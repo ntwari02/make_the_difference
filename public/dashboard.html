@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                500: '#3b82f6', // blue-500
+                600: '#2563eb', // blue-600
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeOut {
+            0% { 
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 200px;
+                margin-bottom: 2rem;
+            }
+            100% { 
+                opacity: 0;
+                transform: translateY(-10px);
+                max-height: 0;
+                margin-bottom: 0;
+                padding: 0;
+            }
+        }
+        .fade-out {
+            animation: fadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .welcome-section {
+            transform-origin: top;
+            will-change: transform, opacity, max-height;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Mbappe Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <span id="userName" class="text-gray-600 dark:text-gray-300"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div id="welcomeSection" class="welcome-section bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
+            <p class="text-gray-600 dark:text-gray-300">Manage your scholarships, applications, and profile from here.</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
+                        <i class="fas fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Applications</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="activeApplications">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
+                        <i class="fas fa-check-circle text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Approved Scholarships</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="approvedScholarships">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
+                        <i class="fas fa-star text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Available Scholarships</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="availableScholarships">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- User Charts -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Your Application Status</h3>
+                    <button id="toggleUserChart" class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-chart-pie"></i>
+                    </button>
+                </div>
+                <div class="h-64">
+                    <canvas id="userStatusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Admin Charts Replay -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Overall Statistics</h3>
+                    <div class="flex gap-2">
+                        <button id="toggleAdminChart" class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
+                            <i class="fas fa-chart-bar"></i>
+                        </button>
+                        <button id="refreshStats" class="text-green-500 hover:text-green-600 dark:text-green-400">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="adminStatsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Applications</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Applications will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chats and Diagrams Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Chat Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Chats</h3>
+                    <button class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
+                <div class="h-64 overflow-y-auto">
+                    <div id="chatList" class="space-y-4">
+                        <!-- Chat messages will be populated here -->
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="chatInput" placeholder="Type a message..." 
+                        class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 
+                        text-gray-900 dark:text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="sendChat" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Diagrams Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Progress Diagrams</h3>
+                    <div class="flex gap-2">
+                        <button class="text-gray-500 hover:text-gray-600 dark:text-gray-400" id="toggleChart">
+                            <i class="fas fa-chart-pie"></i>
+                        </button>
+                        <button class="text-gray-500 hover:text-gray-600 dark:text-gray-400" id="downloadChart">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="h-64 flex items-center justify-center">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Scholarships -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Available Scholarships</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="scholarshipsList">
+                <!-- Scholarships will be populated here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Include the API service -->
+    <script src="js/api.js"></script>
+    
+    <script>
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        // Update user name in navigation and welcome section
+        document.getElementById('userName').textContent = user.fullName || 'User';
+        document.getElementById('welcomeName').textContent = user.fullName || 'User';
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        });
+
+        // Fetch and display applications
+        async function loadApplications() {
+            try {
+                const applications = await window.api.scholarships.getApplications();
+                const applicationsList = document.getElementById('applicationsList');
+                applicationsList.innerHTML = '';
+
+                applications.forEach(app => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship.title}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${app.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 
+                                app.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : 
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
+                                ${app.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            ${new Date(app.createdAt).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            <a href="application-details.html?id=${app.id}" 
+                                class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">View Details</a>
+                        </td>
+                    `;
+                    applicationsList.appendChild(row);
+                });
+
+                // Update stats
+                document.getElementById('activeApplications').textContent = 
+                    applications.filter(app => app.status === 'pending').length;
+            } catch (error) {
+                console.error('Error loading applications:', error);
+            }
+        }
+
+        // Fetch and display available scholarships
+        async function loadScholarships() {
+            try {
+                const scholarships = await window.api.scholarships.getAll();
+                const scholarshipsList = document.getElementById('scholarshipsList');
+                scholarshipsList.innerHTML = '';
+
+                document.getElementById('availableScholarships').textContent = scholarships.length;
+
+                scholarships.forEach(scholarship => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200';
+                    card.innerHTML = `
+                        <div class="p-6">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">${scholarship.title}</h4>
+                            <p class="text-gray-600 dark:text-gray-300 mb-4">${scholarship.description.substring(0, 100)}...</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Deadline: ${new Date(scholarship.deadline).toLocaleDateString()}</span>
+                                <button onclick="applyForScholarship(${scholarship.id})" 
+                                    class="bg-green-500 dark:bg-green-600 text-white px-4 py-2 rounded hover:bg-green-600 dark:hover:bg-green-700 transition-colors duration-200">
+                                    Apply Now
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    scholarshipsList.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading scholarships:', error);
+            }
+        }
+
+        // Apply for scholarship
+        async function applyForScholarship(scholarshipId) {
+            try {
+                const response = await window.api.scholarships.apply(scholarshipId);
+                if (response.success) {
+                    alert('Application submitted successfully!');
+                    loadApplications();
+                }
+            } catch (error) {
+                alert(error.message || 'Error applying for scholarship');
+            }
+        }
+
+        // Initialize charts
+        let userStatusChart, adminStatsChart;
+
+        function initializeCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#F3F4F6' : '#374151';
+            const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
+
+            // User Status Chart
+            const userCtx = document.getElementById('userStatusChart').getContext('2d');
+            userStatusChart = new Chart(userCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Pending', 'Rejected'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            '#10B981', // green
+                            '#F59E0B', // yellow
+                            '#EF4444'  // red
+                        ],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#1F2937' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Admin Stats Chart
+            const adminCtx = document.getElementById('adminStatsChart').getContext('2d');
+            adminStatsChart = new Chart(adminCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Applications', 'Approved', 'Pending', 'Rejected'],
+                    datasets: [{
+                        label: 'Applications',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            '#4F46E5', // indigo
+                            '#10B981', // green
+                            '#F59E0B', // yellow
+                            '#EF4444'  // red
+                        ],
+                        borderWidth: 1,
+                        borderColor: isDark ? '#1F2937' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: gridColor },
+                            ticks: { color: textColor }
+                        },
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart toggle handlers
+            document.getElementById('toggleUserChart').addEventListener('click', () => {
+                userStatusChart.config.type = userStatusChart.config.type === 'doughnut' ? 'pie' : 'doughnut';
+                userStatusChart.update();
+            });
+
+            document.getElementById('toggleAdminChart').addEventListener('click', () => {
+                adminStatsChart.config.type = adminStatsChart.config.type === 'bar' ? 'line' : 'bar';
+                adminStatsChart.update();
+            });
+
+            // Refresh stats handler
+            document.getElementById('refreshStats').addEventListener('click', updateCharts);
+        }
+
+        // Update charts with real data
+        async function updateCharts() {
+            try {
+                // Get user's personal stats
+                const userStats = await window.api.scholarships.getUserStats();
+                userStatusChart.data.datasets[0].data = [
+                    userStats.approved || 0,
+                    userStats.pending || 0,
+                    userStats.rejected || 0
+                ];
+                userStatusChart.update();
+
+                // Get admin stats (if available)
+                try {
+                    const adminStats = await window.api.scholarships.getAdminStats();
+                    adminStatsChart.data.datasets[0].data = [
+                        adminStats.total || 0,
+                        adminStats.approved || 0,
+                        adminStats.pending || 0,
+                        adminStats.rejected || 0
+                    ];
+                    adminStatsChart.update();
+                } catch (error) {
+                    console.log('Admin stats not available for this user');
+                }
+            } catch (error) {
+                console.error('Error updating charts:', error);
+            }
+        }
+
+        // Load initial data
+        loadApplications();
+        loadScholarships();
+        initializeCharts();
+        updateCharts();
+
+        // Initialize Chats and Diagrams
+        function initializeChatsAndDiagrams() {
+            // Initialize chat functionality
+            const chatInput = document.getElementById('chatInput');
+            const sendChat = document.getElementById('sendChat');
+            const chatList = document.getElementById('chatList');
+
+            sendChat.addEventListener('click', () => {
+                if (chatInput.value.trim()) {
+                    const message = document.createElement('div');
+                    message.className = 'flex justify-end';
+                    message.innerHTML = `
+                        <div class="bg-blue-500 text-white rounded-lg px-4 py-2 max-w-[80%]">
+                            ${chatInput.value}
+                        </div>
+                    `;
+                    chatList.appendChild(message);
+                    chatInput.value = '';
+                    chatList.scrollTop = chatList.scrollHeight;
+                }
+            });
+
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChat.click();
+                }
+            });
+
+            // Initialize progress chart
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const progressChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Pending', 'Rejected'],
+                    datasets: [{
+                        data: [30, 50, 20],
+                        backgroundColor: [
+                            '#10B981', // green
+                            '#F59E0B', // yellow
+                            '#EF4444'  // red
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Toggle chart type
+            document.getElementById('toggleChart').addEventListener('click', () => {
+                progressChart.config.type = progressChart.config.type === 'doughnut' ? 'pie' : 'doughnut';
+                progressChart.update();
+            });
+
+            // Download chart
+            document.getElementById('downloadChart').addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = 'progress-chart.png';
+                link.href = document.getElementById('progressChart').toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Initialize theme from localStorage or system preference
+        function initializeTheme() {
+          if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'dark') {
+              document.documentElement.classList.add('dark');
+              if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+              document.documentElement.classList.remove('dark');
+              if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+            if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+          }
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+          if (themeIcon) {
+            if (themeIcon.classList.contains('fa-moon')) {
+              themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+              themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+          }
+          
+          if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('color-theme', 'light');
+          } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+          }
+        }
+
+        // Initialize theme on page load
+        initializeTheme();
+
+        // Add welcome message fadeout with immediate trigger option
+        const welcomeSection = document.getElementById('welcomeSection');
+        
+        // Function to handle fadeout
+        function fadeOutWelcome() {
+            welcomeSection.classList.add('fade-out');
+            welcomeSection.addEventListener('animationend', () => {
+                welcomeSection.remove(); // Use remove() instead of display:none for better cleanup
+            }, { once: true }); // Ensure event listener is removed after execution
+        }
+
+        // Start fadeout after a short delay
+        setTimeout(fadeOutWelcome, 800);
+
+        // Allow manual dismiss by clicking
+        welcomeSection.addEventListener('click', () => {
+            clearTimeout(fadeOutTimeout);
+            fadeOutWelcome();
+        });
+
+        // Add event listener if theme toggle exists
+        if (themeToggle) {
+          themeToggle.addEventListener('click', toggleTheme);
+        }
+    </script>
+</body>
+</html>

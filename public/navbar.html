@@ -1,0 +1,363 @@
+<!-- navbar.html -->
+<header class="bg-white dark:bg-gray-800 py-4 fixed top-0 w-full z-50 shadow-sm">
+  <div class="container mx-auto px-4 flex items-center justify-between">
+    <a href="home.html" class="flex items-center">
+      <h1 class="font-raleway font-bold text-2xl tracking-wider text-gray-700 dark:text-white">MBAPE GLOBAL</h1>
+    </a>
+
+    <div class="flex items-center space-x-4">
+      <!-- Mobile Menu Button -->
+      <button id="mobile-menu-button" class="md:hidden p-2 rounded-lg focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path class="mobile-menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          <path class="mobile-menu-close hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <button id="theme-toggle" class="p-2 rounded-full focus:outline-none text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+        </svg>
+        <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+        </svg>
+      </button>
+
+      <!-- Main Navigation -->
+      <nav class="hidden md:block">
+        <ul class="flex space-x-5" id="mainNav">
+          <li><a href="home.html" class="nav-link">Home</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="service.html" class="nav-link">Services</a></li>
+          <li><a href="scholarship.html" class="nav-link">Scholarship</a></li>
+          <li><a href="partnership.html" class="nav-link">Partnership</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+        </ul>
+      </nav>
+
+      <!-- Auth Buttons -->
+      <div id="authButtons" class="hidden md:flex items-center space-x-4">
+        <!-- Will be populated by JavaScript -->
+      </div>
+
+      <!-- User Menu (Hidden by default) -->
+      <div id="userMenu" class="relative hidden md:block">
+        <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none">
+          <span id="userNameDisplay" class="text-gray-700 dark:text-gray-300 text-sm"></span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        <div id="userMenuDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
+          <a id="dashboardLink" href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+          <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" id="profileLink">Profile</a>
+          <hr class="my-1 border-gray-200 dark:border-gray-700">
+          <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" id="logoutButton">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu (Hidden by default) -->
+  <div id="mobile-menu" class="md:hidden fixed inset-0 z-50 opacity-0 pointer-events-none">
+    <div class="fixed inset-0 bg-black bg-opacity-50" id="mobile-menu-backdrop"></div>
+    <div class="fixed inset-y-0 right-0 max-w-xs w-full bg-white dark:bg-gray-800 shadow-xl flex flex-col transform translate-x-full transition-all duration-300">
+      <div class="p-4 flex flex-col h-full">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Menu</h2>
+          <button id="mobile-menu-close" class="p-2 rounded-lg text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Mobile Navigation Links -->
+        <nav class="flex-1">
+          <ul class="space-y-2" id="mobileNav">
+            <li><a href="home.html" class="mobile-nav-link">Home</a></li>
+            <li><a href="about.html" class="mobile-nav-link">About</a></li>
+            <li><a href="service.html" class="mobile-nav-link">Services</a></li>
+            <li><a href="scholarship.html" class="mobile-nav-link">Scholarship</a></li>
+            <li><a href="partnership.html" class="mobile-nav-link">Partnership</a></li>
+            <li><a href="contact.html" class="mobile-nav-link">Contact</a></li>
+          </ul>
+        </nav>
+
+        <!-- Mobile Auth Buttons -->
+        <div id="mobileAuthButtons" class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+.nav-link {
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.dark .nav-link {
+  color: #D1D5DB;
+}
+
+.nav-link:hover {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.mobile-nav-link {
+  display: block;
+  width: 100%;
+  color: #374151;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+}
+
+.dark .mobile-nav-link {
+  color: #D1D5DB;
+}
+
+.mobile-nav-link:hover {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.active {
+  background-color: #3B82F6;
+  color: white;
+}
+
+/* Mobile menu animation */
+#mobile-menu {
+  transition: all 0.3s ease-in-out;
+}
+
+#mobile-menu.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+#mobile-menu.show .transform {
+  transform: translateX(0) !important;
+}
+</style>
+
+<script>
+  // Theme toggle functionality
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+  const userMenu = document.getElementById('userMenu');
+  const userMenuButton = document.getElementById('userMenuButton');
+  const userMenuDropdown = document.getElementById('userMenuDropdown');
+  const authButtons = document.getElementById('authButtons');
+  const userNameDisplay = document.getElementById('userNameDisplay');
+  const dashboardLink = document.getElementById('dashboardLink');
+  const logoutButton = document.getElementById('logoutButton');
+
+  // Initialize theme
+  function initializeTheme() {
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      themeToggleLightIcon.classList.remove('hidden');
+      document.documentElement.classList.add('dark');
+    } else {
+      themeToggleDarkIcon.classList.remove('hidden');
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
+  // Toggle theme
+  themeToggleBtn.addEventListener('click', function() {
+    themeToggleDarkIcon.classList.toggle('hidden');
+    themeToggleLightIcon.classList.toggle('hidden');
+
+    if (localStorage.getItem('color-theme')) {
+      if (localStorage.getItem('color-theme') === 'light') {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('color-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('color-theme', 'light');
+      }
+    } else {
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('color-theme', 'light');
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('color-theme', 'dark');
+      }
+    }
+  });
+
+  // Handle authentication state
+  function updateAuthState() {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (token && user) {
+      // User is logged in
+      authButtons.classList.add('hidden');
+      userMenu.classList.remove('hidden');
+      userNameDisplay.textContent = user.full_name || 'User';
+
+      // Set dashboard link based on role
+      if (user.role === 'admin') {
+        dashboardLink.href = 'admin_dashboard.html';
+      } else {
+        dashboardLink.href = 'dashboard.html';
+      }
+
+      // Highlight active page
+      const currentPage = window.location.pathname.split('/').pop();
+      document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+          link.classList.add('active');
+        }
+      });
+    } else {
+      // User is not logged in
+      userMenu.classList.add('hidden');
+      authButtons.classList.remove('hidden');
+      authButtons.innerHTML = `
+        <a href="login.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
+        <a href="signup.html" class="bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
+      `;
+    }
+  }
+
+  // Toggle user menu
+  userMenuButton?.addEventListener('click', () => {
+    userMenuDropdown.classList.toggle('hidden');
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!userMenu.contains(e.target)) {
+      userMenuDropdown.classList.add('hidden');
+    }
+  });
+
+  // Handle logout
+  logoutButton?.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  // Mobile menu functionality
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileMenuClose = document.getElementById('mobile-menu-close');
+  const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
+  const mobileAuthButtons = document.getElementById('mobileAuthButtons');
+
+  function toggleMobileMenu() {
+    const isOpen = mobileMenu.classList.contains('show');
+    
+    if (!isOpen) {
+      // Opening the menu
+      mobileMenu.classList.add('show');
+      document.body.style.overflow = 'hidden';
+      
+      // Show the close icon
+      const menuIcon = mobileMenuButton.querySelector('.mobile-menu-icon');
+      const closeIcon = mobileMenuButton.querySelector('.mobile-menu-close');
+      if (menuIcon && closeIcon) {
+        menuIcon.classList.add('hidden');
+        closeIcon.classList.remove('hidden');
+      }
+    } else {
+      // Closing the menu
+      mobileMenu.classList.remove('show');
+      document.body.style.overflow = '';
+      
+      // Show the menu icon
+      const menuIcon = mobileMenuButton.querySelector('.mobile-menu-icon');
+      const closeIcon = mobileMenuButton.querySelector('.mobile-menu-close');
+      if (menuIcon && closeIcon) {
+        menuIcon.classList.remove('hidden');
+        closeIcon.classList.add('hidden');
+      }
+    }
+  }
+
+  // Event listeners for mobile menu
+  mobileMenuButton.addEventListener('click', toggleMobileMenu);
+  mobileMenuClose.addEventListener('click', toggleMobileMenu);
+  mobileMenuBackdrop.addEventListener('click', toggleMobileMenu);
+
+  // Close mobile menu when clicking a link
+  document.querySelectorAll('#mobileNav a').forEach(link => {
+    link.addEventListener('click', () => {
+      toggleMobileMenu();
+    });
+  });
+
+  // Update mobile auth buttons when auth state changes
+  function updateMobileAuthButtons() {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (token && user) {
+      mobileAuthButtons.innerHTML = `
+        <div class="flex flex-col space-y-2">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
+          <span class="font-medium text-gray-800 dark:text-white">${user.full_name || 'User'}</span>
+          <a href="${user.role === 'admin' ? 'admin_dashboard.html' : 'dashboard.html'}" 
+            class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
+            Dashboard
+          </a>
+          <button id="mobileLogoutButton" 
+            class="w-full text-center text-red-600 hover:text-red-700 py-2 transition-colors">
+            Logout
+          </button>
+        </div>
+      `;
+
+      // Add mobile logout handler
+      document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+      });
+    } else {
+      mobileAuthButtons.innerHTML = `
+        <div class="flex flex-col space-y-2">
+          <a href="login.html" class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
+            Login
+          </a>
+          <a href="signup.html" class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+            Sign Up
+          </a>
+        </div>
+      `;
+    }
+  }
+
+  // Update both desktop and mobile auth states
+  function updateAllAuthStates() {
+    updateAuthState();
+    updateMobileAuthButtons();
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeTheme();
+    updateAllAuthStates();
+  });
+
+  // Update auth state when storage changes
+  window.addEventListener('storage', updateAllAuthStates);
+</script>

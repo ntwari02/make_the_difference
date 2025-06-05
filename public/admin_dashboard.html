@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                500: '#3b82f6', // blue-500
+                600: '#2563eb', // blue-600
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -10px);
+            }
+        }
+
+        .welcome-fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar-item-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-item-text {
+            opacity: 0;
+            display: none;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 40;
+            }
+
+            .sidebar.mobile-open {
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Admin Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <!-- Collapse Button -->
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- Sidebar Items -->
+            <div class="flex-1 px-4 space-y-2">
+                <!-- Dashboard -->
+                <a href="#dashboard" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+
+                <!-- User Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        User Management
+                    </div>
+                    <a href="#users" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+
+                <!-- Scholarship Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Scholarship Management
+                    </div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+
+                <!-- System Settings -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        System Settings
+                    </div>
+                    <a href="#settings" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                    <a href="#email" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-envelope w-6"></i>
+                        <span class="sidebar-item-text ml-3">Email Templates</span>
+                    </a>
+                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-database w-6"></i>
+                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                    </a>
+                </div>
+
+                <!-- Reports -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Reports
+                    </div>
+                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span class="sidebar-item-text ml-3">Analytics</span>
+                    </a>
+                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-export w-6"></i>
+                        <span class="sidebar-item-text ml-3">Export Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="welcomeSection" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-7xl px-4 opacity-100 transition-opacity duration-300 ease-out hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
+                <p class="text-gray-600 dark:text-gray-300">Manage your platform, users, and content from here.</p>
+            </div>
+        </div>
+
+        <div id="dashboardContent" class="opacity-100 transition-all duration-300 ease-out space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
+                            <i class="fas fa-users text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Users</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalUsers">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
+                            <i class="fas fa-graduation-cap text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Scholarships</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="activeScholarships">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
+                            <i class="fas fa-file-alt text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pending Applications</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="pendingApplications">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
+                            <i class="fas fa-envelope text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Newsletter Subscribers</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="subscribers">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
+                    <div class="h-[370px]">
+                        <canvas id="applicationTrends"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
+                    <div class="h-[370px]">
+                        <canvas id="scholarshipDistribution"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
+                    <div class="h-[370px]">
+                        <canvas id="userRegistration"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
+                    <div class="h-[370px] flex items-center justify-center">
+                        <div class="w-full max-w-[300px]">
+                            <canvas id="statusOverview"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
+                    <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="userDetailsModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700 dark:text-white">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800 dark:text-white">User Details</h3>
+            <form id="userForm" class="space-y-4">
+                <div>
+                    <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                    <input type="text" id="userName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="userEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <select id="userRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="userStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select id="userStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="closeModalBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Close</button>
+                    <button type="submit" id="saveUserBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    
+    <script>
+        // Check if user is logged in and is admin
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        // Update admin name in navigation and welcome section
+        document.getElementById('adminName').textContent = user.fullName || 'Admin';
+        document.getElementById('welcomeName').textContent = user.fullName || 'Admin';
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('hasSeenWelcome'); // Clear the welcome message flag on logout
+            window.location.href = 'login.html';
+        });
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                // Assuming window.api.admin.getDashboardStats() fetches the stats
+                const stats = await window.api.admin.getDashboardStats();
+                document.getElementById('totalUsers').textContent = stats.totalUsers;
+                document.getElementById('activeScholarships').textContent = stats.activeScholarships;
+                document.getElementById('pendingApplications').textContent = stats.pendingApplications;
+                document.getElementById('subscribers').textContent = stats.subscribers;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+                // In a real app, show a user-friendly error message
+            }
+        }
+
+        // Load applications
+        async function loadApplications() {
+            try {
+                // Assuming window.api.admin.getApplications() fetches applications
+                const applications = await window.api.admin.getApplications();
+                const applicationsList = document.getElementById('applicationsList');
+                applicationsList.innerHTML = '';
+
+                applications.forEach(app => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.user.full_name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship.title}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${app.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 
+                                app.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : 
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
+                                ${app.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            ${new Date(app.createdAt).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            <button onclick="updateApplicationStatus(${app.id}, 'approved')" 
+                                class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-2">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button onclick="updateApplicationStatus(${app.id}, 'rejected')" 
+                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    `;
+                    applicationsList.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading applications:', error);
+                // In a real app, show a user-friendly error message
+            }
+        }
+
+        // Charts initialization
+        let applicationTrendsChart, scholarshipDistributionChart, userRegistrationChart, statusOverviewChart;
+
+        // Define chart colors
+        const chartColors = {
+            primary: ['#4F46E5', '#818CF8', '#A5B4FC', '#C7D2FE', '#DDD6FE'], // Indigo shades
+            secondary: ['#059669', '#10B981', '#34D399', '#6EE7B7', '#A7F3D0'], // Emerald shades
+            accent: ['#DC2626', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2'], // Red shades
+            neutral: ['#374151', '#4B5563', '#6B7280', '#9CA3AF', '#D1D5DB'], // Gray shades
+            chart: {
+                blue: '#4F46E5',    // Indigo-600
+                green: '#059669',   // Emerald-600
+                yellow: '#D97706',  // Amber-600
+                red: '#DC2626',     // Red-600
+                purple: '#7C3AED',  // Violet-600
+                orange: '#EA580C',  // Orange-600
+                teal: '#0D9488',    // Teal-600
+                pink: '#DB2777'     // Pink-600
+            }
+        };
+
+        // Initialize charts with dark mode support
+        function initializeCharts(isDark) {
+            const textColor = isDark ? '#F3F4F6' : '#374151';
+            const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
+
+            // Application Trends Chart
+            const applicationTrendsCtx = document.getElementById('applicationTrends').getContext('2d');
+            applicationTrendsChart = new Chart(applicationTrendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Applications',
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: chartColors.chart.blue,
+                        backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Scholarship Distribution Chart
+            const scholarshipDistributionCtx = document.getElementById('scholarshipDistribution').getContext('2d');
+            scholarshipDistributionChart = new Chart(scholarshipDistributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Government', 'Private', 'NGO', 'Other'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            chartColors.chart.blue,
+                            chartColors.chart.green,
+                            chartColors.chart.purple,
+                            chartColors.chart.orange
+                        ],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#1F2937' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                font: {
+                                    size: 12
+                                },
+                                padding: 20
+                            }
+                        }
+                    }
+                }
+            });
+
+            // User Registration Chart
+            const userRegistrationCtx = document.getElementById('userRegistration').getContext('2d');
+            userRegistrationChart = new Chart(userRegistrationCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Students', 'Administrators'],
+                    datasets: [{
+                        label: 'Total Users',
+                        data: [0, 0],
+                        backgroundColor: [
+                            chartColors.chart.teal,
+                            chartColors.chart.pink
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Status Overview Chart
+            const statusOverviewCtx = document.getElementById('statusOverview').getContext('2d');
+            statusOverviewChart = new Chart(statusOverviewCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Pending', 'Rejected'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        // Update charts with real data
+        async function updateCharts() {
+            try {
+                // Assuming window.api.admin.getChartStats() fetches chart data
+                const stats = await window.api.admin.getChartStats();
+                
+                // Update Application Trends
+                applicationTrendsChart.data.datasets[0].data = stats.applicationTrends;
+                applicationTrendsChart.update();
+
+                // Update Scholarship Distribution
+                scholarshipDistributionChart.data.datasets[0].data = stats.scholarshipDistribution;
+                scholarshipDistributionChart.update();
+
+                // Update User Registration
+                userRegistrationChart.data.datasets[0].data = stats.userRegistration;
+                userRegistrationChart.update();
+
+                // Update Status Overview
+                statusOverviewChart.data.datasets[0].data = stats.statusOverview;
+                statusOverviewChart.update();
+            } catch (error) {
+                console.error('Error updating charts:', error);
+                // In a real app, show a user-friendly error message
+            }
+        }
+
+        // Welcome section animation
+        function animateWelcomeSection() {
+            const welcomeSection = document.getElementById('welcomeSection');
+            const dashboardContent = document.getElementById('dashboardContent');
+            const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+            
+            // Only show welcome message if user hasn't seen it
+            if (!hasSeenWelcome) {
+                welcomeSection.classList.remove('hidden');
+                // Start with dashboard content fully visible
+                dashboardContent.style.opacity = '1';
+                
+                // After 1.5 seconds, fade out welcome message
+                setTimeout(() => {
+                    welcomeSection.classList.add('welcome-fade-out');
+                    
+                    // Remove welcome section after animation
+                    setTimeout(() => {
+                        welcomeSection.style.display = 'none';
+                        
+                        // Ensure charts are properly sized
+                        [applicationTrendsChart, scholarshipDistributionChart, 
+                         userRegistrationChart, statusOverviewChart].forEach(chart => {
+                            if (chart) {
+                                chart.resize();
+                            }
+                        });
+                        
+                        // Set flag in localStorage to indicate welcome message has been shown
+                        localStorage.setItem('hasSeenWelcome', 'true');
+                    }, 300); // Match the animation duration
+                }, 1500);
+            } else {
+                // If user has seen welcome message, hide it immediately
+                welcomeSection.style.display = 'none';
+            }
+        }
+
+        // Custom message box function (replaces alert())
+        function displayMessageBox(message, type = 'info') {
+            const messageBox = document.createElement('div');
+            messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
+            
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-500');
+            } else {
+                messageBox.classList.add('bg-blue-500');
+            }
+
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+
+            setTimeout(() => {
+                messageBox.remove();
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        // Initialize dashboard with proper loading sequence
+        async function initializeDashboard() {
+            try {
+                // Verify admin access first
+                // This call should ideally return some data to confirm access, not just throw an error.
+                // For now, we'll assume it works if no error is thrown.
+                await window.api.admin.getDashboardStats(); // Call this to check if user has access
+
+                // Load all data
+                await Promise.all([
+                    loadDashboardStats(),
+                    loadApplications()
+                ]);
+
+                // Initialize charts
+                initializeCharts(document.documentElement.classList.contains('dark'));
+                await updateCharts();
+
+                // Start welcome animation
+                animateWelcomeSection();
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                // Check for specific error codes if your API sends them
+                if (error.message && error.message.includes('403')) { // Example: if API returns 403 status
+                    displayMessageBox('Access denied. Admin privileges required.', 'error');
+                    window.location.href = 'login.html';
+                } else {
+                    displayMessageBox('Error loading dashboard. Please try again.', 'error');
+                }
+            }
+        }
+
+        // Call initialize function when page loads
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+
+        // Initialize theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Initialize theme from localStorage or system preference
+        function initializeTheme() {
+          if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'dark') {
+              document.documentElement.classList.add('dark');
+              if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+              document.documentElement.classList.remove('dark');
+              if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+          } else {
+            document.documentElement.classList.remove('dark');
+            if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+          }
+        }
+
+        initializeTheme(); // Call on load
+
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+            // Re-initialize charts to apply new theme colors
+            if (applicationTrendsChart) applicationTrendsChart.destroy();
+            if (scholarshipDistributionChart) scholarshipDistributionChart.destroy();
+            if (userRegistrationChart) userRegistrationChart.destroy();
+            if (statusOverviewChart) statusOverviewChart.destroy();
+            initializeCharts(document.documentElement.classList.contains('dark'));
+            updateCharts(); // Update charts with data again
+        });
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        const sidebarItems = document.querySelectorAll('.sidebar-item-text');
+
+        // Collapse sidebar function
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                mainContent.style.marginLeft = '80px';
+            } else {
+                mainContent.style.marginLeft = '280px';
+            }
+        }
+
+        // Mobile sidebar function
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Event listeners
+        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+                sidebar.classList.remove('collapsed');
+            } else {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.style.marginLeft = '80px';
+                } else {
+                    mainContent.style.marginLeft = '280px';
+                }
+            }
+        });
+
+        // Initialize sidebar state based on screen size
+        if (window.innerWidth <= 768) {
+            mainContent.style.marginLeft = '0';
+        }
+
+        // Update the sidebar click handlers
+        document.querySelector('a[href="#users"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'admin_users.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roles & Permissions - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                500: '#3b82f6',
+                600: '#2563eb',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar-item-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-item-text {
+            opacity: 0;
+            display: none;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 40;
+            }
+
+            .sidebar.mobile-open {
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Roles & Permissions</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <!-- Collapse Button -->
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- Sidebar Items -->
+            <div class="flex-1 px-4 space-y-2">
+                <!-- Dashboard -->
+                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+
+                <!-- User Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        User Management
+                    </div>
+                    <a href="#users" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 bg-gray-100 dark:bg-gray-700 text-primary-600 dark:text-primary-500 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+
+                <!-- Scholarship Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Scholarship Management
+                    </div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+
+                <!-- System Settings -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        System Settings
+                    </div>
+                    <a href="#settings" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Role Management Section -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Role Management</h2>
+                    <button id="addRoleBtn" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add New Role
+                    </button>
+                </div>
+
+                <!-- Roles Table -->
+                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Users</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="rolesTableBody">
+                            <!-- Role rows will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Permissions Section -->
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Permissions</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Permission Groups -->
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Management</h3>
+                        <div class="space-y-3" id="userPermissions">
+                            <!-- Permission checkboxes will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Management</h3>
+                        <div class="space-y-3" id="scholarshipPermissions">
+                            <!-- Permission checkboxes will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">System Settings</h3>
+                        <div class="space-y-3" id="systemPermissions">
+                            <!-- Permission checkboxes will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function updateTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            updateTheme();
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Set initial theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateTheme();
+
+        // Sidebar Toggle
+        const sidebar = document.getElementById('sidebar');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const mainContent = document.getElementById('mainContent');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+
+        sidebarCollapseBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('ml-[280px]');
+            mainContent.classList.toggle('ml-[80px]');
+        });
+
+        mobileSidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+        // Roles and Permissions Management
+        const rolesTableBody = document.getElementById('rolesTableBody');
+        const addRoleBtn = document.getElementById('addRoleBtn');
+        const userPermissions = document.getElementById('userPermissions');
+        const scholarshipPermissions = document.getElementById('scholarshipPermissions');
+        const systemPermissions = document.getElementById('systemPermissions');
+
+        // Load roles and permissions
+        async function loadRoles() {
+            try {
+                const response = await fetch('/api/roles/roles', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include authentication token if you have it in localStorage or similar
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    credentials: 'include' // Include cookies if using session-based auth
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Redirect to login if unauthorized
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const roles = Array.isArray(data) ? data : (data.roles || []);
+                
+                if (roles.length === 0) {
+                    rolesTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                No roles found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                rolesTableBody.innerHTML = roles.map(role => `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${role.role_name}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">${role.description || ''}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${role.user_count || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editRole(${role.role_id})" class="text-primary-600 hover:text-primary-900 dark:text-primary-500 dark:hover:text-primary-400 mr-3">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteRole(${role.role_id})" class="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading roles:', error);
+                rolesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-red-500">
+                            Error loading roles. Please try again later.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        async function loadPermissions() {
+            try {
+                const response = await fetch('/api/roles/permissions', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const permissions = data.permissions || data;
+
+                // Helper function to populate permissions
+                const populatePermissions = (containerId, permissionList) => {
+                    if (!permissionList || !permissionList.length) {
+                        document.getElementById(containerId).innerHTML = `
+                            <div class="text-gray-500 dark:text-gray-400 text-sm">
+                                No permissions available
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    document.getElementById(containerId).innerHTML = permissionList.map(perm => `
+                        <div class="flex items-center">
+                            <input type="checkbox" id="perm_${perm.permission_id}" 
+                                   class="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+                                   data-permission-id="${perm.permission_id}">
+                            <label for="perm_${perm.permission_id}" class="ml-2 block text-sm text-gray-900 dark:text-gray-200">
+                                ${formatPermissionName(perm.permission_name)}
+                            </label>
+                        </div>
+                    `).join('');
+                };
+
+                // Populate each permission category
+                populatePermissions('userPermissions', permissions.user_management);
+                populatePermissions('scholarshipPermissions', permissions.scholarship_management);
+                populatePermissions('systemPermissions', permissions.system_settings);
+
+            } catch (error) {
+                console.error('Error loading permissions:', error);
+                ['userPermissions', 'scholarshipPermissions', 'systemPermissions'].forEach(id => {
+                    document.getElementById(id).innerHTML = `
+                        <div class="text-red-500 text-sm">
+                            Error loading permissions. Please try again later.
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Function to close role modal
+        window.closeRoleModal = function() {
+            const modal = document.getElementById('roleModal');
+            if (!modal) return;
+
+            // Add exit animations
+            modal.classList.remove('opacity-100');
+            modal.querySelector('.modal-content').classList.add('translate-y-4');
+
+            // Remove modal after animation
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }
+
+        // Function to show role modal
+        window.showRoleModal = function(role = null) {
+            const modalHtml = `
+                <div class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center opacity-0 transition-opacity duration-300" id="roleModal">
+                    <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden transform translate-y-4 transition-transform duration-300">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-center">
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    ${role ? 'Edit Role' : 'Create New Role'}
+                                </h2>
+                                <button onclick="closeRoleModal()" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <form id="roleForm" class="overflow-auto max-h-[calc(90vh-10rem)]">
+                            <div class="p-6 space-y-6">
+                                <!-- Basic Information -->
+                                <div class="space-y-4">
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Name *</label>
+                                        <input type="text" id="roleName" required
+                                            class="w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                            value="${role ? role.role_name : ''}"
+                                            placeholder="Enter role name">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                        <textarea id="roleDescription" rows="3"
+                                            class="w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                            placeholder="Enter role description">${role ? role.description : ''}</textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Permissions -->
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Permissions</h3>
+                                        <div class="flex items-center space-x-4">
+                                            <button type="button" onclick="selectAllPermissions(true)" 
+                                                class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center">
+                                                <i class="fas fa-check-square mr-1"></i> Select All
+                                            </button>
+                                            <button type="button" onclick="selectAllPermissions(false)"
+                                                class="text-sm text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 flex items-center">
+                                                <i class="fas fa-square mr-1"></i> Deselect All
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <!-- User Management Permissions -->
+                                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                        User Management
+                                                    </h4>
+                                                    <div class="flex items-center space-x-2">
+                                                        <button type="button" onclick="selectCategoryPermissions('user', true)" 
+                                                            class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                                                            <i class="fas fa-check-square"></i>
+                                                        </button>
+                                                        <button type="button" onclick="selectCategoryPermissions('user', false)"
+                                                            class="text-xs text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                                                            <i class="fas fa-square"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="p-4 space-y-3" id="userPermissionsModal">
+                                            </div>
+                                        </div>
+
+                                        <!-- Scholarship Management Permissions -->
+                                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                        Scholarship Management
+                                                    </h4>
+                                                    <div class="flex items-center space-x-2">
+                                                        <button type="button" onclick="selectCategoryPermissions('scholarship', true)" 
+                                                            class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                                                            <i class="fas fa-check-square"></i>
+                                                        </button>
+                                                        <button type="button" onclick="selectCategoryPermissions('scholarship', false)"
+                                                            class="text-xs text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                                                            <i class="fas fa-square"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="p-4 space-y-3" id="scholarshipPermissionsModal">
+                                            </div>
+                                        </div>
+
+                                        <!-- System Settings Permissions -->
+                                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                        System Settings
+                                                    </h4>
+                                                    <div class="flex items-center space-x-2">
+                                                        <button type="button" onclick="selectCategoryPermissions('system', true)" 
+                                                            class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                                                            <i class="fas fa-check-square"></i>
+                                                        </button>
+                                                        <button type="button" onclick="selectCategoryPermissions('system', false)"
+                                                            class="text-xs text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                                                            <i class="fas fa-square"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="p-4 space-y-3" id="systemPermissionsModal">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                                <button type="button" onclick="closeRoleModal()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                    ${role ? 'Update Role' : 'Create Role'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            const modal = document.getElementById('roleModal');
+            const roleForm = document.getElementById('roleForm');
+
+            // Load permissions into modal
+            loadModalPermissions();
+
+            // If editing, set the permissions after a short delay to ensure checkboxes are loaded
+            if (role && role.permissions) {
+                setTimeout(() => {
+                    role.permissions.forEach(perm => {
+                        const checkbox = document.querySelector(`input[data-permission-id="${perm.permission_id}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            checkbox.dispatchEvent(new Event('change'));
+                        }
+                    });
+                }, 100);
+            }
+
+            // Show modal with animation
+            requestAnimationFrame(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('.modal-content').classList.remove('translate-y-4');
+            });
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeRoleModal();
+                }
+            });
+
+            // Handle form submission
+            roleForm.onsubmit = (e) => handleRoleSubmit(e, role);
+        }
+
+        // Function to handle role form submission
+        window.handleRoleSubmit = async function(e, role = null) {
+            e.preventDefault();
+            const roleName = document.getElementById('roleName').value.trim();
+            const roleDescription = document.getElementById('roleDescription').value.trim();
+            
+            if (!roleName) {
+                alert('Role name is required');
+                return;
+            }
+
+            const selectedPermissions = Array.from(document.querySelectorAll('.permission-checkbox:checked'))
+                .map(checkbox => parseInt(checkbox.dataset.permissionId));
+
+            if (selectedPermissions.length === 0) {
+                if (!confirm('Are you sure you want to create a role with no permissions?')) {
+                    return;
+                }
+            }
+
+            try {
+                const url = role ? `/api/roles/roles/${role.role_id}` : '/api/roles/roles';
+                const method = role ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        role_name: roleName,
+                        description: roleDescription,
+                        permissions: selectedPermissions
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to save role');
+                }
+
+                closeRoleModal();
+                loadRoles();
+            } catch (error) {
+                console.error('Error saving role:', error);
+                alert(error.message || 'Error saving role');
+            }
+        }
+
+        // Function to delete role
+        window.deleteRole = async function(roleId) {
+            if (!confirm('Are you sure you want to delete this role?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/roles/roles/${roleId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error('Failed to delete role');
+                }
+
+                loadRoles();
+            } catch (error) {
+                console.error('Error deleting role:', error);
+                alert('Error deleting role');
+            }
+        }
+
+        // Function to edit role
+        window.editRole = async function(roleId) {
+            try {
+                const response = await fetch(`/api/roles/roles/${roleId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error('Failed to fetch role details');
+                }
+
+                const role = await response.json();
+                showRoleModal(role);
+            } catch (error) {
+                console.error('Error fetching role details:', error);
+                alert('Error fetching role details');
+            }
+        }
+
+        // Function to load permissions into modal
+        async function loadModalPermissions() {
+            try {
+                const response = await fetch('/api/roles/permissions');
+                const permissions = await response.json();
+                
+                // Helper function to create permission HTML
+                const createPermissionHTML = (perm, category) => `
+                    <div class="permission-item flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg">
+                        <label class="flex items-center w-full cursor-pointer">
+                            <input type="checkbox" 
+                                   class="permission-checkbox ${category}-permission form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                   data-permission-id="${perm.permission_id}"
+                                   data-category="${category}">
+                            <span class="ml-3">
+                                <span class="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    ${formatPermissionName(perm.permission_name)}
+                                </span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                    ${perm.description || 'No description available'}
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                `;
+
+                // Populate permissions for each category
+                if (permissions.user_management) {
+                    document.getElementById('userPermissionsModal').innerHTML = 
+                        permissions.user_management.map(perm => createPermissionHTML(perm, 'user')).join('');
+                }
+
+                if (permissions.scholarship_management) {
+                    document.getElementById('scholarshipPermissionsModal').innerHTML = 
+                        permissions.scholarship_management.map(perm => createPermissionHTML(perm, 'scholarship')).join('');
+                }
+
+                if (permissions.system_settings) {
+                    document.getElementById('systemPermissionsModal').innerHTML = 
+                        permissions.system_settings.map(perm => createPermissionHTML(perm, 'system')).join('');
+                }
+
+                // Add event listeners for checkbox changes
+                document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const item = e.target.closest('.permission-item');
+                        if (item) {
+                            if (e.target.checked) {
+                                item.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+                                item.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-600/50');
+                            } else {
+                                item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                                item.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-600/50');
+                            }
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error loading permissions:', error);
+                alert('Error loading permissions');
+            }
+        }
+
+        // Function to select/deselect all permissions in a category
+        function selectCategoryPermissions(category, select) {
+            document.querySelectorAll(`.${category}-permission`).forEach(checkbox => {
+                checkbox.checked = select;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+        }
+
+        // Function to select/deselect all permissions
+        function selectAllPermissions(select) {
+            document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                checkbox.checked = select;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+        }
+
+        // Helper function to format permission names
+        function formatPermissionName(name) {
+            return name
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRoles();
+            loadPermissions();
+        });
+
+        addRoleBtn.addEventListener('click', () => showRoleModal());
+    </script>
+</body>
+</html> 

@@ -1,0 +1,163 @@
+<!-- Navigation Bar Component -->
+<!-- This component includes a responsive navbar with dark mode support and dynamic authentication -->
+
+<!-- Navigation Bar Container -->
+<nav class="bg-white dark:bg-gray-800 shadow-md fixed w-full z-50 top-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Main Navigation Content -->
+        <div class="flex justify-between h-16">
+            <!-- Logo and Brand Section -->
+            <div class="flex items-center">
+                <a href="home.html" class="text-xl font-bold text-gray-800 dark:text-white hover:text-primary-500 dark:hover:text-primary-400 transition-colors">
+                    ScholarshipHub
+                </a>
+            </div>
+
+            <!-- Desktop Navigation Links -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="home.html" class="nav-link text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Home</a>
+                <a href="about.html" class="nav-link text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">About</a>
+                <a href="services.html" class="nav-link text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Services</a>
+                <a href="partnership.html" class="nav-link text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Partnership</a>
+                <a href="contact.html" class="nav-link text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Contact</a>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="flex items-center space-x-4">
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none" aria-label="Toggle Dark Mode">
+                    <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                </button>
+
+                <!-- Authentication Buttons Container -->
+                <div id="authButtons">
+                    <!-- Content will be dynamically updated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <div class="md:hidden flex items-center">
+                <button id="mobile-menu-button" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white focus:outline-none" aria-label="Toggle Mobile Menu">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="home.html" class="mobile-nav-link block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Home</a>
+                <a href="about.html" class="mobile-nav-link block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">About</a>
+                <a href="services.html" class="mobile-nav-link block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Services</a>
+                <a href="partnership.html" class="mobile-nav-link block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Partnership</a>
+                <a href="contact.html" class="mobile-nav-link block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">Contact</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Navigation Scripts -->
+<script>
+    /**
+     * Navigation Bar JavaScript
+     * This script handles mobile menu, theme toggling, and authentication state
+     */
+
+    // DOM Elements
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    /**
+     * Mobile Menu Functionality
+     */
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    /**
+     * Theme Management
+     */
+    // Updates the theme icon based on current theme
+    function updateThemeIcon(isDark) {
+        themeIcon.classList.remove(isDark ? 'fa-moon' : 'fa-sun');
+        themeIcon.classList.add(isDark ? 'fa-sun' : 'fa-moon');
+    }
+
+    // Initializes theme based on user preference or system settings
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('color-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme) {
+            const isDark = savedTheme === 'dark';
+            document.documentElement.classList.toggle('dark', isDark);
+            updateThemeIcon(isDark);
+        } else if (prefersDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+            updateThemeIcon(true);
+        }
+    }
+
+    // Toggles between light and dark theme
+    function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+        updateThemeIcon(isDark);
+    }
+
+    // Initialize theme on page load
+    initializeTheme();
+    themeToggle.addEventListener('click', toggleTheme);
+
+    /**
+     * Authentication Management
+     */
+    // Updates authentication buttons based on login status
+    function updateAuthButtons() {
+        const authButtons = document.getElementById('authButtons');
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (token) {
+            // User is logged in - show profile dropdown
+            authButtons.innerHTML = `
+                <div class="relative group">
+                    <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        ${user.fullName || 'Profile'} <i class="fas fa-chevron-down ml-2"></i>
+                    </button>
+                    <div class="absolute right-0 w-48 mt-2 py-2 bg-white dark:bg-gray-800 rounded-md shadow-xl hidden group-hover:block">
+                        <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+                        <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">Logout</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // User is not logged in - show login button
+            authButtons.innerHTML = `
+                <a href="login.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                    Login
+                </a>
+            `;
+        }
+    }
+
+    // Handles user logout
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'home.html';
+    }
+
+    // Update auth buttons on page load
+    updateAuthButtons();
+
+    // Add event listener for auth state changes
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'token' || e.key === 'user') {
+            updateAuthButtons();
+        }
+    });
+</script> 

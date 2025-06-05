@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --input-bg: #ffffff;
+            --input-border: #d1d5db;
+            --table-header: #f9fafb;
+            --table-border: #e5e7eb;
+        }
+
+        .dark {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --input-bg: #1f2937;
+            --input-border: #374151;
+            --table-header: #1f2937;
+            --table-border: #374151;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .sidebar-item-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .text-xs {
+            display: none;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+            margin-left: 280px;
+            padding-top: 4rem;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+        }
+
+        .main-content.collapsed {
+            margin-left: 80px;
+        }
+
+        /* Form styles */
+        .form-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+        .input-field {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-primary) !important;
+            padding: 0.75rem 1rem !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            width: 100% !important;
+            border-width: 2px !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .input-field:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+            outline: none !important;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Dark mode specific input styles */
+        .dark .input-field {
+            background-color: #1f2937 !important;
+            border-color: #374151 !important;
+            color: #e5e7eb !important;
+        }
+
+        .dark .input-field:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .dark .input-field::placeholder {
+            color: #6b7280 !important;
+        }
+
+        /* Card styles */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 4rem 1rem 1rem 1rem;
+            }
+
+            .content-card {
+                margin: 1rem 0;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 4rem 1rem 1rem 1rem;
+            }
+
+            .content-card {
+                margin: 1rem 0;
+                border-radius: 0.375rem;
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Add styles for theme toggle */
+        #theme-toggle {
+            color: var(--text-primary);
+        }
+
+        .dark #theme-toggle {
+            color: white;
+        }
+
+        /* Update main content padding and spacing */
+        .content-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-200">
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-700" style="background-color: var(--bg-secondary);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold" style="color: var(--text-primary);">User Management</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none" style="color: var(--text-primary);">
+                        <i id="theme-icon" class="fas fa-moon"></i>
+                    </button>
+                    <span id="adminName" style="color: var(--text-secondary);"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <!-- Collapse Button -->
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- Sidebar Items -->
+            <div class="flex-1 px-4 space-y-2 overflow-y-auto">
+                <!-- Dashboard -->
+                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+
+                <!-- User Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        User Management
+                    </div>
+                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="#roles" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+
+                <!-- Scholarship Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Scholarship Management
+                    </div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+
+                <!-- System Settings -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        System Settings
+                    </div>
+                    <a href="#settings" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                    <a href="#email" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-envelope w-6"></i>
+                        <span class="sidebar-item-text ml-3">Email Templates</span>
+                    </a>
+                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-database w-6"></i>
+                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                    </a>
+                </div>
+
+                <!-- Reports -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Reports
+                    </div>
+                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span class="sidebar-item-text ml-3">Analytics</span>
+                    </a>
+                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-export w-6"></i>
+                        <span class="sidebar-item-text ml-3">Export Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="max-w-7xl mx-auto">
+            <div class="content-card">
+                <div class="p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Manage system users and their permissions</p>
+                        </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search users..." 
+                            class="w-full md:w-64 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                            bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                            focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button onclick="showAddUserModal()" 
+                        class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 
+                        transition-colors duration-200 flex items-center justify-center">
+                        <i class="fas fa-plus"></i>
+                        <span class="hidden [min-width:701px]:inline-block ml-2">Add User</span>
+                    </button>
+                        </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <div class="min-w-full inline-block align-middle">
+                    <div class="overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Name
+                                    </th>
+                                    <th class="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Email
+                                    </th>
+                                    <th class="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Role
+                                    </th>
+                                    <th class="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- User rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-between items-center mt-6">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    Showing <span id="startRange">1</span> to <span id="endRange">10</span> of <span id="totalUsers">0</span> users
+                </div>
+                <div class="flex space-x-2">
+                    <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        Previous
+                    </button>
+                    <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        Next
+                    </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- User Modal -->
+    <div id="userModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New User</h2>
+            <form id="userForm" class="space-y-4">
+                <div>
+                    <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" id="userName" name="fullName" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="userEmail" name="email" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <select id="userRole" name="role" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="userStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select id="userStatus" name="status" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="hideModal()" 
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 
+                        dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // State management
+        let users = [];
+        let currentPage = 1;
+        const usersPerPage = 10;
+        let filteredUsers = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check authentication first
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token || user.role !== 'admin') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Initialize
+            loadUsers();
+            initializeTheme();
+            setupEventListeners();
+            initializeSidebar();
+            
+            // Update admin name in header
+            document.getElementById('adminName').textContent = user.fullName || 'Admin';
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            document.getElementById('prevPage').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextPage').addEventListener('click', () => changePage(1));
+            document.getElementById('userForm').addEventListener('submit', handleUserSubmit);
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('sidebarCollapseBtn').addEventListener('click', toggleSidebar);
+            document.getElementById('mobileSidebarToggle').addEventListener('click', toggleMobileSidebar);
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            });
+        }
+
+        // User CRUD Operations
+        async function loadUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/admin/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+
+                const data = await response.json();
+                users = Array.isArray(data) ? data : [];
+                filteredUsers = [...users];
+                updateUsersTable();
+                updatePagination();
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        async function createUser(userData) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Authentication required');
+                }
+
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create user');
+                }
+
+                const newUser = await response.json();
+                users.push({
+                    id: newUser.id,
+                    full_name: userData.fullName,
+                    email: userData.email,
+                    role: userData.role,
+                    status: userData.status
+                });
+                filteredUsers = [...users];
+                updateUsersTable();
+                
+                if (newUser.defaultPassword) {
+                    showNotification(`User created successfully. Default password: ${newUser.defaultPassword}`, 'success');
+                } else {
+                    showNotification('User created successfully', 'success');
+                }
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        async function updateUser(userId, userData) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Authentication required');
+                }
+
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to update user');
+                }
+
+                users = users.map(user => 
+                    user.id === userId 
+                        ? { 
+                            ...user, 
+                            full_name: userData.fullName,
+                            email: userData.email,
+                            role: userData.role,
+                            status: userData.status
+                        } 
+                        : user
+                );
+                filteredUsers = [...users];
+                updateUsersTable();
+                showNotification('User updated successfully', 'success');
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Authentication required');
+                }
+
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to delete user');
+                }
+
+                users = users.filter(user => user.id !== userId);
+                filteredUsers = [...users];
+                updateUsersTable();
+                showNotification('User deleted successfully', 'success');
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        // UI Updates
+        function updateUsersTable() {
+            const startIndex = (currentPage - 1) * usersPerPage;
+            const endIndex = startIndex + usersPerPage;
+            const usersToDisplay = filteredUsers.slice(startIndex, endIndex);
+
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = usersToDisplay.map(user => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex flex-col sm:flex-row sm:items-center">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                ${user.full_name || ''}
+                            </div>
+                            <div class="mt-1 sm:hidden text-xs text-gray-500 dark:text-gray-400">
+                                ${user.email || ''}
+                            </div>
+                            <div class="mt-1 sm:hidden text-xs text-gray-500 dark:text-gray-400">
+                                ${user.role || 'user'}
+                            </div>
+                            <div class="mt-1 sm:hidden">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    ${user.status === 'active' 
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
+                                    ${user.status || 'active'}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="hidden sm:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        ${user.email || ''}
+                    </td>
+                    <td class="hidden md:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        ${user.role || 'user'}
+                    </td>
+                    <td class="hidden sm:table-cell px-4 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${user.status === 'active' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
+                            ${user.status || 'active'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
+                        <button onclick="editUser(${user.id})" 
+                            class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteUser(${user.id})" 
+                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            const startRange = ((currentPage - 1) * usersPerPage) + 1;
+            const endRange = Math.min(currentPage * usersPerPage, filteredUsers.length);
+
+            document.getElementById('startRange').textContent = startRange;
+            document.getElementById('endRange').textContent = endRange;
+            document.getElementById('totalUsers').textContent = filteredUsers.length;
+
+            // Update pagination buttons
+            const prevButton = document.getElementById('prevPage');
+            const nextButton = document.getElementById('nextPage');
+            
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === totalPages;
+            
+            prevButton.classList.toggle('opacity-50', currentPage === 1);
+            nextButton.classList.toggle('opacity-50', currentPage === totalPages);
+        }
+
+        // Search and Pagination
+        function handleSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredUsers = users.filter(user => 
+                (user.full_name || '').toLowerCase().includes(searchTerm) ||
+                (user.email || '').toLowerCase().includes(searchTerm) ||
+                (user.role || '').toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+            updateUsersTable();
+        }
+
+        function changePage(delta) {
+            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            const newPage = currentPage + delta;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                updateUsersTable();
+            }
+        }
+
+        // Modal Operations
+        let currentUserId = null;
+
+        function showAddUserModal() {
+            currentUserId = null;
+            document.getElementById('modalTitle').textContent = 'Add New User';
+            document.getElementById('userForm').reset();
+            showModal();
+        }
+
+        function editUser(userId) {
+            currentUserId = userId;
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit User';
+            document.getElementById('userName').value = user.full_name || '';
+            document.getElementById('userEmail').value = user.email || '';
+            document.getElementById('userRole').value = user.role || 'user';
+            document.getElementById('userStatus').value = user.status || 'active';
+            
+            showModal();
+        }
+
+        function showModal() {
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        function hideModal() {
+            document.getElementById('userModal').classList.remove('show');
+            document.getElementById('userForm').reset();
+            currentUserId = null;
+        }
+
+        async function handleUserSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const userData = {
+                fullName: formData.get('fullName'),
+                email: formData.get('email'),
+                role: formData.get('role'),
+                status: formData.get('status')
+            };
+
+            try {
+                if (currentUserId) {
+                    await updateUser(currentUserId, userData);
+                } else {
+                    await createUser(userData);
+                }
+                hideModal();
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        // Notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001] ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            }`;
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Theme Management
+        function initializeTheme() {
+            if (localStorage.getItem('color-theme') === 'dark' || 
+                (!localStorage.getItem('color-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            }
+        }
+
+        // Sidebar functionality
+        function initializeSidebar() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('collapsed');
+            }
+            
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('collapsed');
+            
+            // Store the state in localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+                sidebar.classList.remove('collapsed');
+            } else {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.style.marginLeft = '80px';
+                } else {
+                    mainContent.style.marginLeft = '280px';
+                }
+            }
+        });
+
+        // Error Handler
+        function handleApiError(error) {
+            console.error('API Error:', error);
+            
+            if (error.code === 403 || error.httpStatus === 403) {
+                // Handle permission error
+                showNotification('You do not have permission to perform this action', 'error');
+                
+                // If token is invalid, redirect to login
+                if (error.message.includes('token') || error.message.includes('auth')) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                    return;
+                }
+            } else if (error.httpStatus === 401) {
+                // Handle unauthorized error
+                showNotification('Please log in to continue', 'error');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            } else {
+                // Handle other errors
+                showNotification(
+                    error.message || 'An error occurred. Please try again.',
+                    'error'
+                );
+            }
+        }
+    </script>
+</body>
+</html> 

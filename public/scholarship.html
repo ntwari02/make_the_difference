@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Scholarships - MBAPE Global</title>
+  <meta name="description" content="Discover scholarship opportunities to fund your education with MBAPE Global">
+  <meta name="keywords" content="scholarships, education funding, study abroad, financial aid">
+
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Raleway:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            'roboto': ['Roboto', 'sans-serif'],
+            'raleway': ['Raleway', 'sans-serif'],
+            'inter': ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '##1f2937',
+              900: '#1e3a8a'
+            },
+            dark: {
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    /* Dark mode transitions */
+    * {
+      transition-property: color, background-color, border-color;
+      transition-duration: 300ms;
+    }
+
+    /* Mobile menu styles */
+    .mobile-nav-link {
+      display: block;
+      width: 100%;
+      color: #374151;
+      font-weight: 500;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.375rem;
+      transition: all 0.3s ease;
+    }
+
+    .dark .mobile-nav-link {
+      color: #D1D5DB;
+    }
+
+    .mobile-nav-link:hover {
+      background-color: #3B82F6;
+      color: white;
+    }
+
+    /* Mobile menu animation */
+    #mobile-menu {
+      transition: all 0.3s ease-in-out;
+    }
+
+    #mobile-menu.show {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    #mobile-menu.show .transform {
+      transform: translateX(0) !important;
+    }
+
+    /* Active link styles */
+    .nav-link.active,
+    .mobile-nav-link.active {
+      background-color: #3B82F6;
+      color: white;
+    }
+
+    /* Loading state */
+    .loading {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .loaded {
+      opacity: 1;
+    }
+
+    /* Form input focus styles */
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Dark mode specific styles */
+    .dark input:focus,
+    .dark textarea:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+
+<body class="font-roboto text-base text-gray-700 dark:bg-gray-900 dark:text-gray-300 transition-colors duration-300">
+  <div id="navbar-container"></div>
+
+  <main class="container mx-auto px-4 pt-20">
+    <section class="py-16">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Available Scholarships</h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400">Discover opportunities to fund your education and achieve your academic goals.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div class="bg-primary-500 text-white p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+            <i class="bi bi-trophy-fill text-xl"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Global Leadership Scholarship</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">This scholarship is awarded to exceptional students who have shown leadership qualities in their community. Apply today and unlock your future in global leadership.</p>
+          <a href="#application-form" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300">Apply Now</a>
+        </div>
+
+        <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div class="bg-primary-500 text-white p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+            <i class="bi bi-robot text-xl"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">STEM Research Scholarship</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">Designed for students pursuing degrees in Science, Technology, Engineering, or Mathematics, this scholarship aims to promote research and innovation.</p>
+          <a href="#application-form" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300">Apply Now</a>
+        </div>
+
+        <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div class="bg-primary-500 text-white p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+            <i class="bi bi-people-fill text-xl"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Community Service Scholarship</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">For students who have made a significant impact in their community through volunteer work and social initiatives.</p>
+          <a href="#application-form" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300">Apply Now</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 bg-gray-50 dark:bg-dark-900">
+      <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Scholarship Assistance</h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-12">
+          We are dedicated to helping students secure the financial aid they need to achieve their academic dreams. Our expert team provides personalized guidance to help you find the best scholarships suited to your needs.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4 mx-auto">
+              <i class="bi bi-mortarboard-fill text-primary-500 dark:text-primary-400 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Undergraduate Scholarships</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Explore a wide range of scholarships available for undergraduate students across various fields of study.
+            </p>
+            <a href="#apply-now" class="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 font-semibold inline-flex items-center">
+              Learn More <i class="bi bi-arrow-right ml-1"></i>
+            </a>
+          </div>
+
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4 mx-auto">
+              <i class="bi bi-book-half text-primary-500 dark:text-primary-400 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Postgraduate Scholarships</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              We assist postgraduate students in identifying scholarships and grants to further their academic and research endeavors.
+            </p>
+            <a href="#apply-now" class="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 font-semibold inline-flex items-center">
+              Learn More <i class="bi bi-arrow-right ml-1"></i>
+            </a>
+          </div>
+
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4 mx-auto">
+              <i class="bi bi-globe2 text-primary-500 dark:text-primary-400 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">International Scholarships</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Our team provides detailed guidance on securing international scholarships to study abroad.
+            </p>
+            <a href="#apply-now" class="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 font-semibold inline-flex items-center">
+              Learn More <i class="bi bi-arrow-right ml-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">Available Scholarship Documents</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-start">
+              <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-lg mr-4">
+                <i class="bi bi-file-earmark-pdf-fill text-primary-500 dark:text-primary-400 text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Scholarship List - Universities & Countries</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">View detailed scholarship opportunities based on institutions and regions.</p>
+                <a href="pdf/pdf2.pdf" target="_blank" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
+                  <i class="bi bi-download mr-2"></i> Download PDF
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-start">
+              <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-lg mr-4">
+                <i class="bi bi-file-earmark-spreadsheet-fill text-primary-500 dark:text-primary-400 text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Scholarship Amount Details</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Includes funding amounts, requirements, and application links.</p>
+                <a href="pdf/pdf1.pdf" target="_blank" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
+                  <i class="bi bi-download mr-2"></i> Download PDF
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="application-form" class="py-16 bg-gray-50 dark:bg-dark-900">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary-500 mb-4">Scholarship Application Form</h2>
+          <p class="text-lg text-gray-600 dark:text-gray-400">Fill in the form below to apply for available scholarship opportunities.</p>
+        </div>
+
+        <form class="max-w-3xl mx-auto bg-white dark:bg-dark-800 p-8 rounded-lg shadow-lg border-l-4 border-primary-500">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label for="fullName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full Name</label>
+              <input type="text" id="fullName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Jane Doe" required>
+            </div>
+            <div>
+              <label for="emailAddress" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
+              <input type="email" id="emailAddress" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. jane@email.com" required>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label for="university" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Preferred University</label>
+              <input type="text" id="university" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. University of Kigali">
+            </div>
+            <div>
+              <label for="country" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
+              <input type="text" id="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Rwanda">
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label for="scholarship-type" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Scholarship Type</label>
+            <select id="scholarship-type" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900">
+              <option value="">Select a scholarship</option>
+              <option value="1">Global Leadership Scholarship</option>
+              <option value="2">STEM Research Scholarship</option>
+              <option value="3">Community Service Scholarship</option>
+            </select>
+          </div>
+
+          <div class="mb-6">
+            <label for="message" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Why Are You Applying?</label>
+            <textarea id="message" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Briefly explain your motivation..."></textarea>
+          </div>
+
+          <div class="mb-6">
+            <label class="inline-flex items-center">
+              <input type="checkbox" class="rounded border-gray-300 text-primary-500 focus:ring-primary-500 dark:bg-dark-900 dark:border-gray-600">
+              <span class="ml-2 text-gray-700 dark:text-gray-300">I agree to the terms and conditions</span>
+            </label>
+          </div>
+
+          <div class="text-right">
+            <button type="submit" class="bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">
+              Submit Application
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-gray-800 dark:bg-dark-900 text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div>
+          <a href="home.html" class="text-2xl font-bold dark:text-white">MBAPE</a>
+          <div class="mt-4 text-gray-300 dark:text-gray-400">
+            <p>Remera-Gisimenti</p>
+            <p>Remera-Gisimenti, equity bank 2nd floor</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+1(431) 309-2173</span></p>
+            <p><strong>Email:</strong> <span>reaglegroup8@gmail.com</span></p>
+          </div>
+          <div class="flex space-x-4 mt-4">
+            <a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xl font-semibold mb-4 dark:text-white">Useful Links</h4>
+          <ul class="space-y-2">
+            <li><a href="home.html" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Home</a></li>
+            <li><a href="about.html" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">About us</a></li>
+            <li><a href="service.html" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Services</a></li>
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Terms of service</a></li>
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Privacy policy</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xl font-semibold mb-4 dark:text-white">Our Services</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Web Design</a></li>
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Web Development</a></li>
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Crypto Assistance</a></li>
+            <li><a href="scholarship.html" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Scholarships Consultancy</a></li>
+            <li><a href="#" class="text-gray-300 hover:text-primary-500 dark:hover:text-primary-400">Visa Assistance</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xl font-semibold mb-4 dark:text-white">Our Newsletter</h4>
+          <p class="mb-4 text-gray-300 dark:text-gray-400">Subscribe to our newsletter and receive the latest news about our services!</p>
+          <form class="space-y-4">
+            <input type="email" class="w-full px-4 py-2 rounded text-gray-800 dark:bg-gray-700 dark:text-white" placeholder="Your Email">
+            <button type="submit" class="w-full bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600 transition-all duration-300">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="text-center mt-8 pt-8 border-t border-gray-700 text-gray-300 dark:text-gray-400">
+        <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">MBAPE GLOBAL</strong> <span>All Rights Reserved</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <a href="#" id="scroll-top" class="fixed bottom-8 right-8 bg-primary-500 text-white p-3 rounded-full hover:bg-primary-600 transition-all duration-300 hidden shadow-lg">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
+
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+  <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+
+  <script src="assets/js/main.js"></script>
+
+  <script src="js/include-navbar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      includeNavbar(); // Load and initialize the navbar
+    });
+
+    // Scroll Top Button (kept here as it's page-specific functionality)
+    const scrollTopBtn = document.getElementById("scroll-top");
+
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 200) {
+        scrollTopBtn.classList.remove("hidden");
+      } else {
+        scrollTopBtn.classList.add("hidden");
+      }
+    });
+
+    scrollTopBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    });
+
+    // Form Submission (kept here as it's page-specific functionality)
+    document.querySelector('#application-form form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        scholarship_id: document.getElementById('scholarship-type').value,
+        full_name: document.getElementById('fullName').value,
+        email: document.getElementById('emailAddress').value,
+        university: document.getElementById('university').value,
+        country: document.getElementById('country').value,
+        motivation: document.getElementById('message').value
+      };
+
+      try {
+        const response = await fetch('/api/scholarships/apply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          displayMessageBox('Application submitted successfully!', 'success');
+          // Reset form
+          e.target.reset();
+        } else {
+          throw new Error(result.error || 'Failed to submit application');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        displayMessageBox(error.message || 'Error submitting application. Please try again.', 'error');
+      }
+    });
+
+    // Custom message box function (copied from admin dashboard for consistency)
+    function displayMessageBox(message, type = 'info') {
+        const messageBox = document.createElement('div');
+        messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
+        
+        if (type === 'success') {
+            messageBox.classList.add('bg-green-500');
+        } else if (type === 'error') {
+            messageBox.classList.add('bg-red-500');
+        } else {
+            messageBox.classList.add('bg-blue-500');
+        }
+
+        messageBox.textContent = message;
+        document.body.appendChild(messageBox);
+
+        setTimeout(() => {
+            messageBox.remove();
+        }, 3000); // Message disappears after 3 seconds
+    }
+  </script>
+</body>
+
+</html>

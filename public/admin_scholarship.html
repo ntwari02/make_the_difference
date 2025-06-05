@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scholarship Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        dark: {
+                            'bg-primary': '#1f2937',
+                            'bg-secondary': '#111827',
+                            'border': '#374151'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --input-bg: #ffffff;
+            --input-border: #d1d5db;
+            --table-header: #f9fafb;
+            --table-border: #e5e7eb;
+        }
+
+        .dark {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --input-bg: #1f2937;
+            --input-border: #374151;
+            --table-header: #1f2937;
+            --table-border: #374151;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .sidebar-item-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .text-xs {
+            display: none;
+        }
+
+        /* Update main content padding and spacing */
+        .main-content {
+            transition: margin-left 0.3s ease;
+            margin-left: 280px;
+            padding-top: 4rem;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+        }
+
+        .main-content.collapsed {
+            margin-left: 80px;
+        }
+
+        /* Form styles */
+        .form-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+        .input-field {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-primary) !important;
+            padding: 0.75rem 1rem !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            width: 100% !important;
+            border-width: 2px !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .input-field:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+            outline: none !important;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Specific styles for select inputs */
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.75rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        /* Specific styles for textarea */
+        textarea.input-field {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* Form label styles */
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary) !important;
+        }
+
+        /* Form group spacing */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Dark mode specific input styles */
+        .dark .input-field {
+            background-color: #1f2937 !important;
+            border-color: #374151 !important;
+            color: #e5e7eb !important;
+        }
+
+        .dark .input-field:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .dark .input-field::placeholder {
+            color: #6b7280 !important;
+        }
+
+        /* Update form container padding */
+        .card .p-6 {
+            padding: 2rem !important;
+        }
+
+        /* Table styles */
+        .table-container {
+            background-color: var(--bg-secondary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-header {
+            background-color: var(--table-header);
+        }
+
+        .table-row {
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        /* Card styles */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+        .card-header {
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        /* Status badge styles */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .dark .status-badge.active {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .status-badge.inactive {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #d97706;
+        }
+
+        .dark .status-badge.inactive {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-badge.expired {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #dc2626;
+        }
+
+        .dark .status-badge.expired {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        /* Button styles */
+        .btn-dark {
+            background-color: #374151;
+            color: #e5e7eb;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .btn-dark:hover {
+            background-color: #4b5563;
+        }
+
+        .btn-primary-dark {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-dark:hover {
+            background-color: #2563eb;
+        }
+
+        /* Add modal styles */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 50;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background-color: var(--bg-primary);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-backdrop.show {
+            display: block;
+        }
+
+        /* Add scroll styling for modal */
+        .modal::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 0.75rem;
+        }
+
+        .modal::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 0.75rem;
+        }
+
+        .modal::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Add loading spinner styles */
+        .loading-spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid var(--text-secondary);
+            border-radius: 50%;
+            border-top-color: var(--text-primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 60;
+            backdrop-filter: blur(2px);
+        }
+
+        .table-container {
+            position: relative;
+        }
+
+        /* Disable pointer events during loading */
+        .loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .search-container {
+            position: relative;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .filter-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 4rem 1rem 1rem 1rem;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .modal {
+                width: 95%;
+                margin: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 4rem 1rem 1rem 1rem;
+            }
+
+            .grid-cols-1 {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                margin: 0 -1rem;
+                border-radius: 0;
+            }
+
+            .table-responsive {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .card {
+                margin: 0 -1rem;
+                border-radius: 0;
+            }
+
+            .modal {
+                max-height: 95vh;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .search-filters {
+                flex-direction: column;
+            }
+
+            .btn-primary-dark {
+                width: 100%;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .status-badge {
+                display: inline-block;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* Enhanced table responsiveness */
+        .table-responsive {
+            position: relative;
+        }
+
+        @media (max-width: 640px) {
+            .scholarship-card {
+                display: block;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                background-color: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+            }
+
+            .scholarship-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
+
+            .scholarship-card-content {
+                margin-bottom: 0.5rem;
+            }
+
+            .scholarship-card-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.5rem;
+            }
+
+            /* Hide table headers on mobile */
+            .table-header {
+                display: none;
+            }
+
+            /* Convert table rows to cards on mobile */
+            #scholarshipsList tr {
+                display: block;
+                margin-bottom: 1rem;
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+                background-color: var(--bg-secondary);
+            }
+
+            #scholarshipsList td {
+                display: block;
+                padding: 0.75rem 1rem;
+                border: none;
+                position: relative;
+            }
+
+            #scholarshipsList td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                display: block;
+                margin-bottom: 0.25rem;
+                color: var(--text-secondary);
+            }
+
+            .action-buttons {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-200">
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-700" style="background-color: var(--bg-secondary);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold" style="color: var(--text-primary);">Admin Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none" style="color: var(--text-primary);">
+                        <i id="theme-icon" class="fas fa-moon"></i>
+                    </button>
+                    <span id="adminName" style="color: var(--text-secondary);"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <!-- Collapse Button -->
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- Sidebar Items -->
+            <div class="flex-1 px-4 space-y-2">
+                <!-- Dashboard -->
+                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+
+                <!-- User Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        User Management
+                    </div>
+                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="#roles" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+
+                <!-- Scholarship Management -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Scholarship Management
+                    </div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+
+                <!-- System Settings -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        System Settings
+                    </div>
+                    <a href="#settings" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                    <a href="#email" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-envelope w-6"></i>
+                        <span class="sidebar-item-text ml-3">Email Templates</span>
+                    </a>
+                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-database w-6"></i>
+                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                    </a>
+                </div>
+
+                <!-- Reports -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Reports
+                    </div>
+                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span class="sidebar-item-text ml-3">Analytics</span>
+                    </a>
+                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-export w-6"></i>
+                        <span class="sidebar-item-text ml-3">Export Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
+        <i class="fas fa-bars"></i>
+    </button>
+
+        <!-- Main Content -->
+    <main class="main-content">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="header-content flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold" style="color: var(--text-primary);">Scholarship Management</h2>
+                    <p style="color: var(--text-secondary);">Manage all scholarship opportunities</p>
+                </div>
+                <button id="addScholarshipBtn" class="btn-primary-dark px-4 sm:px-6 py-2 sm:py-3 text-base sm:text-lg flex items-center justify-center gap-2 w-full sm:w-auto">
+                    <i class="fas fa-plus"></i>
+                    Add New Scholarship
+                </button>
+            </div>
+
+            <div class="mb-6 dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search Bar -->
+                    <div class="sm:col-span-2">
+                        <label for="searchInput" class="form-label">Search Scholarships</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" class="input-field pl-10" placeholder="Search by name or description...">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Type Filter -->
+                    <div>
+                        <label for="typeFilter" class="form-label">Filter by Type</label>
+                        <select id="typeFilter" class="input-field">
+                            <option value="">All Types</option>
+                            <option value="ngo">NGO</option>
+                            <option value="private">Private</option>
+                            <option value="gov">Government</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div>
+                        <label for="statusFilter" class="form-label">Filter by Status</label>
+                        <select id="statusFilter" class="input-field">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scholarship Form Modal -->
+            <div id="scholarshipModal" class="modal">
+                <div class="card">
+                    <div class="card-header p-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold" style="color: var(--text-primary);" id="formTitle">Add New Scholarship</h3>
+                        <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form id="scholarshipForm" class="space-y-6">
+                            <input type="hidden" id="scholarshipId">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="form-group">
+                                    <label class="form-label">Scholarship Name</label>
+                                    <input type="text" id="name" name="name" class="input-field" placeholder="Enter scholarship name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Scholarship Type</label>
+                                    <select id="type" name="type" class="input-field" required>
+                                        <option value="">Select Type</option>
+                                        <option value="ngo">NGO</option>
+                                        <option value="private">Private</option>
+                                        <option value="gov">Government</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Description</label>
+                                <textarea id="description" name="description" class="input-field" placeholder="Enter scholarship description" rows="4" required></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="form-group">
+                                    <label class="form-label">Application Deadline</label>
+                                    <input type="date" id="deadline" name="deadline" class="input-field" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select id="status" name="status" class="input-field" required>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="expired">Expired</option>
+                                </select>
+                            </div>
+                            </div>
+                            <div class="flex justify-end space-x-4 mt-8">
+                                <button type="button" onclick="resetForm()" class="btn-dark px-6 py-3 text-lg">
+                                    Clear
+                                </button>
+                                <button type="submit" class="btn-primary-dark px-6 py-3 text-lg">
+                                    Save Scholarship
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="modalBackdrop" class="modal-backdrop"></div>
+
+            <!-- Scholarships List -->
+            <div class="table-container">
+                <div id="tableLoading" class="loading-overlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="p-6 border-b" style="border-color: var(--border-color);">
+                    <h3 class="text-xl font-bold" style="color: var(--text-primary);">Scholarships List</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary);">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary);">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary);">Deadline</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary);">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary);">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scholarshipsList">
+                            <!-- Scholarships will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </main>
+    
+    <script>
+        // Check if user is logged in and is admin
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        // Update admin name
+        document.getElementById('adminName').textContent = user.fullName || 'Admin';
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function initializeTheme() {
+            if (localStorage.getItem('color-theme') === 'dark' || 
+                (!localStorage.getItem('color-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+
+        initializeTheme();
+
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+        });
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.querySelector('.main-content');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('collapsed');
+            
+            // Store the state in localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+                sidebar.classList.remove('collapsed');
+            } else {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.style.marginLeft = '80px';
+                } else {
+                    mainContent.style.marginLeft = '280px';
+                }
+            }
+        });
+
+        // Initialize sidebar state based on screen size and stored preference
+        function initializeSidebar() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('collapsed');
+            }
+            
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+            }
+        }
+
+        // Call initialize function when page loads
+        initializeSidebar();
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        });
+
+        // Scholarship Management Code
+        let scholarships = JSON.parse(localStorage.getItem('scholarships')) || [];
+        const scholarshipForm = document.getElementById('scholarshipForm');
+        const formTitle = document.getElementById('formTitle');
+
+        // Modal functionality
+        const modal = document.getElementById('scholarshipModal');
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const addScholarshipBtn = document.getElementById('addScholarshipBtn');
+        const closeModal = document.getElementById('closeModal');
+
+        function showModal() {
+            modal.classList.add('show');
+            modalBackdrop.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Reset status field state
+            const statusField = document.getElementById('status');
+            const deadlineField = document.getElementById('deadline');
+            
+            if (deadlineField.value) {
+                const selectedDate = new Date(deadlineField.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    statusField.value = 'expired';
+                    statusField.disabled = true;
+                } else {
+                    statusField.disabled = false;
+                }
+            } else {
+                statusField.disabled = false;
+            }
+        }
+            
+        function hideModal() {
+            modal.classList.remove('show');
+            modalBackdrop.classList.remove('show');
+            document.body.style.overflow = '';
+            resetForm();
+        }
+
+        addScholarshipBtn.addEventListener('click', showModal);
+        closeModal.addEventListener('click', hideModal);
+        modalBackdrop.addEventListener('click', hideModal);
+
+        // Loading state management
+        function setLoading(loading) {
+            const tableLoading = document.getElementById('tableLoading');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const form = document.getElementById('scholarshipForm');
+            
+            if (loading) {
+                tableLoading.style.display = 'flex';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<div class="loading-spinner"></div>';
+                }
+                if (form) form.classList.add('loading');
+            } else {
+                tableLoading.style.display = 'none';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Save Scholarship';
+                }
+                if (form) form.classList.remove('loading');
+            }
+        }
+
+        // Update API Functions with loading states
+        async function fetchScholarships() {
+            setLoading(true);
+            try {
+                const response = await fetch('/api/scholarships', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch scholarships');
+                const data = await response.json();
+                scholarships = data;
+            displayScholarships();
+            } catch (error) {
+                showAlert('Error fetching scholarships: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function createScholarship(scholarshipData) {
+            setLoading(true);
+            try {
+                console.log('Creating scholarship with data:', scholarshipData); // Debug log
+                const response = await fetch('/api/scholarships', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(scholarshipData)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to create scholarship');
+                }
+                const data = await response.json();
+                showAlert('Scholarship created successfully!', 'success');
+                await fetchScholarships(); // Refresh immediately
+                return data;
+            } catch (error) {
+                showAlert('Error creating scholarship: ' + error.message, 'error');
+                throw error;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function updateScholarship(id, scholarshipData) {
+            setLoading(true);
+            try {
+                console.log('Updating scholarship with data:', scholarshipData);
+                const response = await fetch(`/api/scholarships/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(scholarshipData)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update scholarship');
+                }
+                const data = await response.json();
+                showAlert('Scholarship updated successfully!', 'success');
+                
+                // Update the local scholarship data with the returned updated scholarship
+                if (data.scholarship) {
+                    const index = scholarships.findIndex(s => s.id === id);
+                    if (index !== -1) {
+                        scholarships[index] = data.scholarship;
+                        displayScholarships(); // Refresh the display
+                    }
+                } else {
+                    await fetchScholarships(); // Fallback to fetching all scholarships
+                }
+            } catch (error) {
+                showAlert('Error updating scholarship: ' + error.message, 'error');
+                throw error;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function deleteScholarship(id) {
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/scholarships/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to delete scholarship');
+                showAlert('Scholarship deleted successfully!', 'success');
+                await fetchScholarships(); // Refresh immediately
+            } catch (error) {
+                showAlert('Error deleting scholarship: ' + error.message, 'error');
+                throw error;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Alert System
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'error' ? 'bg-red-500' : 
+                type === 'success' ? 'bg-green-500' : 
+                'bg-blue-500'
+            } text-white`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        // Update form submission
+        scholarshipForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const deadlineValue = document.getElementById('deadline').value;
+            const selectedDate = new Date(deadlineValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const statusField = document.getElementById('status');
+            let selectedStatus = statusField.value;
+
+            // Only override status if deadline is in the past
+            if (deadlineValue && selectedDate < today) {
+                selectedStatus = 'expired';
+            }
+
+            const scholarshipData = {
+                name: document.getElementById('name').value,
+                type: document.getElementById('type').value,
+                description: document.getElementById('description').value,
+                deadline_date: deadlineValue,
+                status: selectedStatus
+            };
+
+            try {
+                const id = document.getElementById('scholarshipId').value;
+                if (id) {
+                    await updateScholarship(id, scholarshipData);
+                } else {
+                    await createScholarship(scholarshipData);
+                }
+                hideModal();
+            } catch (error) {
+                console.error('Error saving scholarship:', error);
+            }
+        });
+
+        // Update delete handler
+        async function handleDeleteScholarship(id) {
+            if (confirm('Are you sure you want to delete this scholarship?')) {
+                try {
+                    await deleteScholarship(id);
+                } catch (error) {
+                    console.error('Error deleting scholarship:', error);
+                }
+            }
+        }
+
+        // Update display function
+        function displayScholarships() {
+            const scholarshipsList = document.getElementById('scholarshipsList');
+            scholarshipsList.innerHTML = '';
+
+            scholarships.forEach(scholarship => {
+                const deadlineDate = scholarship.deadline_date ? new Date(scholarship.deadline_date) : null;
+                const now = new Date();
+                let remainingTime = '';
+                
+                if (deadlineDate && scholarship.status === 'active') {
+                    const timeDiff = deadlineDate.getTime() - now.getTime();
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    
+                    if (daysRemaining > 0) {
+                        remainingTime = `(${daysRemaining} days remaining)`;
+                    } else if (daysRemaining === 0) {
+                        remainingTime = '(Last day)';
+                    }
+                }
+
+                const row = document.createElement('tr');
+                row.classList.add('table-row');
+                row.innerHTML = `
+                    <td class="px-6 py-4" style="color: var(--text-primary);">${scholarship.name}</td>
+                    <td class="px-6 py-4" style="color: var(--text-primary);">${scholarship.type}</td>
+                    <td class="px-6 py-4" style="color: var(--text-primary);">
+                        ${scholarship.deadline_date ? new Date(scholarship.deadline_date).toLocaleDateString() : 'Not set'}
+                        ${remainingTime ? `<span class="text-sm text-gray-500 dark:text-gray-400">${remainingTime}</span>` : ''}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="status-badge ${scholarship.status}">
+                            ${scholarship.status ? scholarship.status.charAt(0).toUpperCase() + scholarship.status.slice(1) : 'Active'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 space-x-3">
+                        <button onclick="editScholarship('${scholarship.id}')" 
+                            class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button onclick="handleDeleteScholarship('${scholarship.id}')" 
+                            class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+                scholarshipsList.appendChild(row);
+            });
+        }
+
+        // Update edit function
+        async function editScholarship(id) {
+            try {
+                const response = await fetch(`/api/scholarships/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch scholarship');
+                const scholarship = await response.json();
+
+                document.getElementById('scholarshipId').value = scholarship.id;
+                document.getElementById('name').value = scholarship.name;
+                document.getElementById('type').value = scholarship.type;
+                document.getElementById('description').value = scholarship.description;
+                document.getElementById('deadline').value = scholarship.deadline_date ? scholarship.deadline_date.split('T')[0] : '';
+                
+                const statusField = document.getElementById('status');
+                statusField.value = scholarship.status || 'active';
+                
+                // Only disable status selection if deadline is in past
+                const deadlineDate = scholarship.deadline_date ? new Date(scholarship.deadline_date) : null;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (deadlineDate && deadlineDate < today) {
+                    statusField.value = 'expired';
+                    statusField.disabled = true;
+                } else {
+                    statusField.disabled = false;
+                }
+
+                formTitle.textContent = 'Edit Scholarship';
+                showModal();
+            } catch (error) {
+                showAlert('Error fetching scholarship details: ' + error.message, 'error');
+            }
+        }
+
+        // Add function to reset form
+        function resetForm() {
+            const form = document.getElementById('scholarshipForm');
+            form.reset();
+            document.getElementById('scholarshipId').value = '';
+            document.getElementById('status').disabled = false;
+            formTitle.textContent = 'Add New Scholarship';
+        }
+
+        // Add deadline change handler
+        document.getElementById('deadline').addEventListener('change', function(e) {
+            const selectedDate = new Date(e.target.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const statusField = document.getElementById('status');
+            
+            if (selectedDate < today) {
+                statusField.value = 'expired';
+                statusField.disabled = true;
+            } else {
+                statusField.disabled = false;
+                // Only reset to active if it was expired
+                if (statusField.value === 'expired') {
+                    statusField.value = 'active';
+                }
+            }
+        });
+
+        // Auto-refresh setup
+        let refreshInterval;
+
+        function startAutoRefresh() {
+            // Refresh every 30 seconds to check for expired scholarships
+            refreshInterval = setInterval(fetchScholarships, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Start auto-refresh when page loads
+        startAutoRefresh();
+
+        // Stop auto-refresh when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+                fetchScholarships(); // Immediate refresh when page becomes visible
+            }
+        });
+
+        // Initial load
+        fetchScholarships();
+
+        // Prevent modal close when clicking inside the modal
+        modal.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+
+        // Add CSS for expired status badge
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .status-badge.expired {
+                background-color: rgba(239, 68, 68, 0.2);
+                color: #dc2626;
+            }
+            .dark .status-badge.expired {
+                background-color: rgba(239, 68, 68, 0.2);
+                color: #f87171;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // Add these variables at the top of your script
+        let filteredScholarships = [];
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+
+        // Add event listeners for search and filters
+        searchInput.addEventListener('input', applyFilters);
+        typeFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+
+        // Function to apply filters and search
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedType = typeFilter.value;
+            const selectedStatus = statusFilter.value;
+
+            filteredScholarships = scholarships.filter(scholarship => {
+                const matchesSearch = (
+                    scholarship.name.toLowerCase().includes(searchTerm) ||
+                    scholarship.description.toLowerCase().includes(searchTerm)
+                );
+                const matchesType = !selectedType || scholarship.type === selectedType;
+                const matchesStatus = !selectedStatus || scholarship.status === selectedStatus;
+
+                return matchesSearch && matchesType && matchesStatus;
+            });
+
+            displayFilteredScholarships();
+        }
+
+        // Update the display function to use filtered scholarships
+        function displayFilteredScholarships() {
+            const scholarshipsList = document.getElementById('scholarshipsList');
+            scholarshipsList.innerHTML = '';
+
+            if (filteredScholarships.length === 0) {
+                scholarshipsList.innerHTML = `
+                    <tr class="table-row">
+                        <td colspan="5" class="px-6 py-4 text-center" style="color: var(--text-secondary);">
+                            No scholarships found matching your criteria
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredScholarships.forEach(scholarship => {
+                const deadlineDate = scholarship.deadline_date ? new Date(scholarship.deadline_date) : null;
+                const now = new Date();
+                let remainingTime = '';
+                
+                if (deadlineDate && scholarship.status === 'active') {
+                    const timeDiff = deadlineDate.getTime() - now.getTime();
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    
+                    if (daysRemaining > 0) {
+                        remainingTime = `(${daysRemaining} days remaining)`;
+                    } else if (daysRemaining === 0) {
+                        remainingTime = '(Last day)';
+                    }
+                }
+
+                const row = document.createElement('tr');
+                row.classList.add('table-row');
+                row.innerHTML = `
+                    <td data-label="Name" class="px-6 py-4" style="color: var(--text-primary);">${scholarship.name}</td>
+                    <td data-label="Type" class="px-6 py-4" style="color: var(--text-primary);">${scholarship.type}</td>
+                    <td data-label="Deadline" class="px-6 py-4" style="color: var(--text-primary);">
+                        ${scholarship.deadline_date ? new Date(scholarship.deadline_date).toLocaleDateString() : 'Not set'}
+                        ${remainingTime ? `<span class="text-sm text-gray-500 dark:text-gray-400">${remainingTime}</span>` : ''}
+                    </td>
+                    <td data-label="Status" class="px-6 py-4">
+                        <span class="status-badge ${scholarship.status}">
+                            ${scholarship.status ? scholarship.status.charAt(0).toUpperCase() + scholarship.status.slice(1) : 'Active'}
+                        </span>
+                    </td>
+                    <td data-label="Actions" class="px-6 py-4">
+                        <div class="action-buttons">
+                            <button onclick="editScholarship('${scholarship.id}')" 
+                                class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="handleDeleteScholarship('${scholarship.id}')" 
+                                class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                `;
+                scholarshipsList.appendChild(row);
+            });
+        }
+
+        // Update the original display function to initialize filtered scholarships
+        function displayScholarships() {
+            filteredScholarships = [...scholarships];
+            applyFilters();
+        }
+
+        // Add debounce function for search input
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Apply debounce to search input
+        searchInput.addEventListener('input', debounce(() => {
+            applyFilters();
+        }, 300));
+
+        // Update modal styles for better mobile experience
+        const modalStyles = `
+            @media (max-width: 640px) {
+                .modal {
+                    width: 100%;
+                    height: 100%;
+                    max-height: none;
+                    margin: 0;
+                    border-radius: 0;
+                }
+
+                .modal .card {
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .modal .card-header {
+                    padding: 1rem;
+                }
+
+                .modal .p-6 {
+                    padding: 1rem;
+                    flex: 1;
+                    overflow-y: auto;
+                }
+
+                .modal .form-group {
+                    margin-bottom: 1rem;
+                }
+
+                .modal .input-field {
+                    padding: 0.75rem;
+                }
+            }
+        `;
+
+        const additionalStyleSheet = document.createElement('style');
+        additionalStyleSheet.textContent = modalStyles;
+        document.head.appendChild(additionalStyleSheet);
+    </script>
+</body>
+</html> 
