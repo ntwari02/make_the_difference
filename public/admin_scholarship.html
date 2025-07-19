@@ -543,6 +543,12 @@
             }
         }
     </style>
+    <link rel="prefetch" href="home.html">
+    <link rel="prefetch" href="dashboard.html">
+    <link rel="prefetch" href="admin_dashboard.html">
+    <link rel="prefetch" href="scholarship.html">
+    <link rel="prefetch" href="login.html">
+    <link rel="prefetch" href="signup.html">
 </head>
 <body class="min-h-screen transition-colors duration-200">
     <!-- Navigation Bar -->
@@ -793,6 +799,7 @@
     </div>
     </main>
     
+    <script src="js/include-navbar.js" defer></script>
     <script>
         // Check if user is logged in and is admin
         const token = localStorage.getItem('token');

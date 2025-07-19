@@ -6,6 +6,7 @@
     <title>Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -22,6 +23,11 @@
       }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="prefetch" href="home.html">
+    <link rel="prefetch" href="dashboard.html">
+    <link rel="prefetch" href="scholarship.html">
+    <link rel="prefetch" href="login.html">
+    <link rel="prefetch" href="signup.html">
     <style>
         /* Custom styles for modal */
         .modal-overlay {
@@ -155,7 +161,7 @@
                     <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                         User Management
                     </div>
-                    <a href="#users" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                         <i class="fas fa-users w-6"></i>
                         <span class="sidebar-item-text ml-3">Users</span>
                     </a>
@@ -248,33 +254,33 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
-                            <i class="fas fa-graduation-cap text-2xl"></i>
+                            <i class="fas fa-handshake text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Scholarships</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="activeScholarships">0</p>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Partners</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalPartners">0</p>
                         </div>
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
-                            <i class="fas fa-file-alt text-2xl"></i>
+                            <i class="fas fa-graduation-cap text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pending Applications</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="pendingApplications">0</p>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Scholarships</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalScholarships">0</p>
                         </div>
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
-                            <i class="fas fa-envelope text-2xl"></i>
+                            <i class="fas fa-file-alt text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Newsletter Subscribers</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="subscribers">0</p>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Applications</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalApplications">0</p>
                         </div>
                     </div>
                 </div>
@@ -284,21 +290,21 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
                     <div class="h-[370px]">
-                        <canvas id="applicationTrends"></canvas>
+                        <canvas id="applicationTrendsChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
                     <div class="h-[370px]">
-                        <canvas id="scholarshipDistribution"></canvas>
+                        <canvas id="scholarshipDistributionChart"></canvas>
                     </div>
                 </div>
                 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
                     <div class="h-[370px]">
-                        <canvas id="userRegistration"></canvas>
+                        <canvas id="userRegistrationChart"></canvas>
                     </div>
                 </div>
                 
@@ -306,7 +312,7 @@
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
                     <div class="h-[370px] flex items-center justify-center">
                         <div class="w-full max-w-[300px]">
-                            <canvas id="statusOverview"></canvas>
+                            <canvas id="statusOverviewChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -325,9 +331,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -374,9 +378,8 @@
     </div>
 
     <script src="js/api.js"></script>
-    
     <script>
-        // Check if user is logged in and is admin
+        // Check if user is logged in and is an admin
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -384,507 +387,300 @@
             window.location.href = 'login.html';
         }
 
-        // Update admin name in navigation and welcome section
-        document.getElementById('adminName').textContent = user.fullName || 'Admin';
-        document.getElementById('welcomeName').textContent = user.fullName || 'Admin';
+        // Update admin name
+        document.getElementById('adminName').textContent = user.full_name || 'Admin';
+        document.getElementById('welcomeName').textContent = user.full_name || 'Admin';
 
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            localStorage.removeItem('hasSeenWelcome'); // Clear the welcome message flag on logout
             window.location.href = 'login.html';
         });
 
-        // Load dashboard statistics
+        // Load dashboard stats
         async function loadDashboardStats() {
             try {
-                // Assuming window.api.admin.getDashboardStats() fetches the stats
-                const stats = await window.api.admin.getDashboardStats();
-                document.getElementById('totalUsers').textContent = stats.totalUsers;
-                document.getElementById('activeScholarships').textContent = stats.activeScholarships;
-                document.getElementById('pendingApplications').textContent = stats.pendingApplications;
-                document.getElementById('subscribers').textContent = stats.subscribers;
+                const stats = await window.api.get('/admin/dashboard');
+                document.getElementById('totalUsers').textContent = stats.users;
+                document.getElementById('totalPartners').textContent = stats.partners;
+                document.getElementById('totalScholarships').textContent = stats.scholarships;
+                document.getElementById('totalApplications').textContent = stats.applications;
             } catch (error) {
                 console.error('Error loading dashboard stats:', error);
-                // In a real app, show a user-friendly error message
             }
         }
 
-        // Load applications
+        // Load recent applications
         async function loadApplications() {
             try {
-                // Assuming window.api.admin.getApplications() fetches applications
-                const applications = await window.api.admin.getApplications();
+                const applications = await window.api.get('/admin/applications');
                 const applicationsList = document.getElementById('applicationsList');
                 applicationsList.innerHTML = '';
 
                 applications.forEach(app => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.user.full_name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship.title}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${app.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 
-                                app.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : 
-                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
-                                ${app.status}
-                            </span>
-                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.full_name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship_name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                            ${new Date(app.createdAt).toLocaleDateString()}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                            <button onclick="updateApplicationStatus(${app.id}, 'approved')" 
-                                class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-2">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button onclick="updateApplicationStatus(${app.id}, 'rejected')" 
-                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            ${new Date(app.application_date).toLocaleDateString()}
                         </td>
                     `;
                     applicationsList.appendChild(row);
                 });
             } catch (error) {
                 console.error('Error loading applications:', error);
-                // In a real app, show a user-friendly error message
             }
         }
 
-        // Charts initialization
+        // Initialize charts
         let applicationTrendsChart, scholarshipDistributionChart, userRegistrationChart, statusOverviewChart;
 
-        // Define chart colors
-        const chartColors = {
-            primary: ['#4F46E5', '#818CF8', '#A5B4FC', '#C7D2FE', '#DDD6FE'], // Indigo shades
-            secondary: ['#059669', '#10B981', '#34D399', '#6EE7B7', '#A7F3D0'], // Emerald shades
-            accent: ['#DC2626', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2'], // Red shades
-            neutral: ['#374151', '#4B5563', '#6B7280', '#9CA3AF', '#D1D5DB'], // Gray shades
-            chart: {
-                blue: '#4F46E5',    // Indigo-600
-                green: '#059669',   // Emerald-600
-                yellow: '#D97706',  // Amber-600
-                red: '#DC2626',     // Red-600
-                purple: '#7C3AED',  // Violet-600
-                orange: '#EA580C',  // Orange-600
-                teal: '#0D9488',    // Teal-600
-                pink: '#DB2777'     // Pink-600
-            }
-        };
-
-        // Initialize charts with dark mode support
-        function initializeCharts(isDark) {
+        function initializeCharts() {
+            const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#F3F4F6' : '#374151';
             const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
 
-            // Application Trends Chart
-            const applicationTrendsCtx = document.getElementById('applicationTrends').getContext('2d');
-            applicationTrendsChart = new Chart(applicationTrendsCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Applications',
-                        data: [0, 0, 0, 0, 0, 0],
-                        borderColor: chartColors.chart.blue,
-                        backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)',
-                        tension: 0.4,
-                        fill: true,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: textColor,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
+            const chartOptions = (type) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor, font: { size: 12 } }
                     }
-                }
+                },
+                scales: type === 'bar' || type === 'line' ? {
+                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
+                    x: { grid: { color: gridColor }, ticks: { color: textColor } }
+                } : {}
             });
 
-            // Scholarship Distribution Chart
-            const scholarshipDistributionCtx = document.getElementById('scholarshipDistribution').getContext('2d');
-            scholarshipDistributionChart = new Chart(scholarshipDistributionCtx, {
+            const scatterOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor, font: { size: 12 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'month',
+                            parser: 'yyyy-MM',
+                            tooltipFormat: 'MMM yyyy'
+                        },
+                        adapters: {
+                            date: {
+                                zone: 'UTC'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        },
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Applications'
+                        },
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    }
+                }
+            };
+
+            // Application Trends
+            applicationTrendsChart = new Chart(document.getElementById('applicationTrendsChart').getContext('2d'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Applications',
+                        data: [], // Populated from API
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)'
+                    }]
+                },
+                options: scatterOptions
+            });
+
+            // Scholarship Distribution
+            scholarshipDistributionChart = new Chart(document.getElementById('scholarshipDistributionChart').getContext('2d'), {
                 type: 'pie',
                 data: {
                     labels: ['Government', 'Private', 'NGO', 'Other'],
                     datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: [
-                            chartColors.chart.blue,
-                            chartColors.chart.green,
-                            chartColors.chart.purple,
-                            chartColors.chart.orange
-                        ],
-                        borderWidth: 2,
-                        borderColor: isDark ? '#1F2937' : '#ffffff'
+                        data: [], // Populated from API
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: textColor,
-                                font: {
-                                    size: 12
-                                },
-                                padding: 20
-                            }
-                        }
-                    }
-                }
+                options: chartOptions()
             });
 
-            // User Registration Chart
-            const userRegistrationCtx = document.getElementById('userRegistration').getContext('2d');
-            userRegistrationChart = new Chart(userRegistrationCtx, {
+            // User Registration
+            userRegistrationChart = new Chart(document.getElementById('userRegistrationChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: ['Students', 'Administrators'],
+                    labels: ['Users', 'Admins'],
                     datasets: [{
-                        label: 'Total Users',
-                        data: [0, 0],
-                        backgroundColor: [
-                            chartColors.chart.teal,
-                            chartColors.chart.pink
-                        ]
+                        label: 'Count',
+                        data: [], // Populated from API
+                        backgroundColor: ['#90EE90', '#ADD8E6']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: textColor
-                            }
-                        }
-                    }
-                }
+                options: chartOptions('bar')
             });
 
-            // Status Overview Chart
-            const statusOverviewCtx = document.getElementById('statusOverview').getContext('2d');
-            statusOverviewChart = new Chart(statusOverviewCtx, {
-                type: 'doughnut',
+            // Status Overview
+            statusOverviewChart = new Chart(document.getElementById('statusOverviewChart').getContext('2d'), {
+                type: 'bar',
                 data: {
-                    labels: ['Approved', 'Pending', 'Rejected'],
+                    labels: ['Undergraduate', 'Graduate', 'PhD'],
                     datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: [
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444'
-                        ]
+                        label: 'Count',
+                        data: [], // Populated from API
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    layout: {
-                        padding: {
-                            top: 20,
-                            bottom: 20
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: textColor,
-                                padding: 15,
-                                usePointStyle: true,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
-                    },
-                    cutout: '65%'
-                }
+                options: chartOptions('bar')
             });
         }
 
-        // Update charts with real data
+        // Update charts with data from API
         async function updateCharts() {
             try {
-                // Assuming window.api.admin.getChartStats() fetches chart data
-                const stats = await window.api.admin.getChartStats();
-                
-                // Update Application Trends
-                applicationTrendsChart.data.datasets[0].data = stats.applicationTrends;
+                const chartData = await window.api.get('/admin/chart-stats');
+
+                // Application Trends
+                const trendData = chartData.applicationTrends.map(d => ({
+                    x: d.month,
+                    y: d.count
+                }));
+                applicationTrendsChart.data.datasets[0].data = trendData;
                 applicationTrendsChart.update();
 
-                // Update Scholarship Distribution
-                scholarshipDistributionChart.data.datasets[0].data = stats.scholarshipDistribution;
+                // Scholarship Distribution
+                scholarshipDistributionChart.data.datasets[0].data = chartData.scholarshipDistribution;
                 scholarshipDistributionChart.update();
 
-                // Update User Registration
-                userRegistrationChart.data.datasets[0].data = stats.userRegistration;
+                // User Registration
+                userRegistrationChart.data.datasets[0].data = chartData.userRegistration;
                 userRegistrationChart.update();
 
-                // Update Status Overview
-                statusOverviewChart.data.datasets[0].data = stats.statusOverview;
+                // Status Overview
+                statusOverviewChart.data.datasets[0].data = chartData.statusOverview;
                 statusOverviewChart.update();
+
             } catch (error) {
                 console.error('Error updating charts:', error);
-                // In a real app, show a user-friendly error message
             }
         }
+        
+        // Load all data
+        loadDashboardStats();
+        loadApplications();
+        initializeCharts();
+        updateCharts();
 
-        // Welcome section animation
-        function animateWelcomeSection() {
-            const welcomeSection = document.getElementById('welcomeSection');
-            const dashboardContent = document.getElementById('dashboardContent');
-            const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
-            
-            // Only show welcome message if user hasn't seen it
-            if (!hasSeenWelcome) {
-                welcomeSection.classList.remove('hidden');
-                // Start with dashboard content fully visible
-                dashboardContent.style.opacity = '1';
-                
-                // After 1.5 seconds, fade out welcome message
-                setTimeout(() => {
-                    welcomeSection.classList.add('welcome-fade-out');
-                    
-                    // Remove welcome section after animation
-                    setTimeout(() => {
-                        welcomeSection.style.display = 'none';
-                        
-                        // Ensure charts are properly sized
-                        [applicationTrendsChart, scholarshipDistributionChart, 
-                         userRegistrationChart, statusOverviewChart].forEach(chart => {
-                            if (chart) {
-                                chart.resize();
-                            }
-                        });
-                        
-                        // Set flag in localStorage to indicate welcome message has been shown
-                        localStorage.setItem('hasSeenWelcome', 'true');
-                    }, 300); // Match the animation duration
-                }, 1500);
-            } else {
-                // If user has seen welcome message, hide it immediately
-                welcomeSection.style.display = 'none';
-            }
-        }
-
-        // Custom message box function (replaces alert())
-        function displayMessageBox(message, type = 'info') {
-            const messageBox = document.createElement('div');
-            messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
-            
-            if (type === 'success') {
-                messageBox.classList.add('bg-green-500');
-            } else if (type === 'error') {
-                messageBox.classList.add('bg-red-500');
-            } else {
-                messageBox.classList.add('bg-blue-500');
-            }
-
-            messageBox.textContent = message;
-            document.body.appendChild(messageBox);
-
-            setTimeout(() => {
-                messageBox.remove();
-            }, 3000); // Message disappears after 3 seconds
-        }
-
-        // Initialize dashboard with proper loading sequence
-        async function initializeDashboard() {
-            try {
-                // Verify admin access first
-                // This call should ideally return some data to confirm access, not just throw an error.
-                // For now, we'll assume it works if no error is thrown.
-                await window.api.admin.getDashboardStats(); // Call this to check if user has access
-
-                // Load all data
-                await Promise.all([
-                    loadDashboardStats(),
-                    loadApplications()
-                ]);
-
-                // Initialize charts
-                initializeCharts(document.documentElement.classList.contains('dark'));
-                await updateCharts();
-
-                // Start welcome animation
-                animateWelcomeSection();
-            } catch (error) {
-                console.error('Error initializing dashboard:', error);
-                // Check for specific error codes if your API sends them
-                if (error.message && error.message.includes('403')) { // Example: if API returns 403 status
-                    displayMessageBox('Access denied. Admin privileges required.', 'error');
-                    window.location.href = 'login.html';
-                } else {
-                    displayMessageBox('Error loading dashboard. Please try again.', 'error');
-                }
-            }
-        }
-
-        // Call initialize function when page loads
-        document.addEventListener('DOMContentLoaded', initializeDashboard);
-
-        // Initialize theme toggle functionality
+        // Theme toggle functionality
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
         
-        // Initialize theme from localStorage or system preference
-        function initializeTheme() {
-          if (localStorage.getItem('color-theme')) {
+        // Check for saved user preference, if any, on load of the website
+        if (localStorage.getItem('color-theme')) {
             if (localStorage.getItem('color-theme') === 'dark') {
-              document.documentElement.classList.add('dark');
-              if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
             } else {
-              document.documentElement.classList.remove('dark');
-              if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
             }
-          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // If no preference saved, check system preference
             document.documentElement.classList.add('dark');
-            if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-          } else {
-            document.documentElement.classList.remove('dark');
-            if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
-          }
+            localStorage.setItem('color-theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
         }
-
-        initializeTheme(); // Call on load
-
-        themeToggle.addEventListener('click', () => {
+        
+        themeToggle.addEventListener('click', function() {
+            // Toggle icon
+            if (themeIcon.classList.contains('fa-moon')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+            
+            // Toggle theme
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('color-theme', 'light');
-                if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.setItem('color-theme', 'dark');
-                if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
             }
-            // Re-initialize charts to apply new theme colors
-            if (applicationTrendsChart) applicationTrendsChart.destroy();
-            if (scholarshipDistributionChart) scholarshipDistributionChart.destroy();
-            if (userRegistrationChart) userRegistrationChart.destroy();
-            if (statusOverviewChart) statusOverviewChart.destroy();
-            initializeCharts(document.documentElement.classList.contains('dark'));
-            updateCharts(); // Update charts with data again
         });
-
+        
         // Sidebar functionality
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-        const sidebarItems = document.querySelectorAll('.sidebar-item-text');
-
-        // Collapse sidebar function
-        function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
-            if (sidebar.classList.contains('collapsed')) {
-                mainContent.style.marginLeft = '80px';
-            } else {
-                mainContent.style.marginLeft = '280px';
-            }
-        }
-
-        // Mobile sidebar function
-        function toggleMobileSidebar() {
-            sidebar.classList.toggle('mobile-open');
-        }
-
-        // Event listeners
-        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
-        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
-                    sidebar.classList.remove('mobile-open');
-                }
-            }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                mainContent.style.marginLeft = '0';
-                sidebar.classList.remove('collapsed');
-            } else {
-                if (sidebar.classList.contains('collapsed')) {
-                    mainContent.style.marginLeft = '80px';
-                } else {
-                    mainContent.style.marginLeft = '280px';
-                }
-            }
-        });
-
-        // Initialize sidebar state based on screen size
-        if (window.innerWidth <= 768) {
-            mainContent.style.marginLeft = '0';
-        }
-
-        // Update the sidebar click handlers
-        document.querySelector('a[href="#users"]').addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'admin_users.html';
-        });
+         const sidebar = document.getElementById('sidebar');
+         const mainContent = document.getElementById('mainContent');
+         const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+         const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+         const sidebarItems = document.querySelectorAll('.sidebar-item-text');
+ 
+         // Collapse sidebar function
+         function toggleSidebar() {
+             sidebar.classList.toggle('collapsed');
+             if (sidebar.classList.contains('collapsed')) {
+                 mainContent.style.marginLeft = '80px';
+             } else {
+                 mainContent.style.marginLeft = '280px';
+             }
+         }
+ 
+         // Mobile sidebar function
+         function toggleMobileSidebar() {
+             sidebar.classList.toggle('mobile-open');
+         }
+ 
+         // Event listeners
+         sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+         mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+ 
+         // Close sidebar when clicking outside on mobile
+         document.addEventListener('click', (e) => {
+             if (window.innerWidth <= 768) {
+                 if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                     sidebar.classList.remove('mobile-open');
+                 }
+             }
+         });
+ 
+         // Handle window resize
+         window.addEventListener('resize', () => {
+             if (window.innerWidth <= 768) {
+                 mainContent.style.marginLeft = '0';
+                 sidebar.classList.remove('collapsed');
+             } else {
+                 if (sidebar.classList.contains('collapsed')) {
+                     mainContent.style.marginLeft = '80px';
+                 } else {
+                     mainContent.style.marginLeft = '280px';
+                 }
+             }
+         });
+ 
+         // Initialize sidebar state based on screen size
+         if (window.innerWidth <= 768) {
+             mainContent.style.marginLeft = '0';
+         }
     </script>
 </body>
 </html>

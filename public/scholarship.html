@@ -44,7 +44,7 @@
     }
   </script>
 
-  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
@@ -129,6 +129,11 @@
       scroll-behavior: smooth;
     }
   </style>
+  <link rel="prefetch" href="home.html">
+  <link rel="prefetch" href="dashboard.html">
+  <link rel="prefetch" href="admin_dashboard.html">
+  <link rel="prefetch" href="login.html">
+  <link rel="prefetch" href="signup.html">
 </head>
 
 <body class="font-roboto text-base text-gray-700 dark:bg-gray-900 dark:text-gray-300 transition-colors duration-300">
@@ -265,55 +270,159 @@
           <p class="text-lg text-gray-600 dark:text-gray-400">Fill in the form below to apply for available scholarship opportunities.</p>
         </div>
 
-        <form class="max-w-3xl mx-auto bg-white dark:bg-dark-800 p-8 rounded-lg shadow-lg border-l-4 border-primary-500">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label for="fullName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full Name</label>
-              <input type="text" id="fullName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Jane Doe" required>
+        <form id="scholarshipForm" class="max-w-3xl mx-auto bg-white dark:bg-dark-800 p-8 rounded-lg shadow-lg border-l-4 border-primary-500" enctype="multipart/form-data">
+          <!-- Hidden input for scholarship_id if needed -->
+          <input type="hidden" name="scholarship_id" id="scholarship_id" value="1">
+
+          <!-- Step 1: Personal Information -->
+          <div class="form-step" id="step-1">
+            <div class="mb-6 flex flex-col items-center">
+              <label for="profilePicture" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Profile Picture</label>
+              <div id="profileUploadArea" class="relative flex flex-col items-center justify-center w-32 h-32 rounded-full border-2 border-dashed border-primary-500 dark:border-primary-400 bg-gray-100 dark:bg-dark-900 cursor-pointer transition hover:bg-primary-50 dark:hover:bg-primary-900/20 mb-2">
+                <img id="profilePreview" class="absolute w-32 h-32 rounded-full object-cover hidden z-10" alt="Profile Preview">
+                <div id="profilePlaceholder" class="flex flex-col items-center justify-center h-full w-full z-0">
+                  <i class="fas fa-user-circle text-6xl text-gray-300 dark:text-white"></i>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Drag & drop or click</span>
+                </div>
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
+              </div>
+              <button type="button" id="profileUploadBtn" class="mt-2 px-4 py-2 bg-primary-500 text-white rounded shadow hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500">Choose Photo</button>
+              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max size: 2MB. JPG, PNG, or GIF.</span>
             </div>
-            <div>
-              <label for="emailAddress" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
-              <input type="email" id="emailAddress" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. jane@email.com" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="fullName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full Name</label>
+                <input type="text" id="fullName" name="fullName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Jane Doe" required>
+              </div>
+              <div>
+                <label for="emailAddress" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
+                <input type="email" id="emailAddress" name="emailAddress" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. jane@email.com" required>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="dob" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Date of Birth</label>
+                <input type="date" id="dob" name="dateOfBirth" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+              </div>
+              <div>
+                <label for="gender" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Gender</label>
+                <select id="gender" name="gender" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                  <option value="">Select gender</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="phone" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Phone Number</label>
+                <input type="tel" id="phone" name="phoneNumber" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 123 456 789" required>
+              </div>
+              <div>
+                <label for="address" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Address</label>
+                <input type="text" id="address" name="address" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. 123 Main St, Kigali" required>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" class="next-step bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Next</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label for="university" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Preferred University</label>
-              <input type="text" id="university" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. University of Kigali">
+          <!-- Step 2: Academic Information -->
+          <div class="form-step hidden" id="step-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="preferredUniversity" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Preferred University</label>
+                <select id="preferredUniversity" name="preferredUniversity" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                  <option value="">Select a university</option>
+                  <!-- Options will be populated by JS -->
+                </select>
+                <input type="hidden" name="scholarship_id" id="scholarship_id" value="">
+              </div>
+              <div>
+                <label for="country" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
+                <input type="text" id="country" name="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Country will auto-fill" readonly>
+              </div>
             </div>
-            <div>
-              <label for="country" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
-              <input type="text" id="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Rwanda">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="academicLevel" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Academic Level</label>
+                <select id="academicLevel" name="academicLevel" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                  <option value="">Select level</option>
+                  <option value="undergraduate">Undergraduate</option>
+                  <option value="graduate">Graduate</option>
+                  <option value="phd">PhD</option>
+                </select>
+              </div>
+              <div>
+                <label for="intendedMajor" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Intended Major/Field of Study</label>
+                <input type="text" id="intendedMajor" name="intendedMajor" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Computer Science">
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="gpa" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">GPA / Academic Performance</label>
+                <input type="text" id="gpaAcademicPerformance" name="gpaAcademicPerformance" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. 3.8/4.0">
+              </div>
+              <div>
+                <label for="documents" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Upload Documents</label>
+                <input type="file" id="documents" name="documents" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" multiple>
+              </div>
+            </div>
+            <div class="mb-6">
+              <label for="extracurriculars" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Extracurricular Activities</label>
+              <textarea id="extracurricularActivities" name="extracurricularActivities" rows="2" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="List your activities, clubs, sports, etc."></textarea>
+            </div>
+            <div class="flex justify-between">
+              <button type="button" class="prev-step bg-gray-300 text-gray-700 px-8 py-3 rounded font-semibold hover:bg-gray-400 transition-all duration-300">Back</button>
+              <button type="button" class="next-step bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Next</button>
             </div>
           </div>
 
-          <div class="mb-6">
-            <label for="scholarship-type" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Scholarship Type</label>
-            <select id="scholarship-type" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900">
-              <option value="">Select a scholarship</option>
-              <option value="1">Global Leadership Scholarship</option>
-              <option value="2">STEM Research Scholarship</option>
-              <option value="3">Community Service Scholarship</option>
-            </select>
-          </div>
-
-          <div class="mb-6">
-            <label for="message" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Why Are You Applying?</label>
-            <textarea id="message" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Briefly explain your motivation..."></textarea>
-          </div>
-
-          <div class="mb-6">
-            <label class="inline-flex items-center">
-              <input type="checkbox" class="rounded border-gray-300 text-primary-500 focus:ring-primary-500 dark:bg-dark-900 dark:border-gray-600">
-              <span class="ml-2 text-gray-700 dark:text-gray-300">I agree to the terms and conditions</span>
-            </label>
-          </div>
-
-          <div class="text-right">
-            <button type="submit" class="bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">
-              Submit Application
-            </button>
+          <!-- Step 3: Additional Information -->
+          <div class="form-step hidden" id="step-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label for="parentName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Name</label>
+                <input type="text" id="parentGuardianName" name="parentGuardianName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. John Doe">
+              </div>
+              <div>
+                <label for="parentContact" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Contact</label>
+                <input type="text" id="parentGuardianContact" name="parentGuardianContact" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 987 654 321">
+              </div>
+            </div>
+            <div class="mb-6">
+              <label for="financialNeed" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Financial Need Statement</label>
+              <textarea id="financialNeedStatement" name="financialNeedStatement" rows="3" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Describe your financial situation and why you need this scholarship."></textarea>
+            </div>
+            <div class="mb-6">
+              <label for="referral" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">How did you hear about this scholarship?</label>
+              <input type="text" id="howHeardAbout" name="howHeardAbout" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. School, Social Media, Friend">
+            </div>
+            <div class="mb-6">
+              <label for="scholarship-type" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Scholarship Type</label>
+              <select id="scholarship-type" name="scholarshipType" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900">
+                <option value="">Select a scholarship</option>
+                <option value="1">Global Leadership Scholarship</option>
+                <option value="2">STEM Research Scholarship</option>
+                <option value="3">Community Service Scholarship</option>
+              </select>
+            </div>
+            <div class="mb-6">
+              <label for="message" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Why Are You Applying?</label>
+              <textarea id="motivationStatement" name="motivationStatement" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Briefly explain your motivation..."></textarea>
+            </div>
+            <div class="mb-6">
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="termsAgreed" required>
+                <span class="ml-2 text-gray-700 dark:text-gray-300">I agree to the terms and conditions</span>
+              </label>
+            </div>
+            <div class="flex justify-between">
+              <button type="button" class="prev-step bg-gray-300 text-gray-700 px-8 py-3 rounded font-semibold hover:bg-gray-400 transition-all duration-300">Back</button>
+              <button type="submit" class="bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Submit Application</button>
+            </div>
           </div>
         </form>
       </div>
@@ -391,7 +500,7 @@
 
   <script src="assets/js/main.js"></script>
 
-  <script src="js/include-navbar.js"></script>
+  <script src="js/include-navbar.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       includeNavbar(); // Load and initialize the navbar
@@ -416,43 +525,111 @@
       });
     });
 
-    // Form Submission (kept here as it's page-specific functionality)
-    document.querySelector('#application-form form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        scholarship_id: document.getElementById('scholarship-type').value,
-        full_name: document.getElementById('fullName').value,
-        email: document.getElementById('emailAddress').value,
-        university: document.getElementById('university').value,
-        country: document.getElementById('country').value,
-        motivation: document.getElementById('message').value
-      };
+    // Multi-step form logic
+    const steps = Array.from(document.querySelectorAll('.form-step'));
+    let currentStep = 0;
 
-      try {
-        const response = await fetch('/api/scholarships/apply', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
+    function showStep(index) {
+      steps.forEach((step, i) => {
+        step.classList.toggle('hidden', i !== index);
+      });
+    }
 
-        const result = await response.json();
-        if (response.ok) {
-          displayMessageBox('Application submitted successfully!', 'success');
-          // Reset form
-          e.target.reset();
-        } else {
-          throw new Error(result.error || 'Failed to submit application');
+    document.querySelectorAll('.next-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          showStep(currentStep);
         }
-      } catch (error) {
-        console.error('Error:', error);
-        displayMessageBox(error.message || 'Error submitting application. Please try again.', 'error');
+      });
+    });
+
+    document.querySelectorAll('.prev-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (currentStep > 0) {
+          currentStep--;
+          showStep(currentStep);
+        }
+      });
+    });
+
+    showStep(currentStep);
+
+    // Enhanced Profile Picture Upload
+    const profileInput = document.getElementById('profilePicture');
+    const profilePreview = document.getElementById('profilePreview');
+    const profilePlaceholder = document.getElementById('profilePlaceholder');
+    const profileUploadArea = document.getElementById('profileUploadArea');
+    const profileUploadBtn = document.getElementById('profileUploadBtn');
+
+    profileUploadBtn.addEventListener('click', () => profileInput.click());
+
+    profileInput.addEventListener('change', function(event) {
+      const [file] = event.target.files;
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          alert('Please select a valid image file.');
+          profileInput.value = '';
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          alert('Image size must be less than 2MB.');
+          profileInput.value = '';
+          return;
+        }
+        profilePreview.src = URL.createObjectURL(file);
+        profilePreview.classList.remove('hidden');
+        profilePlaceholder.classList.add('hidden');
+      } else {
+        profilePreview.src = '';
+        profilePreview.classList.add('hidden');
+        profilePlaceholder.classList.remove('hidden');
       }
     });
 
-    // Custom message box function (copied from admin dashboard for consistency)
+    // Drag & Drop support
+    profileUploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      profileUploadArea.classList.add('ring-2', 'ring-primary-500');
+    });
+    profileUploadArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      profileUploadArea.classList.remove('ring-2', 'ring-primary-500');
+    });
+    profileUploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      profileUploadArea.classList.remove('ring-2', 'ring-primary-500');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        profileInput.files = files;
+        profileInput.dispatchEvent(new Event('change'));
+      }
+    });
+
+    document.getElementById('scholarshipForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      // Get the scholarship ID from the hidden input or set dynamically
+      const scholarshipId = form.querySelector('[name="scholarship_id"]').value;
+      try {
+        const response = await fetch(`/api/scholarships/${scholarshipId}/apply`, {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (response.ok) {
+          displayMessageBox('Application submitted successfully!', 'success');
+          form.reset();
+        } else {
+          displayMessageBox('Error: ' + (result.message || result.error), 'error');
+        }
+      } catch (error) {
+        displayMessageBox('Network error: ' + error.message, 'error');
+      }
+    });
+
+    // Custom message box function (copied from partnership form for consistency)
     function displayMessageBox(message, type = 'info') {
         const messageBox = document.createElement('div');
         messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
@@ -472,6 +649,33 @@
             messageBox.remove();
         }, 3000); // Message disappears after 3 seconds
     }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Fetch scholarships (universities) from backend
+      const res = await fetch('/api/scholarships');
+      const scholarships = await res.json();
+
+      const select = document.getElementById('preferredUniversity');
+      const hiddenId = document.getElementById('scholarship_id');
+      const countryInput = document.getElementById('country');
+
+      // Populate the select dropdown
+      scholarships.forEach(sch => {
+        const option = document.createElement('option');
+        option.value = sch.name;
+        option.textContent = sch.name;
+        option.dataset.scholarshipId = sch.id;
+        option.dataset.country = sch.country || '';
+        select.appendChild(option);
+      });
+
+      // When user selects a university, update the hidden scholarship_id and country
+      select.addEventListener('change', function() {
+        const selectedOption = select.options[select.selectedIndex];
+        hiddenId.value = selectedOption.dataset.scholarshipId || '';
+        countryInput.value = selectedOption.dataset.country || '';
+      });
+    });
   </script>
 </body>
 

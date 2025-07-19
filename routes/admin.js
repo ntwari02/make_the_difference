@@ -1,13 +1,13 @@
-const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { adminAuth } from '../middleware/auth.js';
 const router = express.Router();
-const db = require('../config/database');
-const { adminAuth } = require('../middleware/auth');
 
 // Get dashboard statistics
 router.get('/dashboard', adminAuth, async (req, res) => {
   try {
     // Get total users
-    const [usersCount] = await db.promise().query('SELECT COUNT(*) as count FROM users WHERE role = "user"');
+    const [usersCount] = await db.promise().query('SELECT COUNT(*) as count FROM users');
     
     // Get total partners
     const [partnersCount] = await db.promise().query('SELECT COUNT(*) as count FROM partners');
@@ -144,87 +144,69 @@ router.delete('/newsletter-subscribers/:id', adminAuth, async (req, res) => {
 // Get chart statistics
 router.get('/chart-stats', adminAuth, async (req, res) => {
   try {
-
-    // Get application trends (last 6 months)
+    // Application trends by month
     const [applicationTrends] = await db.promise().query(`
-      SELECT 
-        DATE_FORMAT(submitted_at, '%Y-%m') as month,
-        COUNT(*) as count
+      SELECT DATE_FORMAT(application_date, '%Y-%m') as month, COUNT(*) as count
       FROM scholarship_applications
-      WHERE submitted_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-      GROUP BY DATE_FORMAT(submitted_at, '%Y-%m')
+      GROUP BY month
       ORDER BY month ASC
     `);
 
-    // Get scholarship distribution by type
+    // Scholarship distribution by type
     const [scholarshipDistribution] = await db.promise().query(`
-      SELECT 
-        COALESCE(type, 'Other') as category,
-        COUNT(*) as count
+      SELECT type, COUNT(*) as count
       FROM scholarships
       GROUP BY type
     `);
+    const scholarshipDistData = {
+      'gov': 0,
+      'private': 0,
+      'ngo': 0,
+      'other': 0
+    };
+    scholarshipDistribution.forEach(row => {
+      scholarshipDistData[row.type] = row.count;
+    });
 
-    // Get user types distribution
-    const [userStats] = await db.promise().query(`
-      SELECT 
-        role,
-        COUNT(*) as count
+    // User registration by role
+    const [userRegistration] = await db.promise().query(`
+      SELECT role, COUNT(*) as count
       FROM users
       GROUP BY role
     `);
 
-    // Process application trends data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const trendsData = new Array(6).fill(0);
-    applicationTrends.forEach(trend => {
-      const monthIndex = new Date(trend.month + '-01').getMonth();
-      trendsData[monthIndex] = trend.count;
-    });
+    const userRegData = {
+      user: 0,
+      admin: 0
+    };
+    userRegistration.forEach(row => {
+      userRegData[row.role] = row.count;
+    })
 
-    // Process scholarship distribution data
-    const categories = ['gov', 'private', 'ngo', 'other'];
-    const distributionData = new Array(4).fill(0);
-    scholarshipDistribution.forEach(item => {
-      const index = categories.indexOf(item.category.toLowerCase());
-      if (index === -1) {
-        distributionData[3] += item.count; // Add to 'other' if category doesn't match
-      } else {
-        distributionData[index] = item.count;
-      }
-    });
-
-    // Process user registration data - using actual database stats
-    const registrationData = [
-      userStats.find(stat => stat.role === 'user')?.count || 0,
-      userStats.find(stat => stat.role === 'admin')?.count || 0
-    ];
-
-    // Get actual application status counts
-    const [statusCounts] = await db.promise().query(`
-      SELECT 
-        status,
-        COUNT(*) as count
+    // Applications by academic level
+    const [statusOverview] = await db.promise().query(`
+      SELECT academic_level, COUNT(*) as count
       FROM scholarship_applications
-      GROUP BY status
+      GROUP BY academic_level
     `);
-
-    // Process status data using actual counts
-    const statusData = [
-      statusCounts.find(s => s.status === 'approved')?.count || 0,
-      statusCounts.find(s => s.status === 'pending')?.count || 0,
-      statusCounts.find(s => s.status === 'rejected')?.count || 0
-    ];
+    const statusOverviewData = {
+      undergraduate: 0,
+      graduate: 0,
+      phd: 0
+    };
+    statusOverview.forEach(row => {
+      statusOverviewData[row.academic_level] = row.count;
+    });
 
     res.json({
-      applicationTrends: trendsData,
-      scholarshipDistribution: distributionData,
-      userRegistration: registrationData,
-      statusOverview: statusData
+      applicationTrends,
+      scholarshipDistribution: Object.values(scholarshipDistData),
+      userRegistration: Object.values(userRegData),
+      statusOverview: Object.values(statusOverviewData)
     });
   } catch (error) {
-    console.error('Error fetching chart statistics:', error);
-    res.status(500).json({ message: 'Error fetching chart statistics' });
+    console.error('Error fetching chart stats:', error);
+    res.status(500).json({ message: 'Error fetching chart stats' });
   }
 });
 
@@ -284,7 +266,7 @@ router.put('/applications/:id/status', adminAuth, async (req, res) => {
     }
 
     const [result] = await db.promise().query(
-      'UPDATE scholarship_applications SET status = ? WHERE id = ?',
+      'UPDATE scholarship_applications SET status = ? WHERE application_id = ?',
       [status, applicationId]
     );
 
@@ -341,8 +323,10 @@ router.post('/users', adminAuth, async (req, res) => {
 router.get('/applications', adminAuth, async (req, res) => {
     try {
         const [applications] = await db.promise().query(`
-            SELECT * FROM scholarship_applications
-            ORDER BY submitted_at DESC
+            SELECT sa.application_id, sa.full_name, sa.application_date, s.name as scholarship_name
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            ORDER BY sa.application_date DESC
         `);
         
         res.json(applications);
@@ -357,7 +341,7 @@ router.get('/applications/:id', adminAuth, async (req, res) => {
     try {
         const [applications] = await db.promise().query(`
             SELECT * FROM scholarship_applications
-            WHERE id = ?
+            WHERE application_id = ?
         `, [req.params.id]);
 
         if (applications.length === 0) {
@@ -375,7 +359,7 @@ router.get('/applications/:id', adminAuth, async (req, res) => {
 router.delete('/applications/:id', adminAuth, async (req, res) => {
     try {
         const [result] = await db.promise().query(
-            'DELETE FROM scholarship_applications WHERE id = ?',
+            'DELETE FROM scholarship_applications WHERE application_id = ?',
             [req.params.id]
         );
 
@@ -415,7 +399,7 @@ router.put('/applications/:id', adminAuth, async (req, res) => {
 
         // Check if application exists
         const [existingApplication] = await db.promise().query(
-            'SELECT * FROM scholarship_applications WHERE id = ?',
+            'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
 
@@ -425,7 +409,7 @@ router.put('/applications/:id', adminAuth, async (req, res) => {
 
         // Check if email is already used by another application for the same scholarship
         const [existingApplications] = await db.promise().query(
-            'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email = ? AND id != ?',
+            'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email = ? AND application_id != ?',
             [scholarship_id, email, applicationId]
         );
 
@@ -438,7 +422,7 @@ router.put('/applications/:id', adminAuth, async (req, res) => {
             `UPDATE scholarship_applications 
              SET full_name = ?, email = ?, university = ?, country = ?, 
                  motivation = ?, scholarship_id = ?
-             WHERE id = ?`,
+             WHERE application_id = ?`,
             [full_name, email, university, country, motivation, scholarship_id, applicationId]
         );
 
@@ -448,7 +432,7 @@ router.put('/applications/:id', adminAuth, async (req, res) => {
 
         // Fetch updated application
         const [updatedApplication] = await db.promise().query(
-            'SELECT * FROM scholarship_applications WHERE id = ?',
+            'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
 
@@ -462,4 +446,4 @@ router.put('/applications/:id', adminAuth, async (req, res) => {
     }
 });
 
-module.exports = router; 
+export default router; 

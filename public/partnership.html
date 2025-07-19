@@ -41,7 +41,7 @@
     }
   </script>
 
-  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
@@ -151,32 +151,32 @@
         <p class="text-lg text-gray-600 dark:text-gray-400 text-center mb-8">
           Interested in partnering with MBAPE Global? Fill out the form below and our team will get in touch.
         </p>
-        <form class="max-w-3xl mx-auto bg-white dark:bg-gray-700 p-8 rounded-lg shadow-md border-l-4 border-blue-500">
+        <form id="partnershipForm" class="max-w-3xl mx-auto bg-white dark:bg-gray-700 p-8 rounded-lg shadow-md border-l-4 border-blue-500">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label for="partnerName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Your Name</label>
-              <input type="text" id="partnerName" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. John Doe" required>
+              <input type="text" id="partnerName" name="name" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. John Doe" required>
             </div>
             <div>
               <label for="partnerEmail" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
-              <input type="email" id="partnerEmail" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. partner@example.com" required>
+              <input type="email" id="partnerEmail" name="email" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. partner@example.com" required>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label for="organizationName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Organization Name</label>
-              <input type="text" id="organizationName" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. University of Global Studies">
+              <input type="text" id="organizationName" name="organization" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. University of Global Studies">
             </div>
             <div>
               <label for="partnerPhone" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Phone Number</label>
-              <input type="tel" id="partnerPhone" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. +123 456 7890">
+              <input type="tel" id="partnerPhone" name="phone" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="e.g. +123 456 7890">
             </div>
           </div>
 
           <div class="mb-6">
             <label for="partnerMessage" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Your Message</label>
-            <textarea id="partnerMessage" rows="5" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="Tell us about your partnership interest..."></textarea>
+            <textarea id="partnerMessage" name="message" rows="5" class="w-full px-4 py-2 border dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" placeholder="Tell us about your partnership interest..."></textarea>
           </div>
 
           <div class="text-center">
@@ -286,20 +286,20 @@
     });
 
     // Form Submission (kept here as it's page-specific functionality)
-    document.querySelector('form').addEventListener('submit', async (e) => {
+    document.getElementById('partnershipForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
+      const form = e.target;
       const formData = {
-        name: document.getElementById('partnerName').value,
-        email: document.getElementById('partnerEmail').value,
-        organization: document.getElementById('organizationName').value,
-        phone: document.getElementById('partnerPhone').value,
-        message: document.getElementById('partnerMessage').value
+        name: form.partnerName.value,
+        email: form.partnerEmail.value,
+        organization: form.organizationName.value,
+        phone: form.partnerPhone.value,
+        message: form.partnerMessage.value
       };
 
       try {
-        // Assuming you have an API endpoint for partnership inquiries
-        const response = await fetch('/api/partnerships/inquire', {
+        const response = await fetch('/api/partners', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -307,13 +307,18 @@
           body: JSON.stringify(formData)
         });
 
-        const result = await response.json();
-        if (response.ok) {
-          // Use a custom message box instead of alert()
-          displayMessageBox('Partnership inquiry submitted successfully!', 'success');
-          e.target.reset(); // Reset form
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json();
+          if (response.ok) {
+            displayMessageBox('Partnership inquiry submitted successfully!', 'success');
+            form.reset();
+          } else {
+            throw new Error(result.message || result.error || 'Failed to submit inquiry');
+          }
         } else {
-          throw new Error(result.error || 'Failed to submit inquiry');
+          const text = await response.text();
+          throw new Error(text || 'Failed to submit inquiry');
         }
       } catch (error) {
         console.error('Error:', error);

@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
+import pool from '../config/database.js';
+import { adminAuth } from '../middleware/auth.js';
 const router = express.Router();
-const pool = require('../config/database');
-const { adminAuth } = require('../middleware/auth');
 
 // Get all roles with their permissions
 router.get('/roles', adminAuth, async (req, res) => {
@@ -328,4 +328,4 @@ router.get('/users/:userId/roles', adminAuth, async (req, res) => {
     }
 });
 
-module.exports = router; 
+export default router; 

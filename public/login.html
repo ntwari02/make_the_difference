@@ -21,6 +21,11 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="prefetch" href="home.html">
+    <link rel="prefetch" href="dashboard.html">
+    <link rel="prefetch" href="admin_dashboard.html">
+    <link rel="prefetch" href="scholarship.html">
+    <link rel="prefetch" href="signup.html">
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center transition-colors duration-200">
     <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
@@ -51,10 +56,27 @@
             I don't have an account? 
             <a href="signup.html" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Create account</a>
         </p>
+        <p class="mt-2 text-center">
+            <a href="#" id="forgot-password-link" class="text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Forgot Password?</a>
+        </p>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-sm relative">
+            <button id="close-forgot-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">&times;</button>
+            <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Reset Password</h3>
+            <form id="forgotPasswordForm" class="space-y-4">
+                <input type="email" id="forgot-email" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" placeholder="Enter your email" required>
+                <button type="submit" class="w-full bg-blue-500 dark:bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">Send Reset Link</button>
+            </form>
+            <div id="forgot-message" class="mt-3 text-center text-sm"></div>
+        </div>
     </div>
 
     <!-- Include the API service -->
     <script src="js/api.js"></script>
+    <script src="js/include-navbar.js" defer></script>
     
     <script>
         // Theme toggle functionality
@@ -104,7 +126,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                const response = await window.api.auth.login(email, password);
+                const response = await window.api.post('/auth/login', { email, password });
                 
                 if (response.token) {
                     // Store token and user data
@@ -129,6 +151,44 @@
                 messageDiv.textContent = error.message || 'An error occurred during login';
                 messageDiv.className = 'bg-red-500 p-3 rounded text-white text-center';
                 messageDiv.style.display = 'block';
+            }
+        });
+
+        // Forgot Password Modal Logic
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const closeForgotModal = document.getElementById('close-forgot-modal');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const forgotMessage = document.getElementById('forgot-message');
+
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            forgotPasswordModal.classList.remove('hidden');
+            forgotMessage.textContent = '';
+            forgotMessage.className = 'mt-3 text-center text-sm';
+            forgotPasswordForm.reset();
+        });
+
+        closeForgotModal.addEventListener('click', function() {
+            forgotPasswordModal.classList.add('hidden');
+        });
+
+        forgotPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgot-email').value;
+            forgotMessage.textContent = 'Sending reset link...';
+            forgotMessage.className = 'mt-3 text-center text-sm text-gray-500';
+            try {
+                const response = await window.api.post('/auth/forgot-password', { email });
+                if (response.success) {
+                    forgotMessage.textContent = 'A password reset link has been sent to your email.';
+                    forgotMessage.className = 'mt-3 text-center text-sm text-green-600';
+                } else {
+                    throw new Error(response.message || 'Failed to send reset link');
+                }
+            } catch (error) {
+                forgotMessage.textContent = error.message || 'An error occurred.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
             }
         });
     </script>

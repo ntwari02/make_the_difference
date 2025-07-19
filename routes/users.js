@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { auth } from '../middleware/auth.js';
+import bcrypt from 'bcrypt';
 const router = express.Router();
-const db = require('../config/database');
-const { auth } = require('../middleware/auth');
-const bcrypt = require('bcrypt');
 
 // Get user profile
 router.get('/profile', auth, async (req, res) => {
@@ -88,4 +88,4 @@ router.put('/change-password', auth, async (req, res) => {
     }
 });
 
-module.exports = router; 
+export default router; 

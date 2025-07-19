@@ -1,7 +1,7 @@
- const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 const router = express.Router();
-const db = require('../config/database');
-const { auth, adminAuth } = require('../middleware/auth');
 
 // Get all plans
 router.get('/', async (req, res) => {
@@ -173,4 +173,4 @@ router.put('/subscriptions/:id/cancel', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

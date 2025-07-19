@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 const router = express.Router();
-const db = require('../config/database');
-const { auth, adminAuth } = require('../middleware/auth');
 
 // Get user's payments
 router.get('/', auth, async (req, res) => {
@@ -96,4 +96,4 @@ router.get('/admin/all', adminAuth, async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

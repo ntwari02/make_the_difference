@@ -1,7 +1,26 @@
-const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { auth, adminAuth } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 const router = express.Router();
-const db = require('../config/database');
-const { auth, adminAuth } = require('../middleware/auth');
+
+// Set up multer storage for profile pictures and documents
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    let dest = 'uploads/';
+    if (file.fieldname === 'profilePicture') dest += 'profile_pictures/';
+    else if (file.fieldname === 'documents') dest += 'documents/';
+    fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 // Function to update expired scholarships
 async function updateExpiredScholarships() {
@@ -96,9 +115,21 @@ router.post('/', adminAuth, async (req, res) => {
 
     console.log('Insert result:', result); // Debug log
 
+    // Fetch the newly created scholarship
+    const [newScholarshipRows] = await db.promise().query(
+      `SELECT *, 
+       CASE 
+         WHEN deadline_date < CURDATE() AND status = 'active' THEN 'expired'
+         ELSE status 
+       END as status 
+       FROM scholarships 
+       WHERE id = ?`,
+      [result.insertId]
+    );
+
     res.status(201).json({
       message: 'Scholarship created successfully',
-      id: result.insertId
+      scholarship: newScholarshipRows[0]
     });
   } catch (error) {
     console.error('Error creating scholarship:', error);
@@ -186,42 +217,75 @@ router.delete('/:id', adminAuth, async (req, res) => {
 });
 
 // Apply for scholarship
-router.post('/:id/apply', auth, async (req, res) => {
+router.post('/:id/apply', upload.fields([
+  { name: 'profilePicture', maxCount: 1 },
+  { name: 'documents', maxCount: 10 }
+]), async (req, res) => {
   try {
-    const { full_name, email, university, country, motivation } = req.body;
+    console.log('Received application:', req.body, req.files);
     const scholarship_id = req.params.id;
+    const {
+      fullName, emailAddress, dateOfBirth, gender, phoneNumber, address,
+      preferredUniversity, country, academicLevel, intendedMajor, gpaAcademicPerformance,
+      extracurricularActivities, parentGuardianName, parentGuardianContact,
+      financialNeedStatement, howHeardAbout, motivationStatement, termsAgreed
+    } = req.body;
 
-    // Check if scholarship exists
-    const [scholarships] = await db.promise().query(
-      'SELECT * FROM scholarships WHERE id = ?',
-      [scholarship_id]
-    );
-
-    if (scholarships.length === 0) {
-      return res.status(404).json({ message: 'Scholarship not found' });
+    // Validate required fields
+    if (!fullName || !emailAddress || !dateOfBirth || !gender || !phoneNumber || !address || !academicLevel || !termsAgreed) {
+      return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    // Check if already applied
+    // Check if already applied (by email and scholarship)
     const [existingApplications] = await db.promise().query(
-      'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email = ?',
-      [scholarship_id, email]
+      'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email_address = ?',
+      [scholarship_id, emailAddress]
     );
-
     if (existingApplications.length > 0) {
       return res.status(400).json({ message: 'You have already applied for this scholarship' });
     }
 
-    // Validate required fields
-    if (!full_name || !email || !university || !country || !motivation) {
-      return res.status(400).json({ 
-        error: 'All fields are required: full_name, email, university, country, motivation' 
-      });
+    // Handle file uploads
+    let profilePictureUrl = null;
+    if (req.files['profilePicture'] && req.files['profilePicture'][0]) {
+      profilePictureUrl = req.files['profilePicture'][0].path.replace(/\\/g, '/');
+    }
+    let uploadedDocuments = [];
+    if (req.files['documents']) {
+      uploadedDocuments = req.files['documents'].map(file => file.path.replace(/\\/g, '/'));
     }
 
-    // Create application
+    // Insert application
     const [result] = await db.promise().query(
-      'INSERT INTO scholarship_applications (scholarship_id, full_name, email, university, country, motivation) VALUES (?, ?, ?, ?, ?, ?)',
-      [scholarship_id, full_name, email, university, country, motivation]
+      `INSERT INTO scholarship_applications (
+        profile_picture_url, full_name, email_address, date_of_birth, gender, phone_number, address,
+        preferred_university, country, academic_level, intended_major, gpa_academic_performance,
+        uploaded_documents_json, extracurricular_activities, parent_guardian_name, parent_guardian_contact,
+        financial_need_statement, how_heard_about, scholarship_id, motivation_statement, terms_agreed
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        profilePictureUrl,
+        fullName,
+        emailAddress,
+        dateOfBirth,
+        gender,
+        phoneNumber,
+        address,
+        preferredUniversity || null,
+        country || null,
+        academicLevel,
+        intendedMajor || null,
+        gpaAcademicPerformance || null,
+        JSON.stringify(uploadedDocuments),
+        extracurricularActivities || null,
+        parentGuardianName || null,
+        parentGuardianContact || null,
+        financialNeedStatement || null,
+        howHeardAbout || null,
+        scholarship_id,
+        motivationStatement || null,
+        termsAgreed === 'on' || termsAgreed === true || termsAgreed === 'true' ? 1 : 0
+      ]
     );
 
     res.status(201).json({
@@ -249,4 +313,4 @@ router.get('/:id/applications', adminAuth, async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

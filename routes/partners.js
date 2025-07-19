@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
+import db from '../config/database.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 const router = express.Router();
-const db = require('../config/database');
-const { auth, adminAuth } = require('../middleware/auth');
 
 // Get all partners
 router.get('/', async (req, res) => {
@@ -50,27 +50,6 @@ router.get('/:id', adminAuth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching partner details' });
-  }
-});
-
-// Update partner status (admin only)
-router.put('/:id', adminAuth, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const [result] = await db.promise().query(
-      'UPDATE partners SET status = ? WHERE id = ?',
-      [status, req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Partner not found' });
-    }
-
-    res.json({ message: 'Partner status updated successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error updating partner status' });
   }
 });
 
@@ -164,4 +143,4 @@ router.delete('/testimonials/:id', adminAuth, async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

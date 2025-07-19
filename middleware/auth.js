@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
+import db from '../config/database.js';
 
-const auth = (req, res, next) => {
+export const auth = async (req, res, next) => {
     try {
         // Get token from header
         const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -10,17 +11,24 @@ const auth = (req, res, next) => {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
+        // Get user from the database
+        const [users] = await db.promise().query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
         // Add user from payload
-        req.user = decoded;
+        req.user = users[0];
         next();
     } catch (error) {
         res.status(401).json({ message: 'Token is not valid' });
     }
 };
 
-const adminAuth = (req, res, next) => {
+export const adminAuth = (req, res, next) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
@@ -39,6 +47,4 @@ const adminAuth = (req, res, next) => {
     } catch (error) {
         res.status(401).json({ message: 'Token verification failed, authorization denied' });
     }
-};
-
-module.exports = { auth, adminAuth }; 
+}; 

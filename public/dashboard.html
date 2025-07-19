@@ -21,6 +21,11 @@
       }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="prefetch" href="home.html">
+    <link rel="prefetch" href="admin_dashboard.html">
+    <link rel="prefetch" href="scholarship.html">
+    <link rel="prefetch" href="login.html">
+    <link rel="prefetch" href="signup.html">
     <style>
         @keyframes fadeOut {
             0% { 
@@ -84,19 +89,8 @@
                         <i class="fas fa-graduation-cap text-2xl"></i>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Applications</h3>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Applications</h3>
                         <p class="text-2xl font-bold text-gray-900 dark:text-white" id="activeApplications">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
-                        <i class="fas fa-check-circle text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Approved Scholarships</h3>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="approvedScholarships">0</p>
                     </div>
                 </div>
             </div>
@@ -114,20 +108,7 @@
         </div>
 
         <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- User Charts -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Your Application Status</h3>
-                    <button id="toggleUserChart" class="text-blue-500 hover:text-blue-600 dark:text-blue-400">
-                        <i class="fas fa-chart-pie"></i>
-                    </button>
-                </div>
-                <div class="h-64">
-                    <canvas id="userStatusChart"></canvas>
-                </div>
-            </div>
-
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
             <!-- Admin Charts Replay -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -155,7 +136,6 @@
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                         </tr>
@@ -247,65 +227,58 @@
         });
 
         // Fetch and display applications
-        async function loadApplications() {
+        async function loadDashboard() {
             try {
-                const applications = await window.api.scholarships.getApplications();
+                // Fetch stats
+                const stats = await window.api.get('/applications/stats');
+                document.getElementById('activeApplications').textContent = stats.applications;
+                document.getElementById('availableScholarships').textContent = stats.scholarships;
+
+                // Fetch applications
+                const applications = await window.api.get('/applications');
                 const applicationsList = document.getElementById('applicationsList');
                 applicationsList.innerHTML = '';
 
                 applications.forEach(app => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship.title}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${app.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 
-                                app.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : 
-                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'}">
-                                ${app.status}
-                            </span>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship_name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            ${new Date(app.application_date).toLocaleDateString()}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                            ${new Date(app.createdAt).toLocaleDateString()}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                            <a href="application-details.html?id=${app.id}" 
+                            <a href="application-details.html?id=${app.application_id}" 
                                 class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">View Details</a>
                         </td>
                     `;
                     applicationsList.appendChild(row);
                 });
 
-                // Update stats
-                document.getElementById('activeApplications').textContent = 
-                    applications.filter(app => app.status === 'pending').length;
             } catch (error) {
-                console.error('Error loading applications:', error);
+                console.error('Error loading dashboard data:', error);
             }
         }
 
         // Fetch and display available scholarships
         async function loadScholarships() {
             try {
-                const scholarships = await window.api.scholarships.getAll();
+                const scholarships = await window.api.get('/scholarships');
                 const scholarshipsList = document.getElementById('scholarshipsList');
                 scholarshipsList.innerHTML = '';
-
-                document.getElementById('availableScholarships').textContent = scholarships.length;
 
                 scholarships.forEach(scholarship => {
                     const card = document.createElement('div');
                     card.className = 'bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200';
                     card.innerHTML = `
                         <div class="p-6">
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">${scholarship.title}</h4>
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">${scholarship.name}</h4>
                             <p class="text-gray-600 dark:text-gray-300 mb-4">${scholarship.description.substring(0, 100)}...</p>
                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500 dark:text-gray-400">Deadline: ${new Date(scholarship.deadline).toLocaleDateString()}</span>
-                                <button onclick="applyForScholarship(${scholarship.id})" 
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Deadline: ${new Date(scholarship.deadline_date).toLocaleDateString()}</span>
+                                <a href="scholarship.html?id=${scholarship.id}"
                                     class="bg-green-500 dark:bg-green-600 text-white px-4 py-2 rounded hover:bg-green-600 dark:hover:bg-green-700 transition-colors duration-200">
-                                    Apply Now
-                                </button>
+                                    View Details
+                                </a>
                             </div>
                         </div>
                     `;
@@ -316,73 +289,26 @@
             }
         }
 
-        // Apply for scholarship
-        async function applyForScholarship(scholarshipId) {
-            try {
-                const response = await window.api.scholarships.apply(scholarshipId);
-                if (response.success) {
-                    alert('Application submitted successfully!');
-                    loadApplications();
-                }
-            } catch (error) {
-                alert(error.message || 'Error applying for scholarship');
-            }
-        }
-
         // Initialize charts
-        let userStatusChart, adminStatsChart;
+        let adminStatsChart;
 
         function initializeCharts() {
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#F3F4F6' : '#374151';
             const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
 
-            // User Status Chart
-            const userCtx = document.getElementById('userStatusChart').getContext('2d');
-            userStatusChart = new Chart(userCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Approved', 'Pending', 'Rejected'],
-                    datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: [
-                            '#10B981', // green
-                            '#F59E0B', // yellow
-                            '#EF4444'  // red
-                        ],
-                        borderWidth: 2,
-                        borderColor: isDark ? '#1F2937' : '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: textColor,
-                                font: { size: 12 }
-                            }
-                        }
-                    }
-                }
-            });
-
             // Admin Stats Chart
             const adminCtx = document.getElementById('adminStatsChart').getContext('2d');
             adminStatsChart = new Chart(adminCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['Total Applications', 'Approved', 'Pending', 'Rejected'],
+                    labels: ['Total Applications', 'Total Scholarships'],
                     datasets: [{
-                        label: 'Applications',
-                        data: [0, 0, 0, 0],
+                        label: 'Count',
+                        data: [0, 0],
                         backgroundColor: [
                             '#4F46E5', // indigo
                             '#10B981', // green
-                            '#F59E0B', // yellow
-                            '#EF4444'  // red
                         ],
                         borderWidth: 1,
                         borderColor: isDark ? '#1F2937' : '#ffffff'
@@ -414,11 +340,6 @@
             });
 
             // Chart toggle handlers
-            document.getElementById('toggleUserChart').addEventListener('click', () => {
-                userStatusChart.config.type = userStatusChart.config.type === 'doughnut' ? 'pie' : 'doughnut';
-                userStatusChart.update();
-            });
-
             document.getElementById('toggleAdminChart').addEventListener('click', () => {
                 adminStatsChart.config.type = adminStatsChart.config.type === 'bar' ? 'line' : 'bar';
                 adminStatsChart.update();
@@ -431,35 +352,19 @@
         // Update charts with real data
         async function updateCharts() {
             try {
-                // Get user's personal stats
-                const userStats = await window.api.scholarships.getUserStats();
-                userStatusChart.data.datasets[0].data = [
-                    userStats.approved || 0,
-                    userStats.pending || 0,
-                    userStats.rejected || 0
+                const stats = await window.api.get('/applications/stats');
+                adminStatsChart.data.datasets[0].data = [
+                    stats.applications,
+                    stats.scholarships
                 ];
-                userStatusChart.update();
-
-                // Get admin stats (if available)
-                try {
-                    const adminStats = await window.api.scholarships.getAdminStats();
-                    adminStatsChart.data.datasets[0].data = [
-                        adminStats.total || 0,
-                        adminStats.approved || 0,
-                        adminStats.pending || 0,
-                        adminStats.rejected || 0
-                    ];
-                    adminStatsChart.update();
-                } catch (error) {
-                    console.log('Admin stats not available for this user');
-                }
+                adminStatsChart.update();
             } catch (error) {
                 console.error('Error updating charts:', error);
             }
         }
 
         // Load initial data
-        loadApplications();
+        loadDashboard();
         loadScholarships();
         initializeCharts();
         updateCharts();
