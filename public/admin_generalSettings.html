@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin General Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar-item-text {
+            transition: opacity 0.3s ease;
+        }
+        .sidebar.collapsed .sidebar-item-text {
+            opacity: 0;
+            display: none;
+        }
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 40;
+            }
+            .sidebar.mobile-open {
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Admin General Settings</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="flex-1 px-4 space-y-2">
+                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        User Management
+                    </div>
+                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Scholarship Management
+                    </div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        System Settings
+                    </div>
+                    <a href="admin_generalSettings.html" class="flex items-center p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                    <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-envelope w-6"></i>
+                        <span class="sidebar-item-text ml-3">Email Templates</span>
+                    </a>
+                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-database w-6"></i>
+                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
+                        Reports
+                    </div>
+                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span class="sidebar-item-text ml-3">Analytics</span>
+                    </a>
+                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-export w-6"></i>
+                        <span class="sidebar-item-text ml-3">Export Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Mobile Sidebar Toggle -->
+    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
+        <i class="fas fa-bars"></i>
+    </button>
+    <!-- Main Content -->
+    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
+        <div class="max-w-3xl mx-auto px-2 sm:px-4 py-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">General Website Settings</h2>
+            <form id="settingsForm" class="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="siteTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Title</label>
+                        <input type="text" id="siteTitle" name="siteTitle" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="contactEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Email</label>
+                        <input type="email" id="contactEmail" name="contactEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label for="backgroundColor" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Background Color</label>
+                <input type="color" id="backgroundColor" name="backgroundColor" class="mt-1 block w-16 h-10 p-0 border-0 bg-transparent">
+            </div>
+        </div>
+                <div>
+                    <label for="siteDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Description</label>
+                    <textarea id="siteDescription" name="siteDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+                </div>
+        <div>
+            <label for="homepageContent" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Homepage Content</label>
+            <textarea id="homepageContent" name="homepageContent" rows="4" placeholder="Enter homepage welcome message, mission, or any HTML content..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"></textarea>
+        </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="homepageBanner" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Homepage Banner Text</label>
+                        <input type="text" id="homepageBanner" name="homepageBanner" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="maintenanceMode" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Maintenance Mode</label>
+                        <select id="maintenanceMode" name="maintenanceMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Manage Services</label>
+            <div id="servicesList" class="space-y-2 mb-2"></div>
+            <div class="flex gap-2">
+                <input type="text" id="newService" placeholder="Add new service (e.g. Scholarship, Mentorship, Career Advice)" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                <button type="button" id="addServiceBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Add</button>
+            </div>
+        </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="logoUpload" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Logo</label>
+                        <input type="file" id="logoUpload" accept="image/*" class="mt-1 block w-full text-gray-700 dark:text-gray-300">
+                        <img id="logoPreview" src="" alt="Logo Preview" class="mt-2 h-12 hidden rounded shadow" />
+                    </div>
+                    <div>
+                        <label for="faviconUpload" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Favicon</label>
+                        <input type="file" id="faviconUpload" accept="image/x-icon,image/png" class="mt-1 block w-full text-gray-700 dark:text-gray-300">
+                        <img id="faviconPreview" src="" alt="Favicon Preview" class="mt-2 h-8 hidden rounded shadow" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Social Links</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                        <input type="url" id="facebookLink" placeholder="Facebook URL" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <input type="url" id="twitterLink" placeholder="Twitter URL" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <input type="url" id="instagramLink" placeholder="Instagram URL" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
+                    <button type="button" id="changePasswordBtn" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Change Admin Password</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Settings</button>
+                </div>
+            </form>
+            <div id="settingsSuccess" class="hidden mt-4 text-green-600 dark:text-green-400 font-semibold">Settings saved successfully!</div>
+        </div>
+        <!-- Password Change Modal -->
+        <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm">
+                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Change Admin Password</h3>
+                <form id="passwordForm" class="space-y-4">
+                    <div>
+                        <label for="currentPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
+                        <input type="password" id="currentPassword" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
+                        <input type="password" id="newPassword" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="closePasswordModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Change Password</button>
+                    </div>
+                </form>
+                <div id="passwordSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold">Password changed successfully!</div>
+                <div id="passwordError" class="hidden mt-2 text-red-600 dark:text-red-400 font-semibold"></div>
+            </div>
+        </div>
+    </main>
+    <script>
+        // Sidebar interactivity
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                mainContent.style.marginLeft = '80px';
+            } else {
+                mainContent.style.marginLeft = '280px';
+            }
+        }
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('mobile-open');
+        }
+        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+                sidebar.classList.remove('collapsed');
+            } else {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.style.marginLeft = '80px';
+                } else {
+                    mainContent.style.marginLeft = '280px';
+                }
+            }
+        });
+        if (window.innerWidth <= 768) {
+            mainContent.style.marginLeft = '0';
+        }
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        themeToggle.addEventListener('click', function() {
+            if (themeIcon.classList.contains('fa-moon')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+        // Auth and admin name
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+        document.getElementById('adminName').textContent = user.full_name || 'Admin';
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        });
+        // Settings form interactivity
+        const settingsForm = document.getElementById('settingsForm');
+        const settingsSuccess = document.getElementById('settingsSuccess');
+        // Logo and favicon preview
+        const logoUpload = document.getElementById('logoUpload');
+        const logoPreview = document.getElementById('logoPreview');
+        const faviconUpload = document.getElementById('faviconUpload');
+        const faviconPreview = document.getElementById('faviconPreview');
+        logoUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoPreview.src = e.target.result;
+                    logoPreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        faviconUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    faviconPreview.src = e.target.result;
+                    faviconPreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        // Services management
+        const servicesList = document.getElementById('servicesList');
+        const newService = document.getElementById('newService');
+        const addServiceBtn = document.getElementById('addServiceBtn');
+        let services = [];
+        function renderServices() {
+            servicesList.innerHTML = '';
+            services.forEach((service, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2';
+                div.innerHTML = `<span class="flex-1">${service}</span><button type="button" class="text-red-500 hover:text-red-700" data-idx="${idx}"><i class="fas fa-trash"></i></button>`;
+                div.querySelector('button').onclick = function() {
+                    services.splice(idx, 1);
+                    renderServices();
+                };
+                servicesList.appendChild(div);
+            });
+        }
+        addServiceBtn.addEventListener('click', () => {
+            const val = newService.value.trim();
+            if (val && !services.includes(val)) {
+                services.push(val);
+                newService.value = '';
+                renderServices();
+            }
+        });
+        // Load settings (simulate API call)
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('adminSettings') || '{}');
+            document.getElementById('siteTitle').value = settings.siteTitle || '';
+            document.getElementById('siteDescription').value = settings.siteDescription || '';
+            document.getElementById('contactEmail').value = settings.contactEmail || '';
+            document.getElementById('homepageBanner').value = settings.homepageBanner || '';
+            document.getElementById('maintenanceMode').value = settings.maintenanceMode || 'off';
+            document.getElementById('facebookLink').value = settings.facebookLink || '';
+            document.getElementById('twitterLink').value = settings.twitterLink || '';
+            document.getElementById('instagramLink').value = settings.instagramLink || '';
+            document.getElementById('backgroundColor').value = settings.backgroundColor || '#f3f4f6';
+            document.getElementById('homepageContent').value = settings.homepageContent || '';
+            services = settings.services || [];
+            renderServices();
+            if (settings.logoDataUrl) {
+                logoPreview.src = settings.logoDataUrl;
+                logoPreview.classList.remove('hidden');
+            }
+            if (settings.faviconDataUrl) {
+                faviconPreview.src = settings.faviconDataUrl;
+                faviconPreview.classList.remove('hidden');
+            }
+        }
+        // Save settings (simulate API call)
+        settingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const settings = {
+                siteTitle: document.getElementById('siteTitle').value,
+                siteDescription: document.getElementById('siteDescription').value,
+                contactEmail: document.getElementById('contactEmail').value,
+                homepageBanner: document.getElementById('homepageBanner').value,
+                maintenanceMode: document.getElementById('maintenanceMode').value,
+                facebookLink: document.getElementById('facebookLink').value,
+                twitterLink: document.getElementById('twitterLink').value,
+                instagramLink: document.getElementById('instagramLink').value,
+                backgroundColor: document.getElementById('backgroundColor').value,
+                homepageContent: document.getElementById('homepageContent').value,
+                services: services
+            };
+            // Save logo and favicon as data URLs
+            if (logoUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    settings.logoDataUrl = e.target.result;
+                    localStorage.setItem('adminSettings', JSON.stringify(settings));
+                    settingsSuccess.classList.remove('hidden');
+                    setTimeout(() => settingsSuccess.classList.add('hidden'), 2000);
+                };
+                reader.readAsDataURL(logoUpload.files[0]);
+                return;
+            }
+            if (faviconUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    settings.faviconDataUrl = e.target.result;
+                    localStorage.setItem('adminSettings', JSON.stringify(settings));
+                    settingsSuccess.classList.remove('hidden');
+                    setTimeout(() => settingsSuccess.classList.add('hidden'), 2000);
+                };
+                reader.readAsDataURL(faviconUpload.files[0]);
+                return;
+            }
+            // Save settings
+            localStorage.setItem('adminSettings', JSON.stringify(settings));
+            settingsSuccess.classList.remove('hidden');
+            setTimeout(() => settingsSuccess.classList.add('hidden'), 2000);
+        });
+        loadSettings();
+        // Apply background color live
+        document.getElementById('backgroundColor').addEventListener('input', function() {
+            document.body.style.backgroundColor = this.value;
+        });
+        // On load, set background color
+        document.body.style.backgroundColor = document.getElementById('backgroundColor').value;
+        // Password change modal logic
+        const passwordModal = document.getElementById('passwordModal');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        const closePasswordModal = document.getElementById('closePasswordModal');
+        const passwordForm = document.getElementById('passwordForm');
+        const passwordSuccess = document.getElementById('passwordSuccess');
+        const passwordError = document.getElementById('passwordError');
+        changePasswordBtn.addEventListener('click', () => {
+            passwordModal.classList.remove('hidden');
+            passwordSuccess.classList.add('hidden');
+            passwordError.classList.add('hidden');
+            passwordForm.reset();
+        });
+        closePasswordModal.addEventListener('click', () => {
+            passwordModal.classList.add('hidden');
+        });
+        passwordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (!current || !newPass || !confirm) {
+                passwordError.textContent = 'All fields are required.';
+                passwordError.classList.remove('hidden');
+                return;
+            }
+            if (newPass !== confirm) {
+                passwordError.textContent = 'New passwords do not match.';
+                passwordError.classList.remove('hidden');
+                return;
+            }
+            // Simulate password change (store in localStorage for demo)
+            localStorage.setItem('adminPassword', newPass);
+            passwordError.classList.add('hidden');
+            passwordSuccess.classList.remove('hidden');
+            setTimeout(() => passwordModal.classList.add('hidden'), 1200);
+        });
+    </script>
+</body>
+</html>
