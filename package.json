@@ -14,17 +14,22 @@
   "type": "module",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
-    "@sendgrid/mail": "^8.1.5",
+    "aos": "^2.3.4",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "glightbox": "^3.3.1",
+    "imagesloaded": "^5.0.0",
+    "isotope-layout": "^3.0.6",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.5",
-    "nodemailer": "^6.10.1"
+    "nodemailer": "^6.10.1",
+    "swiper": "^11.2.10"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",

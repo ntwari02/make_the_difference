@@ -1,6 +1,22 @@
 import express from 'express';
 import db from '../config/database.js';
 import { adminAuth } from '../middleware/auth.js';
+import multer from 'multer';
+// Set up multer storage for profile pictures and documents
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        if (file.fieldname === 'profile_picture') {
+            cb(null, 'uploads/profile_pictures/');
+        } else {
+            cb(null, 'uploads/documents/');
+        }
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname.replace(/\s+/g, ''));
+    }
+});
+const upload = multer({ storage });
 const router = express.Router();
 
 // Get dashboard statistics
@@ -323,13 +339,63 @@ router.post('/users', adminAuth, async (req, res) => {
 router.get('/applications', adminAuth, async (req, res) => {
     try {
         const [applications] = await db.promise().query(`
-            SELECT sa.application_id, sa.full_name, sa.application_date, s.name as scholarship_name
+            SELECT 
+                sa.application_id, 
+                sa.full_name, 
+                sa.email_address, 
+                sa.profile_picture_url,
+                sa.date_of_birth,
+                sa.gender,
+                sa.phone_number,
+                sa.address,
+                sa.preferred_university,
+                sa.country,
+                sa.academic_level,
+                sa.intended_major,
+                sa.gpa_academic_performance,
+                sa.uploaded_documents_json,
+                sa.extracurricular_activities,
+                sa.parent_guardian_name,
+                sa.parent_guardian_contact,
+                sa.financial_need_statement,
+                sa.how_heard_about,
+                sa.scholarship_id,
+                sa.motivation_statement,
+                sa.terms_agreed,
+                sa.application_date,
+                s.name as scholarship_name
             FROM scholarship_applications sa
             JOIN scholarships s ON sa.scholarship_id = s.id
             ORDER BY sa.application_date DESC
         `);
-        
-        res.json(applications);
+        // Map to camelCase for frontend
+        const mapped = applications.map(app => ({
+            applicationId: app.application_id,
+            fullName: app.full_name,
+            emailAddress: app.email_address,
+            profilePictureUrl: app.profile_picture_url,
+            dateOfBirth: app.date_of_birth,
+            gender: app.gender,
+            phoneNumber: app.phone_number,
+            address: app.address,
+            preferredUniversity: app.preferred_university,
+            country: app.country,
+            academicLevel: app.academic_level,
+            intendedMajor: app.intended_major,
+            gpaAcademicPerformance: app.gpa_academic_performance,
+            uploadedDocumentsJson: app.uploaded_documents_json,
+            extracurricularActivities: app.extracurricular_activities,
+            parentGuardianName: app.parent_guardian_name,
+            parentGuardianContact: app.parent_guardian_contact,
+            financialNeedStatement: app.financial_need_statement,
+            howHeardAbout: app.how_heard_about,
+            scholarshipId: app.scholarship_id,
+            motivationStatement: app.motivation_statement,
+            termsAgreed: !!app.terms_agreed,
+            applicationDate: app.application_date,
+            scholarshipName: app.scholarship_name
+        }));
+        res.json(mapped);
     } catch (error) {
         console.error('Error fetching applications:', error);
         res.status(500).json({ message: 'Error fetching applications' });
@@ -374,75 +440,267 @@ router.delete('/applications/:id', adminAuth, async (req, res) => {
     }
 });
 
-// Update application
-router.put('/applications/:id', adminAuth, async (req, res) => {
+// Create application (admin)
+router.post('/applications', adminAuth, upload.fields([
+    { name: 'profile_picture_url', maxCount: 1 },
+    { name: 'uploaded_documents_json', maxCount: 10 }
+]), async (req, res) => {
     try {
-        const { full_name, email, university, country, motivation, scholarship_id } = req.body;
-        const applicationId = req.params.id;
-
-        // Validate required fields
-        if (!full_name || !email || !university || !country || !motivation || !scholarship_id) {
-            return res.status(400).json({ 
-                message: 'All fields are required: full_name, email, university, country, motivation, scholarship_id' 
-            });
+        // Handle file uploads
+        let profile_picture_url = null;
+        if (req.files['profile_picture_url'] && req.files['profile_picture_url'][0]) {
+            profile_picture_url = req.files['profile_picture_url'][0].path.replace(/\\/g, '/');
+        }
+        let uploaded_documents_json = null;
+        if (req.files['uploaded_documents_json']) {
+            const uploadedDocuments = req.files['uploaded_documents_json'].map(file => file.path.replace(/\\/g, '/'));
+            uploaded_documents_json = JSON.stringify(uploadedDocuments);
         }
 
+        const {
+            full_name,
+            email_address,
+            date_of_birth,
+            gender,
+            phone_number,
+            address,
+            preferred_university,
+            country,
+            academic_level,
+            intended_major,
+            gpa_academic_performance,
+            extracurricular_activities,
+            parent_guardian_name,
+            parent_guardian_contact,
+            financial_need_statement,
+            how_heard_about,
+            scholarship_id,
+            motivation_statement,
+            terms_agreed
+        } = req.body;
+        
+        // Validate required fields (adjust as needed)
+        if (!full_name || !email_address || !country || !motivation_statement || !scholarship_id) {
+            return res.status(400).json({ 
+                message: 'Missing required fields.' 
+            });
+        }
+        
         // Check if scholarship exists
         const [scholarships] = await db.promise().query(
             'SELECT * FROM scholarships WHERE id = ?',
             [scholarship_id]
         );
-
         if (scholarships.length === 0) {
             return res.status(404).json({ message: 'Scholarship not found' });
         }
 
+        // Insert application with all fields
+        const [result] = await db.promise().query(
+            `INSERT INTO scholarship_applications (
+                full_name, email_address, profile_picture_url, date_of_birth, gender, phone_number, address,
+                preferred_university, country, academic_level, intended_major, gpa_academic_performance,
+                uploaded_documents_json, extracurricular_activities, parent_guardian_name, parent_guardian_contact,
+                financial_need_statement, how_heard_about, scholarship_id, motivation_statement, terms_agreed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                full_name, email_address, profile_picture_url, date_of_birth, gender, phone_number, address,
+                preferred_university, country, academic_level, intended_major, gpa_academic_performance,
+                uploaded_documents_json, extracurricular_activities, parent_guardian_name, parent_guardian_contact,
+                financial_need_statement, how_heard_about, scholarship_id, motivation_statement, 
+                terms_agreed === 'on' || terms_agreed === true ? 1 : 0
+            ]
+        );
+        
+        const [newApplication] = await db.promise().query(
+            'SELECT * FROM scholarship_applications WHERE application_id = ?',
+            [result.insertId]
+        );
+
+        res.status(201).json({
+            message: 'Application created successfully',
+            application: newApplication[0]
+        });
+
+    } catch (error) {
+        console.error('Error creating application:', error);
+        res.status(500).json({ message: 'Error creating application' });
+    }
+});
+
+// Update application (admin)
+router.put('/applications/:id', adminAuth, upload.fields([
+    { name: 'profile_picture_url', maxCount: 1 },
+    { name: 'uploaded_documents_json', maxCount: 10 }
+]), async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        
         // Check if application exists
         const [existingApplication] = await db.promise().query(
             'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
-
         if (existingApplication.length === 0) {
             return res.status(404).json({ message: 'Application not found' });
         }
-
-        // Check if email is already used by another application for the same scholarship
-        const [existingApplications] = await db.promise().query(
-            'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email = ? AND application_id != ?',
-            [scholarship_id, email, applicationId]
-        );
-
-        if (existingApplications.length > 0) {
-            return res.status(400).json({ message: 'Another application with this email already exists for this scholarship' });
+        
+        // Handle file uploads
+        let profile_picture_url = existingApplication[0].profile_picture_url;
+        if (req.files && req.files['profile_picture_url'] && req.files['profile_picture_url'][0]) {
+            profile_picture_url = req.files['profile_picture_url'][0].path.replace(/\\/g, '/');
+        }
+        
+        let uploaded_documents_json = existingApplication[0].uploaded_documents_json;
+        if (req.files && req.files['uploaded_documents_json']) {
+            const uploadedDocuments = req.files['uploaded_documents_json'].map(file => file.path.replace(/\\/g, '/'));
+            uploaded_documents_json = JSON.stringify(uploadedDocuments);
         }
 
-        // Update application
+        const {
+            full_name,
+            email_address,
+            date_of_birth,
+            gender,
+            phone_number,
+            address,
+            preferred_university,
+            country,
+            academic_level,
+            intended_major,
+            gpa_academic_performance,
+            extracurricular_activities,
+            parent_guardian_name,
+            parent_guardian_contact,
+            financial_need_statement,
+            how_heard_about,
+            scholarship_id,
+            motivation_statement,
+            terms_agreed
+        } = req.body;
+
+        // Validate required fields (adjust as needed)
+        if (!full_name || !email_address || !country || !motivation_statement || !scholarship_id) {
+            return res.status(400).json({ 
+                message: 'Missing required fields.' 
+            });
+        }
+        
+        // Check if scholarship exists
+        const [scholarships] = await db.promise().query(
+            'SELECT * FROM scholarships WHERE id = ?',
+            [scholarship_id]
+        );
+        if (scholarships.length === 0) {
+            return res.status(404).json({ message: 'Scholarship not found' });
+        }
+        
+        // Update application with all fields
         const [result] = await db.promise().query(
-            `UPDATE scholarship_applications 
-             SET full_name = ?, email = ?, university = ?, country = ?, 
-                 motivation = ?, scholarship_id = ?
-             WHERE application_id = ?`,
-            [full_name, email, university, country, motivation, scholarship_id, applicationId]
+            `UPDATE scholarship_applications SET
+                full_name = ?,
+                email_address = ?,
+                profile_picture_url = ?,
+                date_of_birth = ?,
+                gender = ?,
+                phone_number = ?,
+                address = ?,
+                preferred_university = ?,
+                country = ?,
+                academic_level = ?,
+                intended_major = ?,
+                gpa_academic_performance = ?,
+                uploaded_documents_json = ?,
+                extracurricular_activities = ?,
+                parent_guardian_name = ?,
+                parent_guardian_contact = ?,
+                financial_need_statement = ?,
+                how_heard_about = ?,
+                scholarship_id = ?,
+                motivation_statement = ?,
+                terms_agreed = ?
+            WHERE application_id = ?`,
+            [
+                full_name,
+                email_address,
+                profile_picture_url,
+                date_of_birth,
+                gender,
+                phone_number,
+                address,
+                preferred_university,
+                country,
+                academic_level,
+                intended_major,
+                gpa_academic_performance,
+                uploaded_documents_json,
+                extracurricular_activities,
+                parent_guardian_name,
+                parent_guardian_contact,
+                financial_need_statement,
+                how_heard_about,
+                scholarship_id,
+                motivation_statement,
+                terms_agreed === 'on' || terms_agreed === true ? 1 : 0,
+                applicationId
+            ]
         );
-
+        
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Application not found' });
+            return res.status(404).json({ message: 'Application not found during update' });
         }
-
+        
         // Fetch updated application
         const [updatedApplication] = await db.promise().query(
             'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
-
+        
         res.json({
             message: 'Application updated successfully',
             application: updatedApplication[0]
         });
+
     } catch (error) {
         console.error('Error updating application:', error);
         res.status(500).json({ message: 'Error updating application' });
+    }
+});
+
+// Alter scholarships table to add university column
+router.post('/alter-scholarships', adminAuth, async (req, res) => {
+    try {
+        await db.promise().query(
+            `ALTER TABLE scholarships ADD COLUMN university VARCHAR(255) NOT NULL`
+        );
+        res.json({ message: 'Scholarships table altered successfully' });
+    } catch (error) {
+        console.error('Error altering scholarships table:', error);
+        res.status(500).json({ message: 'Error altering scholarships table' });
+    }
+});
+
+router.get('/dashboard/stats', adminAuth, async (req, res) => {
+    try {
+        const [userStats] = await db.promise().query(
+            `SELECT role, COUNT(*) as count
+            FROM users
+            GROUP BY role`
+        );
+        const userStatsData = {
+            user: 0,
+            admin: 0
+        };
+        userStats.forEach(row => {
+            userStatsData[row.role] = row.count;
+        });
+
+        res.json({
+            userStats: Object.values(userStatsData)
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        res.status(500).json({ message: 'Error fetching dashboard stats' });
     }
 });
 

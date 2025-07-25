@@ -199,6 +199,36 @@ async function includeNavbar() {
                 window.location.href = 'login.html';
             });
 
+            // Dynamic Site Name and Logo (for navbar)
+            async function updateSiteNameAndLogo() {
+                try {
+                    const res = await fetch('/api/settings/general');
+                    if (!res.ok) throw new Error('Failed to fetch site info');
+                    const { siteName, siteLogoUrl } = await res.json();
+                    // Navbar
+                    const nameEl = document.getElementById('navbarSiteName');
+                    const logoEl = document.getElementById('navbarSiteLogo');
+                    if (nameEl && siteName) nameEl.textContent = siteName;
+                    if (logoEl && siteLogoUrl) logoEl.src = siteLogoUrl;
+                    // Titles
+                    if (siteName) {
+                        document.querySelectorAll('title').forEach(t => {
+                            t.textContent = t.textContent.replace(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi, siteName);
+                        });
+                        // Headings and footers
+                        document.querySelectorAll('h1, h2, h3, h4, h5, h6, strong, a, span, p').forEach(el => {
+                            if (el.textContent.match(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi)) {
+                                el.textContent = el.textContent.replace(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi, siteName);
+                            }
+                        });
+                    }
+                } catch (err) {
+                    // Optionally handle error
+                }
+            }
+            // Call after navbar is loaded
+            updateSiteNameAndLogo();
+
         } else {
             console.error('Navbar container not found!');
         }

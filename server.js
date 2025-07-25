@@ -1,33 +1,42 @@
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import session from 'express-session';
 import dotenv from 'dotenv';
+import pool from './config/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
-import adminRoutes from './routes/admin.js';
-import scholarshipRoutes from './routes/scholarships.js';
-import partnerRoutes from './routes/partners.js';
-import serviceRoutes from './routes/services.js';
-import paymentRoutes from './routes/payments.js';
-import planRoutes from './routes/plans.js';
 import roleRoutes from './routes/roles.js';
+import planRoutes from './routes/plans.js';
+import serviceRoutes from './routes/services.js';
+import partnerRoutes from './routes/partners.js';
+import paymentRoutes from './routes/payments.js';
+import scholarshipRoutes from './routes/scholarships.js';
 import contactRoutes from './routes/contact.js';
 import newsletterRoutes from './routes/newsletter.js';
 import applicationRoutes from './routes/applications.js';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import pool from './config/database.js';
+import adminRoutes from './routes/admin.js';
 
-const app = express();
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'default_secret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
 
 // Database connection test
 pool.getConnection((err, connection) => {
@@ -39,43 +48,29 @@ pool.getConnection((err, connection) => {
     connection.release();
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/scholarships', scholarshipRoutes);
-app.use('/api/partners', partnerRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/plans', planRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/plans', planRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/subscribe-newsletter', newsletterRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Serve uploads statically so profile pictures and documents are accessible
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve static HTML files
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'home.html'));
-});
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-app.get('/signup', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-app.get('/admin-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin_dashboard.html'));
-});
-
-app.get('/admin-roles', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin_rolesPermissions.html'));
+// Fallback to index.html for SPA-like behavior (optional but good practice)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
 // Error handling middleware
@@ -101,7 +96,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 }); 

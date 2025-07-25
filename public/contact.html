@@ -291,6 +291,10 @@
       newsletterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('newsletterEmail').value;
+        if (!email) {
+          displayMessageBox('Please enter your email address.', 'error');
+          return;
+        }
         try {
           const response = await fetch('/api/subscribe-newsletter', {
             method: 'POST',

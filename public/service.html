@@ -80,84 +80,8 @@
 
   <div class="py-12 bg-white dark:bg-gray-800 transition-colors duration-300">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border dark:border-gray-700 transition-colors duration-300 hover:shadow-xl dark:hover:shadow-gray-700/50">
-          <div class="p-6">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4">
-              <i class="fas fa-graduation-cap text-xl text-white"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white transition-colors duration-300">Scholarship Services</h3>
-            <p class="mt-2 text-base text-gray-500 dark:text-gray-300 transition-colors duration-300">
-              Access a wide range of scholarships and educational funding opportunities.
-            </p>
-            <ul class="mt-4 space-y-2">
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Undergraduate Scholarships</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Postgraduate Scholarships</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Research Grants</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border dark:border-gray-700 transition-colors duration-300 hover:shadow-xl dark:hover:shadow-gray-700/50">
-          <div class="p-6">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4">
-              <i class="fas fa-passport text-xl"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white transition-colors duration-300">Visa Services</h3>
-            <p class="mt-2 text-base text-gray-500 dark:text-gray-300 transition-colors duration-300">
-              Expert guidance for all your visa application needs.
-            </p>
-            <ul class="mt-4 space-y-2">
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Student Visa Assistance</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Work Visa Support</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Family Visa Services</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border dark:border-gray-700 transition-colors duration-300 hover:shadow-xl dark:hover:shadow-gray-700/50">
-          <div class="p-6">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4">
-              <i class="fas fa-coins text-xl"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white transition-colors duration-300">Crypto Services</h3>
-            <p class="mt-2 text-base text-gray-500 dark:text-gray-300 transition-colors duration-300">
-              Comprehensive cryptocurrency services and support.
-            </p>
-            <ul class="mt-4 space-y-2">
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Crypto Trading</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Crypto Investment</span>
-              </li>
-              <li class="flex items-center">
-                <i class="fas fa-check text-blue-500 mr-2"></i>
-                <span class="text-gray-700 dark:text-gray-300 transition-colors duration-300">Crypto Wallets</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+      <div id="servicesGrid" class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <!-- Services will be rendered here by JS -->
       </div>
     </div>
   </div>
@@ -254,8 +178,38 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       includeNavbar(); // Load and initialize the navbar
+      loadServices();
     });
 
+    async function loadServices() {
+      const grid = document.getElementById('servicesGrid');
+      grid.innerHTML = '<div class="col-span-full text-center text-gray-500 dark:text-gray-400">Loading services...</div>';
+      try {
+        const res = await fetch('/api/services');
+        if (!res.ok) throw new Error('Failed to fetch services');
+        const services = await res.json();
+        if (!Array.isArray(services) || services.length === 0) {
+          grid.innerHTML = '<div class="col-span-full text-center text-gray-500 dark:text-gray-400">No services available.</div>';
+          return;
+        }
+        grid.innerHTML = services.map(service => {
+          const imgSrc = service.image_url ? `/${service.image_url}` : '';
+          return `
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border dark:border-gray-700 transition-colors duration-300 hover:shadow-xl dark:hover:shadow-gray-700/50">
+              <div class="p-6">
+                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mb-4">
+                  ${imgSrc ? `<img src="${imgSrc}" alt="${service.name}" class="object-cover h-12 w-12 rounded-md" onerror="this.style.display='none'">` : '<i class="fas fa-cogs text-xl"></i>'}
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white transition-colors duration-300">${service.name}</h3>
+                <p class="mt-2 text-base text-gray-500 dark:text-gray-300 transition-colors duration-300">${service.description}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="col-span-full text-center text-red-500">Error loading services.</div>';
+      }
+    }
     // Scroll Top Button (kept here as it's page-specific functionality)
     const scrollTopBtn = document.getElementById("scroll-top");
 

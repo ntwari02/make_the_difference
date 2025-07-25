@@ -4,8 +4,6 @@ import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import sgMail from '@sendgrid/mail';
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const router = express.Router();
 
 // Register new user
@@ -120,22 +118,24 @@ router.post('/forgot-password', async (req, res) => {
     await db.promise().query('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?', [token, expiry, user.id]);
     // Send email
     const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
-    const msg = {
-      to: email,
-      from: 'your_verified_sender@yourdomain.com', // must match the verified sender
-      subject: 'Password Reset Request',
-      html: `<p>You requested a password reset. <a href="${resetUrl}">Click here to reset your password</a>. This link will expire in 1 hour.</p>`
-    };
-    try {
-      await sgMail.send(msg);
-    } catch (error) {
-      console.error('SendGrid error:', error);
-      if (error.response) {
-        console.error(error.response.body);
-      }
-      res.status(500).json({ success: false, message: 'Error sending reset email' });
-      return;
-    }
+    // const msg = {
+    //   to: email,
+    //   from: 'your_verified_sender@yourdomain.com',
+    //   subject: 'Password Reset Request',
+    //   html: `<p>You requested a password reset. <a href="${resetUrl}">Click here to reset your password</a>. This link will expire in 1 hour.</p>`
+    // };
+    // try {
+    //   await sgMail.send(msg);
+    // } catch (error) {
+    //   console.error('SendGrid error:', error);
+    //   if (error.response) {
+    //     console.error(error.response.body);
+    //   }
+    //   res.status(500).json({ success: false, message: 'Error sending reset email' });
+    //   return;
+    // }
+    // Instead of sending email, just log the reset URL (for development)
+    console.log('Password reset URL:', resetUrl);
     res.json({ success: true, message: 'If this email is registered, a reset link will be sent.' });
   } catch (error) {
     console.error(error);

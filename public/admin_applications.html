@@ -367,7 +367,7 @@ on country select remove the above input and and perform a letter filter if a us
                     <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                         System Settings
                     </div>
-                    <a href="#settings" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <a href="admin_general_setting.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                         <i class="fas fa-cog w-6"></i>
                         <span class="sidebar-item-text ml-3">General Settings</span>
                     </a>
@@ -440,6 +440,9 @@ on country select remove the above input and and perform a letter filter if a us
                                     University
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Country
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Applied Date
                                 </th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -458,6 +461,11 @@ on country select remove the above input and and perform a letter filter if a us
                 </div>
                 <div id="noApplications" class="p-8 text-center text-gray-500 dark:text-gray-400 hidden">
                     No applications found matching your criteria.
+                </div>
+                <div id="fetchError" class="p-8 text-center text-red-600 dark:text-red-400 hidden">
+                    <span id="fetchErrorMessage"></span>
+                    <br>
+                    <button id="retryFetchBtn" class="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600">Retry</button>
                 </div>
             </div>
 
@@ -502,309 +510,153 @@ on country select remove the above input and and perform a letter filter if a us
 
     <!-- Create Application Modal -->
     <div id="createApplicationModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-800">
+        <div class="modal-content bg-white dark:bg-gray-800 text-black dark:text-white">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Create New Application</h2>
+                <h2 class="text-xl font-bold text-black dark:text-white">Create New Application</h2>
                 <button id="closeCreateModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            
-            <form id="createApplicationForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Full Name *
-                    </label>
-                    <input type="text" name="full_name" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <form id="adminScholarshipForm" class="max-w-3xl mx-auto bg-white dark:bg-gray-800 text-black dark:text-white p-8 rounded-lg shadow-lg border-l-4 border-primary-500" enctype="multipart/form-data">
+                <input type="hidden" name="scholarship_id" id="scholarship_id" value="">
+                <!-- Step 1: Personal Information -->
+                <div class="form-step" id="step-1">
+                    <div class="mb-6 flex flex-col items-center">
+                        <label for="profilePicture" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Profile Picture</label>
+                        <div id="profileUploadArea" class="relative flex flex-col items-center justify-center w-32 h-32 rounded-full border-2 border-dashed border-primary-500 dark:border-primary-400 bg-gray-100 dark:bg-dark-900 cursor-pointer transition hover:bg-primary-50 dark:hover:bg-primary-900/20 mb-2">
+                            <img id="profilePreview" class="absolute w-32 h-32 rounded-full object-cover hidden z-10" alt="Profile Preview">
+                            <div id="profilePlaceholder" class="flex flex-col items-center justify-center h-full w-full z-0">
+                                <i class="fas fa-user-circle text-6xl text-gray-300 dark:text-white"></i>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Drag & drop or click</span>
+                            </div>
+                            <input type="file" id="profilePicture" name="profile_picture_url" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
+                        </div>
+                        <button type="button" id="profileUploadBtn" class="mt-2 px-4 py-2 bg-primary-500 text-white rounded shadow hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500">Choose Photo</button>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max size: 2MB. JPG, PNG, or GIF.</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="fullName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full Name</label>
+                            <input type="text" id="fullName" name="full_name" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. Jane Doe" required>
+                        </div>
+                        <div>
+                            <label for="emailAddress" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
+                            <input type="email" id="emailAddress" name="email_address" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. jane@email.com" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="dob" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Date of Birth</label>
+                            <input type="date" id="dob" name="date_of_birth" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" required>
+                        </div>
+                        <div>
+                            <label for="gender" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Gender</label>
+                            <select id="gender" name="gender" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" required>
+                                <option value="">Select gender</option>
+                                <option value="female">Female</option>
+                                <option value="male">Male</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="phone" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Phone Number</label>
+                            <input type="tel" id="phone" name="phone_number" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. +250 123 456 789" required>
+                        </div>
+                        <div>
+                            <label for="address" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Address</label>
+                            <input type="text" id="address" name="address" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. 123 Main St, Kigali" required>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" class="next-step bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Next</button>
+                    </div>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Email *
-                    </label>
-                    <input type="email" name="email" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <!-- Step 2: Academic Information -->
+                <div class="form-step hidden" id="step-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="preferredUniversity" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Preferred University</label>
+                            <select id="preferredUniversity" name="preferred_university" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" required>
+                                <option value="">Select a university</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="country" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
+                            <select id="countryFilter" name="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" required>
+                                <option value="">Select a country</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="academicLevel" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Academic Level</label>
+                            <select id="academicLevel" name="academic_level" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" required>
+                                <option value="">Select level</option>
+                                <option value="undergraduate">Undergraduate</option>
+                                <option value="graduate">Graduate</option>
+                                <option value="phd">PhD</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="intendedMajor" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Intended Major/Field of Study</label>
+                            <input type="text" id="intendedMajor" name="intended_major" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. Computer Science">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="gpa" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">GPA / Academic Performance</label>
+                            <input type="text" id="gpaAcademicPerformance" name="gpa_academic_performance" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. 3.8/4.0">
+                        </div>
+                        <div>
+                            <label for="documents" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Upload Documents</label>
+                            <input type="file" id="documents" name="uploaded_documents_json" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" multiple>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="extracurriculars" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Extracurricular Activities</label>
+                        <textarea id="extracurricularActivities" name="extracurricular_activities" rows="2" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="List your activities, clubs, sports, etc."></textarea>
+                    </div>
+                    <div class="flex justify-between">
+                        <button type="button" class="prev-step bg-gray-300 text-gray-700 px-8 py-3 rounded font-semibold hover:bg-gray-400 transition-all duration-300">Back</button>
+                        <button type="button" class="next-step bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Next</button>
+                    </div>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        University *
-                    </label>
-                    <input type="text" name="university" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Country *
-                    </label>
-                    <select name="country" id="countrySelect" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="">Select a country...</option>
-                        <option value="Afghanistan">Afghanistan</option>
-                        <option value="Albania">Albania</option>
-                        <option value="Algeria">Algeria</option>
-                        <option value="American Samoa">American Samoa</option>
-                        <option value="Andorra">Andorra</option>
-                        <option value="Angola">Angola</option>
-                        <option value="Antigua and Barbuda">Antigua and Barbuda</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Armenia">Armenia</option>
-                        <option value="Aruba">Aruba</option>
-                        <option value="Australia">Australia</option>
-                        <option value="Austria">Austria</option>
-                        <option value="Azerbaijan">Azerbaijan</option>
-                        <option value="Bahamas">The Bahamas</option>
-                        <option value="Bahrain">Bahrain</option>
-                        <option value="Bangladesh">Bangladesh</option>
-                        <option value="Barbados">Barbados</option>
-                        <option value="Belarus">Belarus</option>
-                        <option value="Belgium">Belgium</option>
-                        <option value="Belize">Belize</option>
-                        <option value="Benin">Benin</option>
-                        <option value="Bermuda">Bermuda</option>
-                        <option value="Bhutan">Bhutan</option>
-                        <option value="Bolivia">Bolivia</option>
-                        <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
-                        <option value="Botswana">Botswana</option>
-                        <option value="Brazil">Brazil</option>
-                        <option value="Brunei">Brunei</option>
-                        <option value="Bulgaria">Bulgaria</option>
-                        <option value="Burkina Faso">Burkina Faso</option>
-                        <option value="Burundi">Burundi</option>
-                        <option value="Cabo Verde">Cabo Verde</option>
-                        <option value="Cambodia">Cambodia</option>
-                        <option value="Cameroon">Cameroon</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Cayman Islands">Cayman Islands</option>
-                        <option value="Central African Republic">Central African Republic</option>
-                        <option value="Chad">Chad</option>
-                        <option value="Chile">Chile</option>
-                        <option value="China">China</option>
-                        <option value="Colombia">Colombia</option>
-                        <option value="Comoros">Comoros</option>
-                        <option value="Democratic Republic of the Congo">Democratic Republic of the Congo</option>
-                        <option value="Republic of the Congo">Republic of the Congo</option>
-                        <option value="Costa Rica">Costa Rica</option>
-                        <option value="Côte d'Ivoire">Côte d'Ivoire</option>
-                        <option value="Croatia">Croatia</option>
-                        <option value="Cuba">Cuba</option>
-                        <option value="Curaçao">Curaçao</option>
-                        <option value="Cyprus">Cyprus</option>
-                        <option value="Czech Republic">Czech Republic</option>
-                        <option value="Denmark">Denmark</option>
-                        <option value="Djibouti">Djibouti</option>
-                        <option value="Dominica">Dominica</option>
-                        <option value="Dominican Republic">Dominican Republic</option>
-                        <option value="East Timor">East Timor (Timor-Leste)</option>
-                        <option value="Ecuador">Ecuador</option>
-                        <option value="Egypt">Egypt</option>
-                        <option value="El Salvador">El Salvador</option>
-                        <option value="Equatorial Guinea">Equatorial Guinea</option>
-                        <option value="Eritrea">Eritrea</option>
-                        <option value="Estonia">Estonia</option>
-                        <option value="Eswatini">Eswatini (Swaziland)</option>
-                        <option value="Ethiopia">Ethiopia</option>
-                        <option value="Faroe Islands">Faroe Islands</option>
-                        <option value="Fiji">Fiji</option>
-                        <option value="Finland">Finland</option>
-                        <option value="France">France</option>
-                        <option value="French Guiana">French Guiana</option>
-                        <option value="French Polynesia">French Polynesia</option>
-                        <option value="Gabon">Gabon</option>
-                        <option value="Gambia">The Gambia</option>
-                        <option value="Gaza Strip">Gaza Strip</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Ghana">Ghana</option>
-                        <option value="Greece">Greece</option>
-                        <option value="Greenland">Greenland</option>
-                        <option value="Grenada">Grenada</option>
-                        <option value="Guadeloupe">Guadeloupe</option>
-                        <option value="Guam">Guam</option>
-                        <option value="Guatemala">Guatemala</option>
-                        <option value="Guernsey">Guernsey</option>
-                        <option value="Guinea">Guinea</option>
-                        <option value="Guinea-Bissau">Guinea-Bissau</option>
-                        <option value="Guyana">Guyana</option>
-                        <option value="Haiti">Haiti</option>
-                        <option value="Honduras">Honduras</option>
-                        <option value="Hong Kong">Hong Kong</option>
-                        <option value="Hungary">Hungary</option>
-                        <option value="Iceland">Iceland</option>
-                        <option value="India">India</option>
-                        <option value="Indonesia">Indonesia</option>
-                        <option value="Iran">Iran</option>
-                        <option value="Iraq">Iraq</option>
-                        <option value="Ireland">Ireland</option>
-                        <option value="Isle of Man">Isle of Man</option>
-                        <option value="Israel">Israel</option>
-                        <option value="Italy">Italy</option>
-                        <option value="Jamaica">Jamaica</option>
-                        <option value="Japan">Japan</option>
-                        <option value="Jersey">Jersey</option>
-                        <option value="Jordan">Jordan</option>
-                        <option value="Kazakhstan">Kazakhstan</option>
-                        <option value="Kenya">Kenya</option>
-                        <option value="Kiribati">Kiribati</option>
-                        <option value="North Korea">North Korea</option>
-                        <option value="South Korea">South Korea</option>
-                        <option value="Kosovo">Kosovo</option>
-                        <option value="Kuwait">Kuwait</option>
-                        <option value="Kyrgyzstan">Kyrgyzstan</option>
-                        <option value="Laos">Laos</option>
-                        <option value="Latvia">Latvia</option>
-                        <option value="Lebanon">Lebanon</option>
-                        <option value="Lesotho">Lesotho</option>
-                        <option value="Liberia">Liberia</option>
-                        <option value="Libya">Libya</option>
-                        <option value="Liechtenstein">Liechtenstein</option>
-                        <option value="Lithuania">Lithuania</option>
-                        <option value="Luxembourg">Luxembourg</option>
-                        <option value="Macau">Macau</option>
-                        <option value="Madagascar">Madagascar</option>
-                        <option value="Malawi">Malawi</option>
-                        <option value="Malaysia">Malaysia</option>
-                        <option value="Maldives">Maldives</option>
-                        <option value="Mali">Mali</option>
-                        <option value="Malta">Malta</option>
-                        <option value="Marshall Islands">Marshall Islands</option>
-                        <option value="Martinique">Martinique</option>
-                        <option value="Mauritania">Mauritania</option>
-                        <option value="Mauritius">Mauritius</option>
-                        <option value="Mayotte">Mayotte</option>
-                        <option value="Mexico">Mexico</option>
-                        <option value="Micronesia">Micronesia</option>
-                        <option value="Moldova">Moldova</option>
-                        <option value="Monaco">Monaco</option>
-                        <option value="Mongolia">Mongolia</option>
-                        <option value="Montenegro">Montenegro</option>
-                        <option value="Morocco">Morocco</option>
-                        <option value="Mozambique">Mozambique</option>
-                        <option value="Myanmar">Myanmar (Burma)</option>
-                        <option value="Namibia">Namibia</option>
-                        <option value="Nauru">Nauru</option>
-                        <option value="Nepal">Nepal</option>
-                        <option value="Netherlands">Netherlands</option>
-                        <option value="New Caledonia">New Caledonia</option>
-                        <option value="New Zealand">New Zealand</option>
-                        <option value="Nicaragua">Nicaragua</option>
-                        <option value="Niger">Niger</option>
-                        <option value="Nigeria">Nigeria</option>
-                        <option value="North Macedonia">North Macedonia</option>
-                        <option value="Northern Mariana Islands">Northern Mariana Islands</option>
-                        <option value="Norway">Norway</option>
-                        <option value="Oman">Oman</option>
-                        <option value="Pakistan">Pakistan</option>
-                        <option value="Palau">Palau</option>
-                        <option value="Panama">Panama</option>
-                        <option value="Papua New Guinea">Papua New Guinea</option>
-                        <option value="Paraguay">Paraguay</option>
-                        <option value="Peru">Peru</option>
-                        <option value="Philippines">Philippines</option>
-                        <option value="Poland">Poland</option>
-                        <option value="Portugal">Portugal</option>
-                        <option value="Puerto Rico">Puerto Rico</option>
-                        <option value="Qatar">Qatar</option>
-                        <option value="Réunion">Réunion</option>
-                        <option value="Romania">Romania</option>
-                        <option value="Russia">Russia</option>
-                        <option value="Rwanda">Rwanda</option>
-                        <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
-                        <option value="Saint Lucia">Saint Lucia</option>
-                        <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
-                        <option value="Samoa">Samoa</option>
-                        <option value="San Marino">San Marino</option>
-                        <option value="Sao Tome and Principe">Sao Tome and Principe</option>
-                        <option value="Saudi Arabia">Saudi Arabia</option>
-                        <option value="Senegal">Senegal</option>
-                        <option value="Serbia">Serbia</option>
-                        <option value="Seychelles">Seychelles</option>
-                        <option value="Sierra Leone">Sierra Leone</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="Sint Maarten">Sint Maarten</option>
-                        <option value="Slovakia">Slovakia</option>
-                        <option value="Slovenia">Slovenia</option>
-                        <option value="Solomon Islands">Solomon Islands</option>
-                        <option value="Somalia">Somalia</option>
-                        <option value="South Africa">South Africa</option>
-                        <option value="Spain">Spain</option>
-                        <option value="Sri Lanka">Sri Lanka</option>
-                        <option value="Sudan">Sudan</option>
-                        <option value="South Sudan">South Sudan</option>
-                        <option value="Suriname">Suriname</option>
-                        <option value="Sweden">Sweden</option>
-                        <option value="Switzerland">Switzerland</option>
-                        <option value="Syria">Syria</option>
-                        <option value="Taiwan">Taiwan</option>
-                        <option value="Tajikistan">Tajikistan</option>
-                        <option value="Tanzania">Tanzania</option>
-                        <option value="Thailand">Thailand</option>
-                        <option value="Togo">Togo</option>
-                        <option value="Tonga">Tonga</option>
-                        <option value="Trinidad and Tobago">Trinidad and Tobago</option>
-                        <option value="Tunisia">Tunisia</option>
-                        <option value="Turkey">Turkey</option>
-                        <option value="Turkmenistan">Turkmenistan</option>
-                        <option value="Tuvalu">Tuvalu</option>
-                        <option value="Uganda">Uganda</option>
-                        <option value="Ukraine">Ukraine</option>
-                        <option value="United Arab Emirates">United Arab Emirates</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="United States">United States</option>
-                        <option value="United States Virgin Islands">United States Virgin Islands</option>
-                        <option value="Uruguay">Uruguay</option>
-                        <option value="Uzbekistan">Uzbekistan</option>
-                        <option value="Vanuatu">Vanuatu</option>
-                        <option value="Vatican City">Vatican City</option>
-                        <option value="Venezuela">Venezuela</option>
-                        <option value="Vietnam">Vietnam</option>
-                        <option value="West Bank">West Bank</option>
-                        <option value="Yemen">Yemen</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Scholarship *
-                    </label>
-                    <select name="scholarship_id" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="">Select a scholarship...</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Motivation *
-                    </label>
-                    <textarea name="motivation" required rows="4"
-                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                        focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
-                </div>
-                
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" id="cancelCreateBtn" 
-                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 
-                        dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                        class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
-                        Create Application
-                    </button>
+                <!-- Step 3: Additional Information -->
+                <div class="form-step hidden" id="step-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="parentName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Name</label>
+                            <input type="text" id="parentGuardianName" name="parent_guardian_name" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. John Doe">
+                        </div>
+                        <div>
+                            <label for="parentContact" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Contact</label>
+                            <input type="text" id="parentGuardianContact" name="parent_guardian_contact" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. +250 987 654 321">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="financialNeed" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Financial Need Statement</label>
+                        <textarea id="financialNeedStatement" name="financial_need_statement" rows="3" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="Describe your financial situation and why you need this scholarship."></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label for="referral" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">How did you hear about this scholarship?</label>
+                        <input type="text" id="howHeardAbout" name="how_heard_about" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="e.g. School, Social Media, Friend">
+                    </div>
+                    <div class="mb-6">
+                        <label for="message" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Why Are You Applying?</label>
+                        <textarea id="motivationStatement" name="motivation_statement" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900 text-black dark:text-black" placeholder="Briefly explain your motivation..."></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="terms_agreed" required>
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">I agree to the terms and conditions</span>
+                        </label>
+                    </div>
+                    <div class="flex justify-between">
+                        <button type="button" class="prev-step bg-gray-300 text-gray-700 px-8 py-3 rounded font-semibold hover:bg-gray-400 transition-all duration-300">Back</button>
+                        <button type="submit" class="bg-primary-500 text-white px-8 py-3 rounded font-semibold hover:bg-primary-600 transition-all duration-300">Submit Application</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -818,7 +670,10 @@ on country select remove the above input and and perform a letter filter if a us
         const applicationsPerPage = 10;
         let currentApplicationId = null;
         let availableScholarships = [];
+        let filteredApplications = [];
 
+        // CRUD for admin_applications_simple
+        let simpleApplications = [];
         // DOM Elements
         const applicationsTable = document.getElementById('applicationsTable');
         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -835,13 +690,66 @@ on country select remove the above input and and perform a letter filter if a us
         const closeModalBtn = document.getElementById('closeModal');
         const createApplicationBtn = document.getElementById('createApplicationBtn');
         const createApplicationModal = document.getElementById('createApplicationModal');
-        const createApplicationForm = document.getElementById('createApplicationForm');
-        const cancelCreateBtn = document.getElementById('cancelCreateBtn');
-        const countrySelect = document.getElementById('countrySelect');
+        const adminScholarshipForm = document.getElementById('adminScholarshipForm');
+        const profilePreview = document.getElementById('profilePreview');
+        const profilePlaceholder = document.getElementById('profilePlaceholder');
+        const profilePictureInput = document.getElementById('profilePicture');
+        const profileUploadBtn = document.getElementById('profileUploadBtn');
+        const countryFilterInput = document.getElementById('countryFilter');
+        
+        const defaultAvatar = 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%239ca3af"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" /></svg>';
+        
+        // --- Country List ---
+        const countries = [
+            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+        ];
+        
+        // Make steps available everywhere
+        const steps = Array.from(document.querySelectorAll('#adminScholarshipForm .form-step'));
+        
+        function showStep(index) {
+            steps.forEach((step, i) => step.classList.toggle('hidden', i !== index));
+            const firstInput = steps[index].querySelector('input, select, textarea');
+            if (firstInput) firstInput.focus();
+        }
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication
+        function populateCountries() {
+            const countrySelect = document.getElementById('countryFilter');
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+        }
+
+        function goToNextStep() {
+            const currentStep = steps[currentStepIndex];
+            const inputs = Array.from(currentStep.querySelectorAll('input[required], select[required], textarea[required]'));
+
+            if (inputs.every(input => input.checkValidity())) {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                showStep(currentStepIndex);
+                }
+            } else {
+                inputs.find(input => !input.checkValidity()).reportValidity();
+            }
+        }
+
+        function goToPrevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                showStep(currentStepIndex);
+            }
+        }
+
+        function setupMultiStepNavigation() {
+            document.querySelectorAll('#adminScholarshipForm .next-step').forEach(btn => btn.addEventListener('click', goToNextStep));
+            document.querySelectorAll('#adminScholarshipForm .prev-step').forEach(btn => btn.addEventListener('click', goToPrevStep));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             
@@ -850,21 +758,15 @@ on country select remove the above input and and perform a letter filter if a us
                 return;
             }
             
-            // Set admin name
             document.getElementById('adminName').textContent = user.fullName || 'Admin';
             
-            // Initialize theme and sidebar
             initializeTheme();
             initializeSidebar();
-            
-            // Setup event listeners
             setupEventListeners();
-            
-            // Load applications
-            await loadApplications();
+            loadApplications();
+            populateCountries();
         });
 
-        // Setup event listeners
         function setupEventListeners() {
             searchInput.addEventListener('input', filterApplications);
             prevPageBtn.addEventListener('click', () => changePage(-1));
@@ -872,152 +774,122 @@ on country select remove the above input and and perform a letter filter if a us
             closeBtn.addEventListener('click', hideModal);
             closeModalBtn.addEventListener('click', hideModal);
             
-            // Theme and sidebar toggles
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
             document.getElementById('sidebarCollapseBtn').addEventListener('click', toggleSidebar);
             document.getElementById('mobileSidebarToggle').addEventListener('click', toggleMobileSidebar);
             
-            // Logout
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 window.location.href = 'login.html';
             });
 
-            // Create application modal
-            document.getElementById('createApplicationBtn').addEventListener('click', async () => {
-                await loadScholarships();
+            createApplicationBtn.addEventListener('click', async () => {
+                adminScholarshipForm.reset();
+                adminScholarshipForm.dataset.applicationId = '';
+                document.querySelector('#createApplicationModal h2').textContent = 'Create New Application';
+                adminScholarshipForm.querySelector('button[type="submit"]').textContent = 'Submit Application';
+                profilePictureInput.required = true;
+                    await loadScholarshipsAndPopulateSelects();
                 showCreateModal();
             });
+
             document.getElementById('closeCreateModal').addEventListener('click', hideCreateModal);
-            document.getElementById('cancelCreateBtn').addEventListener('click', hideCreateModal);
-            document.getElementById('createApplicationForm').addEventListener('submit', handleCreateApplication);
+            adminScholarshipForm.addEventListener('submit', handleApplicationSubmit);
+            setupMultiStepNavigation();
         }
 
-        // Load applications from API
         async function loadApplications() {
             try {
                 showLoading(true);
+                hideFetchError();
                 const response = await fetch('/api/admin/applications', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch applications');
-                }
-
-                applications = await response.json();
-                filteredApplications = [...applications];
-                updateApplicationsTable();
-                updatePagination();
+                const result = await handleApiResponse(response);
+                if (!result) return;
+                applications = result;
+                filterApplications();
             } catch (error) {
-                showNotification(error.message, 'error');
                 console.error('Error loading applications:', error);
-                noApplications.textContent = 'Unable to load applications. Please try again later.';
-                noApplications.classList.remove('hidden');
+                showFetchError('Unable to load applications. Please try again later.', loadApplications);
             } finally {
                 showLoading(false);
             }
         }
 
-        // Filter applications based on search
         function filterApplications() {
             const searchTerm = searchInput.value.toLowerCase();
-            
-            filteredApplications = applications.filter(application => 
-                application.full_name.toLowerCase().includes(searchTerm) ||
-                application.email.toLowerCase().includes(searchTerm) ||
-                (application.university && application.university.toLowerCase().includes(searchTerm)) ||
-                (application.country && application.country.toLowerCase().includes(searchTerm))
+            filteredApplications = applications.filter(app => 
+                Object.values(app).some(val => 
+                    String(val).toLowerCase().includes(searchTerm)
+                )
             );
-            
             currentPage = 1;
             updateApplicationsTable();
             updatePagination();
         }
 
-        // Update applications table
         function updateApplicationsTable() {
             const startIndex = (currentPage - 1) * applicationsPerPage;
-            const endIndex = startIndex + applicationsPerPage;
-            const applicationsToDisplay = filteredApplications.slice(startIndex, endIndex);
+            const applicationsToDisplay = filteredApplications.slice(startIndex, startIndex + applicationsPerPage);
             
-            applicationsTable.innerHTML = '';
-            
-            if (filteredApplications.length === 0) {
-                noApplications.classList.remove('hidden');
-                return;
-            }
-            
-            noApplications.classList.add('hidden');
-            
-            applicationsToDisplay.forEach(application => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
+            noApplications.classList.toggle('hidden', filteredApplications.length > 0);
+
+            const tableHtml = applicationsToDisplay.map(app => {
+                const profileImgSrc = app.profilePictureUrl ? `/${app.profilePictureUrl}` : defaultAvatar;
+                const university = app.preferredUniversity || 'N/A';
+                const country = app.country || 'N/A';
+                const appDate = app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A';
+
+                return `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div>
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                    ${application.full_name}
-                                </div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                    ${application.email}
-                                </div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">${app.fullName}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">${app.emailAddress}</div>
                             </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900 dark:text-white">
-                            ${application.university || 'Not specified'}
-                        </div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            ${application.country || 'Not specified'}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        ${new Date(application.submitted_at).toLocaleDateString()}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="viewApplication(${application.id})" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        <button onclick="updateApplication(${application.id})" class="text-warning-600 hover:text-warning-900 dark:text-warning-400 dark:hover:text-warning-300 mr-3">
-                            <i class="fas fa-edit"></i> Update
-                        </button>
-                        <button onclick="deleteApplication(${application.id})" class="text-danger-600 hover:text-danger-900 dark:text-danger-400 dark:hover:text-danger-300">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </td>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900 dark:text-white">${university}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${country}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            ${appDate}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="viewApplication(${app.applicationId})" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3"><i class="fas fa-eye"></i><span class="hidden md:inline"> View</span></button>
+                            <button onclick="updateApplication(${app.applicationId})" class="text-warning-600 hover:text-warning-900 dark:text-warning-400 dark:hover:text-warning-300 mr-3"><i class="fas fa-edit"></i><span class="hidden md:inline"> Update</span></button>
+                            <button onclick="deleteApplication(${app.applicationId})" class="text-danger-600 hover:text-danger-900 dark:text-danger-400 dark:hover:text-danger-300"><i class="fas fa-trash"></i><span class="hidden md:inline"> Delete</span></button>
+                        </td>
+                    </tr>
                 `;
-                applicationsTable.appendChild(row);
-            });
+            }).join('');
+
+            applicationsTable.innerHTML = tableHtml;
         }
 
-        // Update pagination controls
         function updatePagination() {
-            const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
-            const startItem = ((currentPage - 1) * applicationsPerPage) + 1;
-            const endItem = Math.min(currentPage * applicationsPerPage, filteredApplications.length);
-            
+            const total = filteredApplications.length;
+            const totalPages = Math.ceil(total / applicationsPerPage);
+            const startItem = total === 0 ? 0 : (currentPage - 1) * applicationsPerPage + 1;
+            const endItem = Math.min(currentPage * applicationsPerPage, total);
+
             startRange.textContent = startItem;
             endRange.textContent = endItem;
-            totalApplications.textContent = filteredApplications.length;
-            
+            totalApplications.textContent = total;
+
             prevPageBtn.disabled = currentPage === 1;
             nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
-            
-            prevPageBtn.classList.toggle('opacity-50', currentPage === 1);
-            nextPageBtn.classList.toggle('opacity-50', currentPage === totalPages || totalPages === 0);
+            prevPageBtn.classList.toggle('opacity-50', prevPageBtn.disabled);
+            nextPageBtn.classList.toggle('opacity-50', nextPageBtn.disabled);
         }
 
-        // Change page
         function changePage(delta) {
-            const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
             const newPage = currentPage + delta;
-            
+            const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
             if (newPage >= 1 && newPage <= totalPages) {
                 currentPage = newPage;
                 updateApplicationsTable();
@@ -1025,361 +897,280 @@ on country select remove the above input and and perform a letter filter if a us
             }
         }
 
-        // View application details
         async function viewApplication(applicationId) {
             try {
                 showLoading(true);
                 const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch application details');
+                const result = await handleApiResponse(response);
+                if (!result) return;
+                
+                let documentsHtml = 'No documents uploaded';
+                if (result.uploaded_documents_json) {
+                    try {
+                        const docs = JSON.parse(result.uploaded_documents_json);
+                        if (Array.isArray(docs) && docs.length > 0) {
+                            documentsHtml = docs.map(doc => `<a href="/${doc}" target="_blank" class="underline text-primary-600">${doc.split('/').pop()}</a>`).join('<br>');
+                        }
+                    } catch (e) { console.error("Error parsing documents JSON", e); }
                 }
 
-                const application = await response.json();
-                
                 applicationDetails.innerHTML = `
                     <div class="space-y-4">
-                        <div class="application-card">
-                            <h3 class="text-lg font-semibold">Applicant Information</h3>
-                            <p><strong>Name:</strong> ${application.full_name}</p>
-                            <p><strong>Email:</strong> ${application.email}</p>
-                            <p><strong>University:</strong> ${application.university || 'Not specified'}</p>
-                            <p><strong>Country:</strong> ${application.country || 'Not specified'}</p>
+                        <div class="application-card flex flex-col items-center text-center">
+                            <div class="relative w-32 h-32 mx-auto mb-3 group">
+                                <img id="modalProfileImg" src="${result.profile_picture_url ? '/' + result.profile_picture_url : ''}" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-primary-500 shadow bg-gray-100 group-hover:scale-105 transition-transform duration-200" onerror="this.style.display='none';document.getElementById('modalProfileFallback').style.display='flex';">
+                                <div id="modalProfileFallback" style="display:none;" class="absolute inset-0 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 text-4xl font-bold select-none">
+                                    ${result.full_name ? result.full_name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : '?'}
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-xl font-bold text-gray-900 dark:text-white">${result.full_name}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-300 mt-1"><i class="fas fa-envelope mr-1"></i>${result.email_address}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-300 mt-1"><i class="fas fa-phone mr-1"></i>${result.phone_number || 'N/A'}</div>
+                            </div>
+                            <div class="text-sm text-gray-400">Date of Birth: <span class="text-gray-700 dark:text-gray-200">${result.date_of_birth || 'N/A'}</span></div>
                         </div>
-                        
-                        <div class="application-card">
-                            <h3 class="text-lg font-semibold">Application Details</h3>
-                            <p><strong>Scholarship ID:</strong> ${application.scholarship_id}</p>
-                            <p><strong>Submitted:</strong> ${new Date(application.submitted_at).toLocaleString()}</p>
-                        </div>
-                        
-                        <div class="application-card">
-                            <h3 class="text-lg font-semibold">Motivation</h3>
-                            <p class="whitespace-pre-wrap">${application.motivation || 'No motivation provided'}</p>
-                        </div>
-                    </div>
-                `;
-                
+                        <div class="application-card"><h3 class="text-lg font-semibold">Academic Information</h3><p><strong>Preferred University:</strong> ${result.preferred_university || ''}</p><p><strong>Country:</strong> ${result.country || ''}</p></div>
+                        <div class="application-card"><h3 class="text-lg font-semibold">Uploaded Documents</h3>${documentsHtml}</div>
+                    </div>`;
                 showModal();
             } catch (error) {
-                showNotification(error.message, 'error');
                 console.error('Error viewing application:', error);
+                showFetchError('Unable to load application details.');
             } finally {
                 showLoading(false);
             }
         }
 
-        // Delete application
         async function deleteApplication(applicationId) {
-            if (!confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
-                return;
+            if (!confirm('Are you sure you want to delete this application?')) return;
+            try {
+                const response = await fetch(`/api/admin/applications/${applicationId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                await handleApiResponse(response);
+                showNotification('Application deleted successfully', 'success');
+                loadApplications();
+            } catch (error) {
+                showNotification(error.message, 'error');
             }
-            
+        }
+
+        function showLoading(isLoading) {
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+        }
+
+        function showModal() { applicationModal.classList.add('show'); }
+        function hideModal() { applicationModal.classList.remove('show'); }
+
+        function showCreateModal() {
+            currentStepIndex = 0;
+            showStep(0);
+            createApplicationModal.classList.add('show');
+        }
+        function hideCreateModal() { createApplicationModal.classList.remove('show'); }
+
+        async function handleApplicationSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            if (!Array.from(form.querySelectorAll('[required]')).every(el => el.checkValidity())) {
+                for (let i = 0; i < steps.length; i++) {
+                    const step = steps[i];
+                    const invalidInput = Array.from(step.querySelectorAll('[required]')).find(el => !el.checkValidity());
+                    if (invalidInput) {
+                        showStep(i);
+                        invalidInput.reportValidity();
+                        return;
+                    }
+                }
+            }
+
+            const formData = new FormData(form);
+            // Debug: log all form data before submit
+            for (let [key, value] of formData.entries()) {
+                console.log('FORM FIELD:', key, value);
+            }
+            const applicationId = form.dataset.applicationId;
+            const url = applicationId ? `/api/admin/applications/${applicationId}` : '/api/admin/applications';
+            const method = applicationId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+                await handleApiResponse(response);
+                showNotification(`Application ${applicationId ? 'updated' : 'created'} successfully`, 'success');
+                hideCreateModal();
+                loadApplications();
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function loadScholarshipsAndPopulateSelects(selectedUniversity = null) {
+            try {
+                const response = await fetch('/api/scholarships', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const scholarships = await response.json();
+                const universitySelect = document.getElementById('preferredUniversity');
+                const scholarshipIdInput = document.getElementById('scholarship_id');
+                const countryInput = document.getElementById('countryFilter');
+
+                universitySelect.innerHTML = '<option value="">Select a university</option>';
+                scholarships.forEach(sch => {
+                    const option = document.createElement('option');
+                    option.value = sch.name;
+                    option.textContent = sch.name;
+                    option.dataset.scholarshipId = sch.id;
+                    option.dataset.country = sch.country || '';
+                    if (selectedUniversity === sch.name) {
+                        option.selected = true;
+                    }
+                    universitySelect.appendChild(option);
+                });
+
+                function syncFields() {
+                    const selectedOption = universitySelect.options[universitySelect.selectedIndex];
+                    if (selectedOption && selectedOption.value) {
+                        scholarshipIdInput.value = selectedOption.dataset.scholarshipId;
+                        // We no longer auto-fill the country. It's an independent selection.
+                    } else {
+                        scholarshipIdInput.value = '';
+                    }
+                }
+                universitySelect.addEventListener('change', syncFields);
+                if (selectedUniversity) syncFields();
+            } catch (error) {
+                showNotification('Failed to load scholarships', 'error');
+            }
+        }
+
+        async function updateApplication(applicationId) {
             try {
                 showLoading(true);
                 const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
+                const appData = await handleApiResponse(response);
+                if (!appData) return;
+                
+                profilePictureInput.required = false;
 
-                if (!response.ok) {
-                    throw new Error('Failed to delete application');
+                await loadScholarshipsAndPopulateSelects(appData.preferred_university);
+                
+                const fieldMapping = {
+                    full_name: 'fullName', email_address: 'emailAddress', date_of_birth: 'dob', gender: 'gender',
+                    phone_number: 'phone', address: 'address', preferred_university: 'preferredUniversity',
+                    country: 'countryFilter', academic_level: 'academicLevel', intended_major: 'intendedMajor',
+                    gpa_academic_performance: 'gpaAcademicPerformance', extracurricular_activities: 'extracurricularActivities',
+                    parent_guardian_name: 'parentGuardianName', parent_guardian_contact: 'parentGuardianContact',
+                    financial_need_statement: 'financialNeedStatement', how_heard_about: 'howHeardAbout',
+                    motivation_statement: 'motivationStatement'
+                };
+
+                for (const [key, id] of Object.entries(fieldMapping)) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = appData[key] || '';
                 }
+                document.querySelector('input[name="terms_agreed"]').checked = !!appData.terms_agreed;
 
-                showNotification('Application deleted successfully', 'success');
-                await loadApplications();
+                if (profilePreview) {
+                    const imageUrl = appData.profile_picture_url ? `/${appData.profile_picture_url}` : defaultAvatar;
+                    profilePreview.src = imageUrl;
+                    profilePreview.onerror = () => {
+                        profilePreview.src = defaultAvatar;
+                    };
+                    profilePreview.classList.remove('hidden');
+                    profilePlaceholder.classList.add('hidden');
+                }
+                
+                adminScholarshipForm.dataset.applicationId = applicationId;
+                document.querySelector('#createApplicationModal h2').textContent = 'Update Application';
+                adminScholarshipForm.querySelector('button[type="submit"]').textContent = 'Update Application';
+                showCreateModal();
             } catch (error) {
-                showNotification(error.message, 'error');
-                console.error('Error deleting application:', error);
+                console.error('Error loading application for update:', error);
+                showFetchError('Unable to load application details.');
             } finally {
                 showLoading(false);
             }
         }
 
-        // Show/hide loading indicator
-        function showLoading(loading) {
-            if (loading) {
-                loadingIndicator.classList.remove('hidden');
-            } else {
-                loadingIndicator.classList.add('hidden');
-            }
-        }
-
-        // Show modal
-        function showModal() {
-            document.getElementById('applicationModal').classList.add('show');
-        }
-
-        // Hide modal
-        function hideModal() {
-            document.getElementById('applicationModal').classList.remove('show');
-            currentApplicationId = null;
-        }
-
-        // Show notification
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                <span>${message}</span>
-            `;
+            notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i><span>${message}</span>`;
             document.body.appendChild(notification);
-
             setTimeout(() => {
                 notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100%)';
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
 
-        // Theme management
         function initializeTheme() {
             const isDark = localStorage.getItem('darkMode') === 'true';
             document.documentElement.classList.toggle('dark', isDark);
-            updateThemeIcon(isDark);
+            document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
         }
 
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('darkMode', isDark);
-            updateThemeIcon(isDark);
+            document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        function updateThemeIcon(isDark) {
-            const icon = document.getElementById('theme-icon');
-            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-        }
-
-        // Sidebar management
         function initializeSidebar() {
-            const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isSidebarCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.main-content').classList.add('collapsed');
-            }
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            document.getElementById('sidebar').classList.toggle('collapsed', isCollapsed);
+            document.querySelector('.main-content').classList.toggle('collapsed', isCollapsed);
         }
 
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('collapsed');
+            const isCollapsed = document.getElementById('sidebar').classList.toggle('collapsed');
+            document.querySelector('.main-content').classList.toggle('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
 
         function toggleMobileSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('mobile-open');
+            document.getElementById('sidebar').classList.toggle('mobile-open');
         }
 
-        // Close mobile sidebar when clicking outside
-        document.addEventListener('click', (e) => {
-            const sidebar = document.getElementById('sidebar');
-            const mobileToggle = document.getElementById('mobileSidebarToggle');
-            
-            if (window.innerWidth <= 1024 && 
-                !sidebar.contains(e.target) && 
-                !mobileToggle.contains(e.target) && 
-                sidebar.classList.contains('mobile-open')) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 1024) {
-                document.getElementById('sidebar').classList.remove('mobile-open');
-            }
-        });
-
-        // Handle escape key for modal
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && document.getElementById('applicationModal').classList.contains('show')) {
-                hideModal();
-            }
-        });
-
-        // Handle click outside modal to close
-        document.getElementById('applicationModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('applicationModal')) {
-                hideModal();
-            }
-        });
-
-        // Show create modal
-        function showCreateModal() {
-            document.getElementById('createApplicationModal').classList.add('show');
+        function showFetchError(message, retryCallback) {
+            const el = document.getElementById('fetchError');
+            el.querySelector('span').textContent = message;
+            el.classList.remove('hidden');
+            const retryBtn = el.querySelector('button');
+            retryBtn.classList.toggle('hidden', !retryCallback);
+            if(retryCallback) retryBtn.onclick = () => {
+                el.classList.add('hidden');
+                    retryCallback();
+                };
+        }
+        function hideFetchError() {
+            document.getElementById('fetchError').classList.add('hidden');
         }
 
-        // Hide create modal
-        function hideCreateModal() {
-            document.getElementById('createApplicationModal').classList.remove('show');
-            const form = document.getElementById('createApplicationForm');
-            form.reset();
-            form.dataset.applicationId = '';
-            document.querySelector('#createApplicationModal h2').textContent = 'Create New Application';
-            document.querySelector('#createApplicationForm button[type="submit"]').textContent = 'Create Application';
-            document.querySelector('select[name="scholarship_id"]').innerHTML = '<option value="">Select a scholarship...</option>';
-        }
-
-        // Handle create application
-        async function handleCreateApplication(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const applicationId = e.target.dataset.applicationId;
-            const scholarship_id = formData.get('scholarship_id');
-            
-            const applicationData = {
-                full_name: formData.get('full_name'),
-                email: formData.get('email'),
-                university: formData.get('university'),
-                country: formData.get('country'),
-                motivation: formData.get('motivation')
-            };
-            
-            try {
-                showLoading(true);
-                
-                let response;
-                if (applicationId) {
-                    // Update existing application
-                    response = await fetch(`/api/admin/applications/${applicationId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        },
-                        body: JSON.stringify({
-                            ...applicationData,
-                            scholarship_id
-                        })
-                    });
-                } else {
-                    // Create new application
-                    response = await fetch(`/api/scholarships/${scholarship_id}/apply`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        },
-                        body: JSON.stringify(applicationData)
-                    });
+        async function handleApiResponse(response) {
+            if (!response.ok) {
+                // If permission denied, session is likely invalid, so log out.
+                if (response.status === 401 || response.status === 403) {
+                    showNotification('Session expired or permission denied. Please log in again.', 'error');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    // Use a short delay to allow the user to see the notification
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
                 }
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.message || data.error || `Failed to ${applicationId ? 'update' : 'create'} application`);
-                }
-
-                showNotification(`Application ${applicationId ? 'updated' : 'created'} successfully`, 'success');
-                hideCreateModal();
-                await loadApplications();
-            } catch (error) {
-                showNotification(error.message, 'error');
-                console.error(`Error ${applicationId ? 'updating' : 'creating'} application:`, error);
-            } finally {
-                showLoading(false);
+                const errorResult = await response.json().catch(() => ({ message: response.statusText }));
+                throw new Error(errorResult.message || 'An unknown error occurred');
             }
-        }
-
-        // Add new function to load scholarships
-        async function loadScholarships() {
-            try {
-                showLoading(true);
-                const response = await fetch('/api/scholarships', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch scholarships');
-                }
-
-                availableScholarships = await response.json();
-                
-                // Filter only active scholarships
-                const activeScholarships = availableScholarships.filter(s => s.status === 'active');
-                
-                // Update select options
-                const select = document.querySelector('select[name="scholarship_id"]');
-                select.innerHTML = '<option value="">Select a scholarship...</option>';
-                
-                if (activeScholarships.length === 0) {
-                    select.innerHTML += '<option value="" disabled>No active scholarships available</option>';
-                } else {
-                    activeScholarships.forEach(scholarship => {
-                        const amount = scholarship.amount ? `$${scholarship.amount.toLocaleString()}` : 'Amount not specified';
-                        const deadline = scholarship.deadline_date ? 
-                            `(Deadline: ${new Date(scholarship.deadline_date).toLocaleDateString()})` : '';
-                        
-                        select.innerHTML += `
-                            <option value="${scholarship.id}">
-                                ${scholarship.name} - ${scholarship.type.toUpperCase()} - ${amount} ${deadline}
-                            </option>
-                        `;
-                    });
-                }
-            } catch (error) {
-                showNotification('Failed to load scholarships', 'error');
-                console.error('Error loading scholarships:', error);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Add updateApplication function
-        async function updateApplication(applicationId) {
-            try {
-                showLoading(true);
-                
-                // Fetch application details
-                const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch application details');
-                }
-
-                const application = await response.json();
-                
-                // Load scholarships before showing the modal
-                await loadScholarships();
-                
-                // Populate form with application data
-                document.querySelector('input[name="full_name"]').value = application.full_name;
-                document.querySelector('input[name="email"]').value = application.email;
-                document.querySelector('input[name="university"]').value = application.university || '';
-                document.querySelector('input[name="country"]').value = application.country || '';
-                document.querySelector('select[name="scholarship_id"]').value = application.scholarship_id;
-                document.querySelector('textarea[name="motivation"]').value = application.motivation || '';
-                
-                // Add application ID to the form
-                const form = document.getElementById('createApplicationForm');
-                form.dataset.applicationId = applicationId;
-                
-                // Update modal title and submit button text
-                document.querySelector('#createApplicationModal h2').textContent = 'Update Application';
-                document.querySelector('#createApplicationForm button[type="submit"]').textContent = 'Update Application';
-                
-                showCreateModal();
-            } catch (error) {
-                showNotification(error.message, 'error');
-                console.error('Error loading application:', error);
-            } finally {
-                showLoading(false);
-            }
+            if (response.status === 204) return null; 
+            return response.json();
         }
     </script>
 </body>

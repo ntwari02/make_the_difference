@@ -204,7 +204,7 @@
 
                     // Role-based redirect
                     setTimeout(() => {
-                        window.location.href = role === 'admin' ? 'admin_dashboard.html' : 'dashboard.html';
+                        window.location.href = (role === 'admin') ? 'admin_dashboard.html' : 'home.html';
                     }, 1500);
                 } else {
                     throw new Error('Invalid response from server');

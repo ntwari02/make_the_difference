@@ -8,8 +8,11 @@
         <div class="flex justify-between h-16">
             <!-- Logo and Brand Section -->
             <div class="flex items-center">
-                <a href="home.html" class="text-xl font-bold text-gray-800 dark:text-white hover:text-primary-500 dark:hover:text-primary-400 transition-colors">
-                    ScholarshipHub
+                <a href="home.html" class="flex items-center">
+                    <img id="navbarSiteLogo" src="/public/img/default-logo.png" alt="Site Logo" class="h-8 w-8 object-cover rounded-full mr-2">
+                    <span id="navbarSiteName" class="text-xl font-bold text-gray-800 dark:text-white hover:text-primary-500 dark:hover:text-primary-400 transition-colors">
+                        ScholarshipHub
+                    </span>
                 </a>
             </div>
 
@@ -160,4 +163,22 @@
             updateAuthButtons();
         }
     });
+
+    /**
+     * Dynamic Site Name and Logo
+     */
+    async function updateNavbarSiteInfo() {
+        try {
+            const res = await fetch('/api/settings/general');
+            if (!res.ok) throw new Error('Failed to fetch site info');
+            const { siteName, siteLogoUrl } = await res.json();
+            const nameEl = document.getElementById('navbarSiteName');
+            const logoEl = document.getElementById('navbarSiteLogo');
+            if (nameEl && siteName) nameEl.textContent = siteName;
+            if (logoEl && siteLogoUrl) logoEl.src = siteLogoUrl;
+        } catch (err) {
+            // Optionally handle error
+        }
+    }
+    document.addEventListener('DOMContentLoaded', updateNavbarSiteInfo);
 </script> 

@@ -1,7 +1,26 @@
 import express from 'express';
 import db from '../config/database.js';
 import { auth, adminAuth } from '../middleware/auth.js';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 const router = express.Router();
+
+// Multer setup for service images
+const servicesDir = path.resolve('uploads/services');
+if (!fs.existsSync(servicesDir)) {
+  fs.mkdirSync(servicesDir, { recursive: true });
+}
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, servicesDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname.replace(/\s+/g, '_'));
+  }
+});
+const upload = multer({ storage });
 
 // Get all services
 router.get('/', async (req, res) => {
@@ -33,16 +52,22 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create service (admin only)
-router.post('/', adminAuth, async (req, res) => {
+// Create service (admin only, supports file upload or image_url)
+router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, description, image_url } = req.body;
-
+    let finalImageUrl = image_url || null;
+    if (req.file) {
+      // Save relative path for frontend use
+      finalImageUrl = `uploads/services/${req.file.filename}`;
+    }
+    if (!name || !description || !finalImageUrl) {
+      return res.status(400).json({ message: 'Name, description, and image are required.' });
+    }
     const [result] = await db.promise().query(
       'INSERT INTO services (name, description, image_url) VALUES (?, ?, ?)',
-      [name, description, image_url]
+      [name, description, finalImageUrl]
     );
-
     res.status(201).json({
       message: 'Service created successfully',
       id: result.insertId
@@ -54,19 +79,26 @@ router.post('/', adminAuth, async (req, res) => {
 });
 
 // Update service (admin only)
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, description, image_url } = req.body;
-
-    const [result] = await db.promise().query(
-      'UPDATE services SET name = ?, description = ?, image_url = ? WHERE id = ?',
-      [name, description, image_url, req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
+    let finalImageUrl = image_url || null;
+    if (req.file) {
+      finalImageUrl = `uploads/services/${req.file.filename}`;
+    }
+    // Fetch current service to keep existing image if not updated
+    const [currentRows] = await db.promise().query('SELECT * FROM services WHERE id = ?', [req.params.id]);
+    if (currentRows.length === 0) {
       return res.status(404).json({ message: 'Service not found' });
     }
-
+    const current = currentRows[0];
+    const updateName = name || current.name;
+    const updateDesc = description || current.description;
+    const updateImageUrl = finalImageUrl || current.image_url;
+    const [result] = await db.promise().query(
+      'UPDATE services SET name = ?, description = ?, image_url = ? WHERE id = ?',
+      [updateName, updateDesc, updateImageUrl, req.params.id]
+    );
     res.json({ message: 'Service updated successfully' });
   } catch (error) {
     console.error(error);
