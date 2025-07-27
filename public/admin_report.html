@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar { width: 280px; transition: all 0.3s ease; }
+        .sidebar.collapsed { width: 80px; }
+        .sidebar-item-text { transition: opacity 0.3s ease; }
+        .sidebar.collapsed .sidebar-item-text { opacity: 0; display: none; }
+        .main-content { transition: margin-left 0.3s ease; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -280px; z-index: 40; }
+            .sidebar.mobile-open { left: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Admin Reports</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
+                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
+        <div class="h-full flex flex-col">
+            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="flex-1 px-4 space-y-2">
+                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="sidebar-item-text ml-3">Dashboard</span>
+                </a>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">User Management</div>
+                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="sidebar-item-text ml-3">Users</span>
+                    </a>
+                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">Scholarship Management</div>
+                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-graduation-cap w-6"></i>
+                        <span class="sidebar-item-text ml-3">Scholarships</span>
+                    </a>
+                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Applications</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">System Settings</div>
+                    <a href="admin_generalSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="sidebar-item-text ml-3">General Settings</span>
+                    </a>
+                    <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-envelope w-6"></i>
+                        <span class="sidebar-item-text ml-3">Email Templates</span>
+                    </a>
+                    <a href="admin_backup.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-database w-6"></i>
+                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                    </a>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">Reports</div>
+                    <button class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" id="reportsSubmenuToggle">
+                        <i class="fas fa-file-alt w-6"></i>
+                        <span class="sidebar-item-text ml-3">Reports</span>
+                        <i class="fas fa-chevron-down ml-auto"></i>
+                    </button>
+                    <div id="reportsSubmenu" class="hidden space-y-2 pl-6">
+                        <a href="admin_analytics.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                            <i class="fas fa-chart-line w-6"></i>
+                            <span class="sidebar-item-text ml-3">Analytics</span>
+                        </a>
+                        <a href="admin_report.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                            <i class="fas fa-file-export w-6"></i>
+                            <span class="sidebar-item-text ml-3">Reports</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Reports Overview</h2>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Reports</h3>
+                    <p class="text-2xl font-bold text-blue-500">120</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pending Reports</h3>
+                    <p class="text-2xl font-bold text-yellow-500">30</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Reviewed Reports</h3>
+                    <p class="text-2xl font-bold text-green-500">80</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Exported Reports</h3>
+                    <p class="text-2xl font-bold text-purple-500">10</p>
+                </div>
+            </div>
+            <!-- Interactive Reports Section -->
+            <div class="flex space-x-4 mb-6">
+                <select id="reportTypeFilter" class="px-4 py-2 border rounded-md">
+                    <option value="all">All Reports</option>
+                    <option value="pending">Pending</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="exported">Exported</option>
+                </select>
+                <button id="generateReportBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Generate Report</button>
+                <button id="exportReportBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export Report</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Reports</h3>
+                    <ul id="recentReportsList" class="space-y-2">
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Report 1</span>
+                            <span>Pending</span>
+                        </li>
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Report 2</span>
+                            <span>Reviewed</span>
+                        </li>
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Report 3</span>
+                            <span>Exported</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Report Insights</h3>
+                    <ul id="reportInsightsList" class="space-y-2">
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Insight 1</span>
+                            <span>Details</span>
+                        </li>
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Insight 2</span>
+                            <span>Details</span>
+                        </li>
+                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                            <span>Insight 3</span>
+                            <span>Details</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Advanced Report Features -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Advanced Report Features</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Report Filters</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Apply filters to customize report data.</p>
+                        <div class="flex space-x-4 mt-4">
+                            <select id="dateRangeFilter" class="px-4 py-2 border rounded-md">
+                                <option value="all">All Dates</option>
+                                <option value="lastWeek">Last Week</option>
+                                <option value="lastMonth">Last Month</option>
+                                <option value="lastYear">Last Year</option>
+                            </select>
+                            <select id="categoryFilter" class="px-4 py-2 border rounded-md">
+                                <option value="all">All Categories</option>
+                                <option value="finance">Finance</option>
+                                <option value="operations">Operations</option>
+                                <option value="marketing">Marketing</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Report Visualization</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Visualize report data with charts.</p>
+                        <!-- Simplified Chart Section -->
+                        <div class="mt-8">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Simplified Report Chart</h3>
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                                <canvas id="simpleReportChart" class="w-full h-64"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Advanced Filtering Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-white">Advanced Filters</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Filter reports by multiple criteria.</p>
+                <div class="flex space-x-4 mt-4">
+                    <input type="text" id="keywordSearch" class="px-4 py-2 border rounded-md" placeholder="Search by keyword">
+                    <select id="multiCategoryFilter" class="px-4 py-2 border rounded-md" multiple>
+                        <option value="finance">Finance</option>
+                        <option value="operations">Operations</option>
+                        <option value="marketing">Marketing</option>
+                    </select>
+                    <select id="multiDateRangeFilter" class="px-4 py-2 border rounded-md" multiple>
+                        <option value="lastWeek">Last Week</option>
+                        <option value="lastMonth">Last Month</option>
+                        <option value="lastYear">Last Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Comparative Chart Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-white">Comparative Analysis</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Compare report data across categories.</p>
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Bar Chart</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <canvas id="comparativeChart" class="w-full h-64"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Options Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-white">Export Options</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Export reports in various formats.</p>
+                <div class="flex space-x-4 mt-4">
+                    <button id="exportPDFBtn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Export as PDF</button>
+                    <button id="exportExcelBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export as Excel</button>
+                    <button id="exportCSVBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Export as CSV</button>
+                </div>
+            </div>
+
+            <!-- Detailed Report Table Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-white">Detailed Reports</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-300">View and manage detailed report data.</p>
+                <table id="reportTable" class="w-full border-collapse border border-gray-300 dark:border-gray-700">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-700">
+                            <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Report Name</th>
+                            <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Category</th>
+                            <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Date</th>
+                            <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">Report 1</td>
+                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">Finance</td>
+                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">2025-07-20</td>
+                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">
+                                <button class="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 editReportBtn">Edit</button>
+                                <button class="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 deleteReportBtn">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <!-- Interactive Modals -->
+    <div id="editReportModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 w-96">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Edit Report</h3>
+            <input type="text" id="editReportName" class="px-4 py-2 border rounded-md w-full mb-4" placeholder="Report Name">
+            <button id="saveEditReportBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
+            <button id="cancelEditReportBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
+        </div>
+    </div>
+
+    <div id="deleteReportModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 w-96">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Delete Report</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Are you sure you want to delete this report?</p>
+            <button id="confirmDeleteReportBtn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>
+            <button id="cancelDeleteReportBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Real-Time Notifications -->
+    <div id="notification" class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-md">
+        <p id="notificationMessage">Action successful!</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Sidebar interactivity
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                mainContent.style.marginLeft = '80px';
+            } else {
+                mainContent.style.marginLeft = '280px';
+            }
+        }
+        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        themeToggle.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+        });
+
+        // Interactive functionality
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const exportReportBtn = document.getElementById('exportReportBtn');
+        generateReportBtn.addEventListener('click', () => {
+            alert('Report generated!');
+        });
+        exportReportBtn.addEventListener('click', () => {
+            alert('Report exported!');
+        });
+
+        // Simplified Report Chart
+        const simpleCtx = document.getElementById('simpleReportChart').getContext('2d');
+        const simpleReportChart = new Chart(simpleCtx, {
+            type: 'line',
+            data: {
+                labels: ['January', 'February', 'March', 'April', 'May'],
+                datasets: [{
+                    label: 'Report Data',
+                    data: [10, 20, 30, 40, 50],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: 'rgba(75, 192, 192, 1)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: 'rgba(75, 192, 192, 1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Comparative Chart
+        const comparativeCtx = document.getElementById('comparativeChart').getContext('2d');
+        const comparativeChart = new Chart(comparativeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Finance', 'Operations', 'Marketing'],
+                datasets: [
+                    {
+                        label: 'Last Week',
+                        data: [15, 25, 35],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Last Month',
+                        data: [20, 30, 40],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: 'rgba(75, 192, 192, 1)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: 'rgba(75, 192, 192, 1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Export functionality
+        document.getElementById('exportPDFBtn').addEventListener('click', () => {
+            alert('Exporting as PDF...');
+        });
+        document.getElementById('exportExcelBtn').addEventListener('click', () => {
+            alert('Exporting as Excel...');
+        });
+        document.getElementById('exportCSVBtn').addEventListener('click', () => {
+            alert('Exporting as CSV...');
+        });
+
+        // Sidebar Submenu Toggle
+        const reportsSubmenuToggle = document.getElementById('reportsSubmenuToggle');
+        const reportsSubmenu = document.getElementById('reportsSubmenu');
+
+        reportsSubmenuToggle.addEventListener('click', () => {
+            reportsSubmenu.classList.toggle('hidden');
+        });
+
+        // Modals Interactivity
+        const editReportModal = document.getElementById('editReportModal');
+        const deleteReportModal = document.getElementById('deleteReportModal');
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notificationMessage');
+
+        document.querySelectorAll('.editReportBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                editReportModal.classList.remove('hidden');
+            });
+        });
+
+        document.querySelectorAll('.deleteReportBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                deleteReportModal.classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('saveEditReportBtn').addEventListener('click', () => {
+            editReportModal.classList.add('hidden');
+            showNotification('Report edited successfully!');
+        });
+
+        document.getElementById('cancelEditReportBtn').addEventListener('click', () => {
+            editReportModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirmDeleteReportBtn').addEventListener('click', () => {
+            deleteReportModal.classList.add('hidden');
+            showNotification('Report deleted successfully!');
+        });
+
+        document.getElementById('cancelDeleteReportBtn').addEventListener('click', () => {
+            deleteReportModal.classList.add('hidden');
+        });
+
+        function showNotification(message) {
+            notificationMessage.textContent = message;
+            notification.classList.remove('hidden');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Drag-and-Drop Functionality
+        const reportTableBody = document.querySelector('#reportTable tbody');
+        let draggedRow = null;
+
+        reportTableBody.addEventListener('dragstart', (e) => {
+            draggedRow = e.target;
+        });
+
+        reportTableBody.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        reportTableBody.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedRow && e.target.tagName === 'TR') {
+                reportTableBody.insertBefore(draggedRow, e.target.nextSibling);
+            }
+        });
+    </script>
+</body>
+</html>
