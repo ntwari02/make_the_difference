@@ -1,4 +1,3 @@
-on country select remove the above input and and perform a letter filter if a user write a country starting letter for example "A" returns all coutries that starts by a in order to increase a country selection give me the complete codes:
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +33,10 @@ on country select remove the above input and and perform a letter filter if a us
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
     <style>
         :root {
             --bg-primary: #ffffff;
@@ -65,36 +68,11 @@ on country select remove the above input and and perform a letter filter if a us
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Sidebar styles */
-        .sidebar {
-            width: 280px;
-            transition: all 0.3s ease;
-            background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-        }
-
-        .sidebar.collapsed {
-            width: 80px;
-        }
-
-        .sidebar.collapsed .sidebar-item-text {
-            display: none;
-        }
-
-        .sidebar.collapsed .text-xs {
-            display: none;
-        }
-
+        /* Main content styles */
         .main-content {
-            transition: margin-left 0.3s ease;
-            margin-left: 280px;
             padding-top: 4rem;
             min-height: 100vh;
             background-color: var(--bg-primary);
-        }
-
-        .main-content.collapsed {
-            margin-left: 80px;
         }
 
         /* Status badges */
@@ -295,192 +273,92 @@ on country select remove the above input and and perform a letter filter if a us
         }
     </style>
 </head>
-<body class="min-h-screen transition-colors duration-200">
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <!-- Admin Sidebar Container -->
+    <div id="admin-sidebar-container"></div>
+
     <!-- Navigation Bar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-700" style="background-color: var(--bg-secondary);">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold" style="color: var(--text-primary);">Admin Dashboard</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none" style="color: var(--text-primary);">
-                        <i id="theme-icon" class="fas fa-moon"></i>
-                    </button>
-                    <span id="adminName" style="color: var(--text-secondary);"></span>
-                    <button id="logoutBtn" class="text-red-500 hover:text-red-600">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] shadow-lg z-30">
-        <div class="h-full flex flex-col">
-            <!-- Collapse Button -->
-            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-
-            <!-- Sidebar Items -->
-            <div class="flex-1 px-4 space-y-2">
-                <!-- Dashboard -->
-                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-tachometer-alt w-6"></i>
-                    <span class="sidebar-item-text ml-3">Dashboard</span>
-                </a>
-
-                <!-- User Management -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        User Management
-                    </div>
-                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-users w-6"></i>
-                        <span class="sidebar-item-text ml-3">Users</span>
-                    </a>
-                    <a href="#roles" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-user-shield w-6"></i>
-                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
-                    </a>
-                </div>
-
-                <!-- Scholarship Management -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        Scholarship Management
-                    </div>
-                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-graduation-cap w-6"></i>
-                        <span class="sidebar-item-text ml-3">Scholarships</span>
-                    </a>
-                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-alt w-6"></i>
-                        <span class="sidebar-item-text ml-3">Applications</span>
-                    </a>
-                </div>
-
-                <!-- System Settings -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        System Settings
-                    </div>
-                    <a href="admin_general_setting.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-cog w-6"></i>
-                        <span class="sidebar-item-text ml-3">General Settings</span>
-                    </a>
-                    <a href="#email" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-envelope w-6"></i>
-                        <span class="sidebar-item-text ml-3">Email Templates</span>
-                    </a>
-                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-database w-6"></i>
-                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
-                    </a>
-                </div>
-
-                <!-- Reports -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        Reports
-                    </div>
-                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-chart-line w-6"></i>
-                        <span class="sidebar-item-text ml-3">Analytics</span>
-                    </a>
-                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-export w-6"></i>
-                        <span class="sidebar-item-text ml-3">Export Reports</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Mobile Sidebar Toggle -->
-    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
-        <i class="fas fa-bars"></i>
-    </button>
+    <div id="admin-header-container" data-page-title="Applications"></div>
 
     <!-- Main Content -->
-    <main class="main-content">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold" style="color: var(--text-primary);">Applications Management</h2>
-                    <p class="text-gray-600 dark:text-gray-400">Manage all scholarship applications</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                    <button id="createApplicationBtn" 
-                        class="px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200">
-                        <i class="fas fa-plus mr-2"></i>Create Application
-                    </button>
-                    <div class="relative w-full">
-                        <input type="text" id="searchInput" placeholder="Search applications..." 
-                            class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
-                            bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                            focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+    <main class="admin-main-content">
+        <div class="admin-content-container">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold" style="color: var(--text-primary);">Applications Management</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Manage all scholarship applications</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                        <button id="createApplicationBtn" 
+                            class="px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200">
+                            <i class="fas fa-plus mr-2"></i>Create Application
+                        </button>
+                        <div class="relative w-full">
+                            <input type="text" id="searchInput" placeholder="Search applications..." 
+                                class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
+                                bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                                focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Applications Table -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Applicant
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    University
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Country
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Applied Date
-                                </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="applicationsTable" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Applications will be loaded here -->
-                        </tbody>
-                    </table>
+                <!-- Applications Table -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Applicant
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        University
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Country
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Applied Date
+                                    </th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicationsTable" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Applications will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="loadingIndicator" class="p-4 text-center hidden">
+                        <div class="loading-spinner inline-block"></div>
+                        <span class="ml-2 text-gray-600 dark:text-gray-400">Loading applications...</span>
+                    </div>
+                    <div id="noApplications" class="p-8 text-center text-gray-500 dark:text-gray-400 hidden">
+                        No applications found matching your criteria.
+                    </div>
+                    <div id="fetchError" class="p-8 text-center text-red-600 dark:text-red-400 hidden">
+                        <span id="fetchErrorMessage"></span>
+                        <br>
+                        <button id="retryFetchBtn" class="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600">Retry</button>
+                    </div>
                 </div>
-                <div id="loadingIndicator" class="p-4 text-center hidden">
-                    <div class="loading-spinner inline-block"></div>
-                    <span class="ml-2 text-gray-600 dark:text-gray-400">Loading applications...</span>
-                </div>
-                <div id="noApplications" class="p-8 text-center text-gray-500 dark:text-gray-400 hidden">
-                    No applications found matching your criteria.
-                </div>
-                <div id="fetchError" class="p-8 text-center text-red-600 dark:text-red-400 hidden">
-                    <span id="fetchErrorMessage"></span>
-                    <br>
-                    <button id="retryFetchBtn" class="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600">Retry</button>
-                </div>
-            </div>
 
-            <!-- Pagination -->
-            <div class="flex justify-between items-center mt-4">
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    Showing <span id="startRange">1</span> to <span id="endRange">10</span> of <span id="totalApplications">0</span> applications
-                </div>
-                <div class="flex space-x-2">
-                    <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
-                        Previous
-                    </button>
-                    <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
-                        Next
-                    </button>
+                <!-- Pagination -->
+                <div class="flex justify-between items-center mt-4">
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Showing <span id="startRange">1</span> to <span id="endRange">10</span> of <span id="totalApplications">0</span> applications
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            Previous
+                        </button>
+                        <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -761,7 +639,6 @@ on country select remove the above input and and perform a letter filter if a us
             document.getElementById('adminName').textContent = user.fullName || 'Admin';
             
             initializeTheme();
-            initializeSidebar();
             setupEventListeners();
             loadApplications();
             populateCountries();
@@ -774,9 +651,7 @@ on country select remove the above input and and perform a letter filter if a us
             closeBtn.addEventListener('click', hideModal);
             closeModalBtn.addEventListener('click', hideModal);
             
-            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-            document.getElementById('sidebarCollapseBtn').addEventListener('click', toggleSidebar);
-            document.getElementById('mobileSidebarToggle').addEventListener('click', toggleMobileSidebar);
+
             
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 localStorage.removeItem('token');
@@ -1113,33 +988,7 @@ on country select remove the above input and and perform a letter filter if a us
             }, 3000);
         }
 
-        function initializeTheme() {
-            const isDark = localStorage.getItem('darkMode') === 'true';
-            document.documentElement.classList.toggle('dark', isDark);
-            document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-        }
 
-        function toggleTheme() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', isDark);
-            document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-        }
-
-        function initializeSidebar() {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            document.getElementById('sidebar').classList.toggle('collapsed', isCollapsed);
-            document.querySelector('.main-content').classList.toggle('collapsed', isCollapsed);
-        }
-
-        function toggleSidebar() {
-            const isCollapsed = document.getElementById('sidebar').classList.toggle('collapsed');
-            document.querySelector('.main-content').classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-
-        function toggleMobileSidebar() {
-            document.getElementById('sidebar').classList.toggle('mobile-open');
-        }
 
         function showFetchError(message, retryCallback) {
             const el = document.getElementById('fetchError');

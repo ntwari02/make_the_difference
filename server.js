@@ -6,6 +6,7 @@ import cors from 'cors';
 import session from 'express-session';
 import dotenv from 'dotenv';
 import pool from './config/database.js';
+
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import roleRoutes from './routes/roles.js';
@@ -18,6 +19,9 @@ import contactRoutes from './routes/contact.js';
 import newsletterRoutes from './routes/newsletter.js';
 import applicationRoutes from './routes/applications.js';
 import adminRoutes from './routes/admin.js';
+import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
+import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
+import notificationsRoutes from './routes/notifications.js';
 
 dotenv.config();
 
@@ -61,6 +65,9 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/subscribe-newsletter', newsletterRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
+app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
+app.use('/api/notifications', notificationsRoutes);
 
 // Serve uploads statically so profile pictures and documents are accessible
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -99,4 +106,4 @@ app.use((err, req, res, next) => {
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-}); 
+});

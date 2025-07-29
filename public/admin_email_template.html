@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Email Templates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
+</head>
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Admin Email Templates"></div>
+    <main class="admin-main-content">
+        <div class="admin-content-container">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Email Templates Management</h2>
+            <!-- Template Variables Guide -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6 text-sm text-blue-800 dark:text-blue-200">
+                <strong>Template Variables:</strong> Use <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{name}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{scholarship}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{date}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{status}}</code> in your templates. These will be replaced with real data when sending emails.
+            </div>
+            <!-- Tabs for template categories -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" data-tab="application">Application</button>
+                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-tab="reminder">Reminders</button>
+                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-tab="custom">Custom</button>
+            </div>
+            <!-- Application Templates -->
+            <div id="tab-application" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Received</h3>
+                        <textarea id="template-application-received" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nYour application for {{scholarship}} has been received."></textarea>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Approved</h3>
+                        <textarea id="template-application-approved" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nCongratulations! Your application for {{scholarship}} has been approved."></textarea>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 md:col-span-2">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Rejected</h3>
+                        <textarea id="template-application-rejected" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nWe regret to inform you that your application for {{scholarship}} was not successful."></textarea>
+                    </div>
+                </div>
+            </div>
+            <!-- Reminder Templates -->
+            <div id="tab-reminder" class="tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Document Submission Reminder</h3>
+                    <textarea id="template-reminder-documents" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nThis is a reminder to submit your required documents for {{scholarship}} by {{date}}."></textarea>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Interview Schedule</h3>
+                    <textarea id="template-reminder-interview" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nYour interview for {{scholarship}} is scheduled on {{date}}."></textarea>
+                </div>
+            </div>
+            <!-- Custom Templates -->
+            <div id="tab-custom" class="tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Custom Notification</h3>
+                    <textarea id="template-custom" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Type your custom email template here..."></textarea>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6">
+                <button id="testSendBtn" class="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Test Send</button>
+                <button id="saveTemplatesBtn" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Templates</button>
+            </div>
+            <div id="templatesSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold">Templates saved successfully!</div>
+        <!-- Test Send Modal -->
+        <div id="testSendModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm">
+                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Test Send Email</h3>
+                <form id="testSendForm" class="space-y-4">
+                    <div>
+                        <label for="testEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recipient Email</label>
+                        <input type="email" id="testEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div>
+                        <label for="testTemplateType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Template</label>
+                        <select id="testTemplateType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                            <option value="application-received">Application Received</option>
+                            <option value="application-approved">Application Approved</option>
+                            <option value="application-rejected">Application Rejected</option>
+                            <option value="reminder-documents">Document Reminder</option>
+                            <option value="reminder-interview">Interview Schedule</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="closeTestSendModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Send Test</button>
+                    </div>
+                </form>
+                <div id="testSendSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold">Test email sent (simulated)!</div>
+            </div>
+        </div>
+        </div>
+    </main>
+    <script>
+        // Tabs interactivity
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                tabBtns.forEach(b => b.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300'));
+                this.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
+                tabContents.forEach(tc => tc.classList.add('hidden'));
+                document.getElementById('tab-' + this.dataset.tab).classList.remove('hidden');
+            });
+        });
+        // Responsive: show first tab by default
+        document.getElementById('tab-application').classList.remove('hidden');
+        // Sidebar interactivity (same as other admin pages)
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                mainContent.style.marginLeft = '80px';
+            } else {
+                mainContent.style.marginLeft = '280px';
+            }
+        }
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('mobile-open');
+        }
+        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                mainContent.style.marginLeft = '0';
+                sidebar.classList.remove('collapsed');
+            } else {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.style.marginLeft = '80px';
+                } else {
+                    mainContent.style.marginLeft = '280px';
+                }
+            }
+        });
+        if (window.innerWidth <= 768) {
+            mainContent.style.marginLeft = '0';
+        }
+
+        // Auth and admin name
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+        document.getElementById('adminName').textContent = user.full_name || 'Admin';
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        });
+        // Email templates interactivity
+        const saveTemplatesBtn = document.getElementById('saveTemplatesBtn');
+        const templatesSuccess = document.getElementById('templatesSuccess');
+        
+        // Load templates from backend
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/email-templates', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const templates = await response.json();
+                    
+                    // Map templates to form fields
+                    templates.forEach(template => {
+                        const fieldId = `template-${template.name.toLowerCase().replace(/\s+/g, '-')}`;
+                        const field = document.getElementById(fieldId);
+                        if (field) {
+                            field.value = template.content;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+        
+        // Save templates to backend
+        saveTemplatesBtn.addEventListener('click', async function() {
+            try {
+                const templates = [
+                    {
+                        name: 'Application Received',
+                        subject: 'Application Received - {{scholarship}}',
+                        content: document.getElementById('template-application-received').value,
+                        category: 'application',
+                        is_active: true
+                    },
+                    {
+                        name: 'Application Approved',
+                        subject: 'Application Approved - {{scholarship}}',
+                        content: document.getElementById('template-application-approved').value,
+                        category: 'application',
+                        is_active: true
+                    },
+                    {
+                        name: 'Application Rejected',
+                        subject: 'Application Rejected - {{scholarship}}',
+                        content: document.getElementById('template-application-rejected').value,
+                        category: 'application',
+                        is_active: true
+                    },
+                    {
+                        name: 'Document Submission Reminder',
+                        subject: 'Document Submission Reminder - {{scholarship}}',
+                        content: document.getElementById('template-reminder-documents').value,
+                        category: 'reminder',
+                        is_active: true
+                    },
+                    {
+                        name: 'Interview Schedule',
+                        subject: 'Interview Schedule - {{scholarship}}',
+                        content: document.getElementById('template-reminder-interview').value,
+                        category: 'reminder',
+                        is_active: true
+                    }
+                ];
+
+                const response = await fetch('/api/email-templates/bulk-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ templates })
+                });
+
+                if (response.ok) {
+                    templatesSuccess.classList.remove('hidden');
+                    setTimeout(() => templatesSuccess.classList.add('hidden'), 2000);
+                } else {
+                    const error = await response.json();
+                    alert('Error saving templates: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error saving templates:', error);
+                alert('Error saving templates. Please try again.');
+            }
+        });
+        // Test send modal logic
+        const testSendBtn = document.getElementById('testSendBtn');
+        const testSendModal = document.getElementById('testSendModal');
+        const closeTestSendModal = document.getElementById('closeTestSendModal');
+        const testSendForm = document.getElementById('testSendForm');
+        const testSendSuccess = document.getElementById('testSendSuccess');
+        testSendBtn.addEventListener('click', () => {
+            testSendModal.classList.remove('hidden');
+            testSendSuccess.classList.add('hidden');
+            testSendForm.reset();
+        });
+        closeTestSendModal.addEventListener('click', () => {
+            testSendModal.classList.add('hidden');
+        });
+        testSendForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const recipientEmail = document.getElementById('testEmail').value;
+            const templateType = document.getElementById('testTemplateType').value;
+            const customContent = document.getElementById('template-custom').value;
+            
+            try {
+                const response = await fetch('/api/email-templates/test-send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        recipient_email: recipientEmail,
+                        template_type: templateType,
+                        custom_content: templateType === 'custom' ? customContent : null
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    testSendSuccess.textContent = result.message;
+                    testSendSuccess.classList.remove('hidden');
+                    setTimeout(() => testSendModal.classList.add('hidden'), 2000);
+                } else {
+                    const error = await response.json();
+                    alert('Error sending test email: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error sending test email:', error);
+                alert('Error sending test email. Please try again.');
+            }
+        });
+        loadTemplates();
+    </script>
+</body>
+</html>

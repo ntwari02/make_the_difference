@@ -28,6 +28,10 @@
     <link rel="prefetch" href="scholarship.html">
     <link rel="prefetch" href="login.html">
     <link rel="prefetch" href="signup.html">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
     <style>
         /* Custom styles for modal */
         .modal-overlay {
@@ -83,265 +87,124 @@
         .welcome-fade-out {
             animation: fadeOut 0.3s ease-out forwards;
         }
-
-        /* Sidebar styles */
-        .sidebar {
-            width: 280px;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar.collapsed {
-            width: 80px;
-        }
-
-        .sidebar-item-text {
-            transition: opacity 0.3s ease;
-        }
-
-        .sidebar.collapsed .sidebar-item-text {
-            opacity: 0;
-            display: none;
-        }
-
-        .main-content {
-            transition: margin-left 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -280px;
-                z-index: 40;
-            }
-
-            .sidebar.mobile-open {
-                left: 0;
-            }
-        }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Admin Dashboard</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
-                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
-                    </button>
-                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
-                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Admin Dashboard"></div>
+    <main class="admin-main-content">
+        <div class="admin-content-container">
+            <div id="welcomeSection" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-7xl px-4 opacity-100 transition-opacity duration-300 ease-out hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
+                    <p class="text-gray-600 dark:text-gray-300">Manage your platform, users, and content from here.</p>
                 </div>
             </div>
-        </div>
-    </nav>
 
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
-        <div class="h-full flex flex-col">
-            <!-- Collapse Button -->
-            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-
-            <!-- Sidebar Items -->
-            <div class="flex-1 px-4 space-y-2">
-                <!-- Dashboard -->
-                <a href="#dashboard" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-tachometer-alt w-6"></i>
-                    <span class="sidebar-item-text ml-3">Dashboard</span>
-                </a>
-
-                <!-- User Management -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        User Management
+            <div id="dashboardContent" class="opacity-100 transition-all duration-300 ease-out space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
+                                <i class="fas fa-users text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Users</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalUsers">0</p>
+                            </div>
+                        </div>
                     </div>
-                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-users w-6"></i>
-                        <span class="sidebar-item-text ml-3">Users</span>
-                    </a>
-                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-user-shield w-6"></i>
-                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
-                    </a>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
+                                <i class="fas fa-handshake text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Partners</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalPartners">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
+                                <i class="fas fa-graduation-cap text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Scholarships</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalScholarships">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
+                                <i class="fas fa-file-alt text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Applications</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalApplications">0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Scholarship Management -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        Scholarship Management
+                <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
+                        <div class="h-[370px]">
+                            <canvas id="applicationTrendsChart"></canvas>
+                        </div>
                     </div>
-                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-graduation-cap w-6"></i>
-                        <span class="sidebar-item-text ml-3">Scholarships</span>
-                    </a>
-                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-alt w-6"></i>
-                        <span class="sidebar-item-text ml-3">Applications</span>
-                    </a>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
+                        <div class="h-[370px]">
+                            <canvas id="scholarshipDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
+                        <div class="h-[370px]">
+                            <canvas id="userRegistrationChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
+                        <div class="h-[370px] flex items-center justify-center">
+                            <div class="w-full max-w-[300px]">
+                                <canvas id="statusOverviewChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- System Settings -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        System Settings
-                    </div>
-                    <a href="admin_general_setting.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-cog w-6"></i>
-                        <span class="sidebar-item-text ml-3">General Settings</span>
-                    </a>
-                    <a href="#email" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-envelope w-6"></i>
-                        <span class="sidebar-item-text ml-3">Email Templates</span>
-                    </a>
-                    <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-database w-6"></i>
-                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
-                    </a>
-                </div>
-
-                <!-- Reports -->
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                        Reports
-                    </div>
-                    <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-chart-line w-6"></i>
-                        <span class="sidebar-item-text ml-3">Analytics</span>
-                    </a>
-                    <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-export w-6"></i>
-                        <span class="sidebar-item-text ml-3">Export Reports</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Mobile Sidebar Toggle -->
-    <button id="mobileSidebarToggle" class="fixed bottom-4 right-4 md:hidden bg-primary-500 text-white p-4 rounded-full shadow-lg z-50">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Main Content -->
-    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div id="welcomeSection" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-7xl px-4 opacity-100 transition-opacity duration-300 ease-out hidden">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
-                <p class="text-gray-600 dark:text-gray-300">Manage your platform, users, and content from here.</p>
-            </div>
-        </div>
-
-        <div id="dashboardContent" class="opacity-100 transition-all duration-300 ease-out space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
-                            <i class="fas fa-users text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Users</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalUsers">0</p>
-                        </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
+                        <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
-                            <i class="fas fa-handshake text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Partners</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalPartners">0</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
-                            <i class="fas fa-graduation-cap text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Scholarships</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalScholarships">0</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
-                            <i class="fas fa-file-alt text-2xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Applications</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalApplications">0</p>
-                        </div>
-                    </div>
                 </div>
             </div>
-
-            <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
-                    <div class="h-[370px]">
-                        <canvas id="applicationTrendsChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
-                    <div class="h-[370px]">
-                        <canvas id="scholarshipDistributionChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
-                    <div class="h-[370px]">
-                        <canvas id="userRegistrationChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
-                    <div class="h-[370px] flex items-center justify-center">
-                        <div class="w-full max-w-[300px]">
-                            <canvas id="statusOverviewChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
-                    <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-            </div>
-        </div>
-    </main>
+        </main>
 
     <div id="userDetailsModal" class="modal-overlay">
         <div class="modal-content dark:bg-gray-700 dark:text-white">
@@ -590,97 +453,37 @@
         initializeCharts();
         updateCharts();
 
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
+
         
-        // Check for saved user preference, if any, on load of the website
-        if (localStorage.getItem('color-theme')) {
-            if (localStorage.getItem('color-theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            }
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // If no preference saved, check system preference
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
-        
-        themeToggle.addEventListener('click', function() {
-            // Toggle icon
-            if (themeIcon.classList.contains('fa-moon')) {
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            }
+        // Initialize admin layout
+        function initializeAdminLayout() {
+            // Apply dark mode classes to layout elements
+            const isDark = document.documentElement.classList.contains('dark');
+            const layoutElements = document.querySelectorAll('.admin-layout, .admin-header, .admin-sidebar, .admin-main-content');
             
-            // Toggle theme
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
+            layoutElements.forEach(element => {
+                if (isDark) {
+                    element.classList.add('dark');
+                } else {
+                    element.classList.remove('dark');
+                }
+            });
+        }
+
+        // Initialize layout on page load
+        initializeAdminLayout();
+
+        // Listen for theme changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new MutationObserver(() => {
+                initializeAdminLayout();
+            });
+            
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
         });
-        
-        // Sidebar functionality
-         const sidebar = document.getElementById('sidebar');
-         const mainContent = document.getElementById('mainContent');
-         const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-         const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-         const sidebarItems = document.querySelectorAll('.sidebar-item-text');
- 
-         // Collapse sidebar function
-         function toggleSidebar() {
-             sidebar.classList.toggle('collapsed');
-             if (sidebar.classList.contains('collapsed')) {
-                 mainContent.style.marginLeft = '80px';
-             } else {
-                 mainContent.style.marginLeft = '280px';
-             }
-         }
- 
-         // Mobile sidebar function
-         function toggleMobileSidebar() {
-             sidebar.classList.toggle('mobile-open');
-         }
- 
-         // Event listeners
-         sidebarCollapseBtn.addEventListener('click', toggleSidebar);
-         mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
- 
-         // Close sidebar when clicking outside on mobile
-         document.addEventListener('click', (e) => {
-             if (window.innerWidth <= 768) {
-                 if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
-                     sidebar.classList.remove('mobile-open');
-                 }
-             }
-         });
- 
-         // Handle window resize
-         window.addEventListener('resize', () => {
-             if (window.innerWidth <= 768) {
-                 mainContent.style.marginLeft = '0';
-                 sidebar.classList.remove('collapsed');
-             } else {
-                 if (sidebar.classList.contains('collapsed')) {
-                     mainContent.style.marginLeft = '80px';
-                 } else {
-                     mainContent.style.marginLeft = '280px';
-                 }
-             }
-         });
- 
-         // Initialize sidebar state based on screen size
-         if (window.innerWidth <= 768) {
-             mainContent.style.marginLeft = '0';
-         }
     </script>
 </body>
 </html>

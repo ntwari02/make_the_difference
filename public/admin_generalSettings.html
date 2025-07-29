@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin General Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
+</head>
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Admin General Settings"></div>
+    <main class="admin-main-content">
+        <div class="admin-content-container">
+            <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white mb-8 text-center">General Website Settings</h2>
+            <form id="settingsForm" class="space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-10 border border-gray-100 dark:border-gray-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="siteTitle" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Site Title</label>
+                        <input type="text" id="siteTitle" name="siteTitle" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" placeholder="Enter site title">
+                    </div>
+                    <div>
+                        <label for="contactEmail" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Contact Email</label>
+                        <input type="email" id="contactEmail" name="contactEmail" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" placeholder="admin@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="siteDescription" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Site Description</label>
+                    <textarea id="siteDescription" name="siteDescription" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" placeholder="Describe your site..."></textarea>
+                </div>
+                <div>
+                    <label for="homepageContent" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Homepage Content</label>
+                    <textarea id="homepageContent" name="homepageContent" rows="4" placeholder="Enter homepage welcome message, mission, or any HTML content..." class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="homepageBanner" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Homepage Banner Text</label>
+                        <input type="text" id="homepageBanner" name="homepageBanner" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" placeholder="Banner text">
+                    </div>
+                    <div>
+                        <label for="maintenanceMode" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Maintenance Mode</label>
+                        <select id="maintenanceMode" name="maintenanceMode" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Manage Services</label>
+                    <div id="servicesList" class="space-y-2 mb-2"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="newService" placeholder="Add new service (e.g. Scholarship, Mentorship, Career Advice)" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                        <button type="button" id="addServiceBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold shadow">Add</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="logoUpload" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Site Logo</label>
+                        <input type="file" id="logoUpload" accept="image/*" class="mt-1 block w-full text-gray-700 dark:text-gray-300">
+                        <div class="flex items-center mt-2">
+                            <img id="logoPreview" src="" alt="Logo Preview" class="h-16 w-16 object-contain rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hidden" />
+                        </div>
+                    </div>
+                    <div>
+                        <label for="faviconUpload" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Favicon</label>
+                        <input type="file" id="faviconUpload" accept="image/x-icon,image/png" class="mt-1 block w-full text-gray-700 dark:text-gray-300">
+                        <div class="flex items-center mt-2">
+                            <img id="faviconPreview" src="" alt="Favicon Preview" class="h-10 w-10 object-contain rounded shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hidden" />
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Social Links</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                        <input type="url" id="facebookLink" placeholder="Facebook URL" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                        <input type="url" id="twitterLink" placeholder="Twitter URL" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                        <input type="url" id="instagramLink" placeholder="Instagram URL" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-8">
+                    <button type="button" id="changePasswordBtn" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold shadow">Change Admin Password</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow">Save Settings</button>
+                </div>
+            </form>
+            <div id="settingsSuccess" class="hidden mt-4 text-green-600 dark:text-green-400 font-semibold text-center">Settings saved successfully!</div>
+        </div>
+        <!-- Password Change Modal -->
+        <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-gray-100 dark:border-gray-700">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white text-center">Change Admin Password</h3>
+                <form id="passwordForm" class="space-y-4">
+                    <div>
+                        <label for="currentPassword" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+                        <input type="password" id="currentPassword" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    </div>
+                    <div>
+                        <label for="newPassword" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                        <input type="password" id="newPassword" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    </div>
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="closePasswordModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">Change Password</button>
+                    </div>
+                </form>
+                <div id="passwordSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold text-center">Password changed successfully!</div>
+                <div id="passwordError" class="hidden mt-2 text-red-600 dark:text-red-400 font-semibold text-center"></div>
+            </div>
+        </div>
+    </main>
+<script>
+// Settings logic
+const settingsForm = document.getElementById('settingsForm');
+const settingsSuccess = document.getElementById('settingsSuccess');
+const logoUpload = document.getElementById('logoUpload');
+const logoPreview = document.getElementById('logoPreview');
+const faviconUpload = document.getElementById('faviconUpload');
+const faviconPreview = document.getElementById('faviconPreview');
+const servicesList = document.getElementById('servicesList');
+const newService = document.getElementById('newService');
+const addServiceBtn = document.getElementById('addServiceBtn');
+let services = [];
+
+function renderServices() {
+    servicesList.innerHTML = '';
+    services.forEach((service, idx) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `<span class="flex-1">${service}</span><button type="button" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>`;
+        div.querySelector('button').addEventListener('click', () => {
+            services.splice(idx, 1);
+            renderServices();
+        });
+        servicesList.appendChild(div);
+    });
+}
+
+addServiceBtn.addEventListener('click', () => {
+    const val = newService.value.trim();
+    if (val && !services.includes(val)) {
+        services.push(val);
+        newService.value = '';
+        renderServices();
+    }
+});
+
+// Load settings from backend
+function loadSettings() {
+    fetch('/api/settings')
+        .then(res => res.json())
+        .then(settings => {
+            document.getElementById('siteTitle').value = settings.site_title || '';
+            document.getElementById('siteDescription').value = settings.site_description || '';
+            document.getElementById('contactEmail').value = settings.contact_email || '';
+            document.getElementById('homepageBanner').value = settings.homepage_banner || '';
+            document.getElementById('maintenanceMode').value = settings.maintenance_mode || 'off';
+            document.getElementById('facebookLink').value = settings.facebook_link || '';
+            document.getElementById('twitterLink').value = settings.twitter_link || '';
+            document.getElementById('instagramLink').value = settings.instagram_link || '';
+            document.getElementById('homepageContent').value = settings.homepage_content || '';
+
+            services = settings.services ? JSON.parse(settings.services) : [];
+            renderServices();
+
+            if (settings.logo_url) {
+                logoPreview.src = '/uploads/' + settings.logo_url;
+                logoPreview.classList.remove('hidden');
+            }
+            if (settings.favicon_url) {
+                faviconPreview.src = '/uploads/' + settings.favicon_url;
+                faviconPreview.classList.remove('hidden');
+            }
+        });
+}
+
+// Submit settings to backend
+settingsForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('siteTitle', document.getElementById('siteTitle').value);
+    formData.append('siteDescription', document.getElementById('siteDescription').value);
+    formData.append('contactEmail', document.getElementById('contactEmail').value);
+    formData.append('homepageBanner', document.getElementById('homepageBanner').value);
+    formData.append('maintenanceMode', document.getElementById('maintenanceMode').value);
+    formData.append('facebookLink', document.getElementById('facebookLink').value);
+    formData.append('twitterLink', document.getElementById('twitterLink').value);
+    formData.append('instagramLink', document.getElementById('instagramLink').value);
+    formData.append('homepageContent', document.getElementById('homepageContent').value);
+    formData.append('services', JSON.stringify(services));
+
+    if (logoUpload.files[0]) {
+        formData.append('logo', logoUpload.files[0]);
+    }
+    if (faviconUpload.files[0]) {
+        formData.append('favicon', faviconUpload.files[0]);
+    }
+
+    fetch('/api/settings', {
+        method: 'POST',
+        body: formData
+    }).then(res => res.json())
+      .then(() => {
+          settingsSuccess.classList.remove('hidden');
+          setTimeout(() => settingsSuccess.classList.add('hidden'), 2000);
+          loadSettings(); // refresh preview
+      });
+});
+
+
+
+// Logo preview
+logoUpload.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            logoPreview.src = e.target.result;
+            logoPreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Favicon preview
+faviconUpload.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            faviconPreview.src = e.target.result;
+            faviconPreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+loadSettings();
+</script>
+
+</body>
+</html>

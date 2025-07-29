@@ -229,6 +229,76 @@ async function includeNavbar() {
             // Call after navbar is loaded
             updateSiteNameAndLogo();
 
+            // --- Notification Bell Logic ---
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationBadge = document.getElementById('notification-badge');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            const notificationList = document.getElementById('notification-list');
+            const noNotifications = document.getElementById('no-notifications');
+
+            async function fetchNotifications() {
+              const token = localStorage.getItem('token');
+              if (!token) return [];
+              try {
+                const res = await fetch('/api/notifications', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return [];
+                return await res.json();
+              } catch (e) {
+                return [];
+              }
+            }
+
+            function renderNotifications(notifications) {
+              notificationList.innerHTML = '';
+              let unreadCount = 0;
+              notifications.forEach(n => {
+                const item = document.createElement('div');
+                item.className = `px-4 py-2 border-b border-gray-100 dark:border-gray-700 cursor-pointer ${n.is_read ? '' : 'bg-blue-50 dark:bg-gray-700'}`;
+                item.innerHTML = `<div class='font-semibold'>${n.title}</div><div class='text-sm text-gray-500 dark:text-gray-300'>${n.message}</div><div class='text-xs text-gray-400 mt-1'>${new Date(n.created_at).toLocaleString()}</div>`;
+                if (!n.is_read) unreadCount++;
+                item.onclick = async () => {
+                  if (!n.is_read) {
+                    await fetch(`/api/notifications/${n.id}/read`, {
+                      method: 'PATCH',
+                      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    n.is_read = true;
+                    renderNotifications(notifications);
+                  }
+                };
+                notificationList.appendChild(item);
+              });
+              notificationBadge.textContent = unreadCount;
+              notificationBadge.classList.toggle('hidden', unreadCount === 0);
+              noNotifications.style.display = notifications.length ? 'none' : 'block';
+            }
+
+            let notificationsCache = [];
+            async function updateNotifications() {
+              notificationsCache = await fetchNotifications();
+              renderNotifications(notificationsCache);
+            }
+
+            if (notificationBell) {
+              notificationBell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                notificationDropdown.classList.toggle('hidden');
+                if (!notificationDropdown.classList.contains('hidden')) {
+                  updateNotifications();
+                }
+              });
+              document.addEventListener('click', (e) => {
+                if (!notificationDropdown.contains(e.target) && e.target !== notificationBell) {
+                  notificationDropdown.classList.add('hidden');
+                }
+              });
+              // Optionally, poll for new notifications every minute
+              setInterval(updateNotifications, 60000);
+              updateNotifications();
+            }
+
         } else {
             console.error('Navbar container not found!');
         }

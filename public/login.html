@@ -155,7 +155,9 @@
                     
                     // Redirect based on role
                     setTimeout(() => {
-                        window.location.href = 'home.html';
+                        window.location.href = response.user.role === 'admin' 
+                            ? 'admin_dashboard.html' 
+                            : 'home.html';
                     }, 1500);
                 } else {
                     throw new Error(response.message || 'Login failed');
