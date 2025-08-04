@@ -14,7 +14,7 @@ export const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
         // Get user from the database
-        const [users] = await db.promise().query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
 
         if (users.length === 0) {
             return res.status(401).json({ message: 'User not found' });
@@ -28,7 +28,7 @@ export const auth = async (req, res, next) => {
     }
 };
 
-export const adminAuth = (req, res, next) => {
+export const adminAuth = async (req, res, next) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
@@ -36,15 +36,23 @@ export const adminAuth = (req, res, next) => {
             return res.status(401).json({ message: 'No authentication token, access denied' });
         }
 
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
-        if (verified.role !== 'admin') {
+        // Get user from database to verify role
+        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        
+        if (users[0].role !== 'admin') {
             return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
         }
 
-        req.user = verified;
+        req.user = users[0];
         next();
     } catch (error) {
+        console.error('Admin auth error:', error);
         res.status(401).json({ message: 'Token verification failed, authorization denied' });
     }
 }; 

@@ -10,7 +10,6 @@ import pool from './config/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import roleRoutes from './routes/roles.js';
-import planRoutes from './routes/plans.js';
 import serviceRoutes from './routes/services.js';
 import partnerRoutes from './routes/partners.js';
 import paymentRoutes from './routes/payments.js';
@@ -19,9 +18,13 @@ import contactRoutes from './routes/contact.js';
 import newsletterRoutes from './routes/newsletter.js';
 import applicationRoutes from './routes/applications.js';
 import adminRoutes from './routes/admin.js';
+import adminAccountRoutes from './routes/adminAccount.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
 import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
+import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
 import notificationsRoutes from './routes/notifications.js';
+import analyticsRoutes from './routes/analytics.js'; // ✅ ADDED HERE
+import reportsRoutes from './routes/reports.js'; // ✅ ADDED HERE
 
 dotenv.config();
 
@@ -56,7 +59,6 @@ pool.getConnection((err, connection) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/plans', planRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -65,9 +67,14 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/subscribe-newsletter', newsletterRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminAccountRoutes);
 app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
 app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
+app.use('/api/security-questions', securityQuestionsRoutes); // ✅ ADDED HERE
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/analytics', analyticsRoutes); // ✅ ADDED HERE
+app.use('/api/reports', reportsRoutes); // ✅ ADDED HERE
+
 
 // Serve uploads statically so profile pictures and documents are accessible
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

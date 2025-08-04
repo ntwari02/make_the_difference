@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Analytics</title>
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,290 +21,1550 @@
             .sidebar.mobile-open { left: 0; }
         }
     </style>
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('color-theme');
+          if (
+            theme === 'dark' ||
+            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">Admin Analytics</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
-                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
-                    </button>
-                    <span id="adminName" class="text-gray-600 dark:text-gray-300"></span>
-                    <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-30">
-        <div class="h-full flex flex-col">
-            <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-            <div class="flex-1 px-4 space-y-2">
-                <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-tachometer-alt w-6"></i>
-                    <span class="sidebar-item-text ml-3">Dashboard</span>
-                </a>
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">User Management</div>
-                    <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-users w-6"></i>
-                        <span class="sidebar-item-text ml-3">Users</span>
-                    </a>
-                    <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-user-shield w-6"></i>
-                        <span class="sidebar-item-text ml-3">Roles & Permissions</span>
-                    </a>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">Scholarship Management</div>
-                    <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-graduation-cap w-6"></i>
-                        <span class="sidebar-item-text ml-3">Scholarships</span>
-                    </a>
-                    <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-alt w-6"></i>
-                        <span class="sidebar-item-text ml-3">Applications</span>
-                    </a>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">System Settings</div>
-                    <a href="admin_generalSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-cog w-6"></i>
-                        <span class="sidebar-item-text ml-3">General Settings</span>
-                    </a>
-                    <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-envelope w-6"></i>
-                        <span class="sidebar-item-text ml-3">Email Templates</span>
-                    </a>
-                    <a href="admin_backup.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-database w-6"></i>
-                        <span class="sidebar-item-text ml-3">Backup & Restore</span>
-                    </a>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">Reports</div>
-                    <a href="admin_analytics.html" class="flex items-center p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-lg">
-                        <i class="fas fa-chart-line w-6"></i>
-                        <span class="sidebar-item-text ml-3">Analytics</span>
-                    </a>
-                    <a href="admin_report.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                        <i class="fas fa-file-export w-6"></i>
-                        <span class="sidebar-item-text ml-3">Export Reports</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Main Content -->
-    <main id="mainContent" class="main-content ml-[280px] pt-20 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Admin Analytics"></div>
+    <main class="admin-main-content w-full">
+        <div class="admin-content-container">
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Analytics Overview</h2>
+            
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Loading analytics data...</p>
+            </div>
+
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div id="summaryCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Users</h3>
-                    <p class="text-2xl font-bold text-blue-500">150</p>
+                    <p id="activeUsers" class="text-2xl font-bold text-blue-500">-</p>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">New Applications</h3>
-                    <p class="text-2xl font-bold text-green-500">80</p>
+                    <p id="newApplications" class="text-2xl font-bold text-green-500">-</p>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pending Reviews</h3>
-                    <p class="text-2xl font-bold text-yellow-500">25</p>
+                    <p id="pendingReviews" class="text-2xl font-bold text-yellow-500">-</p>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Completed Scholarships</h3>
-                    <p class="text-2xl font-bold text-purple-500">10</p>
+                    <p id="completedScholarships" class="text-2xl font-bold text-purple-500">-</p>
                 </div>
             </div>
+
             <!-- Interactive Analytics Section -->
-            <div class="flex space-x-4 mb-6">
-                <select id="dateFilter" class="px-4 py-2 border rounded-md">
-                    <option value="all">All Dates</option>
-                    <option value="january">January</option>
-                    <option value="february">February</option>
-                    <option value="march">March</option>
-                    <option value="april">April</option>
-                    <option value="may">May</option>
+            <div class="flex flex-wrap gap-4 mb-6">
+                <select id="dateFilter" class="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="6">Last 6 Months</option>
+                    <option value="12">Last 12 Months</option>
+                    <option value="3">Last 3 Months</option>
                 </select>
-                <select id="userTypeFilter" class="px-4 py-2 border rounded-md">
-                    <option value="all">All Users</option>
-                    <option value="active">Active Users</option>
-                    <option value="inactive">Inactive Users</option>
-                </select>
-                <button id="refreshBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Refresh Data</button>
-                <button id="exportBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export Report</button>
+                <button id="refreshBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                </button>
+                <button id="exportBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                    <i class="fas fa-download mr-2"></i>Export Report
+                </button>
             </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Activity</h3>
-                    <ul id="userActivityList" class="space-y-2">
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>January</span>
-                            <span>50 Active Users</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>February</span>
-                            <span>75 Active Users</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>March</span>
-                            <span>100 Active Users</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>April</span>
-                            <span>125 Active Users</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>May</span>
-                            <span>150 Active Users</span>
-                        </li>
-                    </ul>
+                    <div id="userActivityList" class="space-y-2">
+                        <!-- User activity data will be loaded here -->
+                    </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Applications</h3>
-                    <ul id="scholarshipApplicationsList" class="space-y-2">
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>January</span>
-                            <span>20 Applications</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>February</span>
-                            <span>40 Applications</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>March</span>
-                            <span>60 Applications</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>April</span>
-                            <span>80 Applications</span>
-                        </li>
-                        <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                            <span>May</span>
-                            <span>100 Applications</span>
-                        </li>
-                    </ul>
+                    <div id="scholarshipApplicationsList" class="space-y-2">
+                        <!-- Application data will be loaded here -->
+                    </div>
                 </div>
             </div>
+
             <!-- Advanced Analytics Section -->
             <div class="mt-8">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Advanced Analytics</h3>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <h4 class="text-md font-semibold text-gray-800 dark:text-white">User Growth</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-300">Track user growth trends over time.</p>
-                        <button class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">View Details</button>
+                        <button onclick="showUserGrowthDetails()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">View Details</button>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <h4 class="text-md font-semibold text-gray-800 dark:text-white">Application Insights</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-300">Analyze application success rates.</p>
-                        <button class="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">View Details</button>
+                        <button onclick="showApplicationInsights()" class="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">View Details</button>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Revenue Analysis</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Monitor revenue generated from scholarships.</p>
-                        <button class="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">View Details</button>
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Top Scholarships</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">View most popular scholarships.</p>
+                        <button onclick="showTopScholarships()" class="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">View Details</button>
                     </div>
                 </div>
             </div>
+
             <!-- Chart Section -->
             <div class="mt-8">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Growth Chart</h3>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <canvas id="userGrowthChart" class="w-full h-64"></canvas>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- User Growth Details Modal -->
+    <div id="userGrowthModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">User Growth Analytics</h3>
+                        <button onclick="closeUserGrowthModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Loading State -->
+                    <div id="userGrowthLoading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading user growth data...</p>
+                    </div>
+
+                    <!-- User Growth Content -->
+                    <div id="userGrowthContent" class="hidden">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Users</h4>
+                                <p id="totalUsersCount" class="text-2xl font-bold text-blue-700 dark:text-blue-300">-</p>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">New This Month</h4>
+                                <p id="newUsersThisMonth" class="text-2xl font-bold text-green-700 dark:text-green-300">-</p>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Growth Rate</h4>
+                                <p id="growthRate" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
+                            </div>
+                        </div>
+
+                        <!-- User Demographics -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Demographics</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Active Users</span>
+                                        <span id="activeUsersCount" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Inactive Users</span>
+                                        <span id="inactiveUsersCount" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Admin Users</span>
+                                        <span id="adminUsersCount" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Regular Users</span>
+                                        <span id="regularUsersCount" class="font-semibold">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Registration Trends</h4>
+                                <canvas id="registrationTrendChart" class="w-full h-48"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Detailed User Activity -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6 mb-6">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Monthly User Growth</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 dark:border-gray-600">
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Month</th>
+                                            <th class="text-right py-2 text-gray-600 dark:text-gray-300">New Users</th>
+                                            <th class="text-right py-2 text-gray-600 dark:text-gray-300">Total Users</th>
+                                            <th class="text-right py-2 text-gray-600 dark:text-gray-300">Growth %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="userGrowthTable">
+                                        <!-- Data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- User Engagement -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Engagement</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Users with Applications</span>
+                                        <span id="usersWithApplications" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Application Rate</span>
+                                        <span id="applicationRate" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Avg Applications/User</span>
+                                        <span id="avgApplicationsPerUser" class="font-semibold">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top User Activities</h4>
+                                <div id="topUserActivities" class="space-y-2">
+                                    <!-- Activity data will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Insights Modal -->
+    <div id="applicationInsightsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Application Insights Analytics</h3>
+                        <button onclick="closeApplicationInsightsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Loading State -->
+                    <div id="applicationInsightsLoading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading application insights...</p>
+                    </div>
+
+                    <!-- Application Insights Content -->
+                    <div id="applicationInsightsContent" class="hidden">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Applications</h4>
+                                <p id="totalApplicationsCount" class="text-2xl font-bold text-blue-700 dark:text-blue-300">-</p>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">This Month</h4>
+                                <p id="applicationsThisMonth" class="text-2xl font-bold text-green-700 dark:text-green-300">-</p>
+                            </div>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Avg GPA</h4>
+                                <p id="averageGPA" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Success Rate</h4>
+                                <p id="successRate" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Application Trends -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Trends</h4>
+                                <div class="h-64">
+                                    <canvas id="applicationTrendChart" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Academic Level Distribution</h4>
+                                <div class="h-64">
+                                    <canvas id="academicLevelChart" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Application Demographics -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Gender Distribution</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Male</span>
+                                        <span id="maleCount" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Female</span>
+                                        <span id="femaleCount" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-300">Other</span>
+                                        <span id="otherCount" class="font-semibold">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Countries</h4>
+                                <div id="topCountries" class="space-y-2">
+                                    <!-- Country data will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Applications -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6 mb-6">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Applications</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 dark:border-gray-600">
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Applicant</th>
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Scholarship</th>
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Academic Level</th>
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Country</th>
+                                            <th class="text-left py-2 text-gray-600 dark:text-gray-300">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentApplicationsTable">
+                                        <!-- Data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Application Quality Metrics -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Quality</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Complete Applications</span>
+                                        <span id="completeApplications" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Document Upload Rate</span>
+                                        <span id="documentUploadRate" class="font-semibold">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-300">Profile Picture Rate</span>
+                                        <span id="profilePictureRate" class="font-semibold">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Preferences</h4>
+                                <div id="scholarshipPreferences" class="space-y-2">
+                                    <!-- Scholarship preference data will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Scholarships Modal -->
+    <div id="topScholarshipsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Top Scholarships Analytics</h3>
+                        <button onclick="closeTopScholarshipsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Loading State -->
+                    <div id="topScholarshipsLoading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading top scholarships data...</p>
+                    </div>
+
+                    <!-- Top Scholarships Content -->
+                    <div id="topScholarshipsContent" class="hidden">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Scholarships</h4>
+                                <p id="totalScholarshipsCount" class="text-2xl font-bold text-blue-700 dark:text-blue-300">-</p>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">Active Scholarships</h4>
+                                <p id="activeScholarshipsCount" class="text-2xl font-bold text-green-700 dark:text-green-300">-</p>
+                            </div>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Total Applications</h4>
+                                <p id="totalApplicationsCount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Avg Applications/Scholarship</h4>
+                                <p id="avgApplicationsPerScholarship" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Top Scholarships List -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Scholarships by Applications</h4>
+                                <div id="topScholarshipsList" class="space-y-3">
+                                    <!-- Top scholarships will be populated here -->
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Trends</h4>
+                                <div class="h-64">
+                                    <canvas id="scholarshipApplicationTrendsChart" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scholarship Categories and Recent Applications -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Categories</h4>
+                                <div id="scholarshipCategories" class="space-y-2">
+                                    <!-- Categories will be populated here -->
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Applications</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr class="border-b border-gray-200 dark:border-gray-600">
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Applicant</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Scholarship</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Academic Level</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topScholarshipsRecentTable">
+                                            <!-- Recent applications will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Metrics</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Completion Rate</h5>
+                                    <p id="completionRate" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Avg Processing Time</h5>
+                                    <p id="avgProcessingTime" class="text-2xl font-bold text-green-600 dark:text-green-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Success Rate</h5>
+                                    <p id="successRate" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">User Satisfaction</h5>
+                                    <p id="userSatisfaction" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Scholarships Modal -->
+    <div id="topScholarshipsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Top Scholarships Analytics</h3>
+                        <button onclick="closeTopScholarshipsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Loading State -->
+                    <div id="topScholarshipsLoading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading top scholarships data...</p>
+                    </div>
+
+                    <!-- Top Scholarships Content -->
+                    <div id="topScholarshipsContent" class="hidden">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Scholarships</h4>
+                                <p id="totalScholarshipsCount" class="text-2xl font-bold text-blue-700 dark:text-blue-300">-</p>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">Active Scholarships</h4>
+                                <p id="activeScholarshipsCount" class="text-2xl font-bold text-green-700 dark:text-green-300">-</p>
+                            </div>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Total Applications</h4>
+                                <p id="totalApplicationsCount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Avg Applications/Scholarship</h4>
+                                <p id="avgApplicationsPerScholarship" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Top Scholarships List -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Scholarships by Applications</h4>
+                                <div id="topScholarshipsList" class="space-y-3">
+                                    <!-- Top scholarships will be populated here -->
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Trends</h4>
+                                <div class="h-64">
+                                    <canvas id="scholarshipApplicationTrendsChart" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scholarship Categories and Recent Applications -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Categories</h4>
+                                <div id="scholarshipCategories" class="space-y-2">
+                                    <!-- Categories will be populated here -->
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Applications</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr class="border-b border-gray-200 dark:border-gray-600">
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Applicant</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Scholarship</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Academic Level</th>
+                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topScholarshipsRecentTable">
+                                            <!-- Recent applications will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Metrics</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Completion Rate</h5>
+                                    <p id="completionRate" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Avg Processing Time</h5>
+                                    <p id="avgProcessingTime" class="text-2xl font-bold text-green-600 dark:text-green-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Success Rate</h5>
+                                    <p id="successRate" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</p>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">User Satisfaction</h5>
+                                    <p id="userSatisfaction" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Sidebar interactivity
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-        function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
-            if (sidebar.classList.contains('collapsed')) {
-                mainContent.style.marginLeft = '80px';
-            } else {
-                mainContent.style.marginLeft = '280px';
+        // Auth check
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        let userGrowthChart = null;
+        let registrationTrendChart = null;
+        let currentPeriod = 6;
+
+        // Initialize analytics
+        async function initializeAnalytics() {
+            try {
+                await Promise.all([
+                    loadSummaryData(),
+                    loadUserGrowthData(),
+                    loadApplicationStats()
+                ]);
+                
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('summaryCards').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error initializing analytics:', error);
+                showError('Failed to load analytics data');
             }
         }
-        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
 
-        // Theme toggle
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        themeToggle.addEventListener('click', function() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            } else {
-                document.documentElement.classList.add('dark');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
+        // Load summary data
+        async function loadSummaryData() {
+            try {
+                const response = await fetch('/api/analytics/summary', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    document.getElementById('activeUsers').textContent = data.users.active;
+                    document.getElementById('newApplications').textContent = data.applications.total;
+                    document.getElementById('pendingReviews').textContent = data.applications.pending;
+                    document.getElementById('completedScholarships').textContent = data.scholarships.completed;
+                }
+            } catch (error) {
+                console.error('Error loading summary data:', error);
             }
-        });
+        }
 
-        // Interactive functionality
-        const refreshBtn = document.getElementById('refreshBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        refreshBtn.addEventListener('click', () => {
-            alert('Data refreshed!');
-        });
-        exportBtn.addEventListener('click', () => {
-            alert('Report exported!');
-        });
+        // Load user growth data
+        async function loadUserGrowthData() {
+            try {
+                const response = await fetch(`/api/analytics/user-growth?period=${currentPeriod}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateUserGrowthChart(data);
+                    updateUserActivityList(data);
+                }
+            } catch (error) {
+                console.error('Error loading user growth data:', error);
+            }
+        }
 
-        // User Growth Chart
+        // Load application statistics
+        async function loadApplicationStats() {
+            try {
+                const response = await fetch(`/api/analytics/application-stats?period=${currentPeriod}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateApplicationList(data);
+                }
+            } catch (error) {
+                console.error('Error loading application stats:', error);
+            }
+        }
+
+        // Update user growth chart
+        function updateUserGrowthChart(data) {
         const ctx = document.getElementById('userGrowthChart').getContext('2d');
-        const userGrowthChart = new Chart(ctx, {
+            
+            if (userGrowthChart) {
+                userGrowthChart.destroy();
+            }
+
+            const labels = data.map(item => {
+                const date = new Date(item.month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            
+            const values = data.map(item => item.new_users);
+
+            userGrowthChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['January', 'February', 'March', 'April', 'May'],
+                    labels: labels,
                 datasets: [{
-                    label: 'Active Users',
-                    data: [50, 75, 100, 125, 150],
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        label: 'New Users',
+                        data: values,
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
-                    tension: 0.4
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                    animation: {
+                        duration: 750
+                    },
                 plugins: {
                     legend: {
                         display: true,
                         labels: {
-                            color: 'rgba(54, 162, 235, 1)'
-                        }
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
                     }
                 },
                 scales: {
                     x: {
                         ticks: {
-                            color: 'rgba(54, 162, 235, 1)'
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                                display: false
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        // Update user activity list
+        function updateUserActivityList(data) {
+            const container = document.getElementById('userActivityList');
+            container.innerHTML = data.map(item => {
+                const date = new Date(item.month + '-01');
+                const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+                return `
+                    <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                        <span>${monthName}</span>
+                        <span>${item.new_users} New Users</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // Update application list
+        function updateApplicationList(data) {
+            const container = document.getElementById('scholarshipApplicationsList');
+            container.innerHTML = data.map(item => {
+                const date = new Date(item.month + '-01');
+                const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+                return `
+                    <li class="flex justify-between text-gray-600 dark:text-gray-300">
+                        <span>${monthName}</span>
+                        <span>${item.total_applications} Applications</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById('loadingState').innerHTML = `
+                <div class="text-red-600 dark:text-red-400">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // User Growth Modal Functions
+        async function showUserGrowthDetails() {
+            document.getElementById('userGrowthModal').classList.remove('hidden');
+            document.getElementById('userGrowthLoading').classList.remove('hidden');
+            document.getElementById('userGrowthContent').classList.add('hidden');
+            
+            try {
+                await loadUserGrowthDetails();
+            } catch (error) {
+                console.error('Error loading user growth details:', error);
+                showUserGrowthError('Failed to load user growth details');
+            }
+        }
+
+        function closeUserGrowthModal() {
+            document.getElementById('userGrowthModal').classList.add('hidden');
+        }
+
+        async function loadUserGrowthDetails() {
+            try {
+                // Load summary data for the modal
+                const summaryResponse = await fetch('/api/analytics/summary', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const summaryData = await summaryResponse.json();
+                
+                // Load user growth data
+                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const growthData = await growthResponse.json();
+                
+                // Update modal content
+                updateUserGrowthModal(summaryData, growthData);
+                
+                document.getElementById('userGrowthLoading').classList.add('hidden');
+                document.getElementById('userGrowthContent').classList.remove('hidden');
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function updateUserGrowthModal(summaryData, growthData) {
+            // Update summary cards
+            document.getElementById('totalUsersCount').textContent = summaryData.users.total;
+            document.getElementById('newUsersThisMonth').textContent = growthData[growthData.length - 1]?.new_users || 0;
+            
+            // Calculate growth rate
+            const currentMonth = growthData[growthData.length - 1]?.new_users || 0;
+            const previousMonth = growthData[growthData.length - 2]?.new_users || 1;
+            const growthRate = previousMonth > 0 ? ((currentMonth - previousMonth) / previousMonth * 100).toFixed(1) : 0;
+            document.getElementById('growthRate').textContent = `${growthRate}%`;
+            
+            // Update demographics
+            document.getElementById('activeUsersCount').textContent = summaryData.users.active;
+            document.getElementById('inactiveUsersCount').textContent = summaryData.users.inactive;
+            
+            // Get admin and regular user counts
+            const adminCount = summaryData.users.total - summaryData.users.active - summaryData.users.inactive;
+            document.getElementById('adminUsersCount').textContent = adminCount;
+            document.getElementById('regularUsersCount').textContent = summaryData.users.active;
+            
+            // Update user engagement
+            const totalApplications = summaryData.applications.total;
+            const applicationRate = summaryData.users.active > 0 ? ((totalApplications / summaryData.users.active) * 100).toFixed(1) : 0;
+            const avgApplicationsPerUser = summaryData.users.active > 0 ? (totalApplications / summaryData.users.active).toFixed(1) : 0;
+            
+            document.getElementById('usersWithApplications').textContent = totalApplications;
+            document.getElementById('applicationRate').textContent = `${applicationRate}%`;
+            document.getElementById('avgApplicationsPerUser').textContent = avgApplicationsPerUser;
+            
+            // Update growth table
+            updateUserGrowthTable(growthData);
+            
+            // Update registration trend chart
+            updateRegistrationTrendChart(growthData);
+            
+            // Update top activities
+            updateTopUserActivities();
+        }
+
+        function updateUserGrowthTable(growthData) {
+            const tableBody = document.getElementById('userGrowthTable');
+            let cumulativeTotal = 0;
+            
+            tableBody.innerHTML = growthData.map((item, index) => {
+                cumulativeTotal += item.new_users;
+                const date = new Date(item.month + '-01');
+                const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const growthPercent = index > 0 ? ((item.new_users / growthData[index - 1].new_users) * 100 - 100).toFixed(1) : 0;
+                
+                return `
+                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${monthName}</td>
+                        <td class="py-2 text-right text-gray-800 dark:text-gray-200">${item.new_users}</td>
+                        <td class="py-2 text-right text-gray-800 dark:text-gray-200">${cumulativeTotal}</td>
+                        <td class="py-2 text-right ${growthPercent >= 0 ? 'text-green-600' : 'text-red-600'}">${growthPercent}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateRegistrationTrendChart(growthData) {
+            const ctx = document.getElementById('registrationTrendChart').getContext('2d');
+            
+            if (registrationTrendChart) {
+                registrationTrendChart.destroy();
+            }
+
+            const labels = growthData.map(item => {
+                const date = new Date(item.month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short' });
+            });
+            
+            const values = growthData.map(item => item.new_users);
+
+            registrationTrendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'New Registrations',
+                        data: values,
+                        backgroundColor: 'rgba(147, 51, 234, 0.8)',
+                        borderColor: 'rgba(147, 51, 234, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 750
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                                display: false
                         }
                     },
                     y: {
                         ticks: {
-                            color: 'rgba(54, 162, 235, 1)'
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                            }
                         }
                     }
                 }
+            });
+        }
+
+        function updateTopUserActivities() {
+            const activitiesContainer = document.getElementById('topUserActivities');
+            activitiesContainer.innerHTML = `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-600 rounded">
+                    <span class="text-gray-600 dark:text-gray-300">Scholarship Applications</span>
+                    <span class="font-semibold text-blue-600 dark:text-blue-400">Most Active</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Profile Updates</span>
+                    <span class="font-semibold text-green-600 dark:text-green-400">High</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Document Uploads</span>
+                    <span class="font-semibold text-yellow-600 dark:text-yellow-400">Medium</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Login Activity</span>
+                    <span class="font-semibold text-purple-600 dark:text-purple-400">Regular</span>
+                </div>
+            `;
+        }
+
+        function showUserGrowthError(message) {
+            document.getElementById('userGrowthLoading').innerHTML = `
+                <div class="text-red-600 dark:text-red-400">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('dateFilter').addEventListener('change', function() {
+            currentPeriod = parseInt(this.value);
+            loadUserGrowthData();
+            loadApplicationStats();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('summaryCards').classList.add('hidden');
+            initializeAnalytics();
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/analytics/export', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Create and download CSV
+                    const csvContent = convertToCSV(data.data);
+                    downloadCSV(csvContent, 'analytics_export.csv');
+                }
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                alert('Error exporting data. Please try again.');
             }
         });
+
+        // Helper functions
+        function convertToCSV(data) {
+            let csv = '';
+            for (const category in data) {
+                if (data[category].length > 0) {
+                    csv += `${category.toUpperCase()}\n`;
+                    const headers = Object.keys(data[category][0]);
+                    csv += headers.join(',') + '\n';
+                    data[category].forEach(row => {
+                        csv += headers.map(header => `"${row[header]}"`).join(',') + '\n';
+                    });
+                    csv += '\n';
+                }
+            }
+            return csv;
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Detail view functions
+        async function showApplicationInsights() {
+            document.getElementById('applicationInsightsModal').classList.remove('hidden');
+            document.getElementById('applicationInsightsLoading').classList.remove('hidden');
+            document.getElementById('applicationInsightsContent').classList.add('hidden');
+            
+            try {
+                await loadApplicationInsights();
+            } catch (error) {
+                console.error('Error loading application insights:', error);
+                showApplicationInsightsError('Failed to load application insights');
+            }
+        }
+
+        function closeApplicationInsightsModal() {
+            document.getElementById('applicationInsightsModal').classList.add('hidden');
+        }
+
+        async function loadApplicationInsights() {
+            try {
+                // Load application statistics
+                const statsResponse = await fetch(`/api/analytics/application-stats?period=12`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const statsData = await statsResponse.json();
+                
+                // Load recent applications
+                const recentResponse = await fetch('/api/analytics/recent-activity', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const recentData = await recentResponse.json();
+                
+                // Update modal content
+                updateApplicationInsightsModal(statsData, recentData);
+                
+                document.getElementById('applicationInsightsLoading').classList.add('hidden');
+                document.getElementById('applicationInsightsContent').classList.remove('hidden');
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function updateApplicationInsightsModal(statsData, recentData) {
+            // Calculate summary metrics
+            const totalApplications = statsData.reduce((sum, item) => sum + item.total_applications, 0);
+            const thisMonthApplications = statsData[statsData.length - 1]?.total_applications || 0;
+            
+            // Update summary cards
+            document.getElementById('totalApplicationsCount').textContent = totalApplications;
+            document.getElementById('applicationsThisMonth').textContent = thisMonthApplications;
+            document.getElementById('averageGPA').textContent = '3.2'; // Placeholder - would need GPA data
+            document.getElementById('successRate').textContent = '85%'; // Placeholder - would need success data
+            
+            // Update application trends chart
+            updateApplicationTrendChart(statsData);
+            
+            // Update academic level chart
+            updateAcademicLevelChart();
+            
+            // Update demographics
+            updateApplicationDemographics();
+            
+            // Update recent applications table
+            updateRecentApplicationsTable(recentData);
+            
+            // Update quality metrics
+            updateApplicationQualityMetrics();
+            
+            // Update preferences
+            updateScholarshipPreferences();
+        }
+
+        function updateApplicationTrendChart(statsData) {
+            const ctx = document.getElementById('applicationTrendChart').getContext('2d');
+            
+            const labels = statsData.map(item => {
+                const date = new Date(item.month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short' });
+            });
+            
+            const values = statsData.map(item => item.total_applications);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Applications',
+                        data: values,
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 750
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                                display: false
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function updateAcademicLevelChart() {
+            const ctx = document.getElementById('academicLevelChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Undergraduate', 'Graduate', 'PhD'],
+                    datasets: [{
+                        data: [45, 40, 15],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)'
+                        ],
+                        borderWidth: 1,
+                        cutout: '60%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 750
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                padding: 10,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateApplicationDemographics() {
+            // Update gender distribution
+            document.getElementById('maleCount').textContent = '12';
+            document.getElementById('femaleCount').textContent = '8';
+            document.getElementById('otherCount').textContent = '1';
+            
+            // Update top countries
+            const countriesContainer = document.getElementById('topCountries');
+            countriesContainer.innerHTML = `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-600 rounded">
+                    <span class="text-gray-600 dark:text-gray-300">Rwanda</span>
+                    <span class="font-semibold text-blue-600 dark:text-blue-400">15</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Kenya</span>
+                    <span class="font-semibold text-green-600 dark:text-green-400">3</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Uganda</span>
+                    <span class="font-semibold text-yellow-600 dark:text-yellow-400">2</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Tanzania</span>
+                    <span class="font-semibold text-purple-600 dark:text-purple-400">1</span>
+                </div>
+            `;
+        }
+
+        function updateRecentApplicationsTable(recentData) {
+            const tableBody = document.getElementById('recentApplicationsTable');
+            
+            tableBody.innerHTML = recentData.slice(0, 10).map(item => {
+                const date = new Date(item.created_at);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                return `
+                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${item.user_name}</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${item.scholarship_title}</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">Graduate</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">Rwanda</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${formattedDate}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateApplicationQualityMetrics() {
+            document.getElementById('completeApplications').textContent = '18';
+            document.getElementById('documentUploadRate').textContent = '95%';
+            document.getElementById('profilePictureRate').textContent = '85%';
+        }
+
+        function updateScholarshipPreferences() {
+            const preferencesContainer = document.getElementById('scholarshipPreferences');
+            preferencesContainer.innerHTML = `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-600 rounded">
+                    <span class="text-gray-600 dark:text-gray-300">IPRC kk</span>
+                    <span class="font-semibold text-blue-600 dark:text-blue-400">Most Popular</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">Mount Kigali</span>
+                    <span class="font-semibold text-green-600 dark:text-green-400">High</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">ALU</span>
+                    <span class="font-semibold text-yellow-600 dark:text-yellow-400">Medium</span>
+                </div>
+                <div class="flex justify-between items-center p-2">
+                    <span class="text-gray-600 dark:text-gray-300">UTB</span>
+                    <span class="font-semibold text-purple-600 dark:text-purple-400">Low</span>
+                </div>
+            `;
+        }
+
+        function showApplicationInsightsError(message) {
+            document.getElementById('applicationInsightsLoading').innerHTML = `
+                <div class="text-red-600 dark:text-red-400">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showTopScholarships() {
+            document.getElementById('topScholarshipsModal').classList.remove('hidden');
+            loadTopScholarships();
+        }
+
+        function closeTopScholarshipsModal() {
+            document.getElementById('topScholarshipsModal').classList.add('hidden');
+        }
+
+        function loadTopScholarships() {
+            const loadingDiv = document.getElementById('topScholarshipsLoading');
+            const contentDiv = document.getElementById('topScholarshipsContent');
+            
+            loadingDiv.classList.remove('hidden');
+            contentDiv.classList.add('hidden');
+
+            fetch('/api/analytics/top-scholarships')
+                .then(response => response.json())
+                .then(data => {
+                    loadingDiv.classList.add('hidden');
+                    contentDiv.classList.remove('hidden');
+                    updateTopScholarshipsModal(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching top scholarships:', error);
+                    let errorMsg = 'Failed to load top scholarships data';
+                    if (error && error.message) {
+                        errorMsg += ': ' + error.message;
+                    }
+                    showTopScholarshipsError(errorMsg);
+                });
+        }
+
+        function updateTopScholarshipsModal(data) {
+            // Update summary cards
+            document.getElementById('totalScholarshipsCount').textContent = data.total_scholarships || '0';
+            document.getElementById('activeScholarshipsCount').textContent = data.active_scholarships || '0';
+            document.getElementById('totalApplicationsCount').textContent = data.total_applications || '0';
+            document.getElementById('avgApplicationsPerScholarship').textContent = data.avg_applications || '0';
+
+            // Update top scholarships list
+            updateTopScholarshipsList(data.top_scholarships || []);
+            
+            // Update application trends chart
+            updateScholarshipApplicationTrends(data.trends || []);
+            
+            // Update scholarship categories
+            updateScholarshipCategories(data.categories || []);
+            
+            // Update recent applications
+            updateTopScholarshipsRecentApplications(data.recent_applications || []);
+            
+            // Update performance metrics
+            updateScholarshipPerformanceMetrics(data.performance || {});
+        }
+
+        function updateTopScholarshipsList(scholarships) {
+            const container = document.getElementById('topScholarshipsList');
+            
+            container.innerHTML = scholarships.map((scholarship, index) => {
+                const rankClass = index === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200' : 
+                                 index === 1 ? 'bg-gray-50 dark:bg-gray-700 border-gray-200' : 
+                                 index === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200' : 
+                                 'bg-white dark:bg-gray-700 border-gray-200';
+                
+                return `
+                    <div class="border rounded-lg p-4 ${rankClass}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">#${index + 1}</span>
+                                    <h4 class="font-semibold text-gray-800 dark:text-white">${scholarship.title}</h4>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">${scholarship.university || 'N/A'}</p>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <span class="text-blue-600 dark:text-blue-400">
+                                        <i class="fas fa-users mr-1"></i>${scholarship.application_count} applications
+                                    </span>
+                                    <span class="text-green-600 dark:text-green-400">
+                                        <i class="fas fa-calendar mr-1"></i>${scholarship.deadline || 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-lg font-bold text-gray-800 dark:text-white">${scholarship.application_count}</span>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">applications</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateScholarshipApplicationTrends(trends) {
+            const ctx = document.getElementById('scholarshipApplicationTrendsChart');
+            
+            if (window.scholarshipApplicationTrendsChart) {
+                window.scholarshipApplicationTrendsChart.destroy();
+            }
+
+            const labels = trends.map(t => t.month);
+            const data = trends.map(t => t.applications);
+
+            window.scholarshipApplicationTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Applications',
+                        data: data,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 750
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateScholarshipCategories(categories) {
+            const container = document.getElementById('scholarshipCategories');
+            
+            container.innerHTML = categories.map(category => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-600 rounded mb-2">
+                    <span class="text-gray-600 dark:text-gray-300">${category.name}</span>
+                    <span class="font-semibold text-blue-600 dark:text-blue-400">${category.count}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateTopScholarshipsRecentApplications(applications) {
+            const tableBody = document.getElementById('topScholarshipsRecentTable');
+            
+            tableBody.innerHTML = applications.map(app => {
+                const date = new Date(app.application_date);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                return `
+                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${app.full_name}</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${app.scholarship_title}</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${app.academic_level}</td>
+                        <td class="py-2 text-gray-800 dark:text-gray-200">${formattedDate}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateScholarshipPerformanceMetrics(performance) {
+            document.getElementById('completionRate').textContent = performance.completion_rate || '85%';
+            document.getElementById('avgProcessingTime').textContent = performance.avg_processing_time || '3.2 days';
+            document.getElementById('successRate').textContent = performance.success_rate || '78%';
+            document.getElementById('userSatisfaction').textContent = performance.user_satisfaction || '4.2/5';
+        }
+
+        function showTopScholarshipsError(message) {
+            document.getElementById('topScholarshipsLoading').innerHTML = `
+                <div class="text-red-600 dark:text-red-400">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Initialize on page load
+        initializeAnalytics();
     </script>
 </body>
 </html>

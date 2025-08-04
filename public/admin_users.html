@@ -20,6 +20,21 @@
             }
         }
     </script>
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('color-theme');
+                if (
+                    theme === 'dark' ||
+                    (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
@@ -234,7 +249,7 @@
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="User Management"></div>
-    <main class="admin-main-content">
+    <main class="admin-main-content w-full">
         <div class="admin-content-container">
             <div class="p-6">
                 <div class="flex justify-between items-center">
@@ -262,7 +277,7 @@
                 <div class="min-w-full inline-block align-middle">
                     <div class="overflow-hidden">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700/80">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Name
@@ -281,7 +296,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody id="usersList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="usersList" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- User rows will be inserted here -->
                             </tbody>
                         </table>
@@ -324,6 +339,12 @@
                         dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
+                    <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <input type="password" id="userPassword" name="password"
+                        class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
                     <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
                     <select id="userRole" name="role" required
                         class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
@@ -362,7 +383,9 @@
         let users = [];
         let currentPage = 1;
         const usersPerPage = 10;
+        let totalUsers = 0;
         let filteredUsers = [];
+        let currentSearch = '';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -377,7 +400,6 @@
 
             // Initialize
             loadUsers();
-            initializeTheme();
             setupEventListeners();
             initializeSidebar();
             
@@ -402,26 +424,27 @@
         }
 
         // User CRUD Operations
-        async function loadUsers() {
+        async function loadUsers(page = 1, search = '') {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'login.html';
                     return;
                 }
-
-                const response = await fetch('/api/admin/users', {
+                let url = `/api/admin/users?page=${page}&limit=${usersPerPage}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-
                 if (!response.ok) {
                     throw new Error('Failed to fetch users');
                 }
-
                 const data = await response.json();
-                users = Array.isArray(data) ? data : [];
+                users = Array.isArray(data.users) ? data.users : [];
+                totalUsers = data.pagination ? data.pagination.total : users.length;
+                currentPage = data.pagination ? data.pagination.page : 1;
                 filteredUsers = [...users];
                 updateUsersTable();
                 updatePagination();
@@ -436,7 +459,6 @@
                 if (!token) {
                     throw new Error('Authentication required');
                 }
-
                 const response = await fetch('/api/admin/users', {
                     method: 'POST',
                     headers: {
@@ -445,40 +467,23 @@
                     },
                     body: JSON.stringify(userData)
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.message || 'Failed to create user');
                 }
-
-                const newUser = await response.json();
-                users.push({
-                    id: newUser.id,
-                    full_name: userData.fullName,
-                    email: userData.email,
-                    role: userData.role,
-                    status: userData.status
-                });
-                filteredUsers = [...users];
-                updateUsersTable();
-                
-                if (newUser.defaultPassword) {
-                    showNotification(`User created successfully. Default password: ${newUser.defaultPassword}`, 'success');
-                } else {
-                    showNotification('User created successfully', 'success');
-                }
+                await response.json();
+                return true;
             } catch (error) {
                 handleApiError(error);
+                return false;
             }
         }
-
         async function updateUser(userId, userData) {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
                     throw new Error('Authentication required');
                 }
-
                 const response = await fetch(`/api/admin/users/${userId}`, {
                     method: 'PUT',
                     headers: {
@@ -487,28 +492,15 @@
                     },
                     body: JSON.stringify(userData)
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.message || 'Failed to update user');
                 }
-
-                users = users.map(user => 
-                    user.id === userId 
-                        ? { 
-                            ...user, 
-                            full_name: userData.fullName,
-                            email: userData.email,
-                            role: userData.role,
-                            status: userData.status
-                        } 
-                        : user
-                );
-                filteredUsers = [...users];
-                updateUsersTable();
-                showNotification('User updated successfully', 'success');
+                await response.json();
+                return true;
             } catch (error) {
                 handleApiError(error);
+                return false;
             }
         }
 
@@ -533,9 +525,7 @@
                     throw new Error(error.message || 'Failed to delete user');
                 }
 
-                users = users.filter(user => user.id !== userId);
-                filteredUsers = [...users];
-                updateUsersTable();
+                await loadUsers(currentPage, currentSearch);
                 showNotification('User deleted successfully', 'success');
             } catch (error) {
                 handleApiError(error);
@@ -544,12 +534,8 @@
 
         // UI Updates
         function updateUsersTable() {
-            const startIndex = (currentPage - 1) * usersPerPage;
-            const endIndex = startIndex + usersPerPage;
-            const usersToDisplay = filteredUsers.slice(startIndex, endIndex);
-
             const usersList = document.getElementById('usersList');
-            usersList.innerHTML = usersToDisplay.map(user => `
+            usersList.innerHTML = users.map(user => `
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td class="px-4 py-4 whitespace-nowrap">
                         <div class="flex flex-col sm:flex-row sm:items-center">
@@ -598,49 +584,37 @@
                     </td>
                 </tr>
             `).join('');
-
             updatePagination();
         }
 
         function updatePagination() {
-            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-            const startRange = ((currentPage - 1) * usersPerPage) + 1;
-            const endRange = Math.min(currentPage * usersPerPage, filteredUsers.length);
-
-            document.getElementById('startRange').textContent = startRange;
+            const startRange = (currentPage - 1) * usersPerPage + 1;
+            const endRange = Math.min(currentPage * usersPerPage, totalUsers);
+            document.getElementById('startRange').textContent = totalUsers === 0 ? 0 : startRange;
             document.getElementById('endRange').textContent = endRange;
-            document.getElementById('totalUsers').textContent = filteredUsers.length;
-
-            // Update pagination buttons
+            document.getElementById('totalUsers').textContent = totalUsers;
+            const totalPages = Math.ceil(totalUsers / usersPerPage);
             const prevButton = document.getElementById('prevPage');
             const nextButton = document.getElementById('nextPage');
-            
             prevButton.disabled = currentPage === 1;
-            nextButton.disabled = currentPage === totalPages;
-            
+            nextButton.disabled = currentPage === totalPages || totalPages === 0;
             prevButton.classList.toggle('opacity-50', currentPage === 1);
-            nextButton.classList.toggle('opacity-50', currentPage === totalPages);
+            nextButton.classList.toggle('opacity-50', currentPage === totalPages || totalPages === 0);
         }
 
         // Search and Pagination
         function handleSearch(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            filteredUsers = users.filter(user => 
-                (user.full_name || '').toLowerCase().includes(searchTerm) ||
-                (user.email || '').toLowerCase().includes(searchTerm) ||
-                (user.role || '').toLowerCase().includes(searchTerm)
-            );
+            currentSearch = e.target.value;
             currentPage = 1;
-            updateUsersTable();
+            loadUsers(currentPage, currentSearch);
         }
 
         function changePage(delta) {
-            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            const totalPages = Math.ceil(totalUsers / usersPerPage);
             const newPage = currentPage + delta;
-            
             if (newPage >= 1 && newPage <= totalPages) {
                 currentPage = newPage;
-                updateUsersTable();
+                loadUsers(currentPage, currentSearch);
             }
         }
 
@@ -651,6 +625,7 @@
             currentUserId = null;
             document.getElementById('modalTitle').textContent = 'Add New User';
             document.getElementById('userForm').reset();
+            document.getElementById('userPassword').required = true;
             showModal();
         }
 
@@ -664,6 +639,8 @@
             document.getElementById('userEmail').value = user.email || '';
             document.getElementById('userRole').value = user.role || 'user';
             document.getElementById('userStatus').value = user.status || 'active';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userPassword').required = false;
             
             showModal();
         }
@@ -680,7 +657,6 @@
 
         async function handleUserSubmit(e) {
             e.preventDefault();
-            
             const formData = new FormData(e.target);
             const userData = {
                 fullName: formData.get('fullName'),
@@ -688,16 +664,24 @@
                 role: formData.get('role'),
                 status: formData.get('status')
             };
-
-            try {
-                if (currentUserId) {
-                    await updateUser(currentUserId, userData);
-                } else {
-                    await createUser(userData);
+            if (!currentUserId) {
+                const password = formData.get('password');
+                if (!password) {
+                    showNotification('Password is required for new users', 'error');
+                    return;
                 }
+                userData.password = password;
+            }
+            let success = false;
+            if (currentUserId) {
+                success = await updateUser(currentUserId, userData);
+            } else {
+                success = await createUser(userData);
+            }
+            if (success) {
                 hideModal();
-            } catch (error) {
-                handleApiError(error);
+                await loadUsers(currentPage, currentSearch);
+                showNotification(currentUserId ? 'User updated successfully' : 'User created successfully', 'success');
             }
         }
 

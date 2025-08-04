@@ -1,16 +1,16 @@
 <!-- Admin Sidebar Component -->
-<div id="admin-sidebar" class="admin-sidebar bg-white dark:bg-gray-800 shadow-lg">
+<div id="admin-sidebar" class="admin-sidebar shadow-lg bg-white">
     <div class="h-full flex flex-col">
         <!-- Collapse Button -->
-        <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200">
             <i class="fas fa-bars text-xl"></i>
         </button>
 
         <!-- Sidebar Items -->
         <div class="flex-1 px-4 space-y-2">
             <!-- Dashboard -->
-            <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <i class="fas fa-tachometer-alt w-6"></i>
+            <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Dashboard">
+                <i class="fas fa-tachometer-alt w-6 text-center"></i>
                 <span class="sidebar-item-text ml-3">Dashboard</span>
             </a>
 
@@ -19,12 +19,12 @@
                 <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                     User Management
                 </div>
-                <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-users w-6"></i>
+                <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Users">
+                    <i class="fas fa-users w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Users</span>
                 </a>
-                <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-user-shield w-6"></i>
+                <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Roles & Permissions">
+                    <i class="fas fa-user-shield w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Roles & Permissions</span>
                 </a>
             </div>
@@ -34,14 +34,15 @@
                 <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                     Scholarship Management
                 </div>
-                <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-graduation-cap w-6"></i>
+                <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Scholarships">
+                    <i class="fas fa-graduation-cap w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Scholarships</span>
                 </a>
-                <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-file-alt w-6"></i>
+                <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Applications">
+                    <i class="fas fa-file-alt w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Applications</span>
                 </a>
+
             </div>
 
             <!-- System Settings -->
@@ -49,17 +50,17 @@
                 <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                     System Settings
                 </div>
-                <a href="admin_generalSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-cog w-6"></i>
-                    <span class="sidebar-item-text ml-3">General Settings</span>
+                <a href="admin_accountSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Account Settings">
+                    <i class="fas fa-cog w-6 text-center"></i>
+                    <span class="sidebar-item-text ml-3">Account Settings</span>
                 </a>
-                <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-envelope w-6"></i>
+                <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Email Templates">
+                    <i class="fas fa-envelope w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Email Templates</span>
                 </a>
-                <a href="#backup" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-database w-6"></i>
-                    <span class="sidebar-item-text ml-3">Backup & Restore</span>
+                <a href="admin_help.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Help">
+                    <i class="fas fa-question w-6 text-center"></i>
+                    <span class="sidebar-item-text ml-3">Help</span>
                 </a>
             </div>
 
@@ -68,14 +69,15 @@
                 <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
                     Reports
                 </div>
-                <a href="#analytics" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-chart-line w-6"></i>
+                <a href="admin_analytics.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Analytics">
+                    <i class="fas fa-chart-line w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Analytics</span>
                 </a>
-                <a href="#reports" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                    <i class="fas fa-file-export w-6"></i>
+                <a href="admin_report.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Export Reports">
+                    <i class="fas fa-file-export w-6 text-center"></i>
                     <span class="sidebar-item-text ml-3">Export Reports</span>
                 </a>
+
             </div>
         </div>
     </div>
@@ -102,11 +104,27 @@
     }
 
     .sidebar-item-text {
-        transition: opacity 0.3s ease;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
     }
 
     .sidebar.collapsed .sidebar-item-text {
         opacity: 0;
+        visibility: hidden;
+        display: none;
+    }
+
+    /* Icons-only mode styling */
+    .sidebar.collapsed a {
+        justify-content: center;
+        padding: 1rem 0.5rem;
+    }
+
+    .sidebar.collapsed a i {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    .sidebar.collapsed .text-xs {
         display: none;
     }
 
@@ -114,15 +132,107 @@
         transition: margin-left 0.3s ease;
     }
 
+    /* Mobile and tablet responsive behavior */
+    @media (max-width: 1024px) {
+        .admin-sidebar {
+            width: 80px;
+        }
+        
+        .admin-sidebar:not(.mobile-open) {
+            width: 80px;
+        }
+        
+        .admin-sidebar .sidebar-item-text {
+            opacity: 0;
+            visibility: hidden;
+            display: none;
+        }
+        
+        .admin-sidebar a {
+            justify-content: center;
+            padding: 1rem 0.5rem;
+        }
+        
+        .admin-sidebar a i {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+        
+        .admin-sidebar .text-xs {
+            display: none;
+        }
+        
+        .admin-main-content {
+            margin-left: 80px;
+        }
+        
+        .admin-main-content.collapsed {
+            margin-left: 80px;
+        }
+    }
+
     @media (max-width: 768px) {
-        .sidebar {
-            position: fixed;
-            left: -280px;
-            z-index: 40;
+        .admin-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            width: 280px;
         }
 
-        .sidebar.mobile-open {
-            left: 0;
+        .admin-sidebar.mobile-open {
+            transform: translateX(0);
         }
+        
+        .admin-sidebar.mobile-open .sidebar-item-text {
+            opacity: 1;
+            visibility: visible;
+            display: block;
+        }
+        
+        .admin-sidebar.mobile-open a {
+            justify-content: flex-start;
+            padding: 0.75rem 1rem;
+        }
+        
+        .admin-sidebar.mobile-open a i {
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .admin-sidebar.mobile-open .text-xs {
+            display: block;
+        }
+        
+        .admin-main-content {
+            margin-left: 0;
+            padding: 1rem;
+        }
+        
+        .admin-main-content.collapsed {
+            margin-left: 0;
+        }
+    }
+
+    /* Tooltip styles for collapsed state */
+    .sidebar.collapsed a:hover::after {
+        content: attr(title);
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(31, 41, 55, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: white;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-left: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.collapsed a {
+        position: relative;
     }
 </style>

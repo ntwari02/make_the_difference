@@ -25,7 +25,7 @@ const upload = multer({ storage });
 // Get all services
 router.get('/', async (req, res) => {
   try {
-    const [services] = await db.promise().query('SELECT * FROM services');
+    const [services] = await db.query('SELECT * FROM services');
     res.json(services);
   } catch (error) {
     console.error(error);
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 // Get single service
 router.get('/:id', async (req, res) => {
   try {
-    const [services] = await db.promise().query(
+    const [services] = await db.query(
       'SELECT * FROM services WHERE id = ?',
       [req.params.id]
     );
@@ -64,7 +64,7 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
     if (!name || !description || !finalImageUrl) {
       return res.status(400).json({ message: 'Name, description, and image are required.' });
     }
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO services (name, description, image_url) VALUES (?, ?, ?)',
       [name, description, finalImageUrl]
     );
@@ -87,7 +87,7 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
       finalImageUrl = `uploads/services/${req.file.filename}`;
     }
     // Fetch current service to keep existing image if not updated
-    const [currentRows] = await db.promise().query('SELECT * FROM services WHERE id = ?', [req.params.id]);
+    const [currentRows] = await db.query('SELECT * FROM services WHERE id = ?', [req.params.id]);
     if (currentRows.length === 0) {
       return res.status(404).json({ message: 'Service not found' });
     }
@@ -95,7 +95,7 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
     const updateName = name || current.name;
     const updateDesc = description || current.description;
     const updateImageUrl = finalImageUrl || current.image_url;
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'UPDATE services SET name = ?, description = ?, image_url = ? WHERE id = ?',
       [updateName, updateDesc, updateImageUrl, req.params.id]
     );
@@ -109,7 +109,7 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
 // Delete service (admin only)
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'DELETE FROM services WHERE id = ?',
       [req.params.id]
     );

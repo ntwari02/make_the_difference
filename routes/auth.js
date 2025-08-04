@@ -9,10 +9,10 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { full_name, email, password, role } = req.body;
+    const { full_name, email, password, security_questions } = req.body;
 
     // Check if user already exists
-    const [existingUser] = await db.promise().query(
+    const [existingUser] = await db.query(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
@@ -21,33 +21,61 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Validate security questions
+    if (!security_questions || !Array.isArray(security_questions) || security_questions.length !== 3) {
+      return res.status(400).json({ message: 'Three security questions are required' });
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert new user
-    const [result] = await db.promise().query(
-      'INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)',
-      [full_name, email, hashedPassword, role || 'user']
-    );
+    // Start transaction
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
-    // Create token
-    const token = jwt.sign(
-      { id: result.insertId, role: role || 'user' },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '1d' }
-    );
+    try {
+      // Insert new user
+      const [result] = await connection.query(
+        'INSERT INTO users (full_name, email, password, role, security_questions_setup) VALUES (?, ?, ?, ?, ?)',
+        [full_name, email, hashedPassword, 'user', true]
+      );
 
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: {
-        id: result.insertId,
-        full_name,
-        email,
-        role: role || 'user'
+      const userId = result.insertId;
+
+      // Insert security question answers
+      for (const question of security_questions) {
+        await connection.query(
+          'INSERT INTO user_security_answers (user_id, question_id, answer) VALUES (?, ?, ?)',
+          [userId, question.question_id, question.answer]
+        );
       }
-    });
+
+      await connection.commit();
+
+      // Create token
+      const token = jwt.sign(
+        { id: userId, role: 'user' },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '1d' }
+      );
+
+      res.status(201).json({
+        message: 'User registered successfully',
+        token,
+        user: {
+          id: userId,
+          full_name,
+          email,
+          role: 'user'
+        }
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error registering user' });
@@ -60,7 +88,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Check if user exists
-    const [users] = await db.promise().query(
+    const [users] = await db.query(
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
@@ -70,6 +98,9 @@ router.post('/login', async (req, res) => {
     }
 
     const user = users[0];
+    if (user.status !== 'active') {
+      return res.status(403).json({ message: 'Account is inactive. Please contact admin.' });
+    }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -100,46 +131,56 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Forgot Password
+// Forgot Password - Get security questions
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+  
   try {
-    // Check if user exists
-    const [users] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
+    // Check if user exists and has security questions set up
+    const [users] = await db.query(`
+      SELECT u.id, u.email, u.security_questions_setup,
+             COUNT(usa.id) as question_count
+      FROM users u
+      LEFT JOIN user_security_answers usa ON u.id = usa.user_id
+      WHERE u.email = ?
+      GROUP BY u.id
+    `, [email]);
+    
     if (users.length === 0) {
-      return res.status(200).json({ success: true, message: 'If this email is registered, a reset link will be sent.' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No account found with this email address' 
+      });
     }
+    
     const user = users[0];
-    // Generate token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 1000 * 60 * 60); // 1 hour from now
-    // Save token and expiry in DB
-    await db.promise().query('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?', [token, expiry, user.id]);
-    // Send email
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
-    // const msg = {
-    //   to: email,
-    //   from: 'your_verified_sender@yourdomain.com',
-    //   subject: 'Password Reset Request',
-    //   html: `<p>You requested a password reset. <a href="${resetUrl}">Click here to reset your password</a>. This link will expire in 1 hour.</p>`
-    // };
-    // try {
-    //   await sgMail.send(msg);
-    // } catch (error) {
-    //   console.error('SendGrid error:', error);
-    //   if (error.response) {
-    //     console.error(error.response.body);
-    //   }
-    //   res.status(500).json({ success: false, message: 'Error sending reset email' });
-    //   return;
-    // }
-    // Instead of sending email, just log the reset URL (for development)
-    console.log('Password reset URL:', resetUrl);
-    res.json({ success: true, message: 'If this email is registered, a reset link will be sent.' });
+    
+    if (!user.security_questions_setup || user.question_count < 2) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Security questions not set up for this account. Please contact administrator.' 
+      });
+    }
+    
+    // Get user's security questions
+    const [questions] = await db.query(`
+      SELECT sq.id, sq.question
+      FROM security_questions sq
+      INNER JOIN user_security_answers usa ON sq.id = usa.question_id
+      WHERE usa.user_id = ?
+      ORDER BY sq.question
+    `, [user.id]);
+    
+    res.json({ 
+      success: true, 
+      message: 'Security questions retrieved successfully',
+      questions: questions
+    });
+    
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Error sending reset email' });
+    res.status(500).json({ success: false, message: 'Error retrieving security questions' });
   }
 });
 
@@ -149,7 +190,7 @@ router.post('/reset-password', async (req, res) => {
   if (!token || !newPassword) return res.status(400).json({ success: false, message: 'Token and new password are required' });
   try {
     // Find user with valid token
-    const [users] = await db.promise().query('SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()', [token]);
+    const [users] = await db.query('SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()', [token]);
     if (users.length === 0) {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
@@ -158,7 +199,7 @@ router.post('/reset-password', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     // Update password and clear token
-    await db.promise().query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?', [hashedPassword, user.id]);
+    await db.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?', [hashedPassword, user.id]);
     res.json({ success: true, message: 'Password has been reset successfully' });
   } catch (error) {
     console.error(error);

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications & Conversations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('color-theme');
+          if (
+            theme === 'dark' ||
+            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Notifications & Conversations</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="dashboard.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Your Messages</h2>
+                <p class="text-gray-600 dark:text-gray-400">View notifications and continue conversations with admin</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button id="markAllReadBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm">
+                    <i class="fas fa-check-double mr-2"></i>Mark All as Read
+                </button>
+                <button id="refreshBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" data-filter="all">All Messages</button>
+            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="notifications">Notifications</button>
+            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="conversations">Conversations</button>
+            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="unread">Unread</button>
+        </div>
+
+        <!-- Content Container -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Messages List -->
+            <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Messages</h3>
+                    </div>
+                    <div id="messagesList" class="max-h-96 overflow-y-auto">
+                        <!-- Messages will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversation/Notification Details -->
+            <div class="lg:col-span-2">
+                <div id="messageDetails" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-comments text-4xl mb-4"></i>
+                        <p>Select a message to view details and reply</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <p class="mt-4 text-gray-600 dark:text-gray-400 text-lg">Loading messages...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 max-w-md mx-auto">
+                <i class="fas fa-bell text-6xl text-gray-400 mb-6"></i>
+                <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No messages</h3>
+                <p class="text-gray-500 dark:text-gray-500">You don't have any messages yet.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auth check
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        let allNotifications = [];
+        let allConversations = [];
+        let currentFilter = 'all';
+        let selectedMessageId = null;
+        let selectedMessageType = null; // 'notification' or 'conversation'
+
+        // Filter buttons functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterBtns.forEach(b => b.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300'));
+                this.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
+                currentFilter = this.dataset.filter;
+                renderMessages();
+            });
+        });
+
+        // Fetch all data
+        async function fetchAllData() {
+            try {
+                showLoading(true);
+                
+                // Fetch notifications and conversations in parallel
+                const [notificationsResponse, conversationsResponse] = await Promise.all([
+                    fetch('/api/notifications', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch('/api/notifications/conversations', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+                
+                if (notificationsResponse.ok) {
+                    allNotifications = await notificationsResponse.json();
+                }
+                
+                if (conversationsResponse.ok) {
+                    allConversations = await conversationsResponse.json();
+                }
+                
+                renderMessages();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showError('Error loading messages. Please check your connection.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const container = document.getElementById('messagesList');
+            container.innerHTML = `
+                <div class="p-4">
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <div class="flex">
+                            <i class="fas fa-exclamation-triangle text-red-400 mt-1 mr-3"></i>
+                            <div>
+                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+                                <p class="text-sm text-red-700 dark:text-red-300 mt-1">${message}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render messages based on current filter
+        function renderMessages() {
+            const container = document.getElementById('messagesList');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+
+            // Hide loading state
+            loadingState.classList.add('hidden');
+
+            // Filter messages
+            let filteredMessages = [];
+            
+            if (currentFilter === 'notifications') {
+                filteredMessages = allNotifications.map(n => ({
+                    ...n,
+                    type: 'notification',
+                    displayId: n.id,
+                    title: n.title,
+                    message: n.message,
+                    date: n.created_at,
+                    isRead: n.is_read
+                }));
+            } else if (currentFilter === 'conversations') {
+                filteredMessages = allConversations.map(c => ({
+                    ...c,
+                    type: 'conversation',
+                    displayId: c.id,
+                    title: c.subject,
+                    message: c.notification_message,
+                    date: c.updated_at,
+                    isRead: true,
+                    replyCount: c.reply_count || 0
+                }));
+            } else if (currentFilter === 'unread') {
+                const unreadNotifications = allNotifications.filter(n => !n.is_read).map(n => ({
+                    ...n,
+                    type: 'notification',
+                    displayId: n.id,
+                    title: n.title,
+                    message: n.message,
+                    date: n.created_at,
+                    isRead: n.is_read
+                }));
+                filteredMessages = unreadNotifications;
+            } else { // 'all'
+                const notificationMessages = allNotifications.map(n => ({
+                    ...n,
+                    type: 'notification',
+                    displayId: n.id,
+                    title: n.title,
+                    message: n.message,
+                    date: n.created_at,
+                    isRead: n.is_read
+                }));
+                const conversationMessages = allConversations.map(c => ({
+                    ...c,
+                    type: 'conversation',
+                    displayId: c.id,
+                    title: c.subject,
+                    message: c.notification_message,
+                    date: c.updated_at,
+                    isRead: true,
+                    replyCount: c.reply_count || 0
+                }));
+                filteredMessages = [...notificationMessages, ...conversationMessages];
+            }
+
+            // Sort by date (newest first)
+            filteredMessages.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Show empty state if no messages
+            if (filteredMessages.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            // Render message list
+            container.innerHTML = filteredMessages.map(message => `
+                <div class="message-item p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedMessageId === message.displayId && selectedMessageType === message.type ? 'bg-blue-50 dark:bg-blue-900/20' : ''}" 
+                     onclick="selectMessage('${message.type}', ${message.displayId})">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h4 class="text-sm font-semibold text-gray-800 dark:text-white truncate">${message.title}</h4>
+                                ${!message.isRead ? '<span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">New</span>' : ''}
+                                ${message.type === 'conversation' && message.replyCount > 0 ? `<span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">${message.replyCount} replies</span>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">${message.message}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-400">${formatDate(message.date)}</span>
+                                <span class="text-xs text-gray-400 capitalize">${message.type}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select a message to view details
+        async function selectMessage(type, id) {
+            selectedMessageId = id;
+            selectedMessageType = type;
+            
+            // Update UI to show selected message
+            document.querySelectorAll('.message-item').forEach(item => {
+                item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+            });
+            event.target.closest('.message-item').classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+            
+            // Load message details
+            await loadMessageDetails(type, id);
+        }
+
+        // Load message details
+        async function loadMessageDetails(type, id) {
+            try {
+                const detailsContainer = document.getElementById('messageDetails');
+                
+                if (type === 'notification') {
+                    // For notifications, show the notification details
+                    const notification = allNotifications.find(n => n.id == id);
+                    if (!notification) return;
+                    
+                    detailsContainer.innerHTML = `
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${notification.title}</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(notification.created_at)}</span>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                                <p class="text-gray-700 dark:text-gray-300">${notification.message}</p>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Notification</span>
+                                ${!notification.is_read ? `
+                                    <button onclick="markAsRead(${notification.id})" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm">
+                                        Mark as Read
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else if (type === 'conversation') {
+                    // For conversations, fetch and show the conversation with replies
+                    const response = await fetch(`/api/notifications/conversations/${id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const conversation = data.conversation;
+                        const replies = data.replies;
+                        
+                        detailsContainer.innerHTML = `
+                            <div class="flex flex-col h-full">
+                                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${conversation.subject}</h3>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(conversation.created_at)}</span>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                                        <p class="text-gray-700 dark:text-gray-300">${conversation.notification_message}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                                    ${replies.map(reply => `
+                                        <div class="flex ${reply.sender_type === 'user' ? 'justify-end' : 'justify-start'}">
+                                            <div class="max-w-xs lg:max-w-md">
+                                                <div class="bg-${reply.sender_type === 'user' ? 'blue' : 'gray'}-100 dark:bg-${reply.sender_type === 'user' ? 'blue' : 'gray'}-800 rounded-lg p-3">
+                                                    <p class="text-sm text-gray-800 dark:text-gray-200">${reply.message}</p>
+                                                </div>
+                                                <div class="flex items-center justify-between mt-1">
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${reply.sender_name || reply.sender_email}</span>
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(reply.created_at)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                
+                                <div class="p-6 border-t border-gray-200 dark:border-gray-700">
+                                    <form onsubmit="sendReply(event, ${conversation.id})" class="flex gap-2">
+                                        <input type="text" id="replyMessage" placeholder="Type your reply..." 
+                                               class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading message details:', error);
+                showError('Error loading message details.');
+            }
+        }
+
+        // Send reply
+        async function sendReply(event, conversationId) {
+            event.preventDefault();
+            const messageInput = document.getElementById('replyMessage');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            try {
+                const response = await fetch(`/api/notifications/conversations/${conversationId}/replies`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                if (response.ok) {
+                    messageInput.value = '';
+                    // Reload conversation details
+                    await loadMessageDetails('conversation', conversationId);
+                    // Refresh all data
+                    await fetchAllData();
+                }
+            } catch (error) {
+                console.error('Error sending reply:', error);
+                alert('Error sending reply. Please try again.');
+            }
+        }
+
+        // Mark notification as read
+        async function markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Update local state
+                    const notification = allNotifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.is_read = true;
+                        renderMessages();
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Mark all notifications as read
+        document.getElementById('markAllReadBtn').addEventListener('click', async function() {
+            try {
+                const unreadNotifications = allNotifications.filter(n => !n.is_read);
+                
+                if (unreadNotifications.length === 0) {
+                    alert('No unread notifications to mark.');
+                    return;
+                }
+
+                // Mark all unread notifications as read
+                for (const notification of unreadNotifications) {
+                    await fetch(`/api/notifications/${notification.id}/read`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    notification.is_read = true;
+                }
+
+                renderMessages();
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+                alert('Error marking notifications as read. Please try again.');
+            }
+        });
+
+        // Refresh messages
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            fetchAllData();
+        });
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffInHours = (now - date) / (1000 * 60 * 60);
+
+            if (diffInHours < 1) {
+                const minutes = Math.floor((now - date) / (1000 * 60));
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            } else if (diffInHours < 24) {
+                const hours = Math.floor(diffInHours);
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else if (diffInHours < 168) { // 7 days
+                const days = Math.floor(diffInHours / 24);
+                return `${days} day${days !== 1 ? 's' : ''} ago`;
+            } else {
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+        }
+
+        // Show loading state
+        function showLoading(isLoading) {
+            const loadingState = document.getElementById('loadingState');
+            if (isLoading) {
+                loadingState.classList.remove('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+            }
+        }
+
+        // Initial load
+        fetchAllData();
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchAllData, 30000);
+    </script>
+</body>
+</html> 

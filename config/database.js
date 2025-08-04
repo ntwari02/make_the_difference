@@ -22,4 +22,5 @@ pool.getConnection((err, connection) => {
     connection.release();
 });
 
-export default pool; 
+// Export both pool and db for consistency
+export default pool.promise(); 

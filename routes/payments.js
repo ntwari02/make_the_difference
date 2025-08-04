@@ -6,7 +6,7 @@ const router = express.Router();
 // Get user's payments
 router.get('/', auth, async (req, res) => {
   try {
-    const [payments] = await db.promise().query(
+    const [payments] = await db.query(
       'SELECT * FROM payments WHERE user_id = ?',
       [req.user.id]
     );
@@ -24,7 +24,7 @@ router.post('/', auth, async (req, res) => {
     const { amount, method } = req.body;
     const user_id = req.user.id;
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO payments (user_id, amount, method, status) VALUES (?, ?, ?, "pending")',
       [user_id, amount, method]
     );
@@ -44,7 +44,7 @@ router.put('/:id', adminAuth, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'UPDATE payments SET status = ? WHERE id = ?',
       [status, req.params.id]
     );
@@ -63,7 +63,7 @@ router.put('/:id', adminAuth, async (req, res) => {
 // Get payment details
 router.get('/:id', auth, async (req, res) => {
   try {
-    const [payments] = await db.promise().query(
+    const [payments] = await db.query(
       'SELECT * FROM payments WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
@@ -82,7 +82,7 @@ router.get('/:id', auth, async (req, res) => {
 // Get all payments (admin only)
 router.get('/admin/all', adminAuth, async (req, res) => {
   try {
-    const [payments] = await db.promise().query(
+    const [payments] = await db.query(
       `SELECT p.*, u.full_name, u.email 
        FROM payments p 
        JOIN users u ON p.user_id = u.id 

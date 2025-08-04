@@ -29,46 +29,116 @@ async function includeAdminHeader() {
             window.location.href = 'login.html';
         });
 
-        // Theme toggle
+        // Enhanced Theme Management
+        initializeThemeSystem();
+        
+    } catch (err) {
+        console.error('Error including admin header:', err);
+    }
+}
+
+function initializeThemeSystem() {
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
         
-        function updateTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
+    // Theme state management
+    const themeState = {
+        current: 'light',
+        setTheme(theme) {
+            this.current = theme;
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('admin-theme', 'dark');
             } else {
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('admin-theme', 'light');
             }
+            this.updateUI();
+            this.applyThemeToComponents();
+        },
+        
+        toggle() {
+            const newTheme = this.current === 'light' ? 'dark' : 'light';
+            this.setTheme(newTheme);
+        },
+        
+        updateUI() {
+            if (!themeIcon) return;
             
-            // Update layout theme classes
-            const layoutElements = document.querySelectorAll('.admin-layout, .admin-header, .admin-sidebar, .admin-main-content');
-            layoutElements.forEach(element => {
-                if (document.documentElement.classList.contains('dark')) {
+            if (this.current === 'dark') {
+                themeIcon.className = 'fas fa-sun text-yellow-400';
+                themeIcon.title = 'Switch to Light Mode';
+            } else {
+                themeIcon.className = 'fas fa-moon text-gray-600';
+                themeIcon.title = 'Switch to Dark Mode';
+            }
+        },
+        
+        applyThemeToComponents() {
+            // Apply theme to all admin components
+            const adminElements = document.querySelectorAll('.admin-layout, .admin-header, .admin-sidebar, .admin-main-content, .admin-card');
+            adminElements.forEach(element => {
+                if (this.current === 'dark') {
                     element.classList.add('dark');
                 } else {
                     element.classList.remove('dark');
                 }
             });
-        }
+            
+            // Update body class for global theme
+            if (this.current === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+                document.body.classList.remove('dark-mode');
+            }
+        },
         
-        themeToggle.addEventListener('click', function() {
-            document.documentElement.classList.toggle('dark');
-            updateTheme();
-            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        initialize() {
+            // Check for saved theme preference or default to system preference
+            const savedTheme = localStorage.getItem('admin-theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme) {
+                this.setTheme(savedTheme);
+            } else {
+                this.setTheme(systemPrefersDark ? 'dark' : 'light');
+            }
+            
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('admin-theme')) {
+                    this.setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+    };
+    
+    // Initialize theme system
+    themeState.initialize();
+    
+    // Theme toggle event listener
+    if (themeToggle) {
+        themeToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            themeToggle.classList.add('scale-95');
+            setTimeout(() => themeToggle.classList.remove('scale-95'), 150);
+            themeState.toggle();
         });
-        
-        // Set initial theme
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        updateTheme();
-    } catch (err) {
-        console.error('Error including admin header:', err);
     }
+    
+    // Add smooth transitions for theme changes
+    const style = document.createElement('style');
+    style.textContent = `
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .theme-toggle-transition {
+            transition: transform 0.15s ease;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 document.addEventListener('DOMContentLoaded', includeAdminHeader); 

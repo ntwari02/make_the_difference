@@ -1,13 +1,13 @@
 import express from 'express';
 import db from '../config/database.js';
-import { auth } from '../middleware/auth.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 const router = express.Router();
 
 // Get user profile
 router.get('/profile', auth, async (req, res) => {
     try {
-        const [user] = await db.promise().query(
+        const [user] = await db.query(
             'SELECT id, fullName, email, role, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
@@ -29,7 +29,7 @@ router.put('/profile', auth, async (req, res) => {
     
     try {
         // Check if email is already taken by another user
-        const [existingUser] = await db.promise().query(
+        const [existingUser] = await db.query(
             'SELECT id FROM users WHERE email = ? AND id != ?',
             [email, req.user.id]
         );
@@ -39,7 +39,7 @@ router.put('/profile', auth, async (req, res) => {
         }
         
         // Update user profile
-        await db.promise().query(
+        await db.query(
             'UPDATE users SET fullName = ?, email = ? WHERE id = ?',
             [fullName, email, req.user.id]
         );
@@ -57,7 +57,7 @@ router.put('/change-password', auth, async (req, res) => {
     
     try {
         // Verify current password
-        const [user] = await db.promise().query(
+        const [user] = await db.query(
             'SELECT password FROM users WHERE id = ?',
             [req.user.id]
         );
@@ -76,7 +76,7 @@ router.put('/change-password', auth, async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
         // Update password
-        await db.promise().query(
+        await db.query(
             'UPDATE users SET password = ? WHERE id = ?',
             [hashedPassword, req.user.id]
         );
@@ -85,6 +85,67 @@ router.put('/change-password', auth, async (req, res) => {
     } catch (error) {
         console.error('Error changing password:', error);
         res.status(500).json({ message: 'Error changing password' });
+    }
+});
+
+// Get all users for email sending (admin only)
+router.get('/all', adminAuth, async (req, res) => {
+    try {
+        const { search, role, status } = req.query;
+        
+        let query = 'SELECT id, full_name, email, role, status FROM users WHERE 1=1';
+        const params = [];
+        
+        if (search) {
+            query += ' AND (full_name LIKE ? OR email LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        
+        if (role) {
+            query += ' AND role = ?';
+            params.push(role);
+        }
+        
+        if (status) {
+            query += ' AND status = ?';
+            params.push(status);
+        }
+        
+        query += ' ORDER BY full_name';
+        
+        const [users] = await db.query(query, params);
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+});
+
+// Get users by role (admin only)
+router.get('/by-role/:role', adminAuth, async (req, res) => {
+    try {
+        const { role } = req.params;
+        const [users] = await db.query(
+            'SELECT id, full_name, email, role, status FROM users WHERE role = ? AND status = "active" ORDER BY full_name',
+            [role]
+        );
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users by role:', error);
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+});
+
+// Get active users count (admin only)
+router.get('/count', adminAuth, async (req, res) => {
+    try {
+        const [result] = await db.query(
+            'SELECT COUNT(*) as total FROM users WHERE status = "active"'
+        );
+        res.json({ total: result[0].total });
+    } catch (error) {
+        console.error('Error fetching user count:', error);
+        res.status(500).json({ message: 'Error fetching user count' });
     }
 });
 

@@ -1,13 +1,13 @@
 import express from 'express';
 import db from '../config/database.js';
-import { auth } from '../middleware/auth.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get applications for the logged-in user
 router.get('/', auth, async (req, res) => {
   try {
-    const [applications] = await db.promise().query(
+    const [applications] = await db.query(
       `SELECT sa.*, s.name as scholarship_name 
        FROM scholarship_applications sa
        JOIN scholarships s ON sa.scholarship_id = s.id
@@ -25,14 +25,14 @@ router.get('/', auth, async (req, res) => {
 router.get('/stats', auth, async (req, res) => {
   try {
     // Get total applications for the user
-    const [applicationsCount] = await db.promise().query(
+    const [applicationsCount] = await db.query(
       'SELECT COUNT(*) as count FROM scholarship_applications WHERE email_address = ?',
       [req.user.email]
     );
 
     // Get total available scholarships (not expired)
-    const [scholarshipsCount] = await db.promise().query(
-      "SELECT COUNT(*) as count FROM scholarships WHERE status = 'active' AND (deadline_date IS NULL OR deadline_date >= CURDATE())"
+    const [scholarshipsCount] = await db.query(
+      "SELECT COUNT(*) as count FROM scholarships WHERE status = 'active' AND (application_deadline IS NULL OR application_deadline >= CURDATE())"
     );
 
     res.json({
@@ -48,7 +48,7 @@ router.get('/stats', auth, async (req, res) => {
 // Get a single application for the logged-in user
 router.get('/:id', auth, async (req, res) => {
   try {
-    const [applications] = await db.promise().query(
+    const [applications] = await db.query(
       `SELECT sa.*, s.name as scholarship_name 
        FROM scholarship_applications sa
        JOIN scholarships s ON sa.scholarship_id = s.id
@@ -70,7 +70,7 @@ router.put('/:id', auth, async (req, res) => {
   try {
     const applicationId = req.params.id;
     // Only allow update if the application belongs to the user
-    const [existing] = await db.promise().query(
+    const [existing] = await db.query(
       'SELECT * FROM scholarship_applications WHERE application_id = ? AND email_address = ?',
       [applicationId, req.user.email]
     );
@@ -89,7 +89,7 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
     // Update application
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       `UPDATE scholarship_applications SET 
         full_name = ?, date_of_birth = ?, gender = ?, phone_number = ?, address = ?,
         preferred_university = ?, country = ?, academic_level = ?, intended_major = ?, gpa_academic_performance = ?,
@@ -128,19 +128,89 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// Update application status and processing information
+router.patch('/:id/status', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reviewer_notes } = req.body;
+    
+    // Validate status
+    const validStatuses = ['pending', 'under_review', 'approved', 'rejected', 'waitlisted'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    
+    // Get current application
+    const [applications] = await db.query(
+      'SELECT * FROM scholarship_applications WHERE application_id = ?',
+      [id]
+    );
+    
+    if (applications.length === 0) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    
+    const application = applications[0];
+    const now = new Date();
+    
+    // Calculate processing metrics
+    let reviewedAt = application.reviewed_at;
+    let completedAt = application.completed_at;
+    let processingDays = application.processing_days;
+    let reviewDays = application.review_days;
+    
+    // Update reviewed_at if status is changing from pending
+    if (application.status === 'pending' && status !== 'pending') {
+      reviewedAt = now;
+      reviewDays = Math.ceil((now - new Date(application.application_date)) / (1000 * 60 * 60 * 24));
+    }
+    
+    // Update completed_at for final statuses
+    if (['approved', 'rejected', 'waitlisted'].includes(status)) {
+      completedAt = now;
+      processingDays = Math.ceil((now - new Date(application.application_date)) / (1000 * 60 * 60 * 24));
+    }
+    
+    // Update the application
+    await db.query(`
+      UPDATE scholarship_applications 
+      SET status = ?, 
+          reviewed_at = ?, 
+          completed_at = ?, 
+          processing_days = ?, 
+          review_days = ?, 
+          reviewer_notes = ?
+      WHERE application_id = ?
+    `, [status, reviewedAt, completedAt, processingDays, reviewDays, reviewer_notes, id]);
+    
+    // Send notification to user (if you have notification system)
+    // This is optional - you can implement user notifications here
+    
+    res.json({ 
+      message: 'Application status updated successfully',
+      application_id: id,
+      new_status: status
+    });
+    
+  } catch (error) {
+    console.error('Error updating application status:', error);
+    res.status(500).json({ message: 'Error updating application status' });
+  }
+});
+
 // Delete an application for the logged-in user
 router.delete('/:id', auth, async (req, res) => {
   try {
     const applicationId = req.params.id;
     // Only allow delete if the application belongs to the user
-    const [existing] = await db.promise().query(
+    const [existing] = await db.query(
       'SELECT * FROM scholarship_applications WHERE application_id = ? AND email_address = ?',
       [applicationId, req.user.email]
     );
     if (existing.length === 0) {
       return res.status(404).json({ message: 'Application not found or not authorized' });
     }
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'DELETE FROM scholarship_applications WHERE application_id = ? AND email_address = ?',
       [applicationId, req.user.email]
     );

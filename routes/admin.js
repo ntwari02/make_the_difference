@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../config/database.js';
 import { adminAuth } from '../middleware/auth.js';
 import multer from 'multer';
+
 // Set up multer storage for profile pictures and documents
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -19,28 +20,74 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 const router = express.Router();
 
+// Initialize database schema - add missing columns if they don't exist
+async function initializeDatabase() {
+    try {
+        // Add status column to scholarship_applications if it doesn't exist
+        const [columns] = await db.query(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'scholarship_applications' 
+            AND COLUMN_NAME = 'status'
+        `);
+
+        if (columns.length === 0) {
+            await db.query(`
+                ALTER TABLE scholarship_applications 
+                ADD COLUMN status ENUM('pending', 'approved', 'rejected') 
+                DEFAULT 'pending'
+            `);
+            console.log('Added status column to scholarship_applications table');
+        }
+
+        // Add status column to users if it doesn't exist
+        const [userColumns] = await db.query(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'users' 
+            AND COLUMN_NAME = 'status'
+        `);
+
+        if (userColumns.length === 0) {
+            await db.query(`
+                ALTER TABLE users 
+                ADD COLUMN status ENUM('active', 'inactive') 
+                DEFAULT 'active'
+            `);
+            console.log('Added status column to users table');
+        }
+    } catch (error) {
+        console.error('Error initializing database schema:', error);
+    }
+}
+
+// Initialize database on startup
+initializeDatabase();
+
 // Get dashboard statistics
 router.get('/dashboard', adminAuth, async (req, res) => {
   try {
     // Get total users
-    const [usersCount] = await db.promise().query('SELECT COUNT(*) as count FROM users');
+    const [usersCount] = await db.query('SELECT COUNT(*) as count FROM users');
     
     // Get total partners
-    const [partnersCount] = await db.promise().query('SELECT COUNT(*) as count FROM partners');
+    const [partnersCount] = await db.query('SELECT COUNT(*) as count FROM partners');
     
     // Get total scholarships
-    const [scholarshipsCount] = await db.promise().query('SELECT COUNT(*) as count FROM scholarships');
+    const [scholarshipsCount] = await db.query('SELECT COUNT(*) as count FROM scholarships');
     
     // Get total applications
-    const [applicationsCount] = await db.promise().query('SELECT COUNT(*) as count FROM scholarship_applications');
+    const [applicationsCount] = await db.query('SELECT COUNT(*) as count FROM scholarship_applications');
     
     // Get total active subscriptions
-    const [subscriptionsCount] = await db.promise().query(
+    const [subscriptionsCount] = await db.query(
       'SELECT COUNT(*) as count FROM plan_subscriptions WHERE status = "active"'
     );
     
     // Get total revenue
-    const [revenue] = await db.promise().query(
+    const [revenue] = await db.query(
       'SELECT SUM(amount) as total FROM payments WHERE status = "completed"'
     );
 
@@ -53,21 +100,115 @@ router.get('/dashboard', adminAuth, async (req, res) => {
       totalRevenue: revenue[0].total || 0
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching dashboard statistics:', error);
     res.status(500).json({ message: 'Error fetching dashboard statistics' });
   }
 });
 
-// Get all users
+// Get all users with pagination and search
 router.get('/users', adminAuth, async (req, res) => {
   try {
-    const [users] = await db.promise().query(
-      'SELECT id, full_name, email, role, status FROM users'
-    );
-    res.json(users);
+    const { page = 1, limit = 10, search = '', role = '' } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let query = 'SELECT id, full_name, email, role, status, created_at FROM users WHERE 1=1';
+    let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
+    const params = [];
+    const countParams = [];
+
+    if (search) {
+      query += ' AND (full_name LIKE ? OR email LIKE ?)';
+      countQuery += ' AND (full_name LIKE ? OR email LIKE ?)';
+      const searchParam = `%${search}%`;
+      params.push(searchParam, searchParam);
+      countParams.push(searchParam, searchParam);
+    }
+
+    if (role) {
+      query += ' AND role = ?';
+      countQuery += ' AND role = ?';
+      params.push(role);
+      countParams.push(role);
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), offset);
+
+    const [users] = await db.query(query, params);
+    const [totalResult] = await db.query(countQuery, countParams);
+    const total = totalResult[0].total;
+
+    res.json({
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching users:', error);
     res.status(500).json({ message: 'Error fetching users' });
+  }
+});
+
+// Get user by ID
+router.get('/users/:id', adminAuth, async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT id, full_name, email, role, status FROM users WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(users[0]);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user' });
+  }
+});
+
+// Create new user
+router.post('/users', adminAuth, async (req, res) => {
+  try {
+    const { fullName, email, password, role = 'user', status = 'active' } = req.body;
+    
+    // Validate required fields
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ message: 'Full name, email, and password are required' });
+    }
+
+    // Check if email already exists
+    const [existingUsers] = await db.query(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
+    // Hash password
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    const [result] = await db.query(
+      'INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
+      [fullName, email, hashedPassword, role, status]
+    );
+
+    res.status(201).json({ 
+      message: 'User created successfully',
+      userId: result.insertId 
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error creating user' });
   }
 });
 
@@ -82,7 +223,7 @@ router.put('/users/:id', adminAuth, async (req, res) => {
     }
 
     // Check if email exists for other users
-    const [existingUsers] = await db.promise().query(
+    const [existingUsers] = await db.query(
       'SELECT id FROM users WHERE email = ? AND id != ?',
       [email, req.params.id]
     );
@@ -92,7 +233,7 @@ router.put('/users/:id', adminAuth, async (req, res) => {
     }
 
     // Update user
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'UPDATE users SET full_name = ?, email = ?, role = ?, status = ? WHERE id = ?',
       [fullName, email, role || 'user', status || 'active', req.params.id]
     );
@@ -111,7 +252,19 @@ router.put('/users/:id', adminAuth, async (req, res) => {
 // Delete user
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
-    const [result] = await db.promise().query(
+    // Check if user has applications
+    const [applications] = await db.query(
+      'SELECT COUNT(*) as count FROM scholarship_applications WHERE email_address IN (SELECT email FROM users WHERE id = ?)',
+      [req.params.id]
+    );
+
+    if (applications[0].count > 0) {
+      return res.status(400).json({ 
+        message: 'Cannot delete user with existing applications. Please delete applications first.' 
+      });
+    }
+
+    const [result] = await db.query(
       'DELETE FROM users WHERE id = ?',
       [req.params.id]
     );
@@ -122,7 +275,7 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error(error);
+    console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Error deleting user' });
   }
 });
@@ -130,7 +283,7 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
 // Get all newsletter subscribers
 router.get('/newsletter-subscribers', adminAuth, async (req, res) => {
   try {
-    const [subscribers] = await db.promise().query('SELECT * FROM newsletter_subscribers');
+    const [subscribers] = await db.query('SELECT * FROM newsletter_subscribers');
     res.json(subscribers);
   } catch (error) {
     console.error(error);
@@ -141,7 +294,7 @@ router.get('/newsletter-subscribers', adminAuth, async (req, res) => {
 // Delete newsletter subscriber
 router.delete('/newsletter-subscribers/:id', adminAuth, async (req, res) => {
   try {
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'DELETE FROM newsletter_subscribers WHERE id = ?',
       [req.params.id]
     );
@@ -161,18 +314,20 @@ router.delete('/newsletter-subscribers/:id', adminAuth, async (req, res) => {
 router.get('/chart-stats', adminAuth, async (req, res) => {
   try {
     // Application trends by month
-    const [applicationTrends] = await db.promise().query(`
+    const [applicationTrends] = await db.query(`
       SELECT DATE_FORMAT(application_date, '%Y-%m') as month, COUNT(*) as count
       FROM scholarship_applications
+      WHERE application_date IS NOT NULL
       GROUP BY month
       ORDER BY month ASC
+      LIMIT 12
     `);
 
     // Scholarship distribution by type
-    const [scholarshipDistribution] = await db.promise().query(`
-      SELECT type, COUNT(*) as count
+    const [scholarshipDistribution] = await db.query(`
+      SELECT scholarship_type, COUNT(*) as count
       FROM scholarships
-      GROUP BY type
+      GROUP BY scholarship_type
     `);
     const scholarshipDistData = {
       'gov': 0,
@@ -181,11 +336,11 @@ router.get('/chart-stats', adminAuth, async (req, res) => {
       'other': 0
     };
     scholarshipDistribution.forEach(row => {
-      scholarshipDistData[row.type] = row.count;
+      scholarshipDistData[row.scholarship_type] = row.count;
     });
 
     // User registration by role
-    const [userRegistration] = await db.promise().query(`
+    const [userRegistration] = await db.query(`
       SELECT role, COUNT(*) as count
       FROM users
       GROUP BY role
@@ -197,10 +352,10 @@ router.get('/chart-stats', adminAuth, async (req, res) => {
     };
     userRegistration.forEach(row => {
       userRegData[row.role] = row.count;
-    })
+    });
 
     // Applications by academic level
-    const [statusOverview] = await db.promise().query(`
+    const [statusOverview] = await db.query(`
       SELECT academic_level, COUNT(*) as count
       FROM scholarship_applications
       GROUP BY academic_level
@@ -215,7 +370,10 @@ router.get('/chart-stats', adminAuth, async (req, res) => {
     });
 
     res.json({
-      applicationTrends,
+      applicationTrends: applicationTrends.map(trend => ({
+        month: trend.month,
+        count: trend.count
+      })),
       scholarshipDistribution: Object.values(scholarshipDistData),
       userRegistration: Object.values(userRegData),
       statusOverview: Object.values(statusOverviewData)
@@ -237,7 +395,7 @@ router.put('/users/:id/status', adminAuth, async (req, res) => {
     }
 
     // Check if status column exists
-    const [columns] = await db.promise().query(`
+    const [columns] = await db.query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = DATABASE()
@@ -247,14 +405,14 @@ router.put('/users/:id/status', adminAuth, async (req, res) => {
 
     // Add status column if it doesn't exist
     if (columns.length === 0) {
-      await db.promise().query(`
+      await db.query(`
         ALTER TABLE users 
         ADD COLUMN status ENUM('active', 'inactive') 
         DEFAULT 'active'
       `);
     }
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'UPDATE users SET status = ? WHERE id = ?',
       [status, req.params.id]
     );
@@ -273,17 +431,17 @@ router.put('/users/:id/status', adminAuth, async (req, res) => {
 // Update application status
 router.put('/applications/:id/status', adminAuth, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, reviewer_notes } = req.body;
     const applicationId = req.params.id;
 
     // Validate status
-    if (!['pending', 'approved', 'rejected'].includes(status)) {
+    if (!['pending', 'under_review', 'approved', 'rejected', 'waitlisted'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
-    const [result] = await db.promise().query(
-      'UPDATE scholarship_applications SET status = ? WHERE application_id = ?',
-      [status, applicationId]
+    const [result] = await db.query(
+      'UPDATE scholarship_applications SET status = ?, reviewer_notes = ? WHERE application_id = ?',
+      [status, reviewer_notes || null, applicationId]
     );
 
     if (result.affectedRows === 0) {
@@ -308,7 +466,7 @@ router.post('/users', adminAuth, async (req, res) => {
     }
 
     // Check if email already exists
-    const [existingUsers] = await db.promise().query(
+    const [existingUsers] = await db.query(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
@@ -319,7 +477,7 @@ router.post('/users', adminAuth, async (req, res) => {
 
     // Create user with default password (they can reset it later)
     const defaultPassword = Math.random().toString(36).slice(-8); // Generate random password
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
       [fullName, email, defaultPassword, role || 'user', status || 'active']
     );
@@ -338,7 +496,7 @@ router.post('/users', adminAuth, async (req, res) => {
 // Get all scholarship applications
 router.get('/applications', adminAuth, async (req, res) => {
     try {
-        const [applications] = await db.promise().query(`
+        const [applications] = await db.query(`
             SELECT 
                 sa.application_id, 
                 sa.full_name, 
@@ -363,9 +521,10 @@ router.get('/applications', adminAuth, async (req, res) => {
                 sa.motivation_statement,
                 sa.terms_agreed,
                 sa.application_date,
-                s.name as scholarship_name
+                sa.status,
+                COALESCE(s.name, 'Unknown Scholarship') as scholarship_name
             FROM scholarship_applications sa
-            JOIN scholarships s ON sa.scholarship_id = s.id
+            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
             ORDER BY sa.application_date DESC
         `);
         // Map to camelCase for frontend
@@ -393,6 +552,7 @@ router.get('/applications', adminAuth, async (req, res) => {
             motivationStatement: app.motivation_statement,
             termsAgreed: !!app.terms_agreed,
             applicationDate: app.application_date,
+            status: app.status,
             scholarshipName: app.scholarship_name
         }));
         res.json(mapped);
@@ -405,16 +565,75 @@ router.get('/applications', adminAuth, async (req, res) => {
 // Get application details
 router.get('/applications/:id', adminAuth, async (req, res) => {
     try {
-        const [applications] = await db.promise().query(`
-            SELECT * FROM scholarship_applications
-            WHERE application_id = ?
+        const [applications] = await db.query(`
+            SELECT 
+                sa.application_id, 
+                sa.full_name, 
+                sa.email_address, 
+                sa.profile_picture_url,
+                sa.date_of_birth,
+                sa.gender,
+                sa.phone_number,
+                sa.address,
+                sa.preferred_university,
+                sa.country,
+                sa.academic_level,
+                sa.intended_major,
+                sa.gpa_academic_performance,
+                sa.uploaded_documents_json,
+                sa.extracurricular_activities,
+                sa.parent_guardian_name,
+                sa.parent_guardian_contact,
+                sa.financial_need_statement,
+                sa.how_heard_about,
+                sa.scholarship_id,
+                sa.motivation_statement,
+                sa.terms_agreed,
+                sa.application_date,
+                sa.status,
+                sa.reviewer_notes,
+                COALESCE(s.name, 'Unknown Scholarship') as scholarship_name
+            FROM scholarship_applications sa
+            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.application_id = ?
         `, [req.params.id]);
 
         if (applications.length === 0) {
             return res.status(404).json({ message: 'Application not found' });
         }
 
-        res.json(applications[0]);
+        // Map to camelCase for frontend consistency
+        const app = applications[0];
+        const mapped = {
+            applicationId: app.application_id,
+            fullName: app.full_name,
+            emailAddress: app.email_address,
+            profilePictureUrl: app.profile_picture_url,
+            dateOfBirth: app.date_of_birth,
+            gender: app.gender,
+            phoneNumber: app.phone_number,
+            address: app.address,
+            preferredUniversity: app.preferred_university,
+            country: app.country,
+            academicLevel: app.academic_level,
+            intendedMajor: app.intended_major,
+            gpaAcademicPerformance: app.gpa_academic_performance,
+            uploadedDocumentsJson: app.uploaded_documents_json,
+            extracurricularActivities: app.extracurricular_activities,
+            parentGuardianName: app.parent_guardian_name,
+            parentGuardianContact: app.parent_guardian_contact,
+            financialNeedStatement: app.financial_need_statement,
+            howHeardAbout: app.how_heard_about,
+            scholarshipId: app.scholarship_id,
+            motivationStatement: app.motivation_statement,
+            termsAgreed: !!app.terms_agreed,
+            applicationDate: app.application_date,
+            status: app.status,
+            reviewerNotes: app.reviewer_notes,
+            scholarshipName: app.scholarship_name
+        };
+
+        res.json(mapped);
     } catch (error) {
         console.error('Error fetching application details:', error);
         res.status(500).json({ message: 'Error fetching application details' });
@@ -424,7 +643,7 @@ router.get('/applications/:id', adminAuth, async (req, res) => {
 // Delete application
 router.delete('/applications/:id', adminAuth, async (req, res) => {
     try {
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             'DELETE FROM scholarship_applications WHERE application_id = ?',
             [req.params.id]
         );
@@ -487,7 +706,7 @@ router.post('/applications', adminAuth, upload.fields([
         }
         
         // Check if scholarship exists
-        const [scholarships] = await db.promise().query(
+        const [scholarships] = await db.query(
             'SELECT * FROM scholarships WHERE id = ?',
             [scholarship_id]
         );
@@ -496,7 +715,7 @@ router.post('/applications', adminAuth, upload.fields([
         }
 
         // Insert application with all fields
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             `INSERT INTO scholarship_applications (
                 full_name, email_address, profile_picture_url, date_of_birth, gender, phone_number, address,
                 preferred_university, country, academic_level, intended_major, gpa_academic_performance,
@@ -512,7 +731,7 @@ router.post('/applications', adminAuth, upload.fields([
             ]
         );
         
-        const [newApplication] = await db.promise().query(
+        const [newApplication] = await db.query(
             'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [result.insertId]
         );
@@ -537,7 +756,7 @@ router.put('/applications/:id', adminAuth, upload.fields([
         const applicationId = req.params.id;
         
         // Check if application exists
-        const [existingApplication] = await db.promise().query(
+        const [existingApplication] = await db.query(
             'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
@@ -587,7 +806,7 @@ router.put('/applications/:id', adminAuth, upload.fields([
         }
         
         // Check if scholarship exists
-        const [scholarships] = await db.promise().query(
+        const [scholarships] = await db.query(
             'SELECT * FROM scholarships WHERE id = ?',
             [scholarship_id]
         );
@@ -596,7 +815,7 @@ router.put('/applications/:id', adminAuth, upload.fields([
         }
         
         // Update application with all fields
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             `UPDATE scholarship_applications SET
                 full_name = ?,
                 email_address = ?,
@@ -651,7 +870,7 @@ router.put('/applications/:id', adminAuth, upload.fields([
         }
         
         // Fetch updated application
-        const [updatedApplication] = await db.promise().query(
+        const [updatedApplication] = await db.query(
             'SELECT * FROM scholarship_applications WHERE application_id = ?',
             [applicationId]
         );
@@ -670,7 +889,7 @@ router.put('/applications/:id', adminAuth, upload.fields([
 // Alter scholarships table to add university column
 router.post('/alter-scholarships', adminAuth, async (req, res) => {
     try {
-        await db.promise().query(
+        await db.query(
             `ALTER TABLE scholarships ADD COLUMN university VARCHAR(255) NOT NULL`
         );
         res.json({ message: 'Scholarships table altered successfully' });
@@ -682,7 +901,7 @@ router.post('/alter-scholarships', adminAuth, async (req, res) => {
 
 router.get('/dashboard/stats', adminAuth, async (req, res) => {
     try {
-        const [userStats] = await db.promise().query(
+        const [userStats] = await db.query(
             `SELECT role, COUNT(*) as count
             FROM users
             GROUP BY role`
@@ -703,5 +922,173 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
         res.status(500).json({ message: 'Error fetching dashboard stats' });
     }
 });
+
+// Get system statistics
+router.get('/system-stats', adminAuth, async (req, res) => {
+  try {
+    // Database size
+    const [dbSize] = await db.query(`
+      SELECT 
+        ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'DB Size in MB'
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE()
+    `);
+
+    // Table row counts
+    const [tableStats] = await db.query(`
+      SELECT 
+        table_name,
+        table_rows
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE()
+      ORDER BY table_rows DESC
+    `);
+
+    // Recent activity (last 7 days)
+    const [recentActivity] = await db.query(`
+      SELECT 
+        'applications' as type,
+        COUNT(*) as count
+      FROM scholarship_applications 
+      WHERE application_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      UNION ALL
+      SELECT 
+        'users' as type,
+        COUNT(*) as count
+      FROM users 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `);
+
+    res.json({
+      databaseSize: dbSize[0]['DB Size in MB'],
+      tableStats,
+      recentActivity
+    });
+  } catch (error) {
+    console.error('Error fetching system stats:', error);
+    res.status(500).json({ message: 'Error fetching system statistics' });
+  }
+});
+
+// Get application statistics
+router.get('/application-stats', adminAuth, async (req, res) => {
+  try {
+    // Applications by status
+    const [statusStats] = await db.query(`
+      SELECT 
+        COALESCE(status, 'pending') as status,
+        COUNT(*) as count
+      FROM scholarship_applications 
+      GROUP BY status
+    `);
+
+    // Applications by academic level
+    const [levelStats] = await db.query(`
+      SELECT 
+        academic_level,
+        COUNT(*) as count
+      FROM scholarship_applications 
+      GROUP BY academic_level
+    `);
+
+    // Applications by month (last 12 months)
+    const [monthlyStats] = await db.query(`
+      SELECT 
+        DATE_FORMAT(application_date, '%Y-%m') as month,
+        COUNT(*) as count
+      FROM scholarship_applications 
+      WHERE application_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+      GROUP BY month
+      ORDER BY month ASC
+    `);
+
+    res.json({
+      statusStats,
+      levelStats,
+      monthlyStats
+    });
+  } catch (error) {
+    console.error('Error fetching application stats:', error);
+    res.status(500).json({ message: 'Error fetching application statistics' });
+  }
+});
+
+// Export data
+router.get('/export/:type', adminAuth, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { format = 'json' } = req.query;
+
+    let data;
+    let filename;
+
+    switch (type) {
+      case 'applications':
+        const [applications] = await db.query(`
+          SELECT 
+            sa.*,
+            s.name as scholarship_name
+          FROM scholarship_applications sa
+          LEFT JOIN scholarships s ON sa.scholarship_id = s.id
+          ORDER BY sa.application_date DESC
+        `);
+        data = applications;
+        filename = 'applications';
+        break;
+
+      case 'users':
+        const [users] = await db.query(`
+          SELECT id, full_name, email, role, status, created_at
+          FROM users
+          ORDER BY created_at DESC
+        `);
+        data = users;
+        filename = 'users';
+        break;
+
+      case 'scholarships':
+        const [scholarships] = await db.query(`
+          SELECT * FROM scholarships ORDER BY created_at DESC
+        `);
+        data = scholarships;
+        filename = 'scholarships';
+        break;
+
+      default:
+        return res.status(400).json({ message: 'Invalid export type' });
+    }
+
+    if (format === 'csv') {
+      // Convert to CSV
+      const csv = convertToCSV(data);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+      res.send(csv);
+    } else {
+      res.json(data);
+    }
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({ message: 'Error exporting data' });
+  }
+});
+
+// Helper function to convert data to CSV
+function convertToCSV(data) {
+  if (data.length === 0) return '';
+  
+  const headers = Object.keys(data[0]);
+  const csvRows = [headers.join(',')];
+  
+  for (const row of data) {
+    const values = headers.map(header => {
+      const value = row[header];
+      return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+    });
+    csvRows.push(values.join(','));
+  }
+  
+  return csvRows.join('\n');
+}
 
 export default router; 

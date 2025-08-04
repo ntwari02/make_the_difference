@@ -3,310 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Email Templates</title>
+    <title>Email Templates Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
     <script src="js/include-admin-sidebar.js" defer></script>
     <script src="js/include-admin-header.js" defer></script>
+    <!-- Include CKEditor for rich text editing -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
 </head>
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
-    <div id="admin-header-container" data-page-title="Admin Email Templates"></div>
-    <main class="admin-main-content">
+    <div id="admin-header-container" data-page-title="Email Templates Management"></div>
+    <main class="admin-main-content w-full">
         <div class="admin-content-container">
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Email Templates Management</h2>
-            <!-- Template Variables Guide -->
-            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6 text-sm text-blue-800 dark:text-blue-200">
-                <strong>Template Variables:</strong> Use <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{name}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{scholarship}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{date}}</code>, <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">{{status}}</code> in your templates. These will be replaced with real data when sending emails.
-            </div>
-            <!-- Tabs for template categories -->
-            <div class="flex flex-wrap gap-2 mb-6">
-                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" data-tab="application">Application</button>
-                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-tab="reminder">Reminders</button>
-                <button type="button" class="tab-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-tab="custom">Custom</button>
-            </div>
-            <!-- Application Templates -->
-            <div id="tab-application" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Received</h3>
-                        <textarea id="template-application-received" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nYour application for {{scholarship}} has been received."></textarea>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Approved</h3>
-                        <textarea id="template-application-approved" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nCongratulations! Your application for {{scholarship}} has been approved."></textarea>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 md:col-span-2">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Application Rejected</h3>
-                        <textarea id="template-application-rejected" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nWe regret to inform you that your application for {{scholarship}} was not successful."></textarea>
+            <!-- Loading State -->
+            <div id="loadingState" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="text-lg font-semibold text-gray-800 dark:text-white">Loading...</span>
                     </div>
                 </div>
             </div>
-            <!-- Reminder Templates -->
-            <div id="tab-reminder" class="tab-content hidden">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Document Submission Reminder</h3>
-                    <textarea id="template-reminder-documents" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nThis is a reminder to submit your required documents for {{scholarship}} by {{date}}."></textarea>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Interview Schedule</h3>
-                    <textarea id="template-reminder-interview" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Dear {{name}},\nYour interview for {{scholarship}} is scheduled on {{date}}."></textarea>
-                </div>
-            </div>
-            <!-- Custom Templates -->
-            <div id="tab-custom" class="tab-content hidden">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Custom Notification</h3>
-                    <textarea id="template-custom" rows="5" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Type your custom email template here..."></textarea>
-                </div>
-            </div>
-            <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6">
-                <button id="testSendBtn" class="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Test Send</button>
-                <button id="saveTemplatesBtn" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Templates</button>
-            </div>
-            <div id="templatesSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold">Templates saved successfully!</div>
-        <!-- Test Send Modal -->
-        <div id="testSendModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Test Send Email</h3>
-                <form id="testSendForm" class="space-y-4">
-                    <div>
-                        <label for="testEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recipient Email</label>
-                        <input type="email" id="testEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" required>
+            
+            <!-- Error State -->
+            <div id="errorState" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Authentication Error</h3>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">You need to be logged in as admin to access this page.</p>
+                        <div class="space-y-2">
+                            <button onclick="window.location.href='/login.html'" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Go to Login
+                            </button>
+                            <button onclick="window.location.href='/admin_dashboard.html'" class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="testTemplateType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Template</label>
-                        <select id="testTemplateType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                            <option value="application-received">Application Received</option>
-                            <option value="application-approved">Application Approved</option>
-                            <option value="application-rejected">Application Rejected</option>
-                            <option value="reminder-documents">Document Reminder</option>
-                            <option value="reminder-interview">Interview Schedule</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button type="button" id="closeTestSendModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Send Test</button>
-                    </div>
-                </form>
-                <div id="testSendSuccess" class="hidden mt-2 text-green-600 dark:text-green-400 font-semibold">Test email sent (simulated)!</div>
+                </div>
             </div>
-        </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Template List -->
+                <div class="lg:col-span-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Email Templates</h3>
+                        <div class="flex gap-2">
+                            <button id="refreshTemplatesBtn" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-colors">
+                                <i class="fas fa-sync-alt mr-1"></i> Refresh
+                            </button>
+                            <button id="newTemplateBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
+                            <i class="fas fa-plus mr-1"></i> New
+                        </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2 max-h-96 overflow-y-auto" id="templateList">
+                        <!-- Templates will be loaded here -->
+                    </div>
+                </div>
+                <!-- Template Editor -->
+                <div class="lg:col-span-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Edit Template</h3>
+                        <div class="flex gap-2">
+                            <button id="previewBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                <i class="fas fa-eye mr-1"></i> Preview
+                            </button>
+                            <button id="saveBtn" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors">
+                                <i class="fas fa-save mr-1"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Template Name</label>
+                                <input type="text" id="templateName" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                                <select id="templateCategory" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                    <option>System</option>
+                                    <option>Marketing</option>
+                                    <option>Notification</option>
+                                    <option>Custom</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Subject</label>
+                            <input type="text" id="emailSubject" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Available Variables</label>
+                            <div class="flex flex-wrap gap-2 mb-4" id="variableList">
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${user.name}">${user.name}</span>
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${user.email}">${user.email}</span>
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${application.id}">${application.id}</span>
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${scholarship.name}">${scholarship.name}</span>
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${date}">${date}</span>
+                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${organization.name}">${organization.name}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Content</label>
+                            <div id="editor" class="min-h-[300px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Send Email Modal -->
+            <div id="sendEmailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Send Email to Users</h3>
+                        <button id="closeSendModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- User Selection -->
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Select Recipients</h4>
+                            <div class="mb-4 space-y-2">
+                                <button id="selectAllUsers" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-users mr-2"></i> Select All Users
+                                </button>
+                                <button id="selectApplicants" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-user-graduate mr-2"></i> Select All Applicants
+                                </button>
+                                <button id="selectAdmins" class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-user-shield mr-2"></i> Select All Admins
+                                </button>
+                                <button id="clearSelection" class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-times mr-2"></i> Clear Selection
+                                </button>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Search Users</label>
+                                <input type="text" id="userSearch" placeholder="Search by name or email..." class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            </div>
+                            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+                                <div id="userList" class="space-y-1 p-2">
+                                    <!-- Users will be populated here -->
+                                </div>
+                            </div>
+                            <div class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+                                <span id="selectedCount">0</span> users selected
+                            </div>
+                        </div>
+                        <!-- Email Preview -->
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Email Preview</h4>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                <div class="mb-2">
+                                    <strong class="text-gray-800 dark:text-white">Subject:</strong>
+                                    <span id="previewSubject" class="ml-2 text-gray-600 dark:text-gray-300"></span>
+                                </div>
+                                <div class="mb-4">
+                                    <strong class="text-gray-800 dark:text-white">Content:</strong>
+                                </div>
+                                <div id="previewContent" class="text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600 max-h-48 overflow-y-auto"></div>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <button id="sendTestEmail" class="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-paper-plane mr-2"></i> Send Test Email
+                                </button>
+                                <button id="sendBulkEmail" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
+                                    <i class="fas fa-paper-plane mr-2"></i> Send to Selected Users
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Test Email Modal -->
+            <div id="testEmailModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Send Test Email</h3>
+                    <form id="testEmailForm" class="space-y-4">
+                        <div>
+                            <label for="testEmail" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+                            <input type="email" id="testEmail" required class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="recipient@example.com">
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button type="button" id="cancelTestEmail" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">Send Test</button>
+                        </div>
+                    </form>
+                    <div id="testEmailSuccess" class="hidden mt-4 p-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded-lg font-semibold text-center">
+                        <i class="fas fa-check-circle mr-2"></i> Test email sent successfully!
+                    </div>
+                </div>
+            </div>
+            <!-- Success/Error Messages -->
+            <div id="messageContainer" class="fixed top-4 right-4 z-50 hidden">
+                <div id="successMessage" class="hidden bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 p-4 rounded-lg shadow-lg border border-green-200 dark:border-green-800">
+                    <i class="fas fa-check-circle mr-2"></i> <span id="successText"></span>
+                </div>
+                <div id="errorMessage" class="hidden bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg shadow-lg border border-red-200 dark:border-red-800">
+                    <i class="fas fa-exclamation-circle mr-2"></i> <span id="errorText"></span>
+                </div>
+            </div>
         </div>
     </main>
-    <script>
-        // Tabs interactivity
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                tabBtns.forEach(b => b.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300'));
-                this.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
-                tabContents.forEach(tc => tc.classList.add('hidden'));
-                document.getElementById('tab-' + this.dataset.tab).classList.remove('hidden');
-            });
-        });
-        // Responsive: show first tab by default
-        document.getElementById('tab-application').classList.remove('hidden');
-        // Sidebar interactivity (same as other admin pages)
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-        function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
-            if (sidebar.classList.contains('collapsed')) {
-                mainContent.style.marginLeft = '80px';
-            } else {
-                mainContent.style.marginLeft = '280px';
-            }
-        }
-        function toggleMobileSidebar() {
-            sidebar.classList.toggle('mobile-open');
-        }
-        sidebarCollapseBtn.addEventListener('click', toggleSidebar);
-        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
-                    sidebar.classList.remove('mobile-open');
-                }
-            }
-        });
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                mainContent.style.marginLeft = '0';
-                sidebar.classList.remove('collapsed');
-            } else {
-                if (sidebar.classList.contains('collapsed')) {
-                    mainContent.style.marginLeft = '80px';
-                } else {
-                    mainContent.style.marginLeft = '280px';
-                }
-            }
-        });
-        if (window.innerWidth <= 768) {
-            mainContent.style.marginLeft = '0';
-        }
-
-        // Auth and admin name
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || user.role !== 'admin') {
-            window.location.href = 'login.html';
-        }
-        document.getElementById('adminName').textContent = user.full_name || 'Admin';
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
-        });
-        // Email templates interactivity
-        const saveTemplatesBtn = document.getElementById('saveTemplatesBtn');
-        const templatesSuccess = document.getElementById('templatesSuccess');
-        
-        // Load templates from backend
-        async function loadTemplates() {
-            try {
-                const response = await fetch('/api/email-templates', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const templates = await response.json();
-                    
-                    // Map templates to form fields
-                    templates.forEach(template => {
-                        const fieldId = `template-${template.name.toLowerCase().replace(/\s+/g, '-')}`;
-                        const field = document.getElementById(fieldId);
-                        if (field) {
-                            field.value = template.content;
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading templates:', error);
-            }
-        }
-        
-        // Save templates to backend
-        saveTemplatesBtn.addEventListener('click', async function() {
-            try {
-                const templates = [
-                    {
-                        name: 'Application Received',
-                        subject: 'Application Received - {{scholarship}}',
-                        content: document.getElementById('template-application-received').value,
-                        category: 'application',
-                        is_active: true
-                    },
-                    {
-                        name: 'Application Approved',
-                        subject: 'Application Approved - {{scholarship}}',
-                        content: document.getElementById('template-application-approved').value,
-                        category: 'application',
-                        is_active: true
-                    },
-                    {
-                        name: 'Application Rejected',
-                        subject: 'Application Rejected - {{scholarship}}',
-                        content: document.getElementById('template-application-rejected').value,
-                        category: 'application',
-                        is_active: true
-                    },
-                    {
-                        name: 'Document Submission Reminder',
-                        subject: 'Document Submission Reminder - {{scholarship}}',
-                        content: document.getElementById('template-reminder-documents').value,
-                        category: 'reminder',
-                        is_active: true
-                    },
-                    {
-                        name: 'Interview Schedule',
-                        subject: 'Interview Schedule - {{scholarship}}',
-                        content: document.getElementById('template-reminder-interview').value,
-                        category: 'reminder',
-                        is_active: true
-                    }
-                ];
-
-                const response = await fetch('/api/email-templates/bulk-update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({ templates })
-                });
-
-                if (response.ok) {
-                    templatesSuccess.classList.remove('hidden');
-                    setTimeout(() => templatesSuccess.classList.add('hidden'), 2000);
-                } else {
-                    const error = await response.json();
-                    alert('Error saving templates: ' + error.error);
-                }
-            } catch (error) {
-                console.error('Error saving templates:', error);
-                alert('Error saving templates. Please try again.');
-            }
-        });
-        // Test send modal logic
-        const testSendBtn = document.getElementById('testSendBtn');
-        const testSendModal = document.getElementById('testSendModal');
-        const closeTestSendModal = document.getElementById('closeTestSendModal');
-        const testSendForm = document.getElementById('testSendForm');
-        const testSendSuccess = document.getElementById('testSendSuccess');
-        testSendBtn.addEventListener('click', () => {
-            testSendModal.classList.remove('hidden');
-            testSendSuccess.classList.add('hidden');
-            testSendForm.reset();
-        });
-        closeTestSendModal.addEventListener('click', () => {
-            testSendModal.classList.add('hidden');
-        });
-        testSendForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const recipientEmail = document.getElementById('testEmail').value;
-            const templateType = document.getElementById('testTemplateType').value;
-            const customContent = document.getElementById('template-custom').value;
-            
-            try {
-                const response = await fetch('/api/email-templates/test-send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        recipient_email: recipientEmail,
-                        template_type: templateType,
-                        custom_content: templateType === 'custom' ? customContent : null
-                    })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    testSendSuccess.textContent = result.message;
-                    testSendSuccess.classList.remove('hidden');
-                    setTimeout(() => testSendModal.classList.add('hidden'), 2000);
-                } else {
-                    const error = await response.json();
-                    alert('Error sending test email: ' + error.error);
-                }
-            } catch (error) {
-                console.error('Error sending test email:', error);
-                alert('Error sending test email. Please try again.');
-            }
-        });
-        loadTemplates();
-    </script>
+    <script src="js/api.js"></script>
+    <script src="js/admin_email_template.js"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ const router = express.Router();
 // Get all partners
 router.get('/', async (req, res) => {
   try {
-    const [partners] = await db.promise().query('SELECT * FROM partners');
+    const [partners] = await db.query('SELECT * FROM partners');
     res.json(partners);
   } catch (error) {
     console.error(error);
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
   try {
     const { name, email, organization, phone, message } = req.body;
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO partners (name, email, organization, phone, message) VALUES (?, ?, ?, ?, ?)',
       [name, email, organization, phone, message]
     );
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 // Get partner details (admin only)
 router.get('/:id', adminAuth, async (req, res) => {
   try {
-    const [partners] = await db.promise().query(
+    const [partners] = await db.query(
       'SELECT * FROM partners WHERE id = ?',
       [req.params.id]
     );
@@ -56,7 +56,7 @@ router.get('/:id', adminAuth, async (req, res) => {
 // Delete partner (admin only)
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'DELETE FROM partners WHERE id = ?',
       [req.params.id]
     );
@@ -75,7 +75,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
 // Get all testimonials
 router.get('/testimonials', async (req, res) => {
   try {
-    const [testimonials] = await db.promise().query('SELECT * FROM testimonials');
+    const [testimonials] = await db.query('SELECT * FROM testimonials');
     res.json(testimonials);
   } catch (error) {
     console.error(error);
@@ -88,7 +88,7 @@ router.post('/testimonials', adminAuth, async (req, res) => {
   try {
     const { partner_id, name, image_url, testimonial } = req.body;
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO testimonials (partner_id, name, image_url, testimonial) VALUES (?, ?, ?, ?)',
       [partner_id, name, image_url, testimonial]
     );
@@ -108,7 +108,7 @@ router.put('/testimonials/:id', adminAuth, async (req, res) => {
   try {
     const { name, image_url, testimonial } = req.body;
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'UPDATE testimonials SET name = ?, image_url = ?, testimonial = ? WHERE id = ?',
       [name, image_url, testimonial, req.params.id]
     );
@@ -127,7 +127,7 @@ router.put('/testimonials/:id', adminAuth, async (req, res) => {
 // Delete testimonial (admin only)
 router.delete('/testimonials/:id', adminAuth, async (req, res) => {
   try {
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'DELETE FROM testimonials WHERE id = ?',
       [req.params.id]
     );

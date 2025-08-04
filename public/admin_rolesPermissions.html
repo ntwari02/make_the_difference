@@ -20,6 +20,21 @@
         }
       }
     </script>
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('color-theme');
+          if (
+            theme === 'dark' ||
+            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
@@ -78,7 +93,7 @@
                     </div>
 
                     <!-- Roles Table -->
-                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md rounded-lg overflow-hidden">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
@@ -88,7 +103,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="rolesTableBody">
+                            <tbody class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md divide-y divide-gray-200 dark:divide-gray-700" id="rolesTableBody">
                                 <!-- Role rows will be dynamically added here -->
                             </tbody>
                         </table>
@@ -100,21 +115,21 @@
                     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Permissions</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <!-- Permission Groups -->
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Management</h3>
                             <div class="space-y-3" id="userPermissions">
                                 <!-- Permission checkboxes will be dynamically added here -->
                             </div>
                         </div>
 
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Management</h3>
                             <div class="space-y-3" id="scholarshipPermissions">
                                 <!-- Permission checkboxes will be dynamically added here -->
                             </div>
                         </div>
 
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                        <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">System Settings</h3>
                             <div class="space-y-3" id="systemPermissions">
                                 <!-- Permission checkboxes will be dynamically added here -->
@@ -135,15 +150,18 @@
         const mainContent = document.getElementById('mainContent');
         const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
 
-        sidebarCollapseBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('ml-[280px]');
-            mainContent.classList.toggle('ml-[80px]');
-        });
-
-        mobileSidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('mobile-open');
-        });
+        if (sidebarCollapseBtn) {
+            sidebarCollapseBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('ml-[280px]');
+                mainContent.classList.toggle('ml-[80px]');
+            });
+        }
+        if (mobileSidebarToggle) {
+            mobileSidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('mobile-open');
+            });
+        }
 
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
@@ -191,7 +209,7 @@
                 }
 
                 const data = await response.json();
-                const roles = Array.isArray(data) ? data : (data.roles || []);
+                const roles = Array.isArray(data) ? data : [];
                 
                 if (roles.length === 0) {
                     rolesTableBody.innerHTML = `
@@ -251,7 +269,7 @@
                 }
 
                 const data = await response.json();
-                const permissions = data.permissions || data;
+                const permissions = data;
 
                 // Helper function to populate permissions
                 const populatePermissions = (containerId, permissionList) => {
@@ -312,7 +330,7 @@
         window.showRoleModal = function(role = null) {
             const modalHtml = `
                 <div class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center opacity-0 transition-opacity duration-300" id="roleModal">
-                    <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden transform translate-y-4 transition-transform duration-300">
+                    <div class="modal-content bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden transform translate-y-4 transition-transform duration-300">
                         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                             <div class="flex justify-between items-center">
                                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -534,7 +552,8 @@
                 }
 
                 closeRoleModal();
-                loadRoles();
+                await loadRoles();
+                alert(role ? 'Role updated successfully!' : 'Role created successfully!');
             } catch (error) {
                 console.error('Error saving role:', error);
                 alert(error.message || 'Error saving role');
@@ -565,7 +584,8 @@
                     throw new Error('Failed to delete role');
                 }
 
-                loadRoles();
+                await loadRoles();
+                alert('Role deleted successfully!');
             } catch (error) {
                 console.error('Error deleting role:', error);
                 alert('Error deleting role');

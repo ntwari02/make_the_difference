@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Authentication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6">Authentication Debug</h1>
+        
+        <div id="status" class="mb-6 p-4 rounded-lg"></div>
+        
+        <div class="space-y-4">
+            <button onclick="checkAuth()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Check Authentication Status
+            </button>
+            
+            <button onclick="testAdminAccess()" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                Test Admin Access
+            </button>
+            
+            <button onclick="clearAuth()" class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Clear Authentication
+            </button>
+            
+            <button onclick="goToLogin()" class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                Go to Login Page
+            </button>
+        </div>
+        
+        <div id="details" class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-2">Current Authentication Details:</h3>
+            <pre id="authDetails" class="text-sm"></pre>
+        </div>
+    </div>
+    
+    <script>
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            const statusDiv = document.getElementById('status');
+            const detailsDiv = document.getElementById('authDetails');
+            
+            let status = '';
+            let details = '';
+            
+            if (!token) {
+                status = '<div class="bg-red-100 text-red-700 p-3 rounded">❌ No token found</div>';
+                details = 'No authentication token in localStorage';
+            } else if (!user) {
+                status = '<div class="bg-red-100 text-red-700 p-3 rounded">❌ No user data found</div>';
+                details = 'Token exists but no user data in localStorage';
+            } else {
+                try {
+                    const userData = JSON.parse(user);
+                    if (userData.role === 'admin') {
+                        status = '<div class="bg-green-100 text-green-700 p-3 rounded">✅ Logged in as Admin</div>';
+                    } else {
+                        status = '<div class="bg-yellow-100 text-yellow-700 p-3 rounded">⚠️ Logged in as ' + userData.role + '</div>';
+                    }
+                    details = JSON.stringify(userData, null, 2);
+                } catch (error) {
+                    status = '<div class="bg-red-100 text-red-700 p-3 rounded">❌ Invalid user data</div>';
+                    details = 'Error parsing user data: ' + error.message;
+                }
+            }
+            
+            statusDiv.innerHTML = status;
+            detailsDiv.textContent = details;
+        }
+        
+        async function testAdminAccess() {
+            const statusDiv = document.getElementById('status');
+            try {
+                const result = await window.api.get('/email-templates');
+                statusDiv.innerHTML = '<div class="bg-green-100 text-green-700 p-3 rounded">✅ Admin access successful! Found ' + result.length + ' templates</div>';
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="bg-red-100 text-red-700 p-3 rounded">❌ Admin access failed: ' + error.message + '</div>';
+            }
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            document.getElementById('status').innerHTML = '<div class="bg-blue-100 text-blue-700 p-3 rounded">🗑️ Authentication cleared</div>';
+            document.getElementById('authDetails').textContent = 'No authentication data';
+        }
+        
+        function goToLogin() {
+            window.location.href = '/login.html';
+        }
+        
+        // Auto-check on load
+        window.onload = checkAuth;
+    </script>
+</body>
+</html> 

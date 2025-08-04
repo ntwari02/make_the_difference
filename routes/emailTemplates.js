@@ -240,4 +240,115 @@ router.post('/bulk-update', adminAuth, async (req, res) => {
     }
 });
 
+// POST send bulk emails
+router.post('/send-bulk', adminAuth, async (req, res) => {
+    try {
+        const { template_id, user_ids, custom_subject, custom_content } = req.body;
+
+        if (!template_id && !custom_content) {
+            return res.status(400).json({ error: 'Template ID or custom content is required' });
+        }
+
+        if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+            return res.status(400).json({ error: 'User IDs array is required' });
+        }
+
+        // Get template if template_id is provided
+        let emailSubject = custom_subject || 'Email from Scholarship System';
+        let emailContent = custom_content || '';
+
+        if (template_id) {
+            const [templates] = await pool.promise().query(
+                "SELECT * FROM email_templates WHERE id = ?",
+                [template_id]
+            );
+
+            if (templates.length === 0) {
+                return res.status(404).json({ error: 'Email template not found' });
+            }
+
+            emailSubject = templates[0].subject;
+            emailContent = templates[0].content;
+        }
+
+        // Get users
+        const [users] = await pool.promise().query(
+            "SELECT id, full_name, email FROM users WHERE id IN (?)",
+            [user_ids]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'No valid users found' });
+        }
+
+        const sentEmails = [];
+        const failedEmails = [];
+
+        // Process each user
+        for (const user of users) {
+            try {
+                // Replace template variables with user data
+                let processedContent = emailContent;
+                let processedSubject = emailSubject;
+
+                const userData = {
+                    name: user.full_name,
+                    email: user.email,
+                    user_id: user.id,
+                    date: new Date().toLocaleDateString(),
+                    scholarship: 'Scholarship Program'
+                };
+
+                // Replace variables in content and subject
+                Object.keys(userData).forEach(key => {
+                    const regex = new RegExp(`{{${key}}}`, 'g');
+                    processedContent = processedContent.replace(regex, userData[key]);
+                    processedSubject = processedSubject.replace(regex, userData[key]);
+                });
+
+                // In a real application, you would send the email here
+                // For now, we'll simulate the email sending
+                const emailData = {
+                    to: user.email,
+                    subject: processedSubject,
+                    content: processedContent,
+                    user_id: user.id,
+                    sent_at: new Date(),
+                    status: 'sent'
+                };
+
+                // Log the email (in production, you'd send it via email service)
+                console.log('Bulk Email Sent:', emailData);
+
+                sentEmails.push({
+                    user_id: user.id,
+                    email: user.email,
+                    name: user.full_name,
+                    status: 'sent'
+                });
+
+            } catch (error) {
+                console.error(`Error sending email to ${user.email}:`, error);
+                failedEmails.push({
+                    user_id: user.id,
+                    email: user.email,
+                    name: user.full_name,
+                    status: 'failed',
+                    error: error.message
+                });
+            }
+        }
+
+        res.json({
+            message: `Bulk email sending completed. ${sentEmails.length} sent, ${failedEmails.length} failed.`,
+            sent_emails: sentEmails,
+            failed_emails: failedEmails,
+            total_processed: users.length
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router; 

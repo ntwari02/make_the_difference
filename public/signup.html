@@ -62,19 +62,6 @@
                     placeholder="Email" required>
             </div>
             <div>
-                <select name="role" id="role"
-                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    required>
-                    <option value="">Select Role</option>
-                    <option value="user">Student</option>
-                    <option value="admin">Administrator</option>
-                </select>
-                <p class="mt-1 text-sm text-gray-500 dark:text-white">
-                    Select "Student" if you're applying for scholarships, or "Administrator" if you're managing the
-                    platform.
-                </p>
-            </div>
-            <div>
                 <input type="password" name="password" id="password"
                     class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     placeholder="Password" required>
@@ -84,6 +71,45 @@
                     class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     placeholder="Confirm Password" required>
             </div>
+            
+            <!-- Security Questions Section -->
+            <div class="border-t pt-4 mt-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-3">Security Questions</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Set up security questions to help you reset your password if you forget it.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <select name="securityQuestion1" id="securityQuestion1" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="">Select Security Question 1</option>
+                        </select>
+                        <input type="text" name="securityAnswer1" id="securityAnswer1" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
+                            placeholder="Your Answer">
+                    </div>
+                    
+                    <div>
+                        <select name="securityQuestion2" id="securityQuestion2" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="">Select Security Question 2</option>
+                        </select>
+                        <input type="text" name="securityAnswer2" id="securityAnswer2" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
+                            placeholder="Your Answer">
+                    </div>
+                    
+                    <div>
+                        <select name="securityQuestion3" id="securityQuestion3" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="">Select Security Question 3</option>
+                        </select>
+                        <input type="text" name="securityAnswer3" id="securityAnswer3" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
+                            placeholder="Your Answer">
+                    </div>
+                </div>
+            </div>
+            
             <button type="submit"
                 class="w-full bg-blue-500 dark:bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">
                 Sign Up
@@ -99,7 +125,51 @@
     <script src="js/api.js" defer></script>
 
     <script>
-                // Theme toggle functionality
+        // Load security questions on page load
+        async function loadSecurityQuestions() {
+            try {
+                const response = await fetch('/api/security-questions');
+                if (response.ok) {
+                    const questions = await response.json();
+                    const questionSelects = ['securityQuestion1', 'securityQuestion2', 'securityQuestion3'];
+
+                    // Helper to update options
+                    function updateDropdownOptions() {
+                        const selectedValues = questionSelects.map(id => document.getElementById(id).value);
+                        questionSelects.forEach((selectId, idx) => {
+                            const select = document.getElementById(selectId);
+                            const currentValue = select.value;
+                            // Remove all except the placeholder
+                            select.innerHTML = `<option value="">Select Security Question ${idx + 1}</option>`;
+                            questions.forEach(question => {
+                                // Only add if not selected in another dropdown or is the current value
+                                if (!selectedValues.includes(question.id.toString()) || currentValue === question.id.toString()) {
+                                    const option = document.createElement('option');
+                                    option.value = question.id;
+                                    option.textContent = question.question;
+                                    if (currentValue === question.id.toString()) option.selected = true;
+                                    select.appendChild(option);
+                                }
+                            });
+                        });
+                    }
+
+                    // Initial population
+                    questionSelects.forEach(selectId => {
+                        const select = document.getElementById(selectId);
+                        select.addEventListener('change', updateDropdownOptions);
+                    });
+                    updateDropdownOptions();
+                }
+            } catch (error) {
+                console.error('Error loading security questions:', error);
+            }
+        }
+
+        // Load security questions when page loads
+        document.addEventListener('DOMContentLoaded', loadSecurityQuestions);
+
+        // Theme toggle functionality
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
         
@@ -144,7 +214,6 @@
             const submitButton = this.querySelector('button[type="submit"]');
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
-            const role = document.getElementById('role').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -167,10 +236,7 @@
                     throw new Error('Please enter a valid email address');
                 }
 
-                // Validate role selection
-                if (!role) {
-                    throw new Error('Please select a role');
-                }
+                
 
                 // Validate password
                 if (password.length < 6) {
@@ -182,11 +248,34 @@
                     throw new Error('Passwords do not match');
                 }
 
+                // Validate security questions
+                const securityQuestion1 = document.getElementById('securityQuestion1').value;
+                const securityAnswer1 = document.getElementById('securityAnswer1').value.trim();
+                const securityQuestion2 = document.getElementById('securityQuestion2').value;
+                const securityAnswer2 = document.getElementById('securityAnswer2').value.trim();
+                const securityQuestion3 = document.getElementById('securityQuestion3').value;
+                const securityAnswer3 = document.getElementById('securityAnswer3').value.trim();
+
+                if (!securityQuestion1 || !securityAnswer1 || !securityQuestion2 || !securityAnswer2 || !securityQuestion3 || !securityAnswer3) {
+                    throw new Error('Please complete all security questions');
+                }
+
+                // Check for duplicate questions
+                const questions = [securityQuestion1, securityQuestion2, securityQuestion3];
+                const uniqueQuestions = new Set(questions);
+                if (uniqueQuestions.size !== 3) {
+                    throw new Error('Please select different security questions');
+                }
+
                 const userData = {
                     full_name: fullName,
                     email: email,
                     password: password,
-                    role: role
+                    security_questions: [
+                        { question_id: securityQuestion1, answer: securityAnswer1 },
+                        { question_id: securityQuestion2, answer: securityAnswer2 },
+                        { question_id: securityQuestion3, answer: securityAnswer3 }
+                    ]
                 };
 
                 // Attempt registration
@@ -198,13 +287,13 @@
                     localStorage.setItem('user', JSON.stringify(response.user));
 
                     // Show success message
-                    messageDiv.textContent = `Account created successfully! Redirecting to ${role === 'admin' ? 'Administrator' : 'Student'} Dashboard...`;
+                    messageDiv.textContent = `Account created successfully! Redirecting to Dashboard...`;
                     messageDiv.className = 'mb-4 p-3 rounded text-white text-center bg-green-500';
                     messageDiv.style.display = 'block';
 
-                    // Role-based redirect
+                    // Redirect
                     setTimeout(() => {
-                        window.location.href = (role === 'admin') ? 'admin_dashboard.html' : 'home.html';
+                        window.location.href = 'home.html';
                     }, 1500);
                 } else {
                     throw new Error('Invalid response from server');
@@ -237,19 +326,7 @@
             }
         });
 
-        // Add role change handler to update UI
-        document.getElementById('role').addEventListener('change', function (e) {
-            const role = e.target.value;
-            const messageDiv = document.getElementById('message');
-            messageDiv.style.display = 'none'; // Clear any previous messages
 
-            if (role === 'admin') {
-                // Show admin confirmation message
-                messageDiv.textContent = 'You are registering as an Administrator. This role requires approval.';
-                messageDiv.className = 'mb-4 p-3 rounded text-white text-center bg-yellow-500';
-                messageDiv.style.display = 'block';
-            }
-        });
     </script>
 </body>
 

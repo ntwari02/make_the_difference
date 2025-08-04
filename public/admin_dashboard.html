@@ -22,6 +22,21 @@
         }
       }
     </script>
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('color-theme');
+          if (
+            theme === 'dark' ||
+            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="prefetch" href="home.html">
     <link rel="prefetch" href="dashboard.html">
@@ -56,7 +71,9 @@
         }
 
         .modal-content {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             padding: 2rem;
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -92,10 +109,10 @@
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Admin Dashboard"></div>
-    <main class="admin-main-content">
+    <main class="admin-main-content w-full">
         <div class="admin-content-container">
             <div id="welcomeSection" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-7xl px-4 opacity-100 transition-opacity duration-300 ease-out hidden">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6">
                     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
                     <p class="text-gray-600 dark:text-gray-300">Manage your platform, users, and content from here.</p>
                 </div>
@@ -103,7 +120,7 @@
 
             <div id="dashboardContent" class="opacity-100 transition-all duration-300 ease-out space-y-8">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <div class="flex items-center">
                             <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
                                 <i class="fas fa-users text-2xl"></i>
@@ -114,7 +131,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <div class="flex items-center">
                             <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
                                 <i class="fas fa-handshake text-2xl"></i>
@@ -125,7 +142,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <div class="flex items-center">
                             <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
                                 <i class="fas fa-graduation-cap text-2xl"></i>
@@ -136,7 +153,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                         <div class="flex items-center">
                             <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
                                 <i class="fas fa-file-alt text-2xl"></i>
@@ -150,28 +167,28 @@
                 </div>
 
                 <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
                         <div class="h-[370px]">
                             <canvas id="applicationTrendsChart"></canvas>
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
                         <div class="h-[370px]">
                             <canvas id="scholarshipDistributionChart"></canvas>
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
                         <div class="h-[370px]">
                             <canvas id="userRegistrationChart"></canvas>
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 h-[450px]">
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
                         <div class="h-[370px] flex items-center justify-center">
                             <div class="w-full max-w-[300px]">
@@ -181,30 +198,155 @@
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
-                        <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
+                        <div class="flex space-x-2">
+                            <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button onclick="exportData('applications')" class="text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700/80">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="applicationsList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="applicationsList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
                                 </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- User Management Section -->
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Management</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="loadUsers()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button onclick="showAddUserModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <input type="text" id="userSearch" placeholder="Search users..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700/80">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                    <div id="userPagination" class="mt-4 flex justify-between items-center">
+                        <!-- Pagination will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- System Statistics -->
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">System Statistics</h3>
+                        <button onclick="loadSystemStats()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="systemStats" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- System stats will be inserted here -->
                     </div>
                 </div>
                 </div>
             </div>
         </main>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700 dark:text-white">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New User</h3>
+            <form id="addUserForm" class="space-y-4">
+                <div>
+                    <label for="newUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" id="newUserName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="newUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="newUserEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="newUserPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <input type="password" id="newUserPassword" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="newUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <select id="newUserRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700 dark:text-white">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Edit User</h3>
+            <form id="editUserForm" class="space-y-4">
+                <input type="hidden" id="editUserId">
+                <div>
+                    <label for="editUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" id="editUserName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="editUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="editUserEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="editUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <select id="editUserRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="editUserStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select id="editUserStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="userDetailsModal" class="modal-overlay">
         <div class="modal-content dark:bg-gray-700 dark:text-white">
@@ -240,7 +382,7 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // Check if user is logged in and is an admin
         const token = localStorage.getItem('token');
@@ -251,49 +393,105 @@
         }
 
         // Update admin name
-        document.getElementById('adminName').textContent = user.full_name || 'Admin';
         document.getElementById('welcomeName').textContent = user.full_name || 'Admin';
 
+        // Show welcome message
+        const welcomeSection = document.getElementById('welcomeSection');
+        const dashboardContent = document.getElementById('dashboardContent');
+        
+        if (welcomeSection && dashboardContent) {
+            welcomeSection.classList.remove('hidden');
+            setTimeout(() => {
+                welcomeSection.classList.add('welcome-fade-out');
+                setTimeout(() => {
+                    welcomeSection.classList.add('hidden');
+                }, 300);
+            }, 2000);
+        }
+
         // Logout functionality
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                });
+            }
         });
 
         // Load dashboard stats
         async function loadDashboardStats() {
             try {
-                const stats = await window.api.get('/admin/dashboard');
-                document.getElementById('totalUsers').textContent = stats.users;
-                document.getElementById('totalPartners').textContent = stats.partners;
-                document.getElementById('totalScholarships').textContent = stats.scholarships;
-                document.getElementById('totalApplications').textContent = stats.applications;
+                const res = await axios.get('/api/admin/dashboard', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const stats = res.data;
+                document.getElementById('totalUsers').textContent = stats.users || 0;
+                document.getElementById('totalPartners').textContent = stats.partners || 0;
+                document.getElementById('totalScholarships').textContent = stats.scholarships || 0;
+                document.getElementById('totalApplications').textContent = stats.applications || 0;
             } catch (error) {
                 console.error('Error loading dashboard stats:', error);
+                // Show error message to user
+                showNotification('Error loading dashboard statistics', 'error');
             }
         }
 
         // Load recent applications
         async function loadApplications() {
             try {
-                const applications = await window.api.get('/admin/applications');
-                const applicationsList = document.getElementById('applicationsList');
-                applicationsList.innerHTML = '';
-
-                applications.forEach(app => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.full_name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${app.scholarship_name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                            ${new Date(app.application_date).toLocaleDateString()}
-                        </td>
-                    `;
-                    applicationsList.appendChild(row);
+                const res = await axios.get('/api/admin/applications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const applications = res.data;
+                const applicationsList = document.getElementById('applicationsList');
+                
+                if (applicationsList) {
+                    applicationsList.innerHTML = '';
+
+                    if (applications.length === 0) {
+                        applicationsList.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    No applications found
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    applications.forEach(app => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                ${app.fullName || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                ${app.scholarshipName || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${app.status || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="editApplication(${app.applicationId})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteApplication(${app.applicationId})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        applicationsList.appendChild(row);
+                    });
+                }
             } catch (error) {
                 console.error('Error loading applications:', error);
+                showNotification('Error loading applications', 'error');
             }
         }
 
@@ -362,99 +560,427 @@
             };
 
             // Application Trends
-            applicationTrendsChart = new Chart(document.getElementById('applicationTrendsChart').getContext('2d'), {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Applications',
-                        data: [], // Populated from API
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.5)'
-                    }]
-                },
-                options: scatterOptions
-            });
+            const applicationTrendsCtx = document.getElementById('applicationTrendsChart');
+            if (applicationTrendsCtx) {
+                applicationTrendsChart = new Chart(applicationTrendsCtx.getContext('2d'), {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Applications',
+                            data: [], // Populated from API
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)'
+                        }]
+                    },
+                    options: scatterOptions
+                });
+            }
 
             // Scholarship Distribution
-            scholarshipDistributionChart = new Chart(document.getElementById('scholarshipDistributionChart').getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: ['Government', 'Private', 'NGO', 'Other'],
-                    datasets: [{
-                        data: [], // Populated from API
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
-                    }]
-                },
-                options: chartOptions()
-            });
+            const scholarshipDistributionCtx = document.getElementById('scholarshipDistributionChart');
+            if (scholarshipDistributionCtx) {
+                scholarshipDistributionChart = new Chart(scholarshipDistributionCtx.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: ['Government', 'Private', 'NGO', 'Other'],
+                        datasets: [{
+                            data: [], // Populated from API
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
+                        }]
+                    },
+                    options: chartOptions()
+                });
+            }
 
             // User Registration
-            userRegistrationChart = new Chart(document.getElementById('userRegistrationChart').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Users', 'Admins'],
-                    datasets: [{
-                        label: 'Count',
-                        data: [], // Populated from API
-                        backgroundColor: ['#90EE90', '#ADD8E6']
-                    }]
-                },
-                options: chartOptions('bar')
-            });
+            const userRegistrationCtx = document.getElementById('userRegistrationChart');
+            if (userRegistrationCtx) {
+                userRegistrationChart = new Chart(userRegistrationCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Users', 'Admins'],
+                        datasets: [{
+                            label: 'Count',
+                            data: [], // Populated from API
+                            backgroundColor: ['#90EE90', '#ADD8E6']
+                        }]
+                    },
+                    options: chartOptions('bar')
+                });
+            }
 
             // Status Overview
-            statusOverviewChart = new Chart(document.getElementById('statusOverviewChart').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Undergraduate', 'Graduate', 'PhD'],
-                    datasets: [{
-                        label: 'Count',
-                        data: [], // Populated from API
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
-                    }]
-                },
-                options: chartOptions('bar')
-            });
+            const statusOverviewCtx = document.getElementById('statusOverviewChart');
+            if (statusOverviewCtx) {
+                statusOverviewChart = new Chart(statusOverviewCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Undergraduate', 'Graduate', 'PhD'],
+                        datasets: [{
+                            label: 'Count',
+                            data: [], // Populated from API
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
+                        }]
+                    },
+                    options: chartOptions('bar')
+                });
+            }
         }
 
         // Update charts with data from API
         async function updateCharts() {
             try {
-                const chartData = await window.api.get('/admin/chart-stats');
+                const res = await axios.get('/api/admin/chart-stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const chartData = res.data;
 
                 // Application Trends
-                const trendData = chartData.applicationTrends.map(d => ({
-                    x: d.month,
-                    y: d.count
-                }));
-                applicationTrendsChart.data.datasets[0].data = trendData;
-                applicationTrendsChart.update();
+                if (applicationTrendsChart && chartData.applicationTrends) {
+                    const trendData = chartData.applicationTrends.map(d => ({
+                        x: d.month,
+                        y: d.count
+                    }));
+                    applicationTrendsChart.data.datasets[0].data = trendData;
+                    applicationTrendsChart.update();
+                }
 
                 // Scholarship Distribution
-                scholarshipDistributionChart.data.datasets[0].data = chartData.scholarshipDistribution;
-                scholarshipDistributionChart.update();
+                if (scholarshipDistributionChart && chartData.scholarshipDistribution) {
+                    scholarshipDistributionChart.data.datasets[0].data = chartData.scholarshipDistribution;
+                    scholarshipDistributionChart.update();
+                }
 
                 // User Registration
-                userRegistrationChart.data.datasets[0].data = chartData.userRegistration;
-                userRegistrationChart.update();
+                if (userRegistrationChart && chartData.userRegistration) {
+                    userRegistrationChart.data.datasets[0].data = chartData.userRegistration;
+                    userRegistrationChart.update();
+                }
 
                 // Status Overview
-                statusOverviewChart.data.datasets[0].data = chartData.statusOverview;
-                statusOverviewChart.update();
+                if (statusOverviewChart && chartData.statusOverview) {
+                    statusOverviewChart.data.datasets[0].data = chartData.statusOverview;
+                    statusOverviewChart.update();
+                }
 
             } catch (error) {
                 console.error('Error updating charts:', error);
+                showNotification('Error loading chart data', 'error');
             }
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'success' ? 'bg-green-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
         
         // Load all data
-        loadDashboardStats();
-        loadApplications();
-        initializeCharts();
-        updateCharts();
+        async function initializeDashboard() {
+            try {
+                await Promise.all([
+                    loadDashboardStats(),
+                    loadApplications(),
+                    loadUsers(),
+                    loadSystemStats(),
+                    updateCharts()
+                ]);
+                showNotification('Dashboard loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                showNotification('Error loading dashboard data', 'error');
+            }
+        }
 
+        // Load users function
+        async function loadUsers() {
+            try {
+                const res = await axios.get('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = res.data;
+                const users = data.users || []; // Extract users array from response
+                const usersList = document.getElementById('usersList');
+                
+                if (usersList) {
+                    usersList.innerHTML = '';
 
-        
+                    if (users.length === 0) {
+                        usersList.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    No users found
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                ${user.full_name || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                ${user.email || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                }">
+                                    ${user.role || 'user'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    user.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                }">
+                                    ${user.status || 'active'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="editUser(${user.id})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        usersList.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showNotification('Error loading users', 'error');
+            }
+        }
+
+        // Load system stats function
+        async function loadSystemStats() {
+            try {
+                const res = await axios.get('/api/admin/system-stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const stats = res.data;
+                const systemStats = document.getElementById('systemStats');
+                
+                if (systemStats) {
+                    systemStats.innerHTML = `
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                            <h4 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Database</h4>
+                            <p class="text-blue-600 dark:text-blue-300">Tables: ${stats.database?.tables || 0}</p>
+                            <p class="text-blue-600 dark:text-blue-300">Size: ${stats.database?.size || 'N/A'}</p>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                            <h4 class="text-lg font-semibold text-green-800 dark:text-green-200">Storage</h4>
+                            <p class="text-green-600 dark:text-green-300">Files: ${stats.storage?.files || 0}</p>
+                            <p class="text-green-600 dark:text-green-300">Size: ${stats.storage?.size || 'N/A'}</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                            <h4 class="text-lg font-semibold text-purple-800 dark:text-purple-200">Performance</h4>
+                            <p class="text-purple-600 dark:text-purple-300">Uptime: ${stats.performance?.uptime || 'N/A'}</p>
+                            <p class="text-purple-600 dark:text-purple-300">Response: ${stats.performance?.responseTime || 'N/A'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading system stats:', error);
+                showNotification('Error loading system statistics', 'error');
+            }
+        }
+
+        // User management functions
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.add('show');
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('show');
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').classList.remove('show');
+        }
+
+        async function editUser(userId) {
+            try {
+                const res = await axios.get(`/api/admin/users/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = res.data;
+                
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUserName').value = user.full_name || '';
+                document.getElementById('editUserEmail').value = user.email || '';
+                document.getElementById('editUserRole').value = user.role || 'user';
+                document.getElementById('editUserStatus').value = user.status || 'active';
+                
+                document.getElementById('editUserModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading user details:', error);
+                showNotification('Error loading user details', 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    await axios.delete(`/api/admin/users/${userId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    showNotification('User deleted successfully', 'success');
+                    loadUsers();
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    showNotification('Error deleting user', 'error');
+                }
+            }
+        }
+
+        // Export data function
+        function exportData(type) {
+            try {
+                const link = document.createElement('a');
+                link.href = `/api/admin/export/${type}`;
+                link.download = `${type}_export.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showNotification(`${type} data exported successfully`, 'success');
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showNotification('Error exporting data', 'error');
+            }
+        }
+
+        // Application management functions
+        async function editApplication(applicationId) {
+            try {
+                const res = await axios.get(`/api/admin/applications/${applicationId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const application = res.data;
+                
+                // For now, just show a notification with application details
+                showNotification(`Editing application: ${application.fullName || 'Unknown'}`, 'info');
+                console.log('Application details:', application);
+            } catch (error) {
+                console.error('Error loading application details:', error);
+                showNotification('Error loading application details', 'error');
+            }
+        }
+
+        async function deleteApplication(applicationId) {
+            if (confirm('Are you sure you want to delete this application?')) {
+                try {
+                    await axios.delete(`/api/admin/applications/${applicationId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    showNotification('Application deleted successfully', 'success');
+                    loadApplications();
+                } catch (error) {
+                    console.error('Error deleting application:', error);
+                    showNotification('Error deleting application', 'error');
+                }
+            }
+        }
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            initializeDashboard();
+            
+            // Add form submission handlers
+            const addUserForm = document.getElementById('addUserForm');
+            const editUserForm = document.getElementById('editUserForm');
+            
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = {
+                        fullName: document.getElementById('newUserName').value,
+                        email: document.getElementById('newUserEmail').value,
+                        password: document.getElementById('newUserPassword').value,
+                        role: document.getElementById('newUserRole').value
+                    };
+                    
+                    try {
+                        const res = await axios.post('/api/admin/users', formData, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        showNotification('User created successfully', 'success');
+                        closeAddUserModal();
+                        loadUsers();
+                        addUserForm.reset();
+                    } catch (error) {
+                        console.error('Error creating user:', error);
+                        showNotification('Error creating user', 'error');
+                    }
+                });
+            }
+            
+            if (editUserForm) {
+                editUserForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const userId = document.getElementById('editUserId').value;
+                    const formData = {
+                        fullName: document.getElementById('editUserName').value,
+                        email: document.getElementById('editUserEmail').value,
+                        role: document.getElementById('editUserRole').value,
+                        status: document.getElementById('editUserStatus').value
+                    };
+                    
+                    try {
+                        await axios.put(`/api/admin/users/${userId}`, formData, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        showNotification('User updated successfully', 'success');
+                        closeEditUserModal();
+                        loadUsers();
+                    } catch (error) {
+                        console.error('Error updating user:', error);
+                        showNotification('Error updating user', 'error');
+                    }
+                });
+            }
+            
+            // Add search functionality
+            const userSearch = document.getElementById('userSearch');
+            if (userSearch) {
+                userSearch.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = document.querySelectorAll('#usersList tr');
+                    
+                    rows.forEach(row => {
+                        const name = row.cells[0]?.textContent?.toLowerCase() || '';
+                        const email = row.cells[1]?.textContent?.toLowerCase() || '';
+                        const role = row.cells[2]?.textContent?.toLowerCase() || '';
+                        
+                        if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+
         // Initialize admin layout
         function initializeAdminLayout() {
             // Apply dark mode classes to layout elements

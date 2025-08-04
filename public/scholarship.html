@@ -651,7 +651,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
-      // Fetch scholarships (universities) from backend
+      // Fetch scholarships from backend
       const res = await fetch('/api/scholarships');
       const scholarships = await res.json();
 
@@ -659,21 +659,32 @@
       const hiddenId = document.getElementById('scholarship_id');
       const countryInput = document.getElementById('country');
 
-      // Populate the select dropdown
+      // Populate the select dropdown with only open scholarships
       scholarships.forEach(sch => {
-        const option = document.createElement('option');
-        option.value = sch.name;
-        option.textContent = sch.name;
-        option.dataset.scholarshipId = sch.id;
-        option.dataset.country = sch.country || '';
-        select.appendChild(option);
+                        if (sch.status === 'active') {
+          const option = document.createElement('option');
+          option.value = sch.name;
+          option.textContent = `${sch.name} - $${sch.award_amount ? sch.award_amount.toLocaleString() : 'N/A'} (${sch.academic_level})`;
+          option.dataset.scholarshipId = sch.id;
+          option.dataset.country = sch.sponsor || '';
+          option.dataset.amount = sch.award_amount || '';
+          option.dataset.deadline = sch.application_deadline || '';
+          select.appendChild(option);
+        }
       });
 
-      // When user selects a university, update the hidden scholarship_id and country
+      // When user selects a scholarship, update the hidden scholarship_id and country
       select.addEventListener('change', function() {
         const selectedOption = select.options[select.selectedIndex];
         hiddenId.value = selectedOption.dataset.scholarshipId || '';
         countryInput.value = selectedOption.dataset.country || '';
+        
+        // Show scholarship details if available
+        if (selectedOption.dataset.amount) {
+          console.log(`Selected: ${selectedOption.textContent}`);
+          console.log(`Amount: $${selectedOption.dataset.amount}`);
+          console.log(`Deadline: ${selectedOption.dataset.deadline}`);
+        }
       });
     });
   </script>
