@@ -89,17 +89,46 @@ function initializeSidebar() {
         });
     }
 
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
-                sidebar.classList.remove('mobile-open');
-                if (mobileBackdrop) {
-                    mobileBackdrop.classList.remove('show');
+            // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                    if (mobileBackdrop) {
+                        mobileBackdrop.classList.remove('show');
+                    }
                 }
             }
+        });
+
+        // Update help badge count
+        updateHelpBadge();
+    }
+
+    // Function to update help badge count
+    async function updateHelpBadge() {
+        try {
+            const response = await fetch('/api/admin-help/stats');
+            if (response.ok) {
+                const data = await response.json();
+                const badge = document.getElementById('help-badge');
+                if (badge && data.success) {
+                    const activeRequests = data.stats.active_requests || 0;
+                    if (activeRequests > 0) {
+                        badge.textContent = activeRequests;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error updating help badge:', error);
         }
-    });
+    }
+
+    // Update badge every 30 seconds
+    setInterval(updateHelpBadge, 30000);
 
     // Handle window resize
     window.addEventListener('resize', () => {

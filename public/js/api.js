@@ -18,11 +18,21 @@ const request = async (method, path, data = null) => {
     config.body = JSON.stringify(data);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, config);
+  const url = `${API_BASE_URL}${path}`;
+  console.log(`Making ${method.toUpperCase()} request to: ${url}`, data ? { data } : '');
+  
+  const response = await fetch(url, config);
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    let errorMessage = `HTTP error! status: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch (parseError) {
+      // If response is not JSON (e.g., HTML error page), use status text
+      errorMessage = response.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();

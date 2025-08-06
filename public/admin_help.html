@@ -3,1129 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Help Center</title>
+    <title>Admin Help - Password Reset Requests</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/sidebar.css">
-    <link rel="stylesheet" href="css/admin-layout.css">
-    <script src="js/include-admin-sidebar.js" defer></script>
-    <script src="js/include-admin-header.js" defer></script>
 </head>
-<body class="admin-layout bg-white dark:bg-gray-900 transition-colors duration-200">
-    <div id="admin-sidebar-container"></div>
-    <div id="admin-header-container" data-page-title="Admin Help Center"></div>
-    
-    <main class="admin-main-content w-full">
-        <div class="admin-content-container">
-            <!-- Search Section -->
-            <div class="py-8 rounded-md shadow-lg">
-                <div class="relative max-w-2xl mx-auto">
-                    <input type="text" placeholder="Search help articles..." 
-                        class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
-                    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Admin Help Center</h1>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Manage password reset requests from users</p>
                 </div>
+                <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
+                    <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                </button>
             </div>
 
-            <!-- Main Help Sections -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Getting Started -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-white dark:text-blue-300 mr-4">
-                            <i class="fas fa-rocket text-xl"></i>
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                            <i class="fas fa-users text-blue-600 dark:text-blue-400"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Getting Started</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#dashboard-overview" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Admin Dashboard Overview
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#profile-setup" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Setting Up Your Profile
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#navigation" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Navigating the Admin Panel
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- User Management -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-4">
-                            <i class="fas fa-users text-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Management</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#create-users" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Creating and Managing Users
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#user-permissions" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Setting User Permissions
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#reset-passwords" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Resetting User Passwords
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Scholarship Management -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 mr-4">
-                            <i class="fas fa-graduation-cap text-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Scholarship Management</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#create-scholarships" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Creating Scholarships
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#manage-applications" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Managing Applications
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#review-process" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Application Review Process
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Content Management -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 mr-4">
-                            <i class="fas fa-file-alt text-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Content Management</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#general-settings" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                General Settings
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#email-templates" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Email Templates
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Reports & Analytics -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300 mr-4">
-                            <i class="fas fa-chart-bar text-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Reports & Analytics</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#generate-reports" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Generating Reports
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#export-data" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Exporting Data
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Troubleshooting -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
-                    <div class="flex items-center mb-4">
-                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mr-4">
-                            <i class="fas fa-tools text-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Troubleshooting</h3>
-                    </div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#login-issues" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Login Issues
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#error-messages" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                Common Error Messages
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#file-upload" class="help-link flex items-center text-white hover:underline">
-                                <i class="fas fa-chevron-right mr-2 text-sm"></i>
-                                File Upload Problems
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Detailed Help Content -->
-            <div id="help-content" class="mt-10 space-y-8">
-                <!-- Getting Started Section -->
-                <div id="dashboard-overview" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-tachometer-alt mr-3 text-white"></i>Admin Dashboard Overview
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">The admin dashboard provides a comprehensive overview of your scholarship management system.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Key Dashboard Components:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Statistics Cards:</strong> View total users, scholarships, applications, and revenue at a glance</li>
-                            <li><strong>Recent Activity:</strong> Monitor latest applications, user registrations, and system updates</li>
-                            <li><strong>Quick Actions:</strong> Access frequently used functions like creating scholarships or managing users</li>
-                            <li><strong>Performance Metrics:</strong> Track application success rates and user engagement</li>
-                        </ul>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Navigation Tips:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li>Use the sidebar menu to navigate between different sections</li>
-                            <li>Click on statistics cards to view detailed reports</li>
-                            <li>Use the search bar to quickly find specific information</li>
-                            <li>Check the notification bell for important updates</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div id="profile-setup" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-user-cog mr-3 text-white"></i>Setting Up Your Profile
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Complete your admin profile to personalize your experience and ensure proper system access.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Step-by-Step Profile Setup:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Access Account Settings:</strong> Click on your profile picture in the top-right corner and select "Account Settings"</li>
-                            <li><strong>Personal Information:</strong> Fill in your full name, email, phone number, and position</li>
-                            <li><strong>Profile Picture:</strong> Upload a professional photo (recommended size: 200x200px)</li>
-                            <li><strong>Preferences:</strong> Set your timezone, language, and theme preferences</li>
-                            <li><strong>Notifications:</strong> Configure email, SMS, and push notification settings</li>
-                            <li><strong>Save Changes:</strong> Click "Save Changes" to update your profile</li>
-                        </ol>
-
-                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg mt-6 border-l-4 border-blue-500">
-                            <h5 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
-                                <i class="fas fa-lightbulb mr-2"></i>Pro Tip:
-                            </h5>
-                            <p class="text-blue-700 dark:text-blue-300">Keep your profile information up-to-date, especially your email address, as it's used for password resets and important notifications.</p>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Requests</p>
+                            <p id="total-requests" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- User Management Section -->
-                <div id="create-users" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-user-plus mr-3 text-green-600"></i>Creating and Managing Users
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Learn how to create new users and manage existing user accounts effectively.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Creating New Users:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Navigate to User Management:</strong> Go to the sidebar and click "User Management"</li>
-                            <li><strong>Add New User:</strong> Click the "Add New User" button</li>
-                            <li><strong>Fill User Details:</strong> Enter the required information:
-                                <ul class="list-disc pl-6 mt-2 space-y-1">
-                                    <li>Full Name (required)</li>
-                                    <li>Email Address (required, must be unique)</li>
-                                    <li>Password (minimum 8 characters)</li>
-                                    <li>Role (Admin, User, or Super Admin)</li>
-                                </ul>
-                            </li>
-                            <li><strong>Set Permissions:</strong> Assign appropriate permissions based on the user's role</li>
-                            <li><strong>Save User:</strong> Click "Create User" to add the new user</li>
-                        </ol>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Managing Existing Users:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>View Users:</strong> Use the search and filter options to find specific users</li>
-                            <li><strong>Edit User:</strong> Click the edit icon to modify user information</li>
-                            <li><strong>Deactivate User:</strong> Use the status toggle to temporarily disable accounts</li>
-                            <li><strong>Delete User:</strong> Permanently remove users (use with caution)</li>
-                            <li><strong>Reset Password:</strong> Send password reset emails to users</li>
-                        </ul>
-
-                        <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 p-4 rounded-lg mt-6 border-l-4 border-yellow-500">
-                            <h5 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center">
-                                <i class="fas fa-exclamation-triangle mr-2"></i>Important:
-                            </h5>
-                            <p class="text-yellow-700 dark:text-yellow-300">Only Super Admins can create new admin users. Regular admins can only create regular users.</p>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-orange-100 dark:bg-orange-900">
+                            <i class="fas fa-clock text-orange-600 dark:text-orange-400"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Requests</p>
+                            <p id="active-requests" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Scholarship Management Section -->
-                <div id="create-scholarships" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-graduation-cap mr-3 text-indigo-600"></i>Creating Scholarships
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Create and manage scholarship opportunities for students to apply.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Creating a New Scholarship:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Access Scholarship Management:</strong> Go to "Scholarship Management" in the sidebar</li>
-                            <li><strong>Create New Scholarship:</strong> Click "Add New Scholarship"</li>
-                            <li><strong>Basic Information:</strong> Fill in the scholarship details:
-                                <ul class="list-disc pl-6 mt-2 space-y-1">
-                                    <li>Scholarship Name (required)</li>
-                                    <li>Description and eligibility criteria</li>
-                                    <li>Award amount and number of awards</li>
-                                    <li>Application deadline</li>
-                                    <li>Academic level and field of study</li>
-                                </ul>
-                            </li>
-                            <li><strong>Requirements:</strong> Specify required documents and minimum GPA</li>
-                            <li><strong>Settings:</strong> Set scholarship status (active/inactive)</li>
-                            <li><strong>Publish:</strong> Click "Create Scholarship" to make it available</li>
-                        </ol>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Managing Scholarship Status:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Active:</strong> Scholarship is open for applications</li>
-                            <li><strong>Inactive:</strong> Scholarship is temporarily closed</li>
-                            <li><strong>Expired:</strong> Application deadline has passed</li>
-                            <li><strong>Archived:</strong> Scholarship is no longer available</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Application Management Section -->
-                <div id="manage-applications" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-file-alt mr-3 text-purple-600"></i>Managing Applications
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Review and process scholarship applications efficiently.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Application Review Process:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Access Applications:</strong> Go to "Applications" in the sidebar</li>
-                            <li><strong>Filter Applications:</strong> Use filters to view applications by:
-                                <ul class="list-disc pl-6 mt-2 space-y-1">
-                                    <li>Scholarship type</li>
-                                    <li>Application status (pending, approved, rejected)</li>
-                                    <li>Date range</li>
-                                    <li>Academic level</li>
-                                </ul>
-                            </li>
-                            <li><strong>Review Application:</strong> Click on an application to view details:
-                                <ul class="list-disc pl-6 mt-2 space-y-1">
-                                    <li>Personal information</li>
-                                    <li>Academic records</li>
-                                    <li>Uploaded documents</li>
-                                    <li>Motivation statement</li>
-                                </ul>
-                            </li>
-                            <li><strong>Make Decision:</strong> Approve, reject, or request additional information</li>
-                            <li><strong>Add Notes:</strong> Include reviewer comments for internal reference</li>
-                            <li><strong>Notify Applicant:</strong> Send automated email notifications</li>
-                        </ol>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Application Statuses:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Pending:</strong> Application submitted, awaiting review</li>
-                            <li><strong>Under Review:</strong> Application is being evaluated</li>
-                            <li><strong>Approved:</strong> Application meets all criteria</li>
-                            <li><strong>Rejected:</strong> Application does not meet requirements</li>
-                            <li><strong>Waitlisted:</strong> Application may be considered if spots open</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Troubleshooting Section -->
-                <div id="login-issues" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-sign-in-alt mr-3 text-red-600"></i>Login Issues
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Common login problems and their solutions.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Common Login Problems:</h4>
-                        
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-red-500 pl-4">
-                                <h5 class="font-semibold text-red-600">"Invalid email or password"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Check that Caps Lock is off</li>
-                                    <li>Verify your email address is correct</li>
-                                    <li>Use the "Forgot Password" feature to reset your password</li>
-                                    <li>Contact support if the problem persists</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-yellow-500 pl-4">
-                                <h5 class="font-semibold text-yellow-600">"Account locked"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Wait 15 minutes for automatic unlock</li>
-                                    <li>Use "Forgot Password" to reset your password</li>
-                                    <li>Contact your system administrator</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-blue-500 pl-4">
-                                <h5 class="font-semibold text-white">"Session expired"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Simply log in again with your credentials</li>
-                                    <li>Check "Remember Me" for longer sessions</li>
-                                    <li>Ensure your browser accepts cookies</li>
-                                </ul>
-                            </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-red-100 dark:bg-red-900">
+                            <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
                         </div>
-
-                        <div class="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-4 rounded-lg mt-6 border-l-4 border-green-500">
-                            <h5 class="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
-                                <i class="fas fa-check-circle mr-2"></i>Best Practices:
-                            </h5>
-                            <ul class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-1">
-                                <li>Use a strong, unique password</li>
-                                <li>Enable two-factor authentication if available</li>
-                                <li>Log out when using shared computers</li>
-                                <li>Keep your browser updated</li>
-                            </ul>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Expired Requests</p>
+                            <p id="expired-requests" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
                         </div>
-                    </div>
-                </div>
-
-                <div id="file-upload" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-upload mr-3 text-orange-600"></i>File Upload Problems
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Resolve common file upload issues and learn best practices.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Common Upload Issues:</h4>
-                        
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-red-500 pl-4">
-                                <h5 class="font-semibold text-red-600">"File too large"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Compress the file using online tools</li>
-                                    <li>Convert to a smaller format (e.g., PDF instead of high-res images)</li>
-                                    <li>Split large documents into smaller parts</li>
-                                    <li>Maximum file size: 5MB for most uploads</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-yellow-500 pl-4">
-                                <h5 class="font-semibold text-yellow-600">"Invalid file type"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Use supported formats: PDF, DOC, DOCX, JPG, PNG</li>
-                                    <li>Check file extension is correct</li>
-                                    <li>Convert files to supported formats</li>
-                                    <li>Ensure file isn't corrupted</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-blue-500 pl-4">
-                                <h5 class="font-semibold text-white">"Upload failed"</h5>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">Solutions:</p>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Check your internet connection</li>
-                                    <li>Try refreshing the page</li>
-                                    <li>Use a different browser</li>
-                                    <li>Contact support if problem persists</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">File Upload Best Practices:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>File Naming:</strong> Use descriptive names without special characters</li>
-                            <li><strong>File Size:</strong> Keep files under 5MB for faster uploads</li>
-                            <li><strong>Format:</strong> Use PDF for documents, JPG/PNG for images</li>
-                            <li><strong>Quality:</strong> Ensure files are clear and readable</li>
-                            <li><strong>Backup:</strong> Keep copies of important files</li>
-                        </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- FAQ Section -->
-            <div class="mt-10 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Frequently Asked Questions</h3>
-                
-                <div class="space-y-4">
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>How do I reset my admin password?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>To reset your admin password:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-1">
-                                <li>Go to the login page</li>
-                                <li>Click "Forgot Password"</li>
-                                <li>Enter your admin email address</li>
-                                <li>Check your email for a reset link</li>
-                                <li>Follow the instructions to set a new password</li>
-                            </ol>
-                            <p class="mt-3 text-sm text-gray-500">If you don't receive the email, check your spam folder or contact support.</p>
-                        </div>
-                    </div>
-
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>How can I add new admin users?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>Only super admins can add new admin users:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-1">
-                                <li>Navigate to User Management</li>
-                                <li>Click "Add New User"</li>
-                                <li>Fill in the user details</li>
-                                <li>Set the role to "Admin" or "Super Admin"</li>
-                                <li>Save the new user</li>
-                            </ol>
-                            <p class="mt-3 text-sm text-gray-500">Regular admins can only create regular users, not other admins.</p>
-                        </div>
-                    </div>
-
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>How do I manage scholarship applications?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>To manage scholarship applications:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-1">
-                                <li>Go to Applications in the sidebar</li>
-                                <li>Use filters to find specific applications</li>
-                                <li>Click on an application to review details</li>
-                                <li>Approve, reject, or request more information</li>
-                                <li>Add reviewer notes for internal reference</li>
-                                <li>Send notifications to applicants</li>
-                            </ol>
-                            <p class="mt-3 text-sm text-gray-500">Applications are automatically sorted by submission date.</p>
-                        </div>
-                    </div>
-
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>What file types are supported for uploads?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>Supported file types include:</p>
-                            <ul class="list-disc pl-5 mt-2 space-y-1">
-                                <li><strong>Documents:</strong> PDF, DOC, DOCX</li>
-                                <li><strong>Images:</strong> JPG, JPEG, PNG, GIF</li>
-                                <li><strong>Maximum size:</strong> 5MB per file</li>
-                            </ul>
-                            <p class="mt-3 text-sm text-gray-500">For best results, use PDF format for documents and JPG/PNG for images.</p>
-                        </div>
-                    </div>
-
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>How do I generate reports?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>To generate reports:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-1">
-                                <li>Navigate to Reports & Analytics</li>
-                                <li>Select the type of report you need</li>
-                                <li>Choose the date range and filters</li>
-                                <li>Click "Generate Report"</li>
-                                <li>Download the report in your preferred format</li>
-                            </ol>
-                            <p class="mt-3 text-sm text-gray-500">Reports can be exported as PDF, Excel, or CSV files.</p>
-                        </div>
-                    </div>
-
-                    <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <button class="faq-toggle flex justify-between items-center w-full text-left font-semibold text-gray-800 dark:text-white">
-                            <span>How do I update website content?</span>
-                            <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                        </button>
-                        <div class="faq-content mt-2 text-gray-600 dark:text-gray-300 hidden">
-                            <p>To update website content:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-1">
-                                <li>Go to General Settings</li>
-                                <li>Update site title, description, and contact information</li>
-                                <li>Modify homepage content and banner</li>
-                                <li>Update social media links</li>
-                                <li>Save changes to publish updates</li>
-                            </ol>
-                            <p class="mt-3 text-sm text-gray-500">Changes are applied immediately after saving.</p>
-                        </div>
-                    </div>
+            <!-- Help Requests Table -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Password Reset Requests</h2>
                 </div>
-
-                <!-- Content Management Section -->
-                <div id="general-settings" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-cog mr-3 text-purple-600"></i>General Settings
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Configure your website's general settings and appearance.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Website Configuration:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Site Information:</strong> Update site title, description, and contact email</li>
-                            <li><strong>Homepage Content:</strong> Modify banner text and main content</li>
-                            <li><strong>Social Media Links:</strong> Add Facebook, Twitter, and Instagram links</li>
-                            <li><strong>Logo and Favicon:</strong> Upload your organization's branding</li>
-                            <li><strong>Maintenance Mode:</strong> Enable to temporarily disable the website</li>
-                        </ol>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Email Templates:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Application Notifications:</strong> Customize emails for application status updates</li>
-                            <li><strong>Welcome Emails:</strong> Set up automated welcome messages for new users</li>
-                            <li><strong>Reminder Emails:</strong> Configure document submission reminders</li>
-                            <li><strong>Template Variables:</strong> Use {{name}}, {{scholarship}}, {{date}} in templates</li>
-                        </ul>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Requested</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Expires</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Requests will be loaded here -->
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <!-- Reports & Analytics Section -->
-                <div id="generate-reports" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-chart-line mr-3 text-orange-600"></i>Generating Reports
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Create comprehensive reports to analyze your scholarship program's performance.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Available Report Types:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Application Reports:</strong> Track application volumes and success rates</li>
-                            <li><strong>User Analytics:</strong> Monitor user registration and engagement</li>
-                            <li><strong>Financial Reports:</strong> Analyze revenue and payment data</li>
-                            <li><strong>Scholarship Performance:</strong> Evaluate scholarship effectiveness</li>
-                            <li><strong>Custom Reports:</strong> Create tailored reports for specific needs</li>
-                        </ul>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Report Generation Steps:</h4>
-                        <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                            <li><strong>Select Report Type:</strong> Choose from available report categories</li>
-                            <li><strong>Set Date Range:</strong> Specify the period for data analysis</li>
-                            <li><strong>Apply Filters:</strong> Filter by scholarship type, status, or other criteria</li>
-                            <li><strong>Generate Report:</strong> Click to create the report</li>
-                            <li><strong>Export Options:</strong> Download as PDF, Excel, or CSV</li>
-                        </ol>
-
-                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg mt-6 border-l-4 border-blue-500">
-                            <h5 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
-                                <i class="fas fa-chart-bar mr-2"></i>Analytics Tips:
-                            </h5>
-                            <ul class="list-disc pl-6 text-blue-700 dark:text-blue-300 space-y-1">
-                                <li>Generate monthly reports to track trends</li>
-                                <li>Compare periods to identify growth patterns</li>
-                                <li>Use filters to focus on specific demographics</li>
-                                <li>Export data for external analysis tools</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Security & Permissions Section -->
-                <div id="user-permissions" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                        <i class="fas fa-shield-alt mr-3 text-red-600"></i>User Permissions & Security
-                    </h3>
-                    <div class="prose dark:prose-invert max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">Understand user roles and permissions to maintain system security.</p>
-                        
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">User Roles:</h4>
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-red-500 pl-4">
-                                <h5 class="font-semibold text-red-600">Super Admin</h5>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Full system access and control</li>
-                                    <li>Can create other admin users</li>
-                                    <li>Manage all settings and configurations</li>
-                                    <li>Access to all reports and analytics</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-blue-500 pl-4">
-                                <h5 class="font-semibold text-white">Admin</h5>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Manage scholarships and applications</li>
-                                    <li>Create regular user accounts</li>
-                                    <li>Access reports and analytics</li>
-                                    <li>Update website content</li>
-                                </ul>
-                            </div>
-
-                            <div class="border-l-4 border-green-500 pl-4">
-                                <h5 class="font-semibold text-green-600">User</h5>
-                                <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-1">
-                                    <li>Submit scholarship applications</li>
-                                    <li>View application status</li>
-                                    <li>Update personal profile</li>
-                                    <li>Access limited features</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Security Best Practices:</h4>
-                        <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                            <li><strong>Strong Passwords:</strong> Use complex passwords with letters, numbers, and symbols</li>
-                            <li><strong>Regular Updates:</strong> Change passwords every 90 days</li>
-                            <li><strong>Session Management:</strong> Log out when using shared computers</li>
-                            <li><strong>Access Control:</strong> Only grant necessary permissions to users</li>
-                            <li><strong>Monitor Activity:</strong> Regularly review user activity logs</li>
-                        </ul>
+            <!-- No Requests Message -->
+            <div id="no-requests" class="hidden text-center py-12">
+                <i class="fas fa-check-circle text-4xl text-green-500 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Active Requests</h3>
+                <p class="text-gray-600 dark:text-gray-300">All password reset requests have been handled.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Navigation Section -->
-            <div id="navigation" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-compass mr-3 text-blue-600"></i>Navigating the Admin Panel
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Learn how to efficiently navigate through the admin panel and access different features.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Main Navigation Elements:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Sidebar Menu:</strong> Access all main sections including Dashboard, Users, Scholarships, and Applications</li>
-                        <li><strong>Top Header:</strong> Quick access to notifications, profile settings, and logout</li>
-                        <li><strong>Breadcrumbs:</strong> Track your current location within the system</li>
-                        <li><strong>Search Bar:</strong> Quickly find specific information or users</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Keyboard Shortcuts:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Ctrl/Cmd + K:</strong> Focus on search bar</li>
-                        <li><strong>Escape:</strong> Clear search or close modals</li>
-                        <li><strong>Tab:</strong> Navigate between form fields</li>
-                        <li><strong>Enter:</strong> Submit forms or confirm actions</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Quick Actions:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li>Use the "+" buttons for quick creation of new items</li>
-                        <li>Click on statistics cards to view detailed reports</li>
-                        <li>Use the notification bell to check system updates</li>
-                        <li>Access your profile settings from the top-right menu</li>
-                    </ul>
+    <!-- Reset Password Modal -->
+    <div id="reset-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md relative">
+            <button id="close-reset-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">&times;</button>
+            
+            <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Reset User Password</h3>
+            <form id="reset-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">User</label>
+                    <input type="text" id="reset-user-name" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" readonly>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input type="email" id="reset-user-email" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" readonly>
             </div>
-
-            <!-- Reset Passwords Section -->
-            <div id="reset-passwords" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-key mr-3 text-orange-600"></i>Resetting User Passwords
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Learn how to reset passwords for users who have forgotten their credentials.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Security Questions Setup:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>During Registration:</strong> All new users must set up 3 security questions</li>
-                        <li><strong>Question Selection:</strong> Users choose from predefined security questions</li>
-                        <li><strong>Answer Storage:</strong> Answers are securely stored in the database</li>
-                        <li><strong>Setup Tracking:</strong> System tracks if security questions are configured</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">User Password Reset Process:</h4>
-                    <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                        <li><strong>Email Entry:</strong> User enters their email address on login page</li>
-                        <li><strong>Security Questions:</strong> System displays user's security questions</li>
-                        <li><strong>Answer Verification:</strong> User must answer at least 2 questions correctly</li>
-                        <li><strong>Password Reset:</strong> User sets new password after verification</li>
-                        <li><strong>Access Restored:</strong> User can log in with new password</li>
-                    </ol>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Admin Password Reset:</h4>
-                    <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                        <li><strong>Access User Management:</strong> Go to "User Management" in the sidebar</li>
-                        <li><strong>Find the User:</strong> Search for the user by name or email address</li>
-                        <li><strong>Edit User:</strong> Click the edit icon for the specific user</li>
-                        <li><strong>Change Password:</strong> Enter a new temporary password</li>
-                        <li><strong>Notify User:</strong> Inform the user of their new temporary password</li>
-                        <li><strong>Force Change:</strong> Set the password to expire on next login</li>
-                    </ol>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Security Features:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Multiple Questions:</strong> Users must answer at least 2 of 3 questions</li>
-                        <li><strong>Case Insensitive:</strong> Answers are not case-sensitive for user convenience</li>
-                        <li><strong>Reset Tokens:</strong> Temporary tokens expire after 15 minutes</li>
-                        <li><strong>Answer Validation:</strong> System validates answers against stored responses</li>
-                        <li><strong>Audit Trail:</strong> Log all password reset attempts and security question usage</li>
-                    </ul>
-
-                    <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 p-4 rounded-lg mt-6 border-l-4 border-yellow-500">
-                        <h5 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>Security Note:
-                        </h5>
-                        <p class="text-yellow-700 dark:text-yellow-300">The system now uses security questions instead of email verification for password reset. Users without security questions set up must contact an administrator for assistance. Always use secure, temporary passwords and require users to change them on their next login.</p>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                    <input type="password" id="new-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" required>
                 </div>
-            </div>
-
-            <!-- Review Process Section -->
-            <div id="review-process" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-clipboard-check mr-3 text-green-600"></i>Application Review Process
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Understand the step-by-step process for reviewing scholarship applications.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Review Workflow:</h4>
-                    <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                        <li><strong>Initial Screening:</strong> Check if all required documents are submitted</li>
-                        <li><strong>Eligibility Check:</strong> Verify applicant meets basic criteria</li>
-                        <li><strong>Document Review:</strong> Examine academic records and supporting documents</li>
-                        <li><strong>Essay Evaluation:</strong> Review motivation statement and essays</li>
-                        <li><strong>Final Decision:</strong> Approve, reject, or request additional information</li>
-                    </ol>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Review Criteria:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Academic Performance:</strong> GPA, test scores, and academic achievements</li>
-                        <li><strong>Financial Need:</strong> Income level and financial circumstances</li>
-                        <li><strong>Leadership & Activities:</strong> Extracurricular involvement and community service</li>
-                        <li><strong>Essay Quality:</strong> Writing ability and motivation</li>
-                        <li><strong>Recommendations:</strong> Letters of recommendation strength</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Review Tools:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Scoring System:</strong> Use built-in scoring to evaluate applications</li>
-                        <li><strong>Comments:</strong> Add internal notes for reference</li>
-                        <li><strong>Status Updates:</strong> Change application status as review progresses</li>
-                        <li><strong>Bulk Actions:</strong> Process multiple applications simultaneously</li>
-                    </ul>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
+                    <input type="password" id="confirm-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" required>
                 </div>
-            </div>
-
-            <!-- Email Templates Section -->
-            <div id="email-templates" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-envelope mr-3 text-purple-600"></i>Email Templates
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Customize email templates for automated communications with applicants and users.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Available Templates:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>Application Received:</strong> Confirmation email when application is submitted</li>
-                        <li><strong>Application Approved:</strong> Notification of successful application</li>
-                        <li><strong>Application Rejected:</strong> Notification of unsuccessful application</li>
-                        <li><strong>Document Request:</strong> Request for additional documents</li>
-                        <li><strong>Password Reset:</strong> Password reset instructions</li>
-                        <li><strong>Welcome Email:</strong> New user welcome message</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Template Variables:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>{{name}}:</strong> Applicant's full name</li>
-                        <li><strong>{{scholarship}}:</strong> Scholarship name</li>
-                        <li><strong>{{amount}}:</strong> Award amount</li>
-                        <li><strong>{{deadline}}:</strong> Application deadline</li>
-                        <li><strong>{{date}}:</strong> Current date</li>
-                        <li><strong>{{organization}}:</strong> Your organization name</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Customizing Templates:</h4>
-                    <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                        <li><strong>Access Settings:</strong> Go to "General Settings" in the sidebar</li>
-                        <li><strong>Email Templates:</strong> Click on "Email Templates" section</li>
-                        <li><strong>Select Template:</strong> Choose the template you want to edit</li>
-                        <li><strong>Edit Content:</strong> Modify the subject line and email body</li>
-                        <li><strong>Test Template:</strong> Send a test email to verify formatting</li>
-                        <li><strong>Save Changes:</strong> Click "Save" to update the template</li>
-                    </ol>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes (Optional)</label>
+                    <textarea id="admin-notes" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" rows="3" placeholder="Add any notes about this reset..."></textarea>
                 </div>
-            </div>
-
-            <!-- Export Data Section -->
-            <div id="export-data" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-download mr-3 text-green-600"></i>Exporting Data
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Export data from the system for external analysis, reporting, or backup purposes.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Exportable Data Types:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>User Data:</strong> All user information and profiles</li>
-                        <li><strong>Applications:</strong> Complete application records and documents</li>
-                        <li><strong>Scholarships:</strong> Scholarship details and statistics</li>
-                        <li><strong>Financial Data:</strong> Payment records and revenue information</li>
-                        <li><strong>System Logs:</strong> Activity logs and audit trails</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Export Formats:</h4>
-                    <ul class="list-disc pl-6 text-gray-600 dark:text-gray-300 space-y-2">
-                        <li><strong>CSV:</strong> Comma-separated values for spreadsheet applications</li>
-                        <li><strong>Excel:</strong> Microsoft Excel format with formatting</li>
-                        <li><strong>PDF:</strong> Portable Document Format for reports</li>
-                        <li><strong>JSON:</strong> JavaScript Object Notation for API integration</li>
-                    </ul>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Export Process:</h4>
-                    <ol class="list-decimal pl-6 text-gray-600 dark:text-gray-300 space-y-3">
-                        <li><strong>Select Data Type:</strong> Choose what data to export</li>
-                        <li><strong>Set Date Range:</strong> Specify the time period for data</li>
-                        <li><strong>Apply Filters:</strong> Filter data by specific criteria</li>
-                        <li><strong>Choose Format:</strong> Select the export file format</li>
-                        <li><strong>Generate Export:</strong> Click "Export" to create the file</li>
-                        <li><strong>Download:</strong> Save the file to your computer</li>
-                    </ol>
-
-                    <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg mt-6 border-l-4 border-blue-500">
-                        <h5 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
-                            <i class="fas fa-shield-alt mr-2"></i>Data Security:
-                        </h5>
-                        <p class="text-blue-700 dark:text-blue-300">Exported data contains sensitive information. Always store exported files securely and delete them when no longer needed. Never share exported data with unauthorized parties.</p>
-                    </div>
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-green-500 dark:bg-green-600 text-white py-2 rounded-lg hover:bg-green-600 dark:hover:bg-green-700 transition duration-200">Reset Password</button>
+                    <button type="button" id="dismiss-request" class="flex-1 bg-gray-500 dark:bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition duration-200">Dismiss Request</button>
                 </div>
-            </div>
-
-            <!-- Error Messages Section -->
-            <div id="error-messages" class="help-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-                    <i class="fas fa-exclamation-triangle mr-3 text-red-600"></i>Common Error Messages
-                </h3>
-                <div class="prose dark:prose-invert max-w-none">
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">Understand and resolve common error messages you may encounter while using the admin panel.</p>
-                    
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Authentication Errors:</h4>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-red-500 pl-4">
-                            <h5 class="font-semibold text-red-600">"Session expired"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">Your login session has timed out. Simply log in again to continue.</p>
-                        </div>
-                        <div class="border-l-4 border-red-500 pl-4">
-                            <h5 class="font-semibold text-red-600">"Access denied"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">You don't have permission to access this feature. Contact your administrator.</p>
-                        </div>
-                    </div>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">Data Entry Errors:</h4>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-yellow-500 pl-4">
-                            <h5 class="font-semibold text-yellow-600">"Required field missing"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">Fill in all required fields marked with an asterisk (*).</p>
-                        </div>
-                        <div class="border-l-4 border-yellow-500 pl-4">
-                            <h5 class="font-semibold text-yellow-600">"Invalid email format"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">Enter a valid email address (e.g., user@example.com).</p>
-                        </div>
-                        <div class="border-l-4 border-yellow-500 pl-4">
-                            <h5 class="font-semibold text-yellow-600">"Password too weak"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">Use a stronger password with letters, numbers, and symbols.</p>
-                        </div>
-                    </div>
-
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3">System Errors:</h4>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-blue-500 pl-4">
-                            <h5 class="font-semibold text-white">"Server error (500)"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">A server error occurred. Try refreshing the page or contact support.</p>
-                        </div>
-                        <div class="border-l-4 border-blue-500 pl-4">
-                            <h5 class="font-semibold text-white">"Page not found (404)"</h5>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">The requested page doesn't exist. Check the URL or use navigation menu.</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-4 rounded-lg mt-6 border-l-4 border-green-500">
-                        <h5 class="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
-                            <i class="fas fa-lightbulb mr-2"></i>Quick Fixes:
-                        </h5>
-                        <ul class="list-disc pl-6 text-green-700 dark:text-green-300 space-y-1">
-                            <li>Clear your browser cache and cookies</li>
-                            <li>Try using a different browser</li>
-                            <li>Check your internet connection</li>
-                            <li>Contact support if errors persist</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact Support -->
-            <div class="mt-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl shadow-lg p-6 border border-blue-100 dark:border-blue-900">
-                <div class="text-center">
-                    <i class="fas fa-headset text-4xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Need More Help?</h3>
-                    <p class="text-gray-600 dark:text-gray-300 mb-6">Our support team is available 24/7 to assist you with any issues.</p>
-                    <div class="flex flex-col sm:flex-row justify-center gap-4">
-                        <a href="mailto:support@yourdomain.com" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                            <i class="fas fa-envelope mr-2"></i> Email Support
-                        </a>
-                        <a href="#" class="px-6 py-3 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-200 dark:border-gray-600">
-                            <i class="fas fa-phone-alt mr-2"></i> Call Support
-                        </a>
-                    </div>
-                </div>
-            </div>
+            </form>
+            <div id="reset-message" class="mt-3 text-center text-sm"></div>
         </div>
-    </main>
+    </div>
+
+    <!-- Include the API service -->
+    <script src="js/api.js"></script>
 
     <script>
-        // FAQ toggle functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const faqToggles = document.querySelectorAll('.faq-toggle');
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Check for saved user preference
+        if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+        
+        themeToggle.addEventListener('click', function() {
+            if (themeIcon.classList.contains('fa-moon')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
             
-            faqToggles.forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    const content = this.nextElementSibling;
-                    const icon = this.querySelector('i');
-                    
-                    content.classList.toggle('hidden');
-                    icon.classList.toggle('rotate-180');
-                });
-            });
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
 
-            // Help link navigation
-            const helpLinks = document.querySelectorAll('.help-link');
-            helpLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href').substring(1);
-                    const targetSection = document.getElementById(targetId);
-                    
-                    if (targetSection) {
-                        // Hide all help sections first
-                        document.querySelectorAll('.help-section').forEach(section => {
-                            section.classList.add('hidden');
-                        });
-                        
-                        // Show target section
-                        targetSection.classList.remove('hidden');
-                        
-                        // Scroll to section
-                        targetSection.scrollIntoView({ behavior: 'smooth' });
-                        
-                        // Update active state
-                        helpLinks.forEach(l => l.classList.remove('text-blue-700', 'font-semibold'));
-                        this.classList.add('text-blue-700', 'font-semibold');
-                    }
-                });
-            });
+        let currentUserId = null;
+        const resetModal = document.getElementById('reset-modal');
+        const closeResetModal = document.getElementById('close-reset-modal');
+        const resetForm = document.getElementById('reset-form');
+        const dismissRequest = document.getElementById('dismiss-request');
+        const resetMessage = document.getElementById('reset-message');
 
-            // Search functionality
-            const searchInput = document.querySelector('input[type="text"]');
-            const helpSections = document.querySelectorAll('.help-section');
+        // Load help requests
+        async function loadHelpRequests() {
+            try {
+                const [requestsResponse, statsResponse] = await Promise.all([
+                    window.api.get('/admin-help/requests'),
+                    window.api.get('/admin-help/stats')
+                ]);
+
+                // Update statistics
+                if (statsResponse.success) {
+                    document.getElementById('total-requests').textContent = statsResponse.stats.total_requests || 0;
+                    document.getElementById('active-requests').textContent = statsResponse.stats.active_requests || 0;
+                    document.getElementById('expired-requests').textContent = statsResponse.stats.expired_requests || 0;
+                }
+
+                // Update table
+                const tableBody = document.getElementById('requests-table-body');
+                const noRequests = document.getElementById('no-requests');
+
+                if (requestsResponse.success && requestsResponse.requests.length > 0) {
+                    tableBody.innerHTML = '';
+                    noRequests.classList.add('hidden');
+
+                    requestsResponse.requests.forEach(request => {
+                        const row = document.createElement('tr');
+                        const requestedDate = new Date(request.help_requested_at).toLocaleString();
+                        const expiryDate = new Date(request.help_token_expiry).toLocaleString();
+                        
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                ${request.full_name}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${request.email}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${requestedDate}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${expiryDate}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="openResetModal(${request.id}, '${request.full_name}', '${request.email}')" 
+                                        class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                                    Reset Password
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '';
+                    noRequests.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading help requests:', error);
+            }
+        }
+
+        // Open reset modal
+        function openResetModal(userId, userName, userEmail) {
+            currentUserId = userId;
+            document.getElementById('reset-user-name').value = userName;
+            document.getElementById('reset-user-email').value = userEmail;
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            document.getElementById('admin-notes').value = '';
+            resetMessage.textContent = '';
+            resetModal.classList.remove('hidden');
+        }
+
+        // Close reset modal
+        function closeResetModal() {
+            resetModal.classList.add('hidden');
+            currentUserId = null;
+        }
+
+        // Handle reset form submission
+        resetForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase().trim();
-                
-                if (searchTerm === '') {
-                    // Show all sections and links
-                    helpSections.forEach(section => section.classList.remove('hidden'));
-                    helpLinks.forEach(link => link.classList.remove('text-blue-700', 'font-semibold'));
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const adminNotes = document.getElementById('admin-notes').value;
+
+            if (newPassword !== confirmPassword) {
+                resetMessage.textContent = 'Passwords do not match.';
+                resetMessage.className = 'mt-3 text-center text-sm text-red-600';
                     return;
                 }
                 
-                // Hide all sections first
-                helpSections.forEach(section => section.classList.add('hidden'));
-                
-                // Search through sections
-                helpSections.forEach(section => {
-                    const title = section.querySelector('h3').textContent.toLowerCase();
-                    const content = section.textContent.toLowerCase();
-                    
-                    if (title.includes(searchTerm) || content.includes(searchTerm)) {
-                        section.classList.remove('hidden');
-                        
-                        // Highlight matching links
-                        const sectionId = section.id;
-                        helpLinks.forEach(link => {
-                            if (link.getAttribute('href') === '#' + sectionId) {
-                                link.classList.add('text-blue-700', 'font-semibold');
-                            }
-                        });
-                    }
-                });
-                
-                // Search through FAQ items
-                const faqItems = document.querySelectorAll('.faq-toggle');
-                faqItems.forEach(item => {
-                    const question = item.textContent.toLowerCase();
-                    const answer = item.nextElementSibling.textContent.toLowerCase();
-                    
-                    if (question.includes(searchTerm) || answer.includes(searchTerm)) {
-                        item.parentElement.classList.remove('hidden');
-                        // Show the answer if it matches
-                        if (answer.includes(searchTerm)) {
-                            item.nextElementSibling.classList.remove('hidden');
-                            item.querySelector('i').classList.add('rotate-180');
-                        }
-                    } else {
-                        item.parentElement.classList.add('hidden');
-                    }
-                });
-            });
-
-            // Show dashboard overview by default
-            const defaultSection = document.getElementById('dashboard-overview');
-            if (defaultSection) {
-                helpSections.forEach(section => section.classList.add('hidden'));
-                defaultSection.classList.remove('hidden');
+            if (newPassword.length < 6) {
+                resetMessage.textContent = 'Password must be at least 6 characters long.';
+                resetMessage.className = 'mt-3 text-center text-sm text-red-600';
+                return;
             }
 
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Ctrl/Cmd + K to focus search
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
-                
-                // Escape to clear search
-                if (e.key === 'Escape') {
-                    searchInput.value = '';
-                    searchInput.dispatchEvent(new Event('input'));
-                }
-            });
+            resetMessage.textContent = 'Resetting password...';
+            resetMessage.className = 'mt-3 text-center text-sm text-gray-500';
 
-            // Add search placeholder with keyboard shortcut hint
-            searchInput.placeholder = 'Search help articles... (Ctrl+K)';
+            try {
+                const response = await window.api.post('/admin-help/reset-password', {
+                    user_id: currentUserId,
+                    new_password: newPassword,
+                    admin_notes: adminNotes
+                });
+
+                if (response.success) {
+                    resetMessage.textContent = 'Password reset successfully!';
+                    resetMessage.className = 'mt-3 text-center text-sm text-green-600';
+                    
+                    setTimeout(() => {
+                        closeResetModal();
+                        loadHelpRequests();
+                    }, 2000);
+                } else {
+                    throw new Error(response.message || 'Failed to reset password');
+                }
+            } catch (error) {
+                resetMessage.textContent = error.message || 'An error occurred.';
+                resetMessage.className = 'mt-3 text-center text-sm text-red-600';
+            }
+        });
+
+        // Handle dismiss request
+        dismissRequest.addEventListener('click', async function() {
+            const adminNotes = document.getElementById('admin-notes').value;
+            
+            resetMessage.textContent = 'Dismissing request...';
+            resetMessage.className = 'mt-3 text-center text-sm text-gray-500';
+
+            try {
+                const response = await window.api.post('/admin-help/dismiss-request', {
+                    user_id: currentUserId,
+                    admin_notes: adminNotes
+                });
+
+                if (response.success) {
+                    resetMessage.textContent = 'Request dismissed successfully!';
+                    resetMessage.className = 'mt-3 text-center text-sm text-green-600';
+                    
+                    setTimeout(() => {
+                        closeResetModal();
+                        loadHelpRequests();
+                    }, 2000);
+                } else {
+                    throw new Error(response.message || 'Failed to dismiss request');
+                }
+            } catch (error) {
+                resetMessage.textContent = error.message || 'An error occurred.';
+                resetMessage.className = 'mt-3 text-center text-sm text-red-600';
+            }
+        });
+
+        // Close modal handlers
+        closeResetModal.addEventListener('click', closeResetModal);
+        resetModal.addEventListener('click', function(e) {
+            if (e.target === resetModal) {
+                closeResetModal();
+            }
+        });
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHelpRequests();
+            
+            // Refresh data every 30 seconds
+            setInterval(loadHelpRequests, 30000);
         });
     </script>
 </body>

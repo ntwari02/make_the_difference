@@ -272,7 +272,9 @@
             forgotMessage.className = 'mt-3 text-center text-sm text-gray-500';
             
             try {
+                console.log('Fetching security questions for email:', currentEmail);
                 const response = await window.api.post('/auth/forgot-password', { email: currentEmail });
+                console.log('Response received:', response);
                 if (response.success && response.questions) {
                     // Populate security questions
                     const container = document.getElementById('security-questions-container');
@@ -301,7 +303,13 @@
                     throw new Error(response.message || 'Failed to retrieve security questions');
                 }
             } catch (error) {
-                forgotMessage.textContent = error.message || 'An error occurred.';
+                console.error('Error fetching security questions:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
+                forgotMessage.textContent = error.message || 'An error occurred while fetching security questions.';
                 forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
             }
         });
@@ -324,7 +332,7 @@
             });
             
             try {
-                const response = await window.api.post('/api/security-questions/verify', {
+                const response = await window.api.post('/security-questions/verify', {
                     email: currentEmail,
                     answers: answers
                 });
@@ -332,10 +340,28 @@
                     throw new Error('Unexpected server response.');
                 }
                 
-                if (response.success) {
+                if (response.success && response.can_reset) {
                     resetToken = response.reset_token;
                     showStep(3);
                     forgotMessage.textContent = '';
+                } else if (response.requires_admin) {
+                    // Show admin help message
+                    forgotMessage.textContent = response.message;
+                    forgotMessage.className = 'mt-3 text-center text-sm text-orange-600';
+                    
+                    // Add a button to contact admin
+                    const adminHelpDiv = document.createElement('div');
+                    adminHelpDiv.className = 'mt-4 text-center';
+                    adminHelpDiv.innerHTML = `
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            An admin will review your request and contact you soon.
+                        </p>
+                        <button type="button" onclick="closeForgotModal()" 
+                                class="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">
+                            Close
+                        </button>
+                    `;
+                    document.getElementById('forgot-message').appendChild(adminHelpDiv);
                 } else {
                     throw new Error(response.message || 'Incorrect answers');
                 }

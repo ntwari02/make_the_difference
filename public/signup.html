@@ -136,18 +136,29 @@
                     // Helper to update options
                     function updateDropdownOptions() {
                         const selectedValues = questionSelects.map(id => document.getElementById(id).value);
+                        
                         questionSelects.forEach((selectId, idx) => {
                             const select = document.getElementById(selectId);
                             const currentValue = select.value;
+                            
+                            // Store the current selection
+                            const wasSelected = currentValue;
+                            
                             // Remove all except the placeholder
                             select.innerHTML = `<option value="">Select Security Question ${idx + 1}</option>`;
+                            
                             questions.forEach(question => {
+                                const questionId = question.id.toString();
+                                const isSelectedInOther = selectedValues.includes(questionId) && questionId !== wasSelected;
+                                
                                 // Only add if not selected in another dropdown or is the current value
-                                if (!selectedValues.includes(question.id.toString()) || currentValue === question.id.toString()) {
+                                if (!isSelectedInOther || questionId === wasSelected) {
                                     const option = document.createElement('option');
                                     option.value = question.id;
                                     option.textContent = question.question;
-                                    if (currentValue === question.id.toString()) option.selected = true;
+                                    if (questionId === wasSelected) {
+                                        option.selected = true;
+                                    }
                                     select.appendChild(option);
                                 }
                             });
@@ -160,6 +171,15 @@
                         select.addEventListener('change', updateDropdownOptions);
                     });
                     updateDropdownOptions();
+                    
+                    // Add visual feedback for duplicate prevention
+                    const questionSection = document.querySelector('.space-y-4');
+                    if (questionSection) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg';
+                        infoDiv.innerHTML = '<i class="fas fa-info-circle mr-1"></i> Each security question can only be selected once. Selecting a question will remove it from other dropdowns.';
+                        questionSection.insertBefore(infoDiv, questionSection.firstChild);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading security questions:', error);

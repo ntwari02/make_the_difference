@@ -22,6 +22,7 @@ import adminAccountRoutes from './routes/adminAccount.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
 import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
 import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
+import adminHelpRoutes from './routes/adminHelp.js'; // ✅ ADDED HERE
 import notificationsRoutes from './routes/notifications.js';
 import analyticsRoutes from './routes/analytics.js'; // ✅ ADDED HERE
 import reportsRoutes from './routes/reports.js'; // ✅ ADDED HERE
@@ -71,6 +72,7 @@ app.use('/api/admin', adminAccountRoutes);
 app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
 app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
 app.use('/api/security-questions', securityQuestionsRoutes); // ✅ ADDED HERE
+app.use('/api/admin-help', adminHelpRoutes); // ✅ ADDED HERE
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/analytics', analyticsRoutes); // ✅ ADDED HERE
 app.use('/api/reports', reportsRoutes); // ✅ ADDED HERE

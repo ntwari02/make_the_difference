@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -86,7 +87,7 @@ router.post('/verify', async (req, res) => {
 
         if (correctAnswers >= requiredCorrect) {
             // Generate a temporary token for password reset
-            const resetToken = require('crypto').randomBytes(32).toString('hex');
+            const resetToken = crypto.randomBytes(32).toString('hex');
             const expiry = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
             
             await db.query(
@@ -96,13 +97,26 @@ router.post('/verify', async (req, res) => {
 
             res.json({ 
                 success: true, 
-                message: 'Security questions verified successfully',
-                reset_token: resetToken
+                message: 'Security questions verified successfully. You can now reset your password.',
+                reset_token: resetToken,
+                can_reset: true
             });
         } else {
-            res.status(400).json({ 
+                            // Create admin help request
+                const helpToken = crypto.randomBytes(32).toString('hex');
+            const helpExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+            
+            await db.query(
+                'UPDATE users SET help_token = ?, help_token_expiry = ?, help_requested_at = NOW() WHERE id = ?',
+                [helpToken, helpExpiry, user.id]
+            );
+
+            res.json({ 
                 success: false, 
-                message: 'Incorrect security question answers' 
+                message: 'Incorrect answers. Admin help has been requested. You will be notified when an admin can assist you.',
+                help_token: helpToken,
+                can_reset: false,
+                requires_admin: true
             });
         }
 
