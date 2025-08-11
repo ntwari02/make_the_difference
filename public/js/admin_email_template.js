@@ -17,7 +17,7 @@ function checkAuth() {
     
     try {
         const userData = JSON.parse(user);
-        if (userData.role !== 'admin') {
+        if (!userData.isAdmin) {
             showErrorState('Access denied. Admin privileges required.');
             return false;
         }

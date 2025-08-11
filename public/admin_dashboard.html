@@ -264,6 +264,37 @@
                     </div>
                 </div>
 
+                <!-- Admin Management Section -->
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Admin Management</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="loadAdminUsers()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button onclick="showAddAdminModal()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+                                <i class="fas fa-plus"></i> Add Admin
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700/80">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Admin Level</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Login</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- System Statistics -->
                 <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
@@ -341,8 +372,8 @@
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
+                    <button type="button" id="closeModalBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Close</button>
+                    <button type="submit" id="saveUserBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -382,13 +413,76 @@
         </div>
     </div>
 
+    <!-- Add Admin Modal -->
+    <div id="addAdminModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700 dark:text-white">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New Admin</h3>
+            <form id="addAdminForm" class="space-y-4">
+                <div>
+                    <label for="newAdminUserId" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select User</label>
+                    <select id="newAdminUserId" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="">Select a user</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="newAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
+                    <select id="newAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="moderator">Moderator</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeAddAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="button" onclick="addAdminUser()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Add Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Admin Modal -->
+    <div id="editAdminModal" class="modal-overlay">
+        <div class="modal-content dark:bg-gray-700 dark:text-white">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Edit Admin</h3>
+            <form id="editAdminForm" class="space-y-4">
+                <input type="hidden" id="editAdminId">
+                <div>
+                    <label for="editAdminName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" id="editAdminName" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="editAdminEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="editAdminEmail" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="editAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
+                    <select id="editAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="moderator">Moderator</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="editAdminActive" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
+                    </label>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeEditAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="button" onclick="saveAdminUser()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // Check if user is logged in and is an admin
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-        if (!token || user.role !== 'admin') {
+        if (!token || !user.isAdmin) {
             window.location.href = 'login.html';
         }
 
@@ -439,234 +533,203 @@
             }
         }
 
-        // Load recent applications
-        async function loadApplications() {
+        // Load admin users
+        async function loadAdminUsers() {
             try {
-                const res = await axios.get('/api/admin/applications', {
+                const res = await axios.get('/api/admin/admin-users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const applications = res.data;
-                const applicationsList = document.getElementById('applicationsList');
+                const adminUsers = res.data;
+                const adminUsersList = document.getElementById('adminUsersList');
                 
-                if (applicationsList) {
-                    applicationsList.innerHTML = '';
+                if (adminUsersList) {
+                    adminUsersList.innerHTML = '';
 
-                    if (applications.length === 0) {
-                        applicationsList.innerHTML = `
+                    if (adminUsers.length === 0) {
+                        adminUsersList.innerHTML = `
                             <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    No applications found
+                                <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    No admin users found
                                 </td>
                             </tr>
                         `;
                         return;
                     }
 
-                    applications.forEach(app => {
+                    adminUsers.forEach(admin => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${app.fullName || 'N/A'}
+                                ${admin.full_name || 'N/A'}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${app.scholarshipName || 'N/A'}
+                                ${admin.email || 'N/A'}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A'}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    admin.admin_level === 'super_admin' ? 'bg-red-100 text-red-800' :
+                                    admin.admin_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-green-100 text-green-800'
+                                }">
+                                    ${admin.admin_level || 'N/A'}
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${app.status || 'N/A'}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    admin.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }">
+                                    ${admin.is_active ? 'Active' : 'Inactive'}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="editApplication(${app.applicationId})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2">
-                                    <i class="fas fa-edit"></i>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                ${admin.last_login ? new Date(admin.last_login).toLocaleDateString() : 'Never'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editAdminUser(${admin.id})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                                    Edit
                                 </button>
-                                <button onclick="deleteApplication(${app.applicationId})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                    <i class="fas fa-trash"></i>
+                                <button onclick="deleteAdminUser(${admin.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                    Delete
                                 </button>
                             </td>
                         `;
-                        applicationsList.appendChild(row);
+                        adminUsersList.appendChild(row);
                     });
                 }
             } catch (error) {
-                console.error('Error loading applications:', error);
-                showNotification('Error loading applications', 'error');
+                console.error('Error loading admin users:', error);
+                showNotification('Error loading admin users', 'error');
             }
         }
 
-        // Initialize charts
-        let applicationTrendsChart, scholarshipDistributionChart, userRegistrationChart, statusOverviewChart;
-
-        function initializeCharts() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#F3F4F6' : '#374151';
-            const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
-
-            const chartOptions = (type) => ({
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: textColor, font: { size: 12 } }
-                    }
-                },
-                scales: type === 'bar' || type === 'line' ? {
-                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
-                    x: { grid: { color: gridColor }, ticks: { color: textColor } }
-                } : {}
-            });
-
-            const scatterOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: textColor, font: { size: 12 } }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'month',
-                            parser: 'yyyy-MM',
-                            tooltipFormat: 'MMM yyyy'
-                        },
-                        adapters: {
-                            date: {
-                                zone: 'UTC'
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Month'
-                        },
-                        grid: { color: gridColor },
-                        ticks: { color: textColor }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Number of Applications'
-                        },
-                        grid: { color: gridColor },
-                        ticks: { color: textColor }
-                    }
-                }
-            };
-
-            // Application Trends
-            const applicationTrendsCtx = document.getElementById('applicationTrendsChart');
-            if (applicationTrendsCtx) {
-                applicationTrendsChart = new Chart(applicationTrendsCtx.getContext('2d'), {
-                    type: 'scatter',
-                    data: {
-                        datasets: [{
-                            label: 'Applications',
-                            data: [], // Populated from API
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)'
-                        }]
-                    },
-                    options: scatterOptions
-                });
-            }
-
-            // Scholarship Distribution
-            const scholarshipDistributionCtx = document.getElementById('scholarshipDistributionChart');
-            if (scholarshipDistributionCtx) {
-                scholarshipDistributionChart = new Chart(scholarshipDistributionCtx.getContext('2d'), {
-                    type: 'pie',
-                    data: {
-                        labels: ['Government', 'Private', 'NGO', 'Other'],
-                        datasets: [{
-                            data: [], // Populated from API
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
-                        }]
-                    },
-                    options: chartOptions()
-                });
-            }
-
-            // User Registration
-            const userRegistrationCtx = document.getElementById('userRegistrationChart');
-            if (userRegistrationCtx) {
-                userRegistrationChart = new Chart(userRegistrationCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Users', 'Admins'],
-                        datasets: [{
-                            label: 'Count',
-                            data: [], // Populated from API
-                            backgroundColor: ['#90EE90', '#ADD8E6']
-                        }]
-                    },
-                    options: chartOptions('bar')
-                });
-            }
-
-            // Status Overview
-            const statusOverviewCtx = document.getElementById('statusOverviewChart');
-            if (statusOverviewCtx) {
-                statusOverviewChart = new Chart(statusOverviewCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Undergraduate', 'Graduate', 'PhD'],
-                        datasets: [{
-                            label: 'Count',
-                            data: [], // Populated from API
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
-                        }]
-                    },
-                    options: chartOptions('bar')
-                });
-            }
-        }
-
-        // Update charts with data from API
-        async function updateCharts() {
+        // Edit admin user
+        async function editAdminUser(adminId) {
             try {
-                const res = await axios.get('/api/admin/chart-stats', {
+                const res = await axios.get(`/api/admin/admin-users/${adminId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const chartData = res.data;
-
-                // Application Trends
-                if (applicationTrendsChart && chartData.applicationTrends) {
-                    const trendData = chartData.applicationTrends.map(d => ({
-                        x: d.month,
-                        y: d.count
-                    }));
-                    applicationTrendsChart.data.datasets[0].data = trendData;
-                    applicationTrendsChart.update();
-                }
-
-                // Scholarship Distribution
-                if (scholarshipDistributionChart && chartData.scholarshipDistribution) {
-                    scholarshipDistributionChart.data.datasets[0].data = chartData.scholarshipDistribution;
-                    scholarshipDistributionChart.update();
-                }
-
-                // User Registration
-                if (userRegistrationChart && chartData.userRegistration) {
-                    userRegistrationChart.data.datasets[0].data = chartData.userRegistration;
-                    userRegistrationChart.update();
-                }
-
-                // Status Overview
-                if (statusOverviewChart && chartData.statusOverview) {
-                    statusOverviewChart.data.datasets[0].data = chartData.statusOverview;
-                    statusOverviewChart.update();
-                }
-
+                const admin = res.data;
+                
+                // Populate form with admin data
+                document.getElementById('editAdminId').value = admin.id;
+                document.getElementById('editAdminName').value = admin.full_name;
+                document.getElementById('editAdminEmail').value = admin.email;
+                document.getElementById('editAdminLevel').value = admin.admin_level;
+                document.getElementById('editAdminActive').checked = admin.is_active;
+                
+                // Show edit modal
+                document.getElementById('editAdminModal').classList.remove('hidden');
             } catch (error) {
-                console.error('Error updating charts:', error);
-                showNotification('Error loading chart data', 'error');
+                console.error('Error loading admin user:', error);
+                showNotification('Error loading admin user details', 'error');
             }
+        }
+
+        // Delete admin user
+        async function deleteAdminUser(adminId) {
+            if (!confirm('Are you sure you want to delete this admin user?')) {
+                return;
+            }
+            
+            try {
+                await axios.delete(`/api/admin/admin-users/${adminId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                showNotification('Admin user deleted successfully', 'success');
+                loadAdminUsers();
+            } catch (error) {
+                console.error('Error deleting admin user:', error);
+                showNotification('Error deleting admin user', 'error');
+            }
+        }
+
+        // Save admin user changes
+        async function saveAdminUser() {
+            const adminId = document.getElementById('editAdminId').value;
+            const adminLevel = document.getElementById('editAdminLevel').value;
+            const isActive = document.getElementById('editAdminActive').checked;
+            
+            try {
+                await axios.put(`/api/admin/admin-users/${adminId}`, {
+                    adminLevel,
+                    isActive,
+                    permissions: {}
+                }, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                showNotification('Admin user updated successfully', 'success');
+                document.getElementById('editAdminModal').classList.add('hidden');
+                loadAdminUsers();
+            } catch (error) {
+                console.error('Error updating admin user:', error);
+                showNotification('Error updating admin user', 'error');
+            }
+        }
+
+        // Add new admin user
+        async function addAdminUser() {
+            const userId = document.getElementById('newAdminUserId').value;
+            const adminLevel = document.getElementById('newAdminLevel').value;
+            
+            if (!userId) {
+                showNotification('Please select a user', 'error');
+                return;
+            }
+            
+            try {
+                await axios.post('/api/admin/admin-users', {
+                    userId: parseInt(userId),
+                    adminLevel,
+                    permissions: {}
+                }, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                showNotification('Admin user added successfully', 'success');
+                document.getElementById('addAdminModal').classList.add('hidden');
+                document.getElementById('newAdminUserId').value = '';
+                loadAdminUsers();
+            } catch (error) {
+                console.error('Error adding admin user:', error);
+                showNotification(error.response?.data?.message || 'Error adding admin user', 'error');
+            }
+        }
+
+        // Load users for admin assignment
+        async function loadUsersForAdmin() {
+            try {
+                const res = await axios.get('/api/users/all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const users = res.data;
+                const userSelect = document.getElementById('newAdminUserId');
+                
+                userSelect.innerHTML = '<option value="">Select a user</option>';
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = `${user.full_name} (${user.email})`;
+                    userSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // Admin modal functions
+        function showAddAdminModal() {
+            loadUsersForAdmin();
+            document.getElementById('addAdminModal').classList.add('show');
+        }
+
+        function closeAddAdminModal() {
+            document.getElementById('addAdminModal').classList.remove('show');
+        }
+
+        function closeEditAdminModal() {
+            document.getElementById('editAdminModal').classList.remove('show');
         }
 
         // Show notification function
@@ -695,14 +758,86 @@
                     loadDashboardStats(),
                     loadApplications(),
                     loadUsers(),
-                    loadSystemStats(),
-                    updateCharts()
+                    loadAdminUsers(),
+                    loadSystemStats()
                 ]);
                 showNotification('Dashboard loaded successfully', 'success');
             } catch (error) {
                 console.error('Error initializing dashboard:', error);
                 showNotification('Error loading dashboard data', 'error');
             }
+        }
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDashboard();
+            
+            // Add form submission handlers
+            const addUserForm = document.getElementById('addUserForm');
+            const editUserForm = document.getElementById('editUserForm');
+            
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = {
+                        fullName: document.getElementById('newUserName').value,
+                        email: document.getElementById('newUserEmail').value,
+                        password: document.getElementById('newUserPassword').value,
+                        role: document.getElementById('newUserRole').value
+                    };
+                    
+                    try {
+                        const res = await axios.post('/api/admin/users', formData, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        showNotification('User created successfully', 'success');
+                        closeAddUserModal();
+                        loadUsers();
+                        addUserForm.reset();
+                    } catch (error) {
+                        console.error('Error creating user:', error);
+                        showNotification('Error creating user', 'error');
+                    }
+                });
+            }
+            
+            if (editUserForm) {
+                editUserForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const userId = document.getElementById('editUserId').value;
+                    const formData = {
+                        fullName: document.getElementById('editUserName').value,
+                        email: document.getElementById('editUserEmail').value,
+                        role: document.getElementById('editUserRole').value,
+                        status: document.getElementById('editUserStatus').value
+                    };
+                    
+                    try {
+                        await axios.put(`/api/admin/users/${userId}`, formData, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        showNotification('User updated successfully', 'success');
+                        closeEditUserModal();
+                        loadUsers();
+                    } catch (error) {
+                        console.error('Error updating user:', error);
+                        showNotification('Error updating user', 'error');
+                    }
+                });
+            }
+        });
+
+        // User management functions
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.add('show');
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('show');
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').classList.remove('show');
         }
 
         // Load users function
@@ -712,7 +847,7 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = res.data;
-                const users = data.users || []; // Extract users array from response
+                const users = data.users || [];
                 const usersList = document.getElementById('usersList');
                 
                 if (usersList) {
@@ -805,18 +940,6 @@
         }
 
         // User management functions
-        function showAddUserModal() {
-            document.getElementById('addUserModal').classList.add('show');
-        }
-
-        function closeAddUserModal() {
-            document.getElementById('addUserModal').classList.remove('show');
-        }
-
-        function closeEditUserModal() {
-            document.getElementById('editUserModal').classList.remove('show');
-        }
-
         async function editUser(userId) {
             try {
                 const res = await axios.get(`/api/admin/users/${userId}`, {
@@ -852,22 +975,6 @@
             }
         }
 
-        // Export data function
-        function exportData(type) {
-            try {
-                const link = document.createElement('a');
-                link.href = `/api/admin/export/${type}`;
-                link.download = `${type}_export.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showNotification(`${type} data exported successfully`, 'success');
-            } catch (error) {
-                console.error('Error exporting data:', error);
-                showNotification('Error exporting data', 'error');
-            }
-        }
-
         // Application management functions
         async function editApplication(applicationId) {
             try {
@@ -876,7 +983,6 @@
                 });
                 const application = res.data;
                 
-                // For now, just show a notification with application details
                 showNotification(`Editing application: ${application.fullName || 'Unknown'}`, 'info');
                 console.log('Application details:', application);
             } catch (error) {
@@ -900,116 +1006,21 @@
             }
         }
 
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeCharts();
-            initializeDashboard();
-            
-            // Add form submission handlers
-            const addUserForm = document.getElementById('addUserForm');
-            const editUserForm = document.getElementById('editUserForm');
-            
-            if (addUserForm) {
-                addUserForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const formData = {
-                        fullName: document.getElementById('newUserName').value,
-                        email: document.getElementById('newUserEmail').value,
-                        password: document.getElementById('newUserPassword').value,
-                        role: document.getElementById('newUserRole').value
-                    };
-                    
-                    try {
-                        const res = await axios.post('/api/admin/users', formData, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        showNotification('User created successfully', 'success');
-                        closeAddUserModal();
-                        loadUsers();
-                        addUserForm.reset();
+        // Export data function
+        function exportData(type) {
+            try {
+                const link = document.createElement('a');
+                link.href = `/api/admin/export/${type}`;
+                link.download = `${type}_export.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showNotification(`${type} data exported successfully`, 'success');
                     } catch (error) {
-                        console.error('Error creating user:', error);
-                        showNotification('Error creating user', 'error');
-                    }
-                });
+                console.error('Error exporting data:', error);
+                showNotification('Error exporting data', 'error');
             }
-            
-            if (editUserForm) {
-                editUserForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const userId = document.getElementById('editUserId').value;
-                    const formData = {
-                        fullName: document.getElementById('editUserName').value,
-                        email: document.getElementById('editUserEmail').value,
-                        role: document.getElementById('editUserRole').value,
-                        status: document.getElementById('editUserStatus').value
-                    };
-                    
-                    try {
-                        await axios.put(`/api/admin/users/${userId}`, formData, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        showNotification('User updated successfully', 'success');
-                        closeEditUserModal();
-                        loadUsers();
-                    } catch (error) {
-                        console.error('Error updating user:', error);
-                        showNotification('Error updating user', 'error');
-                    }
-                });
-            }
-            
-            // Add search functionality
-            const userSearch = document.getElementById('userSearch');
-            if (userSearch) {
-                userSearch.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = document.querySelectorAll('#usersList tr');
-                    
-                    rows.forEach(row => {
-                        const name = row.cells[0]?.textContent?.toLowerCase() || '';
-                        const email = row.cells[1]?.textContent?.toLowerCase() || '';
-                        const role = row.cells[2]?.textContent?.toLowerCase() || '';
-                        
-                        if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
-                });
-            }
-        });
-
-        // Initialize admin layout
-        function initializeAdminLayout() {
-            // Apply dark mode classes to layout elements
-            const isDark = document.documentElement.classList.contains('dark');
-            const layoutElements = document.querySelectorAll('.admin-layout, .admin-header, .admin-sidebar, .admin-main-content');
-            
-            layoutElements.forEach(element => {
-                if (isDark) {
-                    element.classList.add('dark');
-                } else {
-                    element.classList.remove('dark');
-                }
-            });
         }
-
-        // Initialize layout on page load
-        initializeAdminLayout();
-
-        // Listen for theme changes
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new MutationObserver(() => {
-                initializeAdminLayout();
-            });
-            
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-        });
     </script>
 </body>
 </html>

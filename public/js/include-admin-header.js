@@ -17,7 +17,7 @@ async function includeAdminHeader() {
         // Auth check
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || user.role !== 'admin') {
+        if (!token || !user.isAdmin) {
             window.location.href = 'login.html';
         }
         document.getElementById('adminName').textContent = user.full_name || 'Admin';
