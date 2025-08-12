@@ -108,45 +108,12 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user is an admin - handle case where admin table might not exist
-    // Determine if user is admin using admin_users table only
-    let isAdmin = false;
-    let adminLevel = null;
-    let permissions = {};
-    let adminRow = null;
-
-    try {
-      const [adminUsers] = await db.query(`
-        SELECT * FROM admin_users WHERE user_id = ? AND is_active = TRUE
-      `, [user.id]);
-      if (adminUsers.length > 0) {
-        isAdmin = true;
-        adminRow = adminUsers[0];
-        adminLevel = adminRow.admin_level;
-        permissions = typeof adminRow.permissions === 'string' ? JSON.parse(adminRow.permissions || '{}') : (adminRow.permissions || {});
-      }
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-    }
-
     // Create token
     const token = jwt.sign(
       { id: user.id },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1d' }
     );
-
-    // Update admin last login if user is admin and admin table exists
-    if (isAdmin) {
-      try {
-        await db.query(
-          'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?',
-          [user.id]
-        );
-      } catch (error) {
-        console.error('Error updating admin last login:', error);
-      }
-    }
 
     res.json({
       message: 'Login successful',
@@ -155,9 +122,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        isAdmin: isAdmin,
-        adminLevel: adminLevel,
-        permissions: permissions
+        role: user.role
       }
     });
   } catch (error) {

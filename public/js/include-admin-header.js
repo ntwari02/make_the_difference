@@ -16,36 +16,11 @@ async function includeAdminHeader() {
 
         // Auth check with server verification fallback
         const token = localStorage.getItem('token');
-        let user = {};
-        try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch (_) { user = {}; }
-
-        async function ensureAdminAccess() {
-            if (!token) {
-                window.location.href = 'login.html';
-                return;
-            }
-            if (user && user.isAdmin === true) return; // already marked admin
-            try {
-                const resp = await fetch('/api/admin/dashboard', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (resp.ok) {
-                    // Mark as admin locally for smoother UX
-                    user = user && typeof user === 'object' ? user : {};
-                    user.isAdmin = true;
-                    localStorage.setItem('user', JSON.stringify(user));
-                } else {
-                    window.location.href = 'login.html';
-                }
-            } catch (_) {
-                window.location.href = 'login.html';
-            }
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || user.role !== 'admin') {
+            window.location.href = 'login.html';
         }
-
-        await ensureAdminAccess();
-
-        const adminNameEl = document.getElementById('adminName');
-        if (adminNameEl) adminNameEl.textContent = (user && user.full_name) || 'Admin';
+        document.getElementById('adminName').textContent = user.full_name || 'Admin';
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
