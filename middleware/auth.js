@@ -14,7 +14,7 @@ export const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
         // Get user from the database
-        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        const [users] = await db.query('SELECT id, email, full_name FROM users WHERE id = ?', [decoded.id]);
 
         if (users.length === 0) {
             return res.status(401).json({ message: 'User not found' });
@@ -37,19 +37,31 @@ export const adminAuth = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+
+        // Verify admin via admin_users table only
+        const [adminUsers] = await db.query(`
+            SELECT au.*, u.email, u.full_name 
+            FROM admin_users au 
+            JOIN users u ON au.user_id = u.id 
+            WHERE au.user_id = ? AND au.is_active = TRUE
+        `, [decoded.id]);
+
+        const isAdmin = adminUsers.length > 0;
+        const adminUser = isAdmin ? adminUsers[0] : null;
         
-        // Get user from database to verify role
-        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
-        
-        if (users.length === 0) {
-            return res.status(401).json({ message: 'User not found' });
-        }
-        
-        if (users[0].role !== 'admin') {
+        if (!isAdmin) {
             return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
         }
 
-        req.user = users[0];
+        // Add admin user info to request
+        req.user = {
+            id: adminUser.user_id,
+            email: adminUser.email,
+            full_name: adminUser.full_name,
+            admin_level: adminUser.admin_level,
+            permissions: adminUser.permissions ? JSON.parse(adminUser.permissions) : null
+        };
+        
         next();
     } catch (error) {
         console.error('Admin auth error:', error);

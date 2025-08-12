@@ -7,13 +7,13 @@ const router = express.Router();
 // Get overall analytics summary
 router.get('/summary', adminAuth, async (req, res) => {
   try {
-    // Get total users (excluding admin)
-    const [usersResult] = await db.query('SELECT COUNT(*) as total FROM users WHERE role != "admin"');
+    // Get total users
+    const [usersResult] = await db.query('SELECT COUNT(*) as total FROM users');
     const totalUsers = usersResult[0].total;
 
     // Get active users (users with active status)
     const [activeUsersResult] = await db.query(
-      'SELECT COUNT(*) as active FROM users WHERE role != "admin" AND status = "active"'
+      'SELECT COUNT(*) as active FROM users WHERE status = "active"'
     );
     const activeUsers = activeUsersResult[0].active;
 
@@ -80,7 +80,7 @@ router.get('/user-growth', adminAuth, async (req, res) => {
     // ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     
     // For now, return sample data based on existing user count
-    const [totalUsers] = await db.query('SELECT COUNT(*) as total FROM users WHERE role != "admin"');
+    const [totalUsers] = await db.query('SELECT COUNT(*) as total FROM users');
     const userCount = totalUsers[0].total;
     
     const monthsData = [];
@@ -362,9 +362,8 @@ router.get('/export', adminAuth, async (req, res) => {
     
     if (type === 'all' || type === 'users') {
       const [users] = await db.query(`
-        SELECT id, full_name, email, role, status
+        SELECT id, full_name, email, status
         FROM users 
-        WHERE role != 'admin'
         ORDER BY id DESC
       `);
       data.users = users;

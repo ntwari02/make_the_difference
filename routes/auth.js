@@ -37,8 +37,8 @@ router.post('/register', async (req, res) => {
     try {
       // Insert new user
       const [result] = await connection.query(
-        'INSERT INTO users (full_name, email, password, role, security_questions_setup) VALUES (?, ?, ?, ?, ?)',
-        [full_name, email, hashedPassword, 'user', true]
+        'INSERT INTO users (full_name, email, password, security_questions_setup) VALUES (?, ?, ?, ?)',
+        [full_name, email, hashedPassword, true]
       );
 
       const userId = result.insertId;
@@ -55,7 +55,7 @@ router.post('/register', async (req, res) => {
 
       // Create token
       const token = jwt.sign(
-        { id: userId, role: 'user' },
+        { id: userId },
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '1d' }
       );
@@ -67,7 +67,7 @@ router.post('/register', async (req, res) => {
           id: userId,
           full_name,
           email,
-          role: 'user'
+          isAdmin: false
         }
       });
     } catch (error) {
@@ -108,12 +108,45 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Check if user is an admin - handle case where admin table might not exist
+    // Determine if user is admin using admin_users table only
+    let isAdmin = false;
+    let adminLevel = null;
+    let permissions = {};
+    let adminRow = null;
+
+    try {
+      const [adminUsers] = await db.query(`
+        SELECT * FROM admin_users WHERE user_id = ? AND is_active = TRUE
+      `, [user.id]);
+      if (adminUsers.length > 0) {
+        isAdmin = true;
+        adminRow = adminUsers[0];
+        adminLevel = adminRow.admin_level;
+        permissions = typeof adminRow.permissions === 'string' ? JSON.parse(adminRow.permissions || '{}') : (adminRow.permissions || {});
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+
     // Create token
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1d' }
     );
+
+    // Update admin last login if user is admin and admin table exists
+    if (isAdmin) {
+      try {
+        await db.query(
+          'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?',
+          [user.id]
+        );
+      } catch (error) {
+        console.error('Error updating admin last login:', error);
+      }
+    }
 
     res.json({
       message: 'Login successful',
@@ -122,11 +155,13 @@ router.post('/login', async (req, res) => {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        role: user.role
+        isAdmin: isAdmin,
+        adminLevel: adminLevel,
+        permissions: permissions
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Error logging in' });
   }
 });
@@ -204,6 +239,72 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Error resetting password' });
+  }
+});
+
+// Admin Login
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find admin by email in admin_users
+    const [admins] = await db.query(
+      'SELECT * FROM admin_users WHERE email = ? AND is_active = TRUE',
+      [email]
+    );
+    if (admins.length === 0) {
+      return res.status(400).json({ message: 'Invalid admin credentials' });
+    }
+    const admin = admins[0];
+
+    // Get linked user for password
+    const [users] = await db.query('SELECT * FROM users WHERE id = ?', [admin.user_id]);
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'Admin user not found' });
+    }
+    const user = users[0];
+    if (user.status !== 'active') {
+      return res.status(403).json({ message: 'Account is inactive. Please contact super admin.' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid admin credentials' });
+    }
+
+    // Create token
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1d' }
+    );
+
+    // Update last login
+    try {
+      await db.query(
+        'UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+        [admin.id]
+      );
+    } catch (error) {
+      console.error('Error updating admin last login:', error);
+    }
+
+    res.json({
+      message: 'Admin login successful',
+      token,
+      user: {
+        id: user.id,
+        full_name: admin.full_name,
+        email: admin.email,
+        isAdmin: true,
+        adminLevel: admin.admin_level,
+        permissions: typeof admin.permissions === 'string' ? JSON.parse(admin.permissions || '{}') : (admin.permissions || {})
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: 'Error logging in as admin' });
   }
 });
 

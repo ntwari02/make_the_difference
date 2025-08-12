@@ -23,6 +23,44 @@ const router = express.Router();
 // Initialize database schema - add missing columns if they don't exist
 async function initializeDatabase() {
     try {
+        console.log('Starting database initialization...');
+        
+        // Create admin_users table if it doesn't exist
+        const [adminTables] = await db.query(`
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'admin_users'
+        `);
+        
+        if (adminTables.length === 0) {
+            console.log('Creating admin_users table...');
+            await db.query(`
+                CREATE TABLE admin_users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    full_name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL UNIQUE,
+                    admin_level ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+                    permissions JSON,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    last_login TIMESTAMP NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    INDEX idx_email (email),
+                    INDEX idx_admin_level (admin_level),
+                    INDEX idx_is_active (is_active)
+                )
+            `);
+            console.log('Admin users table created successfully');
+            
+            // Migrate existing admin users
+            await migrateExistingAdmins();
+        } else {
+            console.log('Admin users table already exists');
+        }
+
         // Add status column to scholarship_applications if it doesn't exist
         const [columns] = await db.query(`
             SELECT COLUMN_NAME 
@@ -58,13 +96,66 @@ async function initializeDatabase() {
             `);
             console.log('Added status column to users table');
         }
+        
+        console.log('Database initialization completed successfully');
     } catch (error) {
         console.error('Error initializing database schema:', error);
+        throw error;
+    }
+}
+
+// Migrate existing admin users from users table to admin_users table
+async function migrateExistingAdmins() {
+    try {
+        console.log('Starting admin migration...');
+        
+        // Get all users with role = 'admin'
+        const [adminUsers] = await db.query(`
+            SELECT id, full_name, email 
+            FROM users 
+            WHERE role = 'admin'
+        `);
+        
+        if (adminUsers.length > 0) {
+            console.log(`Found ${adminUsers.length} existing admin users to migrate`);
+            
+            for (const user of adminUsers) {
+                try {
+                    // Check if admin already exists in admin_users table
+                    const [existingAdmin] = await db.query(`
+                        SELECT id FROM admin_users WHERE user_id = ?
+                    `, [user.id]);
+                    
+                    if (existingAdmin.length === 0) {
+                        // Insert into admin_users table
+                        await db.query(`
+                            INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions) 
+                            VALUES (?, ?, ?, 'admin', '{}')
+                        `, [user.id, user.full_name, user.email]);
+                        
+                        console.log(`Migrated admin user: ${user.email}`);
+                    } else {
+                        console.log(`Admin user ${user.email} already exists in admin_users table`);
+                    }
+                } catch (error) {
+                    console.error(`Error migrating admin user ${user.email}:`, error);
+                }
+            }
+            
+            console.log('Admin migration completed successfully');
+        } else {
+            console.log('No existing admin users found to migrate');
+        }
+    } catch (error) {
+        console.error('Error migrating existing admins:', error);
+        throw error;
     }
 }
 
 // Initialize database on startup
-initializeDatabase();
+initializeDatabase().catch(error => {
+    console.error('Failed to initialize database:', error);
+});
 
 // Get dashboard statistics
 router.get('/dashboard', adminAuth, async (req, res) => {
@@ -108,10 +199,10 @@ router.get('/dashboard', adminAuth, async (req, res) => {
 // Get all users with pagination and search
 router.get('/users', adminAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', role = '' } = req.query;
+    const { page = 1, limit = 10, search = '' } = req.query;
     const offset = (page - 1) * limit;
     
-    let query = 'SELECT id, full_name, email, role, status, created_at FROM users WHERE 1=1';
+    let query = 'SELECT id, full_name, email, status, created_at FROM users WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
     const params = [];
     const countParams = [];
@@ -124,12 +215,7 @@ router.get('/users', adminAuth, async (req, res) => {
       countParams.push(searchParam, searchParam);
     }
 
-    if (role) {
-      query += ' AND role = ?';
-      countQuery += ' AND role = ?';
-      params.push(role);
-      countParams.push(role);
-    }
+    // role filtering removed; admin is determined via admin_users
 
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
@@ -157,7 +243,7 @@ router.get('/users', adminAuth, async (req, res) => {
 router.get('/users/:id', adminAuth, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, full_name, email, role, status FROM users WHERE id = ?',
+      'SELECT id, full_name, email, status FROM users WHERE id = ?',
       [req.params.id]
     );
 
@@ -175,7 +261,7 @@ router.get('/users/:id', adminAuth, async (req, res) => {
 // Create new user
 router.post('/users', adminAuth, async (req, res) => {
   try {
-    const { fullName, email, password, role = 'user', status = 'active' } = req.body;
+    const { fullName, email, password, status = 'active' } = req.body;
     
     // Validate required fields
     if (!fullName || !email || !password) {
@@ -198,8 +284,8 @@ router.post('/users', adminAuth, async (req, res) => {
 
     // Insert new user
     const [result] = await db.query(
-      'INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
-      [fullName, email, hashedPassword, role, status]
+      'INSERT INTO users (full_name, email, password, status) VALUES (?, ?, ?, ?)',
+      [fullName, email, hashedPassword, status]
     );
 
     res.status(201).json({ 
@@ -215,7 +301,7 @@ router.post('/users', adminAuth, async (req, res) => {
 // Update user
 router.put('/users/:id', adminAuth, async (req, res) => {
   try {
-    const { fullName, email, role, status } = req.body;
+    const { fullName, email, status } = req.body;
     
     // Validate required fields
     if (!fullName || !email) {
@@ -234,8 +320,8 @@ router.put('/users/:id', adminAuth, async (req, res) => {
 
     // Update user
     const [result] = await db.query(
-      'UPDATE users SET full_name = ?, email = ?, role = ?, status = ? WHERE id = ?',
-      [fullName, email, role || 'user', status || 'active', req.params.id]
+      'UPDATE users SET full_name = ?, email = ?, status = ? WHERE id = ?',
+      [fullName, email, status || 'active', req.params.id]
     );
 
     if (result.affectedRows === 0) {
@@ -339,20 +425,13 @@ router.get('/chart-stats', adminAuth, async (req, res) => {
       scholarshipDistData[row.scholarship_type] = row.count;
     });
 
-    // User registration by role
-    const [userRegistration] = await db.query(`
-      SELECT role, COUNT(*) as count
-      FROM users
-      GROUP BY role
+    // User registration stats (users vs admins)
+    const [[usersCountRow]] = await db.query(`
+      SELECT COUNT(*) as count FROM users
     `);
-
-    const userRegData = {
-      user: 0,
-      admin: 0
-    };
-    userRegistration.forEach(row => {
-      userRegData[row.role] = row.count;
-    });
+    const [[adminsCountRow]] = await db.query(`
+      SELECT COUNT(*) as count FROM admin_users WHERE is_active = TRUE
+    `);
 
     // Applications by academic level
     const [statusOverview] = await db.query(`
@@ -375,7 +454,7 @@ router.get('/chart-stats', adminAuth, async (req, res) => {
         count: trend.count
       })),
       scholarshipDistribution: Object.values(scholarshipDistData),
-      userRegistration: Object.values(userRegData),
+      userRegistration: [usersCountRow.count, adminsCountRow.count],
       statusOverview: Object.values(statusOverviewData)
     });
   } catch (error) {
@@ -458,7 +537,7 @@ router.put('/applications/:id/status', adminAuth, async (req, res) => {
 // Create user (admin only)
 router.post('/users', adminAuth, async (req, res) => {
   try {
-    const { fullName, email, role, status } = req.body;
+    const { fullName, email, status } = req.body;
     
     // Validate required fields
     if (!fullName || !email) {
@@ -478,8 +557,8 @@ router.post('/users', adminAuth, async (req, res) => {
     // Create user with default password (they can reset it later)
     const defaultPassword = Math.random().toString(36).slice(-8); // Generate random password
     const [result] = await db.query(
-      'INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
-      [fullName, email, defaultPassword, role || 'user', status || 'active']
+      'INSERT INTO users (full_name, email, password, status) VALUES (?, ?, ?, ?)',
+      [fullName, email, defaultPassword, status || 'active']
     );
 
     res.status(201).json({
@@ -901,21 +980,17 @@ router.post('/alter-scholarships', adminAuth, async (req, res) => {
 
 router.get('/dashboard/stats', adminAuth, async (req, res) => {
     try {
+        // Return user count only; admin users tracked separately in admin_users
         const [userStats] = await db.query(
-            `SELECT role, COUNT(*) as count
-            FROM users
-            GROUP BY role`
+            `SELECT COUNT(*) as count FROM users`
         );
-        const userStatsData = {
-            user: 0,
-            admin: 0
-        };
-        userStats.forEach(row => {
-            userStatsData[row.role] = row.count;
-        });
+        const [adminStats] = await db.query(
+            `SELECT COUNT(*) as count FROM admin_users WHERE is_active = TRUE`
+        );
 
         res.json({
-            userStats: Object.values(userStatsData)
+            users: userStats[0].count,
+            admins: adminStats[0].count
         });
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -1038,7 +1113,7 @@ router.get('/export/:type', adminAuth, async (req, res) => {
 
       case 'users':
         const [users] = await db.query(`
-          SELECT id, full_name, email, role, status, created_at
+          SELECT id, full_name, email, status, created_at
           FROM users
           ORDER BY created_at DESC
         `);
@@ -1090,5 +1165,435 @@ function convertToCSV(data) {
   
   return csvRows.join('\n');
 }
+
+// Get all admin users
+router.get('/admin-users', adminAuth, async (req, res) => {
+  try {
+    const [adminUsers] = await db.query(`
+      SELECT au.*, u.email, u.full_name, u.status as user_status
+      FROM admin_users au 
+      JOIN users u ON au.user_id = u.id 
+      ORDER BY au.created_at DESC
+    `);
+    
+    res.json(adminUsers);
+  } catch (error) {
+    console.error('Error fetching admin users:', error);
+    res.status(500).json({ message: 'Error fetching admin users' });
+  }
+});
+
+// Create new admin user
+router.post('/admin-users', adminAuth, async (req, res) => {
+  try {
+    const { userId, adminLevel = 'admin', permissions = {} } = req.body;
+    
+    // Validate required fields
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Check if user exists
+    const [users] = await db.query('SELECT id, full_name, email FROM users WHERE id = ?', [userId]);
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user is already an admin
+    const [existingAdmin] = await db.query('SELECT id FROM admin_users WHERE user_id = ?', [userId]);
+    
+    if (existingAdmin.length > 0) {
+      return res.status(400).json({ message: 'User is already an admin' });
+    }
+
+    // Insert new admin user
+    const [result] = await db.query(`
+      INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions) 
+      VALUES (?, ?, ?, ?, ?)
+    `, [userId, users[0].full_name, users[0].email, adminLevel, JSON.stringify(permissions)]);
+
+    res.status(201).json({ 
+      message: 'Admin user created successfully',
+      adminUserId: result.insertId 
+    });
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+    res.status(500).json({ message: 'Error creating admin user' });
+  }
+});
+
+// Update admin user
+router.put('/admin-users/:id', adminAuth, async (req, res) => {
+  try {
+    const { adminLevel, permissions, isActive } = req.body;
+    
+    const [result] = await db.query(`
+      UPDATE admin_users 
+      SET admin_level = ?, permissions = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `, [adminLevel, JSON.stringify(permissions), isActive, req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
+
+    res.json({ message: 'Admin user updated successfully' });
+  } catch (error) {
+    console.error('Error updating admin user:', error);
+    res.status(500).json({ message: 'Error updating admin user' });
+  }
+});
+
+// Delete admin user
+router.delete('/admin-users/:id', adminAuth, async (req, res) => {
+  try {
+    const [result] = await db.query('DELETE FROM admin_users WHERE id = ?', [req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
+
+    res.json({ message: 'Admin user deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting admin user:', error);
+    res.status(500).json({ message: 'Error deleting admin user' });
+  }
+});
+
+// Get admin user by ID
+router.get('/admin-users/:id', adminAuth, async (req, res) => {
+  try {
+    const [adminUsers] = await db.query(`
+      SELECT au.*, u.email, u.full_name, u.status as user_status
+      FROM admin_users au 
+      JOIN users u ON au.user_id = u.id 
+      WHERE au.id = ?
+    `, [req.params.id]);
+
+    if (adminUsers.length === 0) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
+
+    res.json(adminUsers[0]);
+  } catch (error) {
+    console.error('Error fetching admin user:', error);
+    res.status(500).json({ message: 'Error fetching admin user' });
+  }
+});
+
+// Update admin user last login
+router.put('/admin-users/:id/last-login', adminAuth, async (req, res) => {
+  try {
+    const [result] = await db.query(`
+      UPDATE admin_users 
+      SET last_login = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `, [req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
+
+    res.json({ message: 'Last login updated successfully' });
+  } catch (error) {
+    console.error('Error updating last login:', error);
+    res.status(500).json({ message: 'Error updating last login' });
+  }
+});
+
+// Debug endpoint to check admin table status
+router.get('/debug/admin-status', async (req, res) => {
+  try {
+    // Check if admin_users table exists
+    const [adminTables] = await db.query(`
+      SELECT TABLE_NAME 
+      FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'admin_users'
+    `);
+    
+    let adminTableExists = adminTables.length > 0;
+    let adminUsers = [];
+    let usersWithAdminRole = [];
+    
+    if (adminTableExists) {
+      // Get admin users
+      [adminUsers] = await db.query(`
+        SELECT au.*, u.email, u.full_name 
+        FROM admin_users au 
+        JOIN users u ON au.user_id = u.id
+      `);
+    }
+    
+    // Get users with admin role
+    [usersWithAdminRole] = await db.query(`
+      SELECT id, email, full_name, role 
+      FROM users 
+      WHERE role = 'admin'
+    `);
+    
+    res.json({
+      adminTableExists,
+      adminUsersCount: adminUsers.length,
+      adminUsers,
+      usersWithAdminRoleCount: usersWithAdminRole.length,
+      usersWithAdminRole
+    });
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Manual migration endpoint
+router.post('/migrate-admins', async (req, res) => {
+  try {
+    // Get all users with role = 'admin'
+    const [adminUsers] = await db.query(`
+      SELECT id, full_name, email 
+      FROM users 
+      WHERE role = 'admin'
+    `);
+    
+    let migratedCount = 0;
+    let errors = [];
+    
+    for (const user of adminUsers) {
+      try {
+        // Check if admin already exists in admin_users table
+        const [existingAdmin] = await db.query(`
+          SELECT id FROM admin_users WHERE user_id = ?
+        `, [user.id]);
+        
+        if (existingAdmin.length === 0) {
+          // Insert into admin_users table
+          await db.query(`
+            INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions) 
+            VALUES (?, ?, ?, 'admin', '{}')
+          `, [user.id, user.full_name, user.email]);
+          
+          migratedCount++;
+          console.log(`Migrated admin user: ${user.email}`);
+        }
+      } catch (error) {
+        errors.push({ user: user.email, error: error.message });
+      }
+    }
+    
+    res.json({
+      message: `Migration completed. ${migratedCount} users migrated.`,
+      migratedCount,
+      errors
+    });
+  } catch (error) {
+    console.error('Error during migration:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ensure admin table and migrate users endpoint
+router.post('/ensure-admin-setup', async (req, res) => {
+  try {
+    console.log('Ensuring admin table setup...');
+    
+    // Check if admin_users table exists
+    const [adminTables] = await db.query(`
+      SELECT TABLE_NAME 
+      FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'admin_users'
+    `);
+    
+    let tableCreated = false;
+    let usersMigrated = 0;
+    
+    if (adminTables.length === 0) {
+      // Create admin_users table
+      await db.query(`
+        CREATE TABLE admin_users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          full_name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          admin_level ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+          permissions JSON,
+          is_active BOOLEAN DEFAULT TRUE,
+          last_login TIMESTAMP NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_email (email),
+          INDEX idx_admin_level (admin_level),
+          INDEX idx_is_active (is_active)
+        )
+      `);
+      tableCreated = true;
+      console.log('Admin users table created successfully');
+    }
+    
+    // Migrate existing admin users
+    const [adminUsers] = await db.query(`
+      SELECT id, full_name, email 
+      FROM users 
+      WHERE role = 'admin'
+    `);
+    
+    for (const user of adminUsers) {
+      try {
+        // Check if admin already exists in admin_users table
+        const [existingAdmin] = await db.query(`
+          SELECT id FROM admin_users WHERE user_id = ?
+        `, [user.id]);
+        
+        if (existingAdmin.length === 0) {
+          // Insert into admin_users table
+          await db.query(`
+            INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions) 
+            VALUES (?, ?, ?, 'admin', '{}')
+          `, [user.id, user.full_name, user.email]);
+          
+          usersMigrated++;
+          console.log(`Migrated admin user: ${user.email}`);
+        }
+      } catch (error) {
+        console.error(`Error migrating admin user ${user.email}:`, error);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Admin setup completed successfully',
+      tableCreated,
+      usersMigrated,
+      totalAdminUsers: adminUsers.length
+    });
+  } catch (error) {
+    console.error('Error ensuring admin setup:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+// Create admin user from existing user
+router.post('/create-admin', async (req, res) => {
+  try {
+    const { email, adminLevel = 'admin' } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const [users] = await db.query('SELECT id, full_name, email FROM users WHERE email = ?', [email]);
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = users[0];
+
+    // Check if admin_users table exists, create if not
+    const [adminTables] = await db.query(`
+      SELECT TABLE_NAME 
+      FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'admin_users'
+    `);
+
+    if (adminTables.length === 0) {
+      await db.query(`
+        CREATE TABLE admin_users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          full_name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          admin_level ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+          permissions JSON,
+          is_active BOOLEAN DEFAULT TRUE,
+          last_login TIMESTAMP NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_email (email),
+          INDEX idx_admin_level (admin_level),
+          INDEX idx_is_active (is_active)
+        )
+      `);
+    }
+
+    // Check if user is already an admin
+    const [existingAdmin] = await db.query('SELECT id FROM admin_users WHERE user_id = ?', [user.id]);
+    
+    if (existingAdmin.length > 0) {
+      return res.status(400).json({ message: 'User is already an admin' });
+    }
+
+    // Insert new admin user
+    const [result] = await db.query(`
+      INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions) 
+      VALUES (?, ?, ?, ?, '{}')
+    `, [user.id, user.full_name, user.email, adminLevel]);
+
+    res.status(201).json({ 
+      message: 'Admin user created successfully',
+      adminUserId: result.insertId,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        admin_level: adminLevel
+      }
+    });
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+    res.status(500).json({ message: 'Error creating admin user' });
+  }
+});
+
+// Get recent users for dashboard
+router.get('/users', adminAuth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const [users] = await db.query(`
+      SELECT id, full_name, email, status, created_at 
+      FROM users 
+      ORDER BY created_at DESC 
+      LIMIT ?
+    `, [limit]);
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching recent users:', error);
+    res.status(500).json({ message: 'Error fetching users' });
+  }
+});
+
+// Get recent applications for dashboard
+router.get('/applications', adminAuth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const [applications] = await db.query(`
+      SELECT 
+        sa.id,
+        sa.status,
+        sa.created_at,
+        s.title as scholarship_title,
+        CONCAT(u.full_name) as applicant_name
+      FROM scholarship_applications sa
+      JOIN scholarships s ON sa.scholarship_id = s.id
+      JOIN users u ON sa.user_id = u.id
+      ORDER BY sa.created_at DESC 
+      LIMIT ?
+    `, [limit]);
+    
+    res.json(applications);
+  } catch (error) {
+    console.error('Error fetching recent applications:', error);
+    res.status(500).json({ message: 'Error fetching applications' });
+  }
+});
 
 export default router; 

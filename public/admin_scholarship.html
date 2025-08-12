@@ -441,10 +441,11 @@
                 console.log('Auth test response:', data);
                 
                 if (response.ok) {
-                    console.log('Authentication successful, user role:', data.role);
-                    if (data.role !== 'admin') {
-                        console.error('User does not have admin privileges. Current role:', data.role);
-                        alert('You need admin privileges to manage scholarships. Current role: ' + data.role + '\n\nPlease log in with an admin account.');
+                    console.log('Authentication successful');
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    if (!user.isAdmin) {
+                        console.error('User does not have admin privileges.');
+                        alert('You need admin privileges to manage scholarships. Please log in with an admin account.');
                         // Disable form submission for non-admin users
                         const form = document.getElementById('scholarshipForm');
                         if (form) {

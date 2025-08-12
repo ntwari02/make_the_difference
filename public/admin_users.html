@@ -286,7 +286,7 @@
                                         Email
                                     </th>
                                     <th class="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Role
+                                        Account
                                     </th>
                                     <th class="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Status
@@ -393,7 +393,7 @@
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             
-            if (!token || user.role !== 'admin') {
+            if (!token || !user.isAdmin) {
                 window.location.href = 'login.html';
                 return;
             }
@@ -546,7 +546,7 @@
                                 ${user.email || ''}
                             </div>
                             <div class="mt-1 sm:hidden text-xs text-gray-500 dark:text-gray-400">
-                                ${user.role || 'user'}
+                                User
                             </div>
                             <div class="mt-1 sm:hidden">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -562,7 +562,7 @@
                         ${user.email || ''}
                     </td>
                     <td class="hidden md:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${user.role || 'user'}
+                        User
                     </td>
                     <td class="hidden sm:table-cell px-4 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -637,7 +637,7 @@
             document.getElementById('modalTitle').textContent = 'Edit User';
             document.getElementById('userName').value = user.full_name || '';
             document.getElementById('userEmail').value = user.email || '';
-            document.getElementById('userRole').value = user.role || 'user';
+            // role removed in backend
             document.getElementById('userStatus').value = user.status || 'active';
             document.getElementById('userPassword').value = '';
             document.getElementById('userPassword').required = false;

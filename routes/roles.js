@@ -6,10 +6,10 @@ const router = express.Router();
 router.get('/roles', async (req, res) => {
   try {
     const [roles] = await db.query('SELECT * FROM roles');
-    for (let role of roles) {
-      const [count] = await db.query('SELECT COUNT(*) as user_count FROM users WHERE role = ?', [role.role_name]);
-      role.user_count = count[0].user_count;
-    }
+  for (let role of roles) {
+      // Without users.role, user_count aggregation by role is not applicable.
+      role.user_count = 0;
+  }
     res.json(roles);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching roles', error: err.message });

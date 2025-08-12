@@ -132,29 +132,18 @@ router.get('/test-auth-basic', auth, (req, res) => {
   res.json({ 
     message: 'Basic authentication working', 
     user: req.user,
-    role: req.user.role,
     userId: req.user.id
   });
 });
 
-// Endpoint to update user role to admin (for testing purposes)
-router.post('/make-admin', auth, async (req, res) => {
-  try {
-    const [result] = await db.query('UPDATE users SET role = ? WHERE id = ?', ['admin', req.user.id]);
-    console.log('Updated user role to admin for user ID:', req.user.id);
-    res.json({ message: 'User role updated to admin successfully' });
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    res.status(500).json({ message: 'Error updating user role' });
-  }
-});
+// Removed test endpoint that modified users.role. Admins are tracked in admin_users table.
 
 // Create new scholarship (admin only)
 router.post('/', adminAuth, async (req, res) => {
   try {
     console.log('Received scholarship creation request:', req.body);
     console.log('User making request:', req.user);
-    console.log('User role:', req.user.role);
+    // req.user contains admin-related info from middleware if needed
     
     const { 
       name, 

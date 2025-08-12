@@ -62,6 +62,9 @@
         <p class="mt-2 text-center">
             <a href="#" id="forgot-password-link" class="text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Forgot Password?</a>
         </p>
+        <p class="mt-2 text-center">
+            <a href="admin_login.html" class="text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300">Admin Login</a>
+        </p>
     </div>
 
     <!-- Forgot Password Modal -->
@@ -190,9 +193,9 @@
                     messageDiv.className = 'bg-blue-500 p-3 rounded text-white text-center';
                     messageDiv.style.display = 'block';
                     
-                    // Redirect based on role
+                    // Redirect based on admin flag
                     setTimeout(() => {
-                        window.location.href = response.user.role === 'admin' 
+                        window.location.href = response.user.isAdmin 
                             ? 'admin_dashboard.html' 
                             : 'home.html';
                     }, 1500);
