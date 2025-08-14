@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
-import { auth, adminAuth } from '../middleware/auth.js';
+import { auth, bypassAuth } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 const router = express.Router();
 
@@ -89,7 +89,7 @@ router.put('/change-password', auth, async (req, res) => {
 });
 
 // Get all users for email sending (admin only)
-router.get('/all', adminAuth, async (req, res) => {
+router.get('/all', bypassAuth, async (req, res) => {
     try {
         const { search, status } = req.query;
         
@@ -122,7 +122,7 @@ router.get('/all', adminAuth, async (req, res) => {
 // removed by-role endpoint; not applicable without role column
 
 // Get active users count (admin only)
-router.get('/count', adminAuth, async (req, res) => {
+router.get('/count', bypassAuth, async (req, res) => {
     try {
         const [result] = await db.query(
             'SELECT COUNT(*) as total FROM users WHERE status = "active"'

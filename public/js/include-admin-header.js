@@ -14,12 +14,12 @@ async function includeAdminHeader() {
         const titleElem = document.getElementById('admin-page-title');
         if (titleElem) titleElem.textContent = pageTitle;
 
-        // Auth check with server verification fallback
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || user.role !== 'admin') {
-            window.location.href = 'login.html';
-        }
+        // Development mode - bypass authentication
+        const user = {
+            full_name: 'Development Admin',
+            role: 'admin',
+            isAdmin: true
+        };
         document.getElementById('adminName').textContent = user.full_name || 'Admin';
 
         // Logout

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import db from '../config/database.js';
-import { adminAuth } from '../middleware/auth.js';
+import { bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +44,7 @@ const upload = multer({
 });
 
 // GET admin account settings
-router.get('/account', adminAuth, async (req, res) => {
+router.get('/account', bypassAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         
@@ -108,7 +108,7 @@ router.get('/account', adminAuth, async (req, res) => {
 });
 
 // POST/UPDATE admin account settings
-router.post('/account', adminAuth, upload.single('profilePicture'), async (req, res) => {
+router.post('/account', bypassAuth, upload.single('profilePicture'), async (req, res) => {
     try {
         const userId = req.user.id;
         const {
@@ -247,7 +247,7 @@ router.post('/account', adminAuth, upload.single('profilePicture'), async (req, 
 });
 
 // POST change password
-router.post('/change-password', adminAuth, async (req, res) => {
+router.post('/change-password', bypassAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         const { currentPassword, newPassword } = req.body;
@@ -322,7 +322,7 @@ router.post('/change-password', adminAuth, async (req, res) => {
 });
 
 // DELETE profile picture
-router.delete('/profile-picture', adminAuth, async (req, res) => {
+router.delete('/profile-picture', bypassAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         

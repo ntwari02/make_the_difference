@@ -1,6 +1,28 @@
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 
+// Temporary bypass middleware for development - removes authentication requirement
+export const bypassAuth = async (req, res, next) => {
+    // Set a mock admin user for development
+    req.user = {
+        id: 1,
+        email: 'admin@example.com',
+        full_name: 'Development Admin',
+        role: 'admin',
+        admin_level: 'super_admin',
+        permissions: {
+            users: ['read', 'write', 'delete'],
+            applications: ['read', 'write', 'delete'],
+            scholarships: ['read', 'write', 'delete'],
+            settings: ['read', 'write'],
+            analytics: ['read'],
+            reports: ['read', 'write'],
+            email_templates: ['read', 'write', 'delete']
+        }
+    };
+    next();
+};
+
 export const auth = async (req, res, next) => {
     try {
         // Get token from header
