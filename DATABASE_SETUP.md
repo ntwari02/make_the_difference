@@ -68,6 +68,7 @@ The setup script will create a complete database with **25 tables** including:
 - `general_settings` - System configuration
 
 ### Payments (Future Use)
+
 - `payments` - Payment records
 - `plans` - Subscription plans
 - `plan_subscriptions` - User subscriptions
