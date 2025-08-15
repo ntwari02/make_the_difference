@@ -1,353 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            100: '#BFDBFE', // Lightest blue for backgrounds
-                            200: '#93C5FD',
-                            300: '#60A5FA',
-                            400: '#3B82F6',
-                            500: '#2563EB', // A slightly darker standard blue
-                            600: '#1D4ED8', // Our main darker blue
-                            700: '#1E40AF', // Even darker blue
-                            800: '#1E3A8A', // Darkest blue
-                            900: '#172554', // Near black blue
-                        },
-                    },
-                    fontFamily: {
-                        'raleway': ['Raleway', 'sans-serif'],
-                        'times-new-roman': ['"Times New Roman"', 'Times', 'serif'], // Added Times New Roman
-                    },
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Secure Signup - Scholarship Management System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="prefetch" href="home.html">
-    <link rel="prefetch" href="dashboard.html">
-    <link rel="prefetch" href="admin_dashboard.html">
-    <link rel="prefetch" href="scholarship.html">
-    <link rel="prefetch" href="login.html">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+    <script src="js/secure-signup.js"></script>
+    <style>
+        .password-strength-meter {
+            height: 4px;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        .strength-weak { background: linear-gradient(to right, #ef4444, #f87171); }
+        .strength-fair { background: linear-gradient(to right, #f59e0b, #fbbf24); }
+        .strength-good { background: linear-gradient(to right, #10b981, #34d399); }
+        .strength-strong { background: linear-gradient(to right, #059669, #10b981); }
+        
+        .requirement-item {
+            transition: all 0.3s ease;
+        }
+        .requirement-met {
+            color: #10b981;
+        }
+        .requirement-unmet {
+            color: #6b7280;
+        }
+        
+        .security-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .dark .modal-content {
+            background: #1f2937;
+            color: white;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center transition-colors duration-200">
-    <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
-        <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Create Account</h2>
-            <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
-                <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
-            </button>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <!-- Security Status Indicator -->
+    <div class="security-indicator">
+        <div class="bg-green-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-2">
+            <i class="fas fa-shield-alt"></i>
+            <span>Secure Connection</span>
         </div>
-        <div id="message" class="hidden mb-4 p-3 rounded text-white text-center"></div>
-        <form id="signupForm" class="space-y-4">
-            <div>
-                <input type="text" name="fullName" id="fullName"
-                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Full Name" required>
-            </div>
-            <div>
-                <input type="email" name="email" id="email"
-                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Email" required>
-            </div>
-            <div>
-                <input type="password" name="password" id="password"
-                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Password" required>
-            </div>
-            <div>
-                <input type="password" name="confirmPassword" id="confirmPassword"
-                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Confirm Password" required>
-            </div>
-            
-            <!-- Security Questions Section -->
-            <div class="border-t pt-4 mt-4">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-3">Security Questions</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Set up security questions to help you reset your password if you forget it.</p>
-                
-                <div class="space-y-4">
-                    <div>
-                        <select name="securityQuestion1" id="securityQuestion1" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                            <option value="">Select Security Question 1</option>
-                        </select>
-                        <input type="text" name="securityAnswer1" id="securityAnswer1" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
-                            placeholder="Your Answer">
-                    </div>
-                    
-                    <div>
-                        <select name="securityQuestion2" id="securityQuestion2" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                            <option value="">Select Security Question 2</option>
-                        </select>
-                        <input type="text" name="securityAnswer2" id="securityAnswer2" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
-                            placeholder="Your Answer">
-                    </div>
-                    
-                    <div>
-                        <select name="securityQuestion3" id="securityQuestion3" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                            <option value="">Select Security Question 3</option>
-                        </select>
-                        <input type="text" name="securityAnswer3" id="securityAnswer3" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mt-2"
-                            placeholder="Your Answer">
-                    </div>
-                </div>
-            </div>
-            
-            <button type="submit"
-                class="w-full bg-blue-500 dark:bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">
-                Sign Up
-            </button>
-        </form>
-        <p class="mt-4 text-center text-gray-600 dark:text-gray-300">
-            Already have an account?
-            <a href="login.html" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Log in</a>
-        </p>
     </div>
 
-    <!-- Include the API service -->
-    <script src="js/api.js" defer></script>
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <!-- Header -->
+            <div class="text-center">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+                        Create Secure Account
+                    </h2>
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Join our scholarship management system with enterprise-grade security
+                </p>
+            </div>
 
-    <script>
-        // Load security questions on page load
-        async function loadSecurityQuestions() {
-            try {
-                const response = await fetch('/api/security-questions');
-                if (response.ok) {
-                    const questions = await response.json();
-                    const questionSelects = ['securityQuestion1', 'securityQuestion2', 'securityQuestion3'];
+            <!-- Alert Messages -->
+            <div id="alert-container"></div>
 
-                    // Helper to update options
-                    function updateDropdownOptions() {
-                        const selectedValues = questionSelects.map(id => document.getElementById(id).value);
-                        
-                        questionSelects.forEach((selectId, idx) => {
-                            const select = document.getElementById(selectId);
-                            const currentValue = select.value;
-                            
-                            // Store the current selection
-                            const wasSelected = currentValue;
-                            
-                            // Remove all except the placeholder
-                            select.innerHTML = `<option value="">Select Security Question ${idx + 1}</option>`;
-                            
-                            questions.forEach(question => {
-                                const questionId = question.id.toString();
-                                const isSelectedInOther = selectedValues.includes(questionId) && questionId !== wasSelected;
-                                
-                                // Only add if not selected in another dropdown or is the current value
-                                if (!isSelectedInOther || questionId === wasSelected) {
-                                    const option = document.createElement('option');
-                                    option.value = question.id;
-                                    option.textContent = question.question;
-                                    if (questionId === wasSelected) {
-                                        option.selected = true;
-                                    }
-                                    select.appendChild(option);
-                                }
-                            });
-                        });
-                    }
+            <!-- Signup Form -->
+            <form id="signupForm" class="space-y-6">
+                <!-- Full Name -->
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Full Name
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            name="fullName" 
+                            id="fullName" 
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="Enter your full name"
+                            required
+                            autocomplete="name"
+                            pattern="[a-zA-Z\s]+"
+                            minlength="2"
+                            maxlength="100"
+                        >
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div id="fullName-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
+                </div>
 
-                    // Initial population
-                    questionSelects.forEach(selectId => {
-                        const select = document.getElementById(selectId);
-                        select.addEventListener('change', updateDropdownOptions);
-                    });
-                    updateDropdownOptions();
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Email Address
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="email" 
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                            placeholder="Enter your email address"
+                            required
+                            autocomplete="email"
+                            pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                            maxlength="255"
+                        >
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div id="email-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="password" 
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white pr-10 transition-colors"
+                            placeholder="Create a strong password"
+                            required
+                            autocomplete="new-password"
+                            minlength="8"
+                            maxlength="128"
+                        >
+                        <button 
+                            type="button" 
+                            id="togglePassword" 
+                            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     
-                    // Add visual feedback for duplicate prevention
-                    const questionSection = document.querySelector('.space-y-4');
-                    if (questionSection) {
-                        const infoDiv = document.createElement('div');
-                        infoDiv.className = 'text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg';
-                        infoDiv.innerHTML = '<i class="fas fa-info-circle mr-1"></i> Each security question can only be selected once. Selecting a question will remove it from other dropdowns.';
-                        questionSection.insertBefore(infoDiv, questionSection.firstChild);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading security questions:', error);
-            }
-        }
+                    <!-- Password Strength Meter -->
+                    <div class="mt-2">
+                        <div class="password-strength-meter" id="passwordStrength"></div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="strengthText">Password strength</p>
+                    </div>
 
-        // Load security questions when page loads
-        document.addEventListener('DOMContentLoaded', loadSecurityQuestions);
+                    <!-- Password Requirements -->
+                    <div class="mt-3 space-y-1">
+                        <div class="requirement-item requirement-unmet" id="req-length">
+                            <i class="fas fa-circle text-xs mr-2"></i>
+                            <span class="text-sm">At least 8 characters</span>
+                        </div>
+                        <div class="requirement-item requirement-unmet" id="req-uppercase">
+                            <i class="fas fa-circle text-xs mr-2"></i>
+                            <span class="text-sm">One uppercase letter</span>
+                        </div>
+                        <div class="requirement-item requirement-unmet" id="req-lowercase">
+                            <i class="fas fa-circle text-xs mr-2"></i>
+                            <span class="text-sm">One lowercase letter</span>
+                        </div>
+                        <div class="requirement-item requirement-unmet" id="req-number">
+                            <i class="fas fa-circle text-xs mr-2"></i>
+                            <span class="text-sm">One number</span>
+                        </div>
+                        <div class="requirement-item requirement-unmet" id="req-special">
+                            <i class="fas fa-circle text-xs mr-2"></i>
+                            <span class="text-sm">One special character (optional)</span>
+                        </div>
+                    </div>
+                    
+                    <div id="password-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
+                </div>
 
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        
-        // Check for saved user preference, if any, on load of the website
-        if (localStorage.getItem('color-theme')) {
-            if (localStorage.getItem('color-theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            }
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // If no preference saved, check system preference
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('color-theme', 'dark');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
-        
-        themeToggle.addEventListener('click', function() {
-            // Toggle icon
-            if (themeIcon.classList.contains('fa-moon')) {
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            }
-            
-            // Toggle theme
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
-        });
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Confirm Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            name="confirmPassword" 
+                            id="confirmPassword" 
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white pr-10 transition-colors"
+                            placeholder="Confirm your password"
+                            required
+                            autocomplete="new-password"
+                            minlength="8"
+                            maxlength="128"
+                        >
+                        <button 
+                            type="button" 
+                            id="toggleConfirmPassword" 
+                            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="confirmPassword-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
+                </div>
 
-        document.getElementById('signupForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+                <!-- Role Selection (if admin is creating account) -->
+                <div id="roleSection" class="hidden">
+                    <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Account Role
+                    </label>
+                    <select 
+                        name="role" 
+                        id="role" 
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    >
+                        <option value="user">Regular User</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Select the appropriate role for this account
+                    </p>
+                </div>
 
-            const messageDiv = document.getElementById('message');
-            const submitButton = this.querySelector('button[type="submit"]');
-            const fullName = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+                <!-- Security Questions -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Security Questions</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        These questions will help secure your account and enable password recovery.
+                    </p>
+                    
+                    <div id="securityQuestions" class="space-y-4">
+                        <!-- Security questions will be loaded here -->
+                    </div>
+                </div>
 
-            // Reset message
-            messageDiv.style.display = 'none';
+                <!-- Terms and Conditions -->
+                <div class="flex items-start">
+                    <input 
+                        type="checkbox" 
+                        id="termsAccepted" 
+                        class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        required
+                    >
+                    <label for="termsAccepted" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        I agree to the 
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a> 
+                        and 
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</a>
+                    </label>
+                </div>
 
-            // Disable submit button and show loading state
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing up...';
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="signupButton"
+                    class="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span id="signupButtonText">Create Account</span>
+                    <i id="signupButtonIcon" class="fas fa-user-plus ml-2"></i>
+                </button>
+            </form>
 
-            try {
-                // Validate required fields
-                if (!fullName) {
-                    throw new Error('Full name is required');
-                }
+            <!-- Login Link -->
+            <div class="text-center">
+                <p class="text-gray-600 dark:text-gray-400">
+                    Already have an account? 
+                    <a href="login.html" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors">
+                        Sign in here
+                    </a>
+                </p>
+            </div>
 
-                // Validate email format
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    throw new Error('Please enter a valid email address');
-                }
+            <!-- Security Features Info -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Security Features
+                </h4>
+                <ul class="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                    <li>• Input validation & sanitization</li>
+                    <li>• SQL injection prevention</li>
+                    <li>• Role-based access control</li>
+                    <li>• Secure password handling</li>
+                    <li>• Session management</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-                
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Creating Account</h3>
+            <p class="text-gray-600 dark:text-gray-400">Please wait while we securely create your account...</p>
+        </div>
+    </div>
 
-                // Validate password
-                if (password.length < 6) {
-                    throw new Error('Password must be at least 6 characters long');
-                }
-
-                // Validate passwords match
-                if (password !== confirmPassword) {
-                    throw new Error('Passwords do not match');
-                }
-
-                // Validate security questions
-                const securityQuestion1 = document.getElementById('securityQuestion1').value;
-                const securityAnswer1 = document.getElementById('securityAnswer1').value.trim();
-                const securityQuestion2 = document.getElementById('securityQuestion2').value;
-                const securityAnswer2 = document.getElementById('securityAnswer2').value.trim();
-                const securityQuestion3 = document.getElementById('securityQuestion3').value;
-                const securityAnswer3 = document.getElementById('securityAnswer3').value.trim();
-
-                if (!securityQuestion1 || !securityAnswer1 || !securityQuestion2 || !securityAnswer2 || !securityQuestion3 || !securityAnswer3) {
-                    throw new Error('Please complete all security questions');
-                }
-
-                // Check for duplicate questions
-                const questions = [securityQuestion1, securityQuestion2, securityQuestion3];
-                const uniqueQuestions = new Set(questions);
-                if (uniqueQuestions.size !== 3) {
-                    throw new Error('Please select different security questions');
-                }
-
-                const userData = {
-                    full_name: fullName,
-                    email: email,
-                    password: password,
-                    security_questions: [
-                        { question_id: securityQuestion1, answer: securityAnswer1 },
-                        { question_id: securityQuestion2, answer: securityAnswer2 },
-                        { question_id: securityQuestion3, answer: securityAnswer3 }
-                    ]
-                };
-
-                // Attempt registration
-                const response = await window.api.auth.register(userData);
-
-                if (response && response.token && response.user) {
-                    // Store token and user data
-                    localStorage.setItem('token', response.token);
-                    localStorage.setItem('user', JSON.stringify(response.user));
-
-                    // Show success message
-                    messageDiv.textContent = `Account created successfully! Redirecting to Dashboard...`;
-                    messageDiv.className = 'mb-4 p-3 rounded text-white text-center bg-green-500';
-                    messageDiv.style.display = 'block';
-
-                    // Redirect
-                    setTimeout(() => {
-                        window.location.href = 'home.html';
-                    }, 1500);
-                } else {
-                    throw new Error('Invalid response from server');
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-
-                // Handle different types of errors
-                let errorMessage = error.message;
-
-                if (error.message.includes('connect to the server')) {
-                    errorMessage = 'Unable to connect to the server. Please check your internet connection.';
-                } else if (error.message.includes('Email already exists')) {
-                    errorMessage = 'This email is already registered. Please try logging in instead.';
-                } else if (error.message.includes('Invalid response')) {
-                    errorMessage = 'Server error. Please try again later.';
-                }
-
-                // Display error message
-                messageDiv.textContent = errorMessage;
-                messageDiv.className = 'mb-4 p-3 rounded text-white text-center bg-red-500';
-                messageDiv.style.display = 'block';
-
-                // Scroll to error message
-                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } finally {
-                // Re-enable submit button and restore text
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Sign Up';
-            }
-        });
-
-
-    </script>
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-2xl text-green-600 dark:text-green-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Account Created Successfully!</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Your account has been created with enhanced security features.</p>
+            <button id="continueButton" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Continue to Dashboard
+            </button>
+        </div>
+    </div>
 </body>
-
 </html>
