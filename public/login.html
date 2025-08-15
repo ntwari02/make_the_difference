@@ -181,6 +181,7 @@
                 Create account
             </a>
         </p>
+<<<<<<< HEAD
 
         <!-- Security Features Info -->
         <div class="mt-8 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -193,6 +194,11 @@
                 <li><i class="fas fa-check text-green-500 mr-1"></i> Session management</li>
             </ul>
         </div>
+=======
+        <p class="mt-2 text-center">
+            <a href="admin_login.html" class="text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300">Admin Login</a>
+        </p>
+>>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
     </div>
 
     <!-- Forgot Password Modal -->
@@ -277,6 +283,306 @@
     <!-- Include the API service -->
     <script src="js/api.js"></script>
     <script src="js/include-navbar.js" defer></script>
+<<<<<<< HEAD
     <script src="js/secure-login.js"></script>
+=======
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Check for saved user preference, if any, on load of the website
+        if (localStorage.getItem('color-theme')) {
+            if (localStorage.getItem('color-theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // If no preference saved, check system preference
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        
+        themeToggle.addEventListener('click', function() {
+            // Toggle icon
+            if (themeIcon.classList.contains('fa-moon')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+            
+            // Toggle theme
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+
+        // Password visibility toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        const passwordIcon = togglePassword.querySelector('i');
+
+        togglePassword.addEventListener('click', function () {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            passwordIcon.classList.toggle('fa-eye');
+            passwordIcon.classList.toggle('fa-eye-slash');
+        });
+
+        // Login form handling
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('message');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await window.api.post('/auth/login', { email, password });
+                
+                if (response.token) {
+                    // Store token and user data
+                    localStorage.setItem('token', response.token);
+                    localStorage.setItem('user', JSON.stringify(response.user));
+                    
+                    // Show success message
+                    messageDiv.textContent = 'Login successful! Redirecting...';
+                    messageDiv.className = 'bg-blue-500 p-3 rounded text-white text-center';
+                    messageDiv.style.display = 'block';
+                    
+                    // Redirect based on admin flag
+                    setTimeout(() => {
+                        window.location.href = response.user.isAdmin 
+                            ? 'admin_dashboard.html' 
+                            : 'home.html';
+                    }, 1500);
+                } else {
+                    throw new Error(response.message || 'Login failed');
+                }
+            } catch (error) {
+                messageDiv.textContent = error.message || 'An error occurred during login';
+                messageDiv.className = 'bg-red-500 p-3 rounded text-white text-center';
+                messageDiv.style.display = 'block';
+            }
+        });
+
+        // Forgot Password Modal Logic
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const closeForgotModal = document.getElementById('close-forgot-modal');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const securityQuestionsForm = document.getElementById('securityQuestionsForm');
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        const forgotMessage = document.getElementById('forgot-message');
+        
+        let currentEmail = '';
+        let resetToken = '';
+
+        // Password visibility toggles for reset form
+        const toggleNewPassword = document.getElementById('toggleNewPassword');
+        const newPassword = document.getElementById('new-password');
+        const toggleConfirmNewPassword = document.getElementById('toggleConfirmNewPassword');
+        const confirmNewPassword = document.getElementById('confirm-new-password');
+
+        toggleNewPassword.addEventListener('click', function () {
+            const type = newPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            newPassword.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        toggleConfirmNewPassword.addEventListener('click', function () {
+            const type = confirmNewPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmNewPassword.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
+            document.getElementById(`step${stepNumber}`).classList.remove('hidden');
+        }
+
+        function resetModal() {
+            showStep(1);
+            forgotMessage.textContent = '';
+            forgotMessage.className = 'mt-3 text-center text-sm';
+            forgotPasswordForm.reset();
+            securityQuestionsForm.reset();
+            resetPasswordForm.reset();
+            currentEmail = '';
+            resetToken = '';
+        }
+
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            forgotPasswordModal.classList.remove('hidden');
+            resetModal();
+        });
+
+        closeForgotModal.addEventListener('click', function() {
+            forgotPasswordModal.classList.add('hidden');
+        });
+
+        // Step 1: Enter email
+        forgotPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            currentEmail = document.getElementById('forgot-email').value;
+            forgotMessage.textContent = 'Retrieving security questions...';
+            forgotMessage.className = 'mt-3 text-center text-sm text-gray-500';
+            
+            try {
+                console.log('Fetching security questions for email:', currentEmail);
+                const response = await window.api.post('/auth/forgot-password', { email: currentEmail });
+                console.log('Response received:', response);
+                if (response.success && response.questions) {
+                    // Populate security questions
+                    const container = document.getElementById('security-questions-container');
+                    container.innerHTML = '';
+                    
+                    response.questions.forEach((question, index) => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'mb-4';
+                        questionDiv.innerHTML = `
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                ${question.question}
+                            </label>
+                            <input type="text" 
+                                   name="answer_${question.id}" 
+                                   data-question-id="${question.id}"
+                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" 
+                                   placeholder="Your answer" 
+                                   required>
+                        `;
+                        container.appendChild(questionDiv);
+                    });
+                    
+                    showStep(2);
+                    forgotMessage.textContent = '';
+                } else {
+                    throw new Error(response.message || 'Failed to retrieve security questions');
+                }
+            } catch (error) {
+                console.error('Error fetching security questions:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
+                forgotMessage.textContent = error.message || 'An error occurred while fetching security questions.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
+            }
+        });
+
+        // Step 2: Answer security questions
+        securityQuestionsForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            forgotMessage.textContent = 'Verifying answers...';
+            forgotMessage.className = 'mt-3 text-center text-sm text-gray-500';
+            
+            const answers = [];
+            const answerInputs = document.querySelectorAll('[data-question-id]');
+            answerInputs.forEach(input => {
+                if (input.value.trim()) {
+                    answers.push({
+                        question_id: input.dataset.questionId,
+                        answer: input.value.trim()
+                    });
+                }
+            });
+            
+            try {
+                const response = await window.api.post('/security-questions/verify', {
+                    email: currentEmail,
+                    answers: answers
+                });
+                if (typeof response !== 'object') {
+                    throw new Error('Unexpected server response.');
+                }
+                
+                if (response.success && response.can_reset) {
+                    resetToken = response.reset_token;
+                    showStep(3);
+                    forgotMessage.textContent = '';
+                } else if (response.requires_admin) {
+                    // Show admin help message
+                    forgotMessage.textContent = response.message;
+                    forgotMessage.className = 'mt-3 text-center text-sm text-orange-600';
+                    
+                    // Add a button to contact admin
+                    const adminHelpDiv = document.createElement('div');
+                    adminHelpDiv.className = 'mt-4 text-center';
+                    adminHelpDiv.innerHTML = `
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            An admin will review your request and contact you soon.
+                        </p>
+                        <button type="button" onclick="closeForgotModal()" 
+                                class="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">
+                            Close
+                        </button>
+                    `;
+                    document.getElementById('forgot-message').appendChild(adminHelpDiv);
+                } else {
+                    throw new Error(response.message || 'Incorrect answers');
+                }
+            } catch (error) {
+                forgotMessage.textContent = error.message || 'An error occurred.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
+            }
+        });
+
+        // Step 3: Reset password
+        resetPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const newPasswordValue = document.getElementById('new-password').value;
+            const confirmNewPasswordValue = document.getElementById('confirm-new-password').value;
+            
+            if (newPasswordValue !== confirmNewPasswordValue) {
+                forgotMessage.textContent = 'Passwords do not match.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
+                return;
+            }
+            
+            if (newPasswordValue.length < 6) {
+                forgotMessage.textContent = 'Password must be at least 6 characters long.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
+                return;
+            }
+            
+            forgotMessage.textContent = 'Resetting password...';
+            forgotMessage.className = 'mt-3 text-center text-sm text-gray-500';
+            
+            try {
+                const response = await window.api.post('/auth/reset-password', {
+                    token: resetToken,
+                    newPassword: newPasswordValue
+                });
+                
+                if (response.success) {
+                    forgotMessage.textContent = 'Password reset successfully! You can now log in with your new password.';
+                    forgotMessage.className = 'mt-3 text-center text-sm text-green-600';
+                    
+                    setTimeout(() => {
+                        forgotPasswordModal.classList.add('hidden');
+                    }, 3000);
+                } else {
+                    throw new Error(response.message || 'Failed to reset password');
+                }
+            } catch (error) {
+                forgotMessage.textContent = error.message || 'An error occurred.';
+                forgotMessage.className = 'mt-3 text-center text-sm text-red-600';
+            }
+        });
+    </script>
+>>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
 </body>
 </html>

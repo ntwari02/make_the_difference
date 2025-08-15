@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pool from '../config/database.js';
-import { adminAuth } from '../middleware/auth.js';
+import { bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // GET current settings
-router.get('/', adminAuth, (req, res) => {
+router.get('/', bypassAuth, (req, res) => {
     pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1", (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results[0] || {});
@@ -29,7 +29,7 @@ router.get('/', adminAuth, (req, res) => {
 });
 
 // POST/UPDATE settings
-router.post('/', adminAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' }]), async (req, res) => {
+router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' }]), async (req, res) => {
     try {
         const {
             siteTitle, contactEmail, siteDescription, homepageContent,

@@ -70,6 +70,13 @@ npm install
 ```
 
 ### 3. Database Setup
+
+**Option 1: Automated Setup (Recommended)**
+```bash
+npm run setup:database
+```
+
+**Option 2: Manual Setup**
 1. Create a MySQL database:
 ```sql
 CREATE DATABASE mbappe;
@@ -77,8 +84,10 @@ CREATE DATABASE mbappe;
 
 2. Import the database schema:
 ```bash
-mysql -u root -p mbappe < database/schema.sql
+mysql -u root -p mbappe < config/mbappe.sql
 ```
+
+📖 **See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for detailed setup instructions**
 
 ### 4. Environment Configuration
 Create a `.env` file in the root directory:

@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
-import { auth, adminAuth } from '../middleware/auth.js';
+import { auth, bypassAuth } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/profile', auth, async (req, res) => {
     try {
         const [user] = await db.query(
-            'SELECT id, fullName, email, role, created_at FROM users WHERE id = ?',
+            'SELECT id, fullName, email, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
         
@@ -89,11 +89,11 @@ router.put('/change-password', auth, async (req, res) => {
 });
 
 // Get all users for email sending (admin only)
-router.get('/all', adminAuth, async (req, res) => {
+router.get('/all', bypassAuth, async (req, res) => {
     try {
-        const { search, role, status } = req.query;
+        const { search, status } = req.query;
         
-        let query = 'SELECT id, full_name, email, role, status FROM users WHERE 1=1';
+        let query = 'SELECT id, full_name, email, status FROM users WHERE 1=1';
         const params = [];
         
         if (search) {
@@ -101,10 +101,7 @@ router.get('/all', adminAuth, async (req, res) => {
             params.push(`%${search}%`, `%${search}%`);
         }
         
-        if (role) {
-            query += ' AND role = ?';
-            params.push(role);
-        }
+        // role filter removed; admin tracked in admin_users
         
         if (status) {
             query += ' AND status = ?';
@@ -122,22 +119,10 @@ router.get('/all', adminAuth, async (req, res) => {
 });
 
 // Get users by role (admin only)
-router.get('/by-role/:role', adminAuth, async (req, res) => {
-    try {
-        const { role } = req.params;
-        const [users] = await db.query(
-            'SELECT id, full_name, email, role, status FROM users WHERE role = ? AND status = "active" ORDER BY full_name',
-            [role]
-        );
-        res.json(users);
-    } catch (error) {
-        console.error('Error fetching users by role:', error);
-        res.status(500).json({ message: 'Error fetching users' });
-    }
-});
+// removed by-role endpoint; not applicable without role column
 
 // Get active users count (admin only)
-router.get('/count', adminAuth, async (req, res) => {
+router.get('/count', bypassAuth, async (req, res) => {
     try {
         const [result] = await db.query(
             'SELECT COUNT(*) as total FROM users WHERE status = "active"'

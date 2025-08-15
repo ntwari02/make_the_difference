@@ -97,12 +97,12 @@ async function includeNavbar() {
                 const token = localStorage.getItem('token');
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-                if (token && user && user.full_name) { // Ensure user.full_name exists
+                    if (token && user && user.full_name) { // Ensure user.full_name exists
                     mobileAuthButtons.innerHTML = `
                         <div class="flex flex-col space-y-2">
                             <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
                             <span class="font-medium text-gray-800 dark:text-white">${user.full_name}</span>
-                            <a href="${user.role === 'admin' ? 'admin_dashboard.html' : 'dashboard.html'}" 
+                            <a href="${user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html'}" 
                                 class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
                                 Dashboard
                             </a>
@@ -137,16 +137,12 @@ async function includeNavbar() {
                 const token = localStorage.getItem('token');
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-                if (token && user && user.full_name) { // Ensure user.full_name exists
+                    if (token && user && user.full_name) { // Ensure user.full_name exists
                     authButtons.classList.add('hidden');
                     userMenu.classList.remove('hidden');
                     userNameDisplay.textContent = user.full_name;
 
-                    if (user.role === 'admin') {
-                        dashboardLink.href = 'admin_dashboard.html';
-                    } else {
-                        dashboardLink.href = 'dashboard.html';
-                    }
+                    dashboardLink.href = user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html';
 
                     // Highlight active page in desktop nav
                     const currentPage = window.location.pathname.split('/').pop();

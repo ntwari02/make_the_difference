@@ -869,8 +869,7 @@
                         const response = await fetch(`/api/admin/applications/${applicationId}/status`, {
                             method: 'PUT',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
                                 status: status,
@@ -930,8 +929,7 @@
                         const response = await fetch('/api/notifications', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
                                 email: userEmail,
@@ -982,9 +980,7 @@
             try {
                 showLoading(true);
                 hideFetchError();
-                const response = await fetch('/api/admin/applications', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
+                const response = await fetch('/api/admin/applications');
                 const result = await handleApiResponse(response);
                 if (!Array.isArray(result)) {
                     console.warn('Applications API did not return an array:', result);
@@ -1109,9 +1105,7 @@
         async function viewApplication(applicationId) {
             try {
                 showLoading(true);
-                const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
+                const response = await fetch(`/api/admin/applications/${applicationId}`);
                 const result = await handleApiResponse(response);
                 if (!result) return;
                 
@@ -1160,8 +1154,7 @@
             if (!confirm('Are you sure you want to delete this application?')) return;
             try {
                 const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    method: 'DELETE'
                 });
                 await handleApiResponse(response);
                 showNotification('Application deleted successfully', 'success');
@@ -1212,7 +1205,6 @@
             try {
                 const response = await fetch(url, {
                     method,
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     body: formData
                 });
                 await handleApiResponse(response);
@@ -1226,9 +1218,7 @@
 
         async function loadScholarshipsAndPopulateSelects(selectedUniversity = null) {
             try {
-                const response = await fetch('/api/scholarships', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
+                const response = await fetch('/api/scholarships');
                 const scholarships = await response.json();
                 const universitySelect = document.getElementById('preferredUniversity');
                 const scholarshipIdInput = document.getElementById('scholarship_id');
@@ -1266,9 +1256,7 @@
         async function updateApplication(applicationId) {
             try {
                 showLoading(true);
-                const response = await fetch(`/api/admin/applications/${applicationId}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
+                const response = await fetch(`/api/admin/applications/${applicationId}`);
                 const appData = await handleApiResponse(response);
                 if (!appData) return;
                 

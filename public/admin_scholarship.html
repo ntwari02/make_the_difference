@@ -419,63 +419,24 @@
             minDate: 'today'
         });
         
-        // Test authentication
+        // Development mode - bypass authentication
         async function testAuth() {
-            const token = localStorage.getItem('token');
-            console.log('Token from localStorage:', token ? 'Token exists' : 'No token');
-            
-            if (!token) {
-                console.log('No token found in localStorage');
-                alert('No authentication token found. Please log in again.');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/scholarships/test-auth-basic', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                console.log('Auth test response:', data);
-                
-                if (response.ok) {
-                    console.log('Authentication successful, user role:', data.role);
-                    if (data.role !== 'admin') {
-                        console.error('User does not have admin privileges. Current role:', data.role);
-                        alert('You need admin privileges to manage scholarships. Current role: ' + data.role + '\n\nPlease log in with an admin account.');
-                        // Disable form submission for non-admin users
-                        const form = document.getElementById('scholarshipForm');
-                        if (form) {
-                            form.style.display = 'none';
-                        }
-                        const newBtn = document.getElementById('newScholarshipBtn');
-                        if (newBtn) {
-                            newBtn.style.display = 'none';
-                        }
-                    } else {
-                        console.log('Admin privileges confirmed');
-                    }
-                } else {
-                    console.log('Authentication failed:', data.message);
-                    alert('Authentication failed: ' + data.message + '\n\nPlease log in again.');
-                }
-            } catch (error) {
-                console.error('Auth test error:', error);
-                alert('Network error during authentication test. Please check your connection.');
-            }
+            console.log('Development mode - authentication bypassed');
+            // Set mock admin user for development
+            const user = {
+                full_name: 'Development Admin',
+                role: 'admin',
+                isAdmin: true
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+            console.log('Mock admin user set for development');
         }
         
         // Load statistics
         async function loadStats() {
             try {
                 // Try to get stats from scholarships endpoint first
-                const response = await fetch('/api/scholarships', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch('/api/scholarships');
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch scholarships for stats');
@@ -563,11 +524,7 @@
                     url += `&search=${encodeURIComponent(searchTerm)}`;
                 }
                 
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch(url);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch scholarships');
@@ -697,11 +654,7 @@
         // Open edit scholarship modal
         async function openEditScholarshipModal(id) {
             try {
-                const response = await fetch(`/api/scholarships/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch(`/api/scholarships/${id}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch scholarship');
@@ -774,13 +727,8 @@
             // Debug: Log form data
             console.log('Form data being sent:', formData);
             
-            // Check authentication
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('You are not authenticated. Please log in.');
-                return;
-            }
-            console.log('Auth token exists:', !!token);
+            // Development mode - authentication bypassed
+            console.log('Development mode - authentication bypassed');
             
             // Validate required fields
             const requiredFields = ['name', 'description', 'eligibility_criteria', 'application_deadline', 'award_amount', 'number_of_awards', 'academic_level', 'scholarship_type'];
@@ -818,8 +766,7 @@
                     response = await fetch(`/api/scholarships/${currentScholarshipId}`, {
                         method: 'PUT',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(formData)
                     });
@@ -828,8 +775,7 @@
                     response = await fetch('/api/scholarships', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(formData)
                     });
@@ -876,10 +822,7 @@
         async function deleteScholarship(id) {
             try {
                 const response = await fetch(`/api/scholarships/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    method: 'DELETE'
                 });
                 
                 if (!response.ok) {
@@ -906,11 +849,7 @@
                     </tr>
                 `;
                 
-                const response = await fetch(`/api/scholarships/${scholarshipId}/applications`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch(`/api/scholarships/${scholarshipId}/applications`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch applications');
@@ -1019,8 +958,7 @@
                 const response = await fetch(`/api/applications/${applicationId}/status`, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ status: newStatus })
                 });

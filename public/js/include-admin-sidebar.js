@@ -2,19 +2,25 @@
 
 async function includeAdminSidebar() {
     try {
-        const container = document.getElementById('admin-sidebar-container');
-        if (!container) return;
+        const response = await fetch('navbar.html');
+        const sidebarHtml = await response.text();
         
-        const response = await fetch('components/admin-sidebar.html');
-        if (!response.ok) throw new Error('Failed to load admin sidebar');
-        const html = await response.text();
-        container.innerHTML = html;
-
-        // Initialize sidebar functionality
-        initializeSidebar();
+        // Create a temporary container to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = sidebarHtml;
         
-    } catch (err) {
-        console.error('Error including admin sidebar:', err);
+        // Extract the sidebar content
+        const sidebarContent = tempDiv.querySelector('#admin-sidebar');
+        
+        if (sidebarContent) {
+            // Insert sidebar at the beginning of the body
+            document.body.insertBefore(sidebarContent, document.body.firstChild);
+            
+            // Initialize sidebar functionality
+            initializeSidebar();
+        }
+    } catch (error) {
+        console.error('Error loading admin sidebar:', error);
     }
 }
 
@@ -89,21 +95,20 @@ function initializeSidebar() {
         });
     }
 
-            // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
-                    sidebar.classList.remove('mobile-open');
-                    if (mobileBackdrop) {
-                        mobileBackdrop.classList.remove('show');
-                    }
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+            if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+                sidebar.classList.remove('mobile-open');
+                if (mobileBackdrop) {
+                    mobileBackdrop.classList.remove('show');
                 }
             }
-        });
+        }
+    });
 
-        // Update help badge count
-        updateHelpBadge();
-    }
+    // Update help badge count
+    updateHelpBadge();
 
     // Function to update help badge count
     async function updateHelpBadge() {
@@ -127,21 +132,10 @@ function initializeSidebar() {
         }
     }
 
-    // Update badge every 30 seconds
-    setInterval(updateHelpBadge, 30000);
-
-    // Handle window resize
+    // Responsive behavior
     window.addEventListener('resize', () => {
         const newIsMobile = window.innerWidth <= 1024;
         
-        // If switching to mobile view and no preference is set, default to collapsed
-        if (newIsMobile && !localStorage.getItem('sidebarCollapsed')) {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.add('collapsed');
-            localStorage.setItem('sidebarCollapsed', 'true');
-        }
-        
-        // If switching to desktop view and was in mobile collapsed state, expand
         if (!newIsMobile && window.innerWidth > 1024) {
             // Only auto-expand if user hasn't manually set a preference
             if (!localStorage.getItem('sidebarCollapsed')) {

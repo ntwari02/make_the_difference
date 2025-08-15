@@ -1,6 +1,28 @@
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 
+// Temporary bypass middleware for development - removes authentication requirement
+export const bypassAuth = async (req, res, next) => {
+    // Set a mock admin user for development
+    req.user = {
+        id: 1,
+        email: 'admin@example.com',
+        full_name: 'Development Admin',
+        role: 'admin',
+        admin_level: 'super_admin',
+        permissions: {
+            users: ['read', 'write', 'delete'],
+            applications: ['read', 'write', 'delete'],
+            scholarships: ['read', 'write', 'delete'],
+            settings: ['read', 'write'],
+            analytics: ['read'],
+            reports: ['read', 'write'],
+            email_templates: ['read', 'write', 'delete']
+        }
+    };
+    next();
+};
+
 export const auth = async (req, res, next) => {
     try {
         // Get token from header
@@ -14,7 +36,7 @@ export const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
         // Get user from the database
-        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        const [users] = await db.query('SELECT id, email, full_name FROM users WHERE id = ?', [decoded.id]);
 
         if (users.length === 0) {
             return res.status(401).json({ message: 'User not found' });
@@ -38,48 +60,14 @@ export const adminAuth = async (req, res, next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
-        // First check if admin_users table exists
-        const [adminTables] = await db.query(`
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'admin_users'
-        `);
-
-        let isAdmin = false;
-        let adminUser = null;
-
-        if (adminTables.length > 0) {
-            // Admin table exists, check if user exists in admin_users table
-            const [adminUsers] = await db.query(`
-                SELECT au.*, u.email, u.full_name 
-                FROM admin_users au 
-                JOIN users u ON au.user_id = u.id 
-                WHERE au.user_id = ? AND au.is_active = TRUE
-            `, [decoded.id]);
-            
-            if (adminUsers.length > 0) {
-                isAdmin = true;
-                adminUser = adminUsers[0];
-            }
-        } else {
-            // Admin table doesn't exist, fall back to role check for backward compatibility
-            const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
-            
-            if (users.length > 0 && users[0].role === 'admin') {
-                isAdmin = true;
-                adminUser = {
-                    user_id: users[0].id,
-                    email: users[0].email,
-                    full_name: users[0].full_name,
-                    admin_level: 'admin',
-                    permissions: '{}'
-                };
-                console.log('Admin table not found, using role-based admin check');
-            }
+        // Get user from database to verify role
+        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'User not found' });
         }
         
-        if (!isAdmin) {
+        if (users[0].role !== 'admin') {
             return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
         }
 

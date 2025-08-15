@@ -624,7 +624,7 @@
         // Auth check
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || user.role !== 'admin') {
+        if (!token || !user.isAdmin) {
             window.location.href = 'login.html';
         }
 
@@ -652,11 +652,7 @@
         // Load summary data
         async function loadSummaryData() {
             try {
-                const response = await fetch('/api/analytics/summary', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch('/api/analytics/summary');
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -674,11 +670,7 @@
         // Load user growth data
         async function loadUserGrowthData() {
             try {
-                const response = await fetch(`/api/analytics/user-growth?period=${currentPeriod}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch(`/api/analytics/user-growth?period=${currentPeriod}`);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -693,11 +685,7 @@
         // Load application statistics
         async function loadApplicationStats() {
             try {
-                const response = await fetch(`/api/analytics/application-stats?period=${currentPeriod}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch(`/api/analytics/application-stats?period=${currentPeriod}`);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -846,20 +834,12 @@
         async function loadUserGrowthDetails() {
             try {
                 // Load summary data for the modal
-                const summaryResponse = await fetch('/api/analytics/summary', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const summaryResponse = await fetch('/api/analytics/summary');
                 
                 const summaryData = await summaryResponse.json();
                 
                 // Load user growth data
-                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`);
                 
                 const growthData = await growthResponse.json();
                 
@@ -1043,11 +1023,7 @@
 
         document.getElementById('exportBtn').addEventListener('click', async function() {
             try {
-                const response = await fetch('/api/analytics/export', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await fetch('/api/analytics/export');
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -1109,11 +1085,7 @@
         async function loadApplicationInsights() {
             try {
                 // Load application statistics
-                const statsResponse = await fetch(`/api/analytics/application-stats?period=12`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const statsResponse = await fetch(`/api/analytics/application-stats?period=12`);
                 
                 const statsData = await statsResponse.json();
                 

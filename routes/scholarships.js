@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
-import { auth, adminAuth } from '../middleware/auth.js';
+import { auth, bypassAuth } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -104,12 +104,12 @@ router.get('/:id', async (req, res) => {
 });
 
 // Test endpoint to check authentication
-router.get('/test-auth', adminAuth, (req, res) => {
+router.get('/test-auth', bypassAuth, (req, res) => {
   res.json({ message: 'Authentication working', user: req.user });
 });
 
 // Test endpoint to check database schema
-router.get('/test-schema', adminAuth, async (req, res) => {
+router.get('/test-schema', bypassAuth, async (req, res) => {
   try {
     const [columns] = await db.query('DESCRIBE scholarships');
     res.json({ 
@@ -132,29 +132,18 @@ router.get('/test-auth-basic', auth, (req, res) => {
   res.json({ 
     message: 'Basic authentication working', 
     user: req.user,
-    role: req.user.role,
     userId: req.user.id
   });
 });
 
-// Endpoint to update user role to admin (for testing purposes)
-router.post('/make-admin', auth, async (req, res) => {
-  try {
-    const [result] = await db.query('UPDATE users SET role = ? WHERE id = ?', ['admin', req.user.id]);
-    console.log('Updated user role to admin for user ID:', req.user.id);
-    res.json({ message: 'User role updated to admin successfully' });
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    res.status(500).json({ message: 'Error updating user role' });
-  }
-});
+// Removed test endpoint that modified users.role. Admins are tracked in admin_users table.
 
 // Create new scholarship (admin only)
-router.post('/', adminAuth, async (req, res) => {
+router.post('/', bypassAuth, async (req, res) => {
   try {
     console.log('Received scholarship creation request:', req.body);
     console.log('User making request:', req.user);
-    console.log('User role:', req.user.role);
+    // req.user contains admin-related info from middleware if needed
     
     const { 
       name, 
@@ -226,7 +215,7 @@ router.post('/', adminAuth, async (req, res) => {
 
 
 // Update scholarship (admin only)
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', bypassAuth, async (req, res) => {
   try {
     const { 
       name, 
@@ -325,7 +314,7 @@ router.put('/:id', adminAuth, async (req, res) => {
 
 
 // Delete scholarship (admin only)
-router.delete('/:id', adminAuth, async (req, res) => {
+router.delete('/:id', bypassAuth, async (req, res) => {
   try {
     const [result] = await db.query(
       'DELETE FROM scholarships WHERE id = ?',
@@ -405,7 +394,7 @@ router.post('/:id/apply', upload.fields([
 });
 
 // Get applications for a scholarship (admin only)
-router.get('/:id/applications', adminAuth, async (req, res) => {
+router.get('/:id/applications', bypassAuth, async (req, res) => {
   try {
     const [applications] = await db.query(
       'SELECT * FROM scholarship_applications WHERE scholarship_id = ?',

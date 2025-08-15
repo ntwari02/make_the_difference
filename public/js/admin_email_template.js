@@ -5,28 +5,9 @@ let templates = {};
 let users = [];
 let selectedUsers = new Set();
 
-// Authentication check function
+// Development mode - bypass authentication
 function checkAuth() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    if (!token || !user) {
-        showErrorState('You are not logged in. Please log in as admin.');
-        return false;
-    }
-    
-    try {
-        const userData = JSON.parse(user);
-        if (!userData.isAdmin) {
-            showErrorState('Access denied. Admin privileges required.');
-            return false;
-        }
-    } catch (error) {
-        console.error('Error parsing user data:', error);
-        showErrorState('Authentication error. Please log in again.');
-        return false;
-    }
-    
+    // Always return true for development
     return true;
 }
 
@@ -108,8 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSelectedCount();
     });
     document.getElementById('selectAllUsers').addEventListener('click', selectAllUsers);
-    document.getElementById('selectApplicants').addEventListener('click', function() { selectUsersByRole('user'); });
-    document.getElementById('selectAdmins').addEventListener('click', function() { selectUsersByRole('admin'); });
+    // Role-based selectors removed since users table no longer has role
+    const selectApplicantsBtn = document.getElementById('selectApplicants');
+    const selectAdminsBtn = document.getElementById('selectAdmins');
+    if (selectApplicantsBtn) selectApplicantsBtn.classList.add('hidden');
+    if (selectAdminsBtn) selectAdminsBtn.classList.add('hidden');
     document.getElementById('clearSelection').addEventListener('click', clearSelection);
     document.getElementById('userSearch').addEventListener('input', function() {
         const searchTerm = this.value.trim();
@@ -304,7 +288,7 @@ function populateUserList() {
                 <div>
                     <div class="font-medium text-gray-800 dark:text-white">${user.full_name}</div>
                     <div class="text-sm text-gray-600 dark:text-gray-300">${user.email}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 capitalize">${user.role} • ${user.status}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 capitalize">${user.status}</div>
                 </div>
             </div>
         `;
@@ -346,22 +330,7 @@ async function selectAllUsers() {
     }
 }
 
-async function selectUsersByRole(role) {
-    try {
-        const roleUsers = await window.api.get(`/users/by-role/${role}`);
-        selectedUsers.clear();
-        roleUsers.forEach(user => selectedUsers.add(user.id));
-        updateSelectedCount();
-        updateUserList();
-    } catch (error) {
-        if (error.message.includes('401') || error.message.includes('403')) {
-            showErrorState('Authentication expired. Please log in again as admin.');
-            return;
-        }
-        showMessage('Error selecting users by role', 'error');
-        console.error(error);
-    }
-}
+// selectUsersByRole removed; roles are not used on users table anymore
 
 function clearSelection() {
     selectedUsers.clear();

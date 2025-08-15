@@ -6,12 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build:css": "tailwindcss -i ./src/css/styles.css -o ./public/css/styles.css --watch",
-    "setup:email-templates": "node setup_email_templates.js",
-    "setup:admin-account": "node setup_admin_account_db.js",
-    "test:email-templates": "node test_email_templates.js",
-    "remove:background-color": "node remove_background_color.js",
-    "test:theme": "node test_theme_functionality.js"
+    "build:css": "tailwindcss -i ./src/css/styles.css -o ./public/css/styles.css --watch"
   },
   "keywords": [],
   "author": "",
