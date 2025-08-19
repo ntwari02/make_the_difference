@@ -1,0 +1,47 @@
+{
+  "success": true,
+  "items": [
+    {
+      "id": 101,
+      "user_id": 1,
+      "user_name": "Thierry Ntwari",
+      "user_email": "thierry@gmail.com",
+      "category": "Password",
+      "subject": "Cannot log in / forgot security answers",
+      "type": "reset_password",
+      "security_attempts": 3,
+      "message": "I forgot my security answers and can't reset my password",
+      "status": "open",
+      "priority": "high",
+      "created_at": "2025-08-10T10:15:00Z"
+    },
+    {
+      "id": 102,
+      "user_id": 4,
+      "user_name": "Ishimwe Eric",
+      "user_email": "eric@gmail.com",
+      "category": "Application",
+      "subject": "Application submission failing",
+      "type": "general",
+      "security_attempts": 0,
+      "status": "in_progress",
+      "priority": "normal",
+      "created_at": "2025-08-10T09:00:00Z"
+    },
+    {
+      "id": 103,
+      "user_id": 5,
+      "user_name": "Didas",
+      "user_email": "didas@gmail.com",
+      "category": "General",
+      "subject": "Need help",
+      "type": "general",
+      "security_attempts": 0,
+      "status": "resolved",
+      "priority": "low",
+      "created_at": "2025-08-09T16:30:00Z"
+    }
+  ]
+}
+
+

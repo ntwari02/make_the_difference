@@ -22,6 +22,9 @@ async function includeAdminHeader() {
         };
         document.getElementById('adminName').textContent = user.full_name || 'Admin';
 
+        // Initialize profile avatar
+        initializeProfileControls();
+
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
@@ -35,6 +38,74 @@ async function includeAdminHeader() {
     } catch (err) {
         console.error('Error including admin header:', err);
     }
+}
+
+function initializeProfileControls() {
+    const profileBtn = document.getElementById('profileBtn');
+    const avatar = document.getElementById('profileAvatar');
+    const fallback = document.getElementById('profileFallback');
+    const modal = document.getElementById('profileModal');
+    const modalAvatar = document.getElementById('profileModalAvatar');
+    const modalFallback = document.getElementById('profileModalFallback');
+    const nameEl = document.getElementById('profileModalName');
+    const emailEl = document.getElementById('profileModalEmail');
+    const form = document.getElementById('profileAvatarForm');
+    const input = document.getElementById('profileAvatarInput');
+
+    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    const fullName = stored.full_name || 'User';
+    const email = stored.email || '';
+    const photo = stored.profile_picture || '';
+
+    nameEl && (nameEl.textContent = fullName);
+    emailEl && (emailEl.textContent = email);
+
+    const setAvatar = (url) => {
+        if (url) {
+            if (avatar) { avatar.src = url; avatar.classList.remove('hidden'); }
+            if (fallback) fallback.classList.add('hidden');
+            if (modalAvatar) { modalAvatar.src = url; modalAvatar.classList.remove('hidden'); }
+            if (modalFallback) modalFallback.classList.add('hidden');
+        } else {
+            const initials = (fullName || 'U').trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+            if (fallback) fallback.textContent = initials || 'U';
+            if (modalFallback) modalFallback.textContent = initials || 'U';
+            if (avatar) avatar.classList.add('hidden');
+            if (modalAvatar) modalAvatar.classList.add('hidden');
+            if (fallback) fallback.classList.remove('hidden');
+            if (modalFallback) modalFallback.classList.remove('hidden');
+        }
+    };
+    setAvatar(photo);
+
+    if (profileBtn) profileBtn.addEventListener('click', () => {
+        modal && modal.classList.remove('hidden');
+    });
+
+    if (form) form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!input || !input.files || !input.files[0]) return;
+        try {
+            const token = localStorage.getItem('token');
+            const fd = new FormData();
+            fd.append('profilePicture', input.files[0]);
+            // Reuse account endpoint for upload only, with minimal fields
+            fd.append('fullName', fullName);
+            fd.append('email', email);
+            const res = await fetch('/api/admin/account', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+            const data = await res.json();
+            const newPhoto = data.profile_picture;
+            if (newPhoto) {
+                const u = JSON.parse(localStorage.getItem('user') || '{}');
+                u.profile_picture = newPhoto;
+                localStorage.setItem('user', JSON.stringify(u));
+                setAvatar(newPhoto);
+            }
+            modal && modal.classList.add('hidden');
+        } catch (err) {
+            console.error('Profile upload failed', err);
+        }
+    });
 }
 
 function initializeThemeSystem() {

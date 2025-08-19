@@ -125,4 +125,20 @@ router.delete('/:id', bypassAuth, async (req, res) => {
   }
 });
 
+// Simple metrics endpoint for a service (mocked trend or derived from usage table if exists)
+router.get('/:id/metrics', async (req, res) => {
+  try {
+    // If you have a real usage table, query it here by service_id and timeframe
+    // For now, return a simple weekly trend with random-like but stable values per id
+    const seed = parseInt(req.params.id, 10) || 1;
+    const base = (n) => Math.max(0, ((seed * 13 + n * 7) % 50) + 10);
+    const values = [base(1), base(2), base(3), base(4), base(5), base(6), base(7)];
+    const delta = Math.round(((values[6] - values[0]) / (values[0] || 1)) * 100);
+    res.json({ labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], values, delta });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching service metrics' });
+  }
+});
+
 export default router; 

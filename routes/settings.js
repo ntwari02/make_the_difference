@@ -21,11 +21,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // GET current settings
-router.get('/', bypassAuth, (req, res) => {
-    pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results[0] || {});
-    });
+router.get('/', bypassAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
+        res.json(rows[0] || {});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // POST/UPDATE settings
@@ -38,7 +40,7 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
         } = req.body;
 
         // Get the latest settings row
-        const [rows] = await pool.promise().query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
+        const [rows] = await pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
         const latest = rows[0];
 
         // Handle logo and favicon
@@ -67,7 +69,7 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
                 facebookLink, twitterLink, instagramLink,
                 servicesJson, logo, favicon, latest.id
             ];
-            await pool.promise().query(sql, values);
+            await pool.query(sql, values);
         } else {
             // Insert new row
             const sql = `INSERT INTO general_settings (
@@ -82,10 +84,10 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
                 facebookLink, twitterLink, instagramLink,
                 servicesJson, logo, favicon
             ];
-            await pool.promise().query(sql, values);
+            await pool.query(sql, values);
         }
         // Return the updated settings
-        const [updatedRows] = await pool.promise().query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
+        const [updatedRows] = await pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
         res.json(updatedRows[0] || {});
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -49,9 +49,9 @@
             
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Template List -->
-                <div class="lg:col-span-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-100 dark:border-gray-700">
+                <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Email Templates</h3>
+                        <h3 class="text-xl font-bold text-black">Email Templates</h3>
                         <div class="flex gap-2">
                             <button id="refreshTemplatesBtn" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-colors">
                                 <i class="fas fa-sync-alt mr-1"></i> Refresh
@@ -66,9 +66,9 @@
                     </div>
                 </div>
                 <!-- Template Editor -->
-                <div class="lg:col-span-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-100 dark:border-gray-700">
+                <div class="lg:col-span-3 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Edit Template</h3>
+                        <h3 class="text-xl font-bold text-black">Edit Template</h3>
                         <div class="flex gap-2">
                             <button id="previewBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                                 <i class="fas fa-eye mr-1"></i> Preview
@@ -81,12 +81,12 @@
                     <div class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Template Name</label>
-                                <input type="text" id="templateName" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                <label class="block text-sm font-semibold text-black mb-1">Template Name</label>
+                                <input type="text" id="templateName" class="w-full rounded-xl border border-gray-300 bg-gray-50 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition px-4 py-3 text-base">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                                <select id="templateCategory" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                <label class="block text-sm font-semibold text-black mb-1">Category</label>
+                                <select id="templateCategory" class="w-full rounded-xl border border-gray-300 bg-gray-50 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition px-4 py-3 text-base">
                                     <option>System</option>
                                     <option>Marketing</option>
                                     <option>Notification</option>
@@ -95,11 +95,11 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Subject</label>
-                            <input type="text" id="emailSubject" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <label class="block text-sm font-semibold text-black mb-1">Email Subject</label>
+                            <input type="text" id="emailSubject" class="w-full rounded-xl border border-gray-300 bg-gray-50 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition px-4 py-3 text-base">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Available Variables</label>
+                            <label class="block text-sm font-semibold text-black mb-1">Available Variables</label>
                             <div class="flex flex-wrap gap-2 mb-4" id="variableList">
                                 <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${user.name}">${user.name}</span>
                                 <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${user.email}">${user.email}</span>
@@ -120,7 +120,7 @@
             <div id="sendEmailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
                 <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Send Email to Users</h3>
+                        <h3 class="text-xl font-bold text-black">Send Email to Users</h3>
                         <button id="closeSendModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                             <i class="fas fa-times text-xl"></i>
                         </button>
@@ -144,8 +144,8 @@
                                 </button>
                             </div>
                             <div class="mb-4">
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Search Users</label>
-                                <input type="text" id="userSearch" placeholder="Search by name or email..." class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                <label class="block text-sm font-semibold text-black mb-2">Search Users</label>
+                                <input type="text" id="userSearch" placeholder="Search by name or email..." class="w-full rounded-xl border border-gray-300 bg-gray-50 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition px-4 py-3 text-base">
                             </div>
                             <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
                                 <div id="userList" class="space-y-1 p-2">

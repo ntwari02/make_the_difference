@@ -1,82 +1,63 @@
 <!-- Admin Sidebar Component -->
-<div id="admin-sidebar" class="admin-sidebar shadow-lg bg-white">
+<div id="admin-sidebar" class="admin-sidebar collapsed shadow-lg bg-white w-30">
     <div class="h-full flex flex-col">
-        <!-- Collapse Button -->
-        <button id="sidebarCollapseBtn" class="p-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200">
-            <i class="fas fa-bars text-xl"></i>
-        </button>
+        <!-- Header with Logo and Collapse Button -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center">
+                <i class="fas fa-graduation-cap text-2xl text-blue-600 dark:text-blue-400"></i>
+            </div>
+            
+        </div>
 
         <!-- Sidebar Items -->
-        <div class="flex-1 px-4 space-y-2">
+        <div class="flex-1 px-4 space-y-2 py-4">
             <!-- Dashboard -->
-            <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Dashboard">
+            <a href="admin_dashboard.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Dashboard" aria-label="Dashboard">
                 <i class="fas fa-tachometer-alt w-6 text-center"></i>
-                <span class="sidebar-item-text ml-3">Dashboard</span>
             </a>
 
             <!-- User Management -->
             <div class="space-y-2">
-                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                    User Management
-                </div>
-                <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Users">
+                <a href="admin_users.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Users" aria-label="Users">
                     <i class="fas fa-users w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Users</span>
                 </a>
-                <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Roles & Permissions">
+                <a href="admin_rolesPermissions.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Roles & Permissions" aria-label="Roles & Permissions">
                     <i class="fas fa-user-shield w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Roles & Permissions</span>
                 </a>
             </div>
 
             <!-- Scholarship Management -->
             <div class="space-y-2">
-                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                    Scholarship Management
-                </div>
-                <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Scholarships">
+                <a href="admin_scholarship.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Scholarships" aria-label="Scholarships">
                     <i class="fas fa-graduation-cap w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Scholarships</span>
                 </a>
-                <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Applications">
+                <a href="admin_applications.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Applications" aria-label="Applications">
                     <i class="fas fa-file-alt w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Applications</span>
                 </a>
 
             </div>
 
             <!-- System Settings -->
             <div class="space-y-2">
-                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                    System Settings
-                </div>
-                <a href="admin_accountSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Account Settings">
+                <a href="admin_accountSettings.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Account Settings" aria-label="Account Settings">
                     <i class="fas fa-cog w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Account Settings</span>
                 </a>
-                <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Email Templates">
+                <a href="admin_email_template.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Email Templates" aria-label="Email Templates">
                     <i class="fas fa-envelope w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Email Templates</span>
                 </a>
-                <a href="admin_help.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Help">
+                <a href="admin_help.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 relative" title="Help" aria-label="Help">
                     <i class="fas fa-question w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Help</span>
-                    <span id="help-badge" class="hidden ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 sidebar-item-text">0</span>
+                    <span id="help-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-1">0</span>
                 </a>
             </div>
 
             <!-- Reports -->
             <div class="space-y-2">
-                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-2 sidebar-item-text">
-                    Reports
-                </div>
-                <a href="admin_analytics.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Analytics">
+                <a href="admin_analytics.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Analytics" aria-label="Analytics">
                     <i class="fas fa-chart-line w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Analytics</span>
                 </a>
-                <a href="admin_report.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Export Reports">
+                <a href="admin_report.html" class="flex items-center p-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200" title="Export Reports" aria-label="Export Reports">
                     <i class="fas fa-file-export w-6 text-center"></i>
-                    <span class="sidebar-item-text ml-3">Export Reports</span>
                 </a>
 
             </div>
@@ -84,63 +65,76 @@
     </div>
 </div>
 
-<!-- Mobile Sidebar Toggle -->
-<button id="mobileSidebarToggle" class="mobile-sidebar-toggle">
-    <i class="fas fa-bars"></i>
-</button>
-
-<!-- Mobile Backdrop -->
-<div id="mobileBackdrop" class="mobile-backdrop"></div>
+ 
 
 <!-- CSS for the sidebar -->
 <style>
     /* Sidebar styles */
-    .sidebar {
+    .admin-sidebar {
         width: 280px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
         transition: all 0.3s ease;
+        background: white;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
-    .sidebar.collapsed {
-        width: 80px;
+    .dark .admin-sidebar {
+        background: #1f2937;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .admin-sidebar.collapsed {
+        width: 100px;
     }
 
     .sidebar-item-text {
         transition: opacity 0.3s ease, visibility 0.3s ease;
     }
 
-    .sidebar.collapsed .sidebar-item-text {
+    .admin-sidebar.collapsed .sidebar-item-text {
         opacity: 0;
         visibility: hidden;
         display: none;
     }
 
     /* Icons-only mode styling */
-    .sidebar.collapsed a {
+    .admin-sidebar.collapsed a {
         justify-content: center;
         padding: 1rem 0.5rem;
     }
 
-    .sidebar.collapsed a i {
+    .admin-sidebar.collapsed a i {
         margin: 0;
         font-size: 1.25rem;
     }
 
-    .sidebar.collapsed .text-xs {
+    .admin-sidebar.collapsed .text-xs {
         display: none;
     }
 
-    .main-content {
-        transition: margin-left 0.3s ease;
-    }
-
-    /* Mobile and tablet responsive behavior */
-    @media (max-width: 1024px) {
-        .admin-sidebar {
-            width: 80px;
+    /* Desktop behavior */
+    @media (min-width: 1024px) {
+        .admin-main-content {
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
         }
         
-        .admin-sidebar:not(.mobile-open) {
-            width: 80px;
+        .admin-sidebar.collapsed + .admin-main-content {
+            margin-left: 100px;
+        }
+    }
+
+    /* Tablet and small desktop - icon only */
+    @media (max-width: 1023px) {
+        .admin-sidebar {
+            width: 100px;
+            display: block !important;
+            left: 0 !important;
+            transform: none !important;
         }
         
         .admin-sidebar .sidebar-item-text {
@@ -164,57 +158,72 @@
         }
         
         .admin-main-content {
-            margin-left: 80px;
+            margin-left: 100px;
         }
         
-        .admin-main-content.collapsed {
-            margin-left: 80px;
-        }
+        
     }
 
+    /* Mobile devices - icon only */
     @media (max-width: 768px) {
         .admin-sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            width: 280px;
-        }
-
-        .admin-sidebar.mobile-open {
-            transform: translateX(0);
+            width: 100px;
+            display: block !important;
+            left: 0 !important;
+            transform: none !important;
         }
         
-        .admin-sidebar.mobile-open .sidebar-item-text {
-            opacity: 1;
-            visibility: visible;
-            display: block;
+        .admin-sidebar .sidebar-item-text {
+            display: none;
         }
         
-        .admin-sidebar.mobile-open a {
-            justify-content: flex-start;
-            padding: 0.75rem 1rem;
+        .admin-sidebar a {
+            justify-content: center;
+            padding: 0.75rem;
         }
         
-        .admin-sidebar.mobile-open a i {
-            margin-right: 0.75rem;
-            font-size: 1rem;
+        .admin-sidebar a i {
+            margin: 0;
+            font-size: 1.25rem;
         }
         
-        .admin-sidebar.mobile-open .text-xs {
-            display: block;
+        .admin-sidebar .text-xs {
+            display: none;
         }
         
         .admin-main-content {
-            margin-left: 0;
-            padding: 1rem;
+            margin-left: 100px;
         }
         
-        .admin-main-content.collapsed {
-            margin-left: 0;
-        }
+        
     }
 
-    /* Tooltip styles for collapsed state */
-    .sidebar.collapsed a:hover::after {
+    /* Very small screens - compact icon only */
+    @media (max-width: 480px) {
+        .admin-sidebar {
+            width: 100px;
+            display: block !important;
+            left: 0 !important;
+            transform: none !important;
+        }
+        
+        .admin-sidebar a {
+            padding: 0.5rem;
+        }
+        
+        .admin-sidebar a i {
+            font-size: 1.125rem;
+        }
+        
+        .admin-main-content {
+            margin-left: 100px;
+        }
+        
+        
+    }
+
+    /* Tooltip styles for icon-only state */
+    .admin-sidebar a::after {
         content: attr(title);
         position: absolute;
         left: 100%;
@@ -231,9 +240,157 @@
         z-index: 1000;
         margin-left: 0.5rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        pointer-events: none;
     }
 
-    .sidebar.collapsed a {
+    .admin-sidebar a:hover::after {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .admin-sidebar a {
         position: relative;
+        border-radius: 0.5rem;
+    }
+
+    /* Active state */
+    .admin-sidebar a.active {
+        background: #e5e7eb; /* gray-200 */
+        color: #111827; /* gray-900 */
+    }
+    .dark .admin-sidebar a.active {
+        background: #374151; /* gray-700 */
+        color: white;
+    }
+    .admin-sidebar a.active::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 10%;
+        bottom: 10%;
+        width: 4px;
+        background: #2563eb; /* blue-600 */
+        border-radius: 9999px;
+    }
+
+    /* Icon colors */
+    .admin-sidebar a i {
+        color: #6b7280; /* gray-500 */
+        transition: color 0.2s ease;
+    }
+    .dark .admin-sidebar a i {
+        color: #e5e7eb; /* gray-200 */
+    }
+    .admin-sidebar a:hover i {
+        color: #111827; /* gray-900 */
+    }
+    .dark .admin-sidebar a:hover i {
+        color: #ffffff;
+    }
+    .admin-sidebar a.active i {
+        color: #2563eb; /* blue-600 */
+    }
+    .dark .admin-sidebar a.active i {
+        color: #60a5fa; /* blue-400 */
+    }
+
+    /* Pure CSS active states driven by body[data-page] */
+    body[data-page="dashboard"] #admin-sidebar a[href$="admin_dashboard.html"],
+    body[data-page="users"] #admin-sidebar a[href$="admin_users.html"],
+    body[data-page="roles"] #admin-sidebar a[href$="admin_rolesPermissions.html"],
+    body[data-page="scholarships"] #admin-sidebar a[href$="admin_scholarship.html"],
+    body[data-page="applications"] #admin-sidebar a[href$="admin_applications.html"],
+    body[data-page="account-settings"] #admin-sidebar a[href$="admin_accountSettings.html"],
+    body[data-page="email-templates"] #admin-sidebar a[href$="admin_email_template.html"],
+    body[data-page="help"] #admin-sidebar a[href$="admin_help.html"],
+    body[data-page="analytics"] #admin-sidebar a[href$="admin_analytics.html"],
+    body[data-page="reports"] #admin-sidebar a[href$="admin_report.html"] {
+        background: #e5e7eb !important;
+        color: #111827 !important;
+    }
+    body.dark[data-page="dashboard"] #admin-sidebar a[href$="admin_dashboard.html"],
+    body.dark[data-page="users"] #admin-sidebar a[href$="admin_users.html"],
+    body.dark[data-page="roles"] #admin-sidebar a[href$="admin_rolesPermissions.html"],
+    body.dark[data-page="scholarships"] #admin-sidebar a[href$="admin_scholarship.html"],
+    body.dark[data-page="applications"] #admin-sidebar a[href$="admin_applications.html"],
+    body.dark[data-page="account-settings"] #admin-sidebar a[href$="admin_accountSettings.html"],
+    body.dark[data-page="email-templates"] #admin-sidebar a[href$="admin_email_template.html"],
+    body.dark[data-page="help"] #admin-sidebar a[href$="admin_help.html"],
+    body.dark[data-page="analytics"] #admin-sidebar a[href$="admin_analytics.html"],
+    body.dark[data-page="reports"] #admin-sidebar a[href$="admin_report.html"] {
+        background: #374151 !important;
+        color: #ffffff !important;
+    }
+    body[data-page] #admin-sidebar a[href$=".html"] i {
+        color: #6b7280;
+    }
+    body[data-page="dashboard"] #admin-sidebar a[href$="admin_dashboard.html"] i,
+    body[data-page="users"] #admin-sidebar a[href$="admin_users.html"] i,
+    body[data-page="roles"] #admin-sidebar a[href$="admin_rolesPermissions.html"] i,
+    body[data-page="scholarships"] #admin-sidebar a[href$="admin_scholarship.html"] i,
+    body[data-page="applications"] #admin-sidebar a[href$="admin_applications.html"] i,
+    body[data-page="account-settings"] #admin-sidebar a[href$="admin_accountSettings.html"] i,
+    body[data-page="email-templates"] #admin-sidebar a[href$="admin_email_template.html"] i,
+    body[data-page="help"] #admin-sidebar a[href$="admin_help.html"] i,
+    body[data-page="analytics"] #admin-sidebar a[href$="admin_analytics.html"] i,
+    body[data-page="reports"] #admin-sidebar a[href$="admin_report.html"] i {
+        color: #2563eb !important;
+    }
+    body.dark[data-page="dashboard"] #admin-sidebar a[href$="admin_dashboard.html"] i,
+    body.dark[data-page="users"] #admin-sidebar a[href$="admin_users.html"] i,
+    body.dark[data-page="roles"] #admin-sidebar a[href$="admin_rolesPermissions.html"] i,
+    body.dark[data-page="scholarships"] #admin-sidebar a[href$="admin_scholarship.html"] i,
+    body.dark[data-page="applications"] #admin-sidebar a[href$="admin_applications.html"] i,
+    body.dark[data-page="account-settings"] #admin-sidebar a[href$="admin_accountSettings.html"] i,
+    body.dark[data-page="email-templates"] #admin-sidebar a[href$="admin_email_template.html"] i,
+    body.dark[data-page="help"] #admin-sidebar a[href$="admin_help.html"] i,
+    body.dark[data-page="analytics"] #admin-sidebar a[href$="admin_analytics.html"] i,
+    body.dark[data-page="reports"] #admin-sidebar a[href$="admin_report.html"] i {
+        color: #60a5fa !important;
+    }
+
+    
+
+    /* Sidebar header responsive behavior */
+    @media (max-width: 1023px) {
+        .admin-sidebar .sidebar-item-text {
+            display: none;
+        }
+        
+        .admin-sidebar .flex.items-center.justify-between {
+            justify-content: center;
+            padding: 1rem 0.5rem;
+        }
+        
+        .admin-sidebar .flex.items-center {
+            justify-content: center;
+        }
+        
+        .admin-sidebar .flex.items-center i {
+            margin: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .admin-sidebar .flex.items-center.justify-between {
+            padding: 0.75rem 0.25rem;
+        }
+        
+        .admin-sidebar .flex.items-center i {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .admin-sidebar .flex.items-center.justify-between {
+            padding: 0.5rem 0.25rem;
+        }
+        
+        .admin-sidebar .flex.items-center i {
+            font-size: 1.25rem;
+        }
     }
 </style>

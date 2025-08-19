@@ -162,10 +162,10 @@ function renderTemplateList() {
         div.setAttribute('data-template', templateId);
         div.innerHTML = `
             <div class="flex justify-between items-center">
-                <span class="font-medium text-gray-800 dark:text-white">${t.name}</span>
-                <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">${t.category || 'System'}</span>
+                <span class="font-medium text-black">${t.name}</span>
+                <span class="text-xs bg-blue-100 px-2 py-1 rounded text-black">${t.category || 'System'}</span>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 truncate">${t.subject || ''}</p>
+            <p class="text-sm text-black mt-1 truncate">${t.subject || ''}</p>
             <div class="flex gap-1 mt-2">
                 <button class="send-template-btn px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"><i class="fas fa-paper-plane mr-1"></i>Send</button>
                 <button class="edit-template-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"><i class="fas fa-edit mr-1"></i>Edit</button>

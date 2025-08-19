@@ -43,38 +43,138 @@ async function updateExpiredScholarships() {
   }
 }
 
-// Get all scholarships (for public and admin use)
+// Get scholarships (supports optional pagination, search, and includes application counts)
 router.get('/', async (req, res) => {
-    try {
-        await updateExpiredScholarships();
-        const [scholarships] = await db.query(`
-            SELECT 
-                id, 
-                name, 
-                description, 
-                eligibility_criteria,
-                application_deadline, 
-                award_amount,
-                is_recurring,
-                number_of_awards,
-                academic_level,
-                field_of_study,
-                sponsor,
-                link_to_application,
-                contact_email,
-                status,
-                min_gpa,
-                documents_required,
-                scholarship_type,
-                created_at,
-                updated_at
-            FROM scholarships
-        `);
-        res.json(scholarships);
-    } catch (error) {
-        console.error('Error fetching scholarships:', error);
-        res.status(500).json({ message: 'Error fetching scholarships' });
+  try {
+    await updateExpiredScholarships();
+
+    const pageParam = parseInt(req.query.page, 10);
+    const limitParam = parseInt(req.query.limit, 10);
+    const hasPagination = !Number.isNaN(pageParam) && !Number.isNaN(limitParam) && pageParam > 0 && limitParam > 0;
+    const search = (req.query.search || '').trim();
+    const status = (req.query.status || '').trim();
+    const academicLevel = (req.query.academic_level || '').trim();
+    const scholarshipType = (req.query.scholarship_type || '').trim();
+    const sort = (req.query.sort || 'created_at').trim();
+    const order = ((req.query.order || 'DESC').toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+
+    const allowedSort = new Set(['created_at', 'application_deadline', 'award_amount', 'name']);
+    const sortColumn = allowedSort.has(sort) ? sort : 'created_at';
+
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (search) {
+      where += ' AND (s.name LIKE ? OR s.description LIKE ? OR s.sponsor LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
+    if (status) {
+      where += ' AND s.status = ?';
+      params.push(status);
+    }
+    if (academicLevel) {
+      where += ' AND s.academic_level = ?';
+      params.push(academicLevel);
+    }
+    if (scholarshipType) {
+      where += ' AND s.scholarship_type = ?';
+      params.push(scholarshipType);
+    }
+
+    if (!hasPagination) {
+      // Legacy response (array), used by other pages
+      const [rows] = await db.query(
+        `SELECT 
+            s.id,
+            s.name,
+            s.description,
+            s.eligibility_criteria,
+            s.application_deadline,
+            s.award_amount,
+            s.is_recurring,
+            s.number_of_awards,
+            s.academic_level,
+            s.field_of_study,
+            s.sponsor,
+            s.link_to_application,
+            s.contact_email,
+            s.status,
+            s.min_gpa,
+            s.documents_required,
+            s.scholarship_type,
+            s.created_at,
+            s.updated_at,
+            COALESCE(apps.cnt, 0) AS application_count
+         FROM scholarships s
+         LEFT JOIN (
+           SELECT scholarship_id, COUNT(*) AS cnt FROM scholarship_applications GROUP BY scholarship_id
+         ) apps ON apps.scholarship_id = s.id
+         ${where}
+         ORDER BY s.${sortColumn} ${order}`,
+        params
+      );
+      return res.json(rows);
+    }
+
+    const page = pageParam;
+    const limit = limitParam;
+    const offset = (page - 1) * limit;
+
+    // Total count
+    const [countRows] = await db.query(
+      `SELECT COUNT(*) AS total FROM scholarships s ${where}`,
+      params
+    );
+    const total = countRows[0]?.total || 0;
+
+    // Paged items with application counts
+    const [items] = await db.query(
+      `SELECT 
+          s.id,
+          s.name,
+          s.description,
+          s.eligibility_criteria,
+          s.application_deadline,
+          s.award_amount,
+          s.is_recurring,
+          s.number_of_awards,
+          s.academic_level,
+          s.field_of_study,
+          s.sponsor,
+          s.link_to_application,
+          s.contact_email,
+          s.status,
+          s.min_gpa,
+          s.documents_required,
+          s.scholarship_type,
+          s.created_at,
+          s.updated_at,
+          COALESCE(apps.cnt, 0) AS application_count
+       FROM scholarships s
+       LEFT JOIN (
+         SELECT scholarship_id, COUNT(*) AS cnt FROM scholarship_applications GROUP BY scholarship_id
+       ) apps ON apps.scholarship_id = s.id
+       ${where}
+       ORDER BY s.${sortColumn} ${order}
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          perPage: limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching scholarships:', error);
+    res.status(500).json({ message: 'Error fetching scholarships' });
+  }
 });
 
 

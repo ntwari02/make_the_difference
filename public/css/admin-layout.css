@@ -130,11 +130,13 @@
     min-height: calc(100vh - 64px);
     padding: 2rem;
     background-color: #f9fafb;
+    color: #111827; /* default text color in light mode */
     transition: margin-left 0.3s ease, background-color 0.3s ease;
 }
 
 .admin-main-content.dark {
     background-color: #111827;
+    color: #f9fafb; /* default text color in dark mode */
 }
 
 .admin-main-content.collapsed {
@@ -145,6 +147,7 @@
 .admin-content-container {
     max-width: 1200px;
     margin: 0 auto;
+    color: inherit; /* inherit theme text color */
 }
 
 /* Responsive design */
@@ -312,12 +315,33 @@
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(229, 231, 235, 0.5);
     transition: all 0.3s ease;
+    color: inherit; /* inherit theme text color */
 }
 
 .admin-card.dark {
     background-color: rgba(31, 41, 55, 0.8);
     border-color: rgba(55, 65, 81, 0.5);
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure common elements inherit the theme text color within main content */
+.admin-main-content p,
+.admin-main-content h1,
+.admin-main-content h2,
+.admin-main-content h3,
+.admin-main-content h4,
+.admin-main-content h5,
+.admin-main-content h6,
+.admin-main-content span,
+.admin-main-content li,
+.admin-main-content label,
+.admin-main-content a,
+.admin-main-content th,
+.admin-main-content td,
+.admin-main-content input,
+.admin-main-content select,
+.admin-main-content textarea {
+    color: inherit;
 }
 
 /* Grid layouts */

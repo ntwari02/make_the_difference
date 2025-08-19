@@ -3,1121 +3,465 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Make The Difference</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                500: '#3b82f6', // blue-500
-                600: '#2563eb', // blue-600
-              }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     <script>
-      (function() {
-        try {
-          var theme = localStorage.getItem('color-theme');
-          if (
-            theme === 'dark' ||
-            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          ) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        } catch (e) {}
-      })();
+        (function() {
+            try {
+                var theme = localStorage.getItem('color-theme');
+                if (
+                    theme === 'dark' ||
+                    (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
     </script>
+    
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="prefetch" href="home.html">
-    <link rel="prefetch" href="dashboard.html">
-    <link rel="prefetch" href="scholarship.html">
-    <link rel="prefetch" href="login.html">
-    <link rel="prefetch" href="signup.html">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CSS Files -->
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    
+    <!-- JavaScript Files -->
     <script src="js/include-admin-sidebar.js" defer></script>
     <script src="js/include-admin-header.js" defer></script>
-    <style>
-        /* Custom styles for modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 500px;
-            transform: translateY(-20px);
-            opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* Animations */
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-                transform: translate(-50%, 0);
-            }
-            to {
-                opacity: 0;
-                transform: translate(-50%, -10px);
-            }
-        }
-
-        .welcome-fade-out {
-            animation: fadeOut 0.3s ease-out forwards;
-        }
-    </style>
 </head>
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarMobileOverlay" class="sidebar-mobile-overlay"></div>
+    
+    <!-- Fixed Sidebar Container -->
     <div id="admin-sidebar-container"></div>
-    <div id="admin-header-container" data-page-title="Admin Dashboard"></div>
+    
+    <div id="admin-header-container" data-page-title="Dashboard"></div>
+    <!-- Main Content -->
     <main class="admin-main-content w-full">
-        <div class="admin-content-container">
-            <div id="welcomeSection" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-7xl px-4 opacity-100 transition-opacity duration-300 ease-out hidden">
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6">
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
-                    <p class="text-gray-600 dark:text-gray-300">Manage your platform, users, and content from here.</p>
+        <div class="admin-content-container p-6">
+            <!-- Welcome Section -->
+            <div id="welcomeSection" class="mb-8 animate-fade-in-up hidden">
+                <div class="glass rounded-2xl shadow-xl p-8 text-center">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-6 animate-pulse-slow">
+                        <i class="fas fa-crown text-white text-3xl"></i>
+                    </div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                        Welcome back, <span id="welcomeName" class="text-gray-800 dark:text-white">Admin</span>!
+                    </h1>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                        Here's what's happening with your platform today. Manage users, monitor applications, and track performance from your comprehensive dashboard.
+                    </p>
                 </div>
             </div>
 
-            <div id="dashboardContent" class="opacity-100 transition-all duration-300 ease-out space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
-                                <i class="fas fa-users text-2xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Users</h3>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalUsers">0</p>
-                            </div>
+            <!-- Quick Stats Cards -->
+            <div id="statsSection" class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Users Card -->
+                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.1s;">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalUsers">-</p>
+                            <p class="text-sm text-green-600 dark:text-green-400" id="usersGrowth">
+                                <i class="fas fa-arrow-up mr-1"></i>0%
+                            </p>
                         </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400">
-                                <i class="fas fa-handshake text-2xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Partners</h3>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalPartners">0</p>
-                            </div>
+                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                            <i class="fas fa-users text-2xl text-blue-600 dark:text-blue-400"></i>
                         </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400">
-                                <i class="fas fa-graduation-cap text-2xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Scholarships</h3>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalScholarships">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400">
-                                <i class="fas fa-file-alt text-2xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Total Applications</h3>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="totalApplications">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+</div>
+</div>
 
-                <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Trends</h3>
-                        <div class="h-[370px]">
-                            <canvas id="applicationTrendsChart"></canvas>
+                <!-- Active Applications Card -->
+                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.2s;">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Applications</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="activeApplications">-</p>
+                            <p class="text-sm text-blue-600 dark:text-blue-400" id="applicationsGrowth">
+                                <i class="fas fa-arrow-up mr-1"></i>0%
+                            </p>
                         </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Scholarship Distribution</h3>
-                        <div class="h-[370px]">
-                            <canvas id="scholarshipDistributionChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">User Registration Statistics</h3>
-                        <div class="h-[370px]">
-                            <canvas id="userRegistrationChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 h-[450px]">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Application Status Overview</h3>
-                        <div class="h-[370px] flex items-center justify-center">
-                            <div class="w-full max-w-[300px]">
-                                <canvas id="statusOverviewChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                            <i class="fas fa-file-alt text-2xl text-green-600 dark:text-green-400"></i>
+</div>
+</div>
+</div>
 
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
-                        <div class="flex space-x-2">
-                            <button onclick="loadApplications()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                <!-- Scholarships Card -->
+                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.3s;">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Scholarships</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalScholarships">-</p>
+                            <p class="text-sm text-purple-600 dark:text-purple-400" id="scholarshipsGrowth">
+                                <i class="fas fa-arrow-up mr-1"></i>0%
+                            </p>
+                        </div>
+                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                            <i class="fas fa-graduation-cap text-2xl text-purple-600 dark:text-purple-400"></i>
+</div>
+</div>
+</div>
+
+                <!-- Revenue Card -->
+                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.4s;">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalRevenue">$0</p>
+                            <p class="text-sm text-yellow-600 dark:text-yellow-400" id="revenueGrowth">
+                                <i class="fas fa-arrow-up mr-1"></i>0%
+                            </p>
+                        </div>
+                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                            <i class="fas fa-dollar-sign text-2xl text-yellow-600 dark:text-yellow-400"></i>
+</div>
+</div>
+</div>
+</div>
+
+            <!-- Charts Section -->
+            <div id="chartsSection" class="charts-container grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Application Trends Chart -->
+                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
+                    <div class="chart-controls flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Application Trends</h3>
+                        <div class="chart-period-buttons flex space-x-2">
+                            <button data-period="week" onclick="adminDashboard.updateChartPeriod('week')" class="chart-period-btn active px-3 py-1 rounded-md text-sm font-medium">
+                                <i class="fas fa-calendar-week mr-1"></i><span class="hidden sm:inline">Week</span>
                             </button>
-                            <button onclick="exportData('applications')" class="text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300">
-                                <i class="fas fa-download"></i> Export
+                            <button data-period="month" onclick="adminDashboard.updateChartPeriod('month')" class="chart-period-btn px-3 py-1 rounded-md text-sm font-medium">
+                                <i class="fas fa-calendar-alt mr-1"></i><span class="hidden sm:inline">Month</span>
+                            </button>
+                            <button data-period="year" onclick="adminDashboard.updateChartPeriod('year')" class="chart-period-btn px-3 py-1 rounded-md text-sm font-medium">
+                                <i class="fas fa-calendar mr-1"></i><span class="hidden sm:inline">Year</span>
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="h-[350px] relative">
+<canvas id="applicationTrendsChart"></canvas>
+                        <div id="chartLoading" class="absolute inset-0 flex items-center justify-center">
+                            <div class="skeleton w-full h-full rounded"></div>
+                        </div>
+</div>
+</div>
+
+                <!-- User Registration Chart -->
+                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Registration</h3>
+                        <button onclick="adminDashboard.refreshUserChart()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="h-[350px] relative">
+                        <canvas id="userRegistrationChart"></canvas>
+                        <div id="userChartLoading" class="absolute inset-0 flex items-center justify-center">
+                            <div class="skeleton w-full h-full rounded"></div>
+                        </div>
+</div>
+</div>
+
+                <!-- Application Status Overview -->
+                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Application Status</h3>
+                    <div class="h-[350px] flex items-center justify-center">
+                        <canvas id="applicationStatusChart"></canvas>
+</div>
+</div>
+
+                <!-- Recent Activity -->
+                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Recent Activity</h3>
+                    <div id="recentActivity" class="space-y-4 h-[350px] overflow-y-auto">
+                        <!-- Activity items will be loaded here -->
+                    </div>
+</div>
+</div>
+
+            <!-- Recent Applications Table -->
+            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
+                <div class="flex justify-between items-center mb-6">
+<h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
+                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button onclick="adminDashboard.loadApplications()" class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+                            <i class="fas fa-sync-alt mr-2"></i> <span class="hidden sm:inline">Refresh</span>
+                        </button>
+                        <button onclick="adminDashboard.exportData('applications')" class="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200">
+                            <i class="fas fa-download mr-2"></i> <span class="hidden sm:inline">Export</span>
+                        </button>
+                    </div>
+</div>
+                    <div class="table-container overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700/80">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
+</tr>
+</thead>
                             <tbody id="applicationsList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
+                            <!-- Applications will be loaded here -->
+</tbody>
+</table>
+</div>
+</div>
 
                 <!-- User Management Section -->
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
+            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
+                <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Management</h3>
-                        <div class="flex space-x-2">
-                            <button onclick="loadUsers()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button onclick="adminDashboard.exportUsers()" class="export-button flex items-center justify-center px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200">
+                            <i class="fas fa-download mr-2"></i> <span class="hidden sm:inline">Export</span>
                             </button>
-                            <button onclick="showAddUserModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
-                                <i class="fas fa-plus"></i> Add User
+                        <button onclick="adminDashboard.loadUsers()" class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+                            <i class="fas fa-sync-alt mr-2"></i> <span class="hidden sm:inline">Refresh</span>
+                            </button>
+                        <button onclick="adminDashboard.showAddUserModal()" class="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200">
+                            <i class="fas fa-plus mr-2"></i> <span class="hidden sm:inline">Add User</span>
                             </button>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <input type="text" id="userSearch" placeholder="Search users..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    </div>
-                    <div class="overflow-x-auto">
+                    <div id="searchResultsCount" class="text-sm text-blue-600 dark:text-blue-400 mb-4 hidden"></div>
+                                    <div class="mb-6">
+                        <div class="search-container relative">
+                            <input type="text" id="userSearch" placeholder="Search users..." 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        </div>
+                    <div class="table-container overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700/80">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Users will be loaded here -->
                                 </tbody>
                         </table>
                     </div>
-                    <div id="userPagination" class="mt-4 flex justify-between items-center">
+                <div id="userPagination" class="mt-6 flex justify-between items-center">
                         <!-- Pagination will be inserted here -->
                     </div>
                 </div>
 
                 <!-- System Statistics -->
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <div class="flex justify-between items-center mb-4">
+            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
+                <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white">System Statistics</h3>
-                        <button onclick="loadSystemStats()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                            <i class="fas fa-sync-alt"></i> Refresh
+                    <button onclick="adminDashboard.loadSystemStats()" class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
                         </button>
                     </div>
-                    <div id="systemStats" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="systemStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- System stats will be inserted here -->
-                    </div>
                 </div>
-                </div>
-            </div>
-        </main>
+</div>
+</div>
+</main>
 
     <!-- Add User Modal -->
-    <div id="addUserModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New User</h3>
+    <div id="addUserModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Add New User</h3>
+                <button onclick="adminDashboard.closeAddUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- View Application Modal -->
+            <div id="applicationDetailsModal" class="fixed inset-0 bg-black/50 hidden z-[2000]">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-auto mt-20 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Application Details</h4>
+                        <button data-modal-close="applicationDetailsModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="applicationDetailsContent" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                </div>
+            </div>
+
+            <!-- Edit Application Modal -->
+            <div id="editApplicationModal" class="fixed inset-0 bg-black/50 hidden z-[2000]">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-auto mt-24 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Application</h4>
+                        <button data-modal-close="editApplicationModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                    </div>
+                    <form id="editApplicationForm">
+                        <input type="hidden" name="applicationId" />
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <select name="status" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                            <textarea name="notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" data-modal-close="editApplicationModal" class="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <form id="addUserForm" class="space-y-4">
                 <div>
-                    <label for="newUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                    <input type="text" id="newUserName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="newUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                    <input type="text" id="newUserName" name="newUserName" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
-                    <label for="newUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="newUserEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="newUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input type="email" id="newUserEmail" name="newUserEmail" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
-                    <label for="newUserPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                    <input type="password" id="newUserPassword" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="newUserPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                    <input type="password" id="newUserPassword" name="newUserPassword" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
-                    <label for="newUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                    <select id="newUserRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="newUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                    <select id="newUserRole" name="newUserRole" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Add User</button>
+                    <button type="button" onclick="adminDashboard.closeAddUserModal()" 
+                            class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                        Add User
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Edit User</h3>
+    <div id="editUserModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Edit User</h3>
+                <button onclick="adminDashboard.closeEditUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
             <form id="editUserForm" class="space-y-4">
-                <input type="hidden" id="editUserId">
+                <input type="hidden" id="editUserId" name="userId">
                 <div>
-                    <label for="editUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                    <input type="text" id="editUserName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="editUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                    <input type="text" id="editUserName" name="fullName" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
-                    <label for="editUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="editUserEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="editUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input type="email" id="editUserEmail" name="email" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
                 <div>
-                    <label for="editUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                    <select id="editUserRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="editUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                    <select id="editUserRole" name="role"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
                 <div>
-                    <label for="editUserStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                    <select id="editUserStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <label for="editUserStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                    <select id="editUserStatus" name="status"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
+                    <button type="button" onclick="adminDashboard.closeEditUserModal()" 
+                            class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                        Save Changes
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="userDetailsModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800 dark:text-white">User Details</h3>
-            <form id="userForm" class="space-y-4">
-                <div>
-                    <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                    <input type="text" id="userName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="userEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                    <select id="userRole" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="userStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                    <select id="userStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" id="closeAddModalBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Close</button>
-                    <button type="submit" id="saveAddUserBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
-                </div>
-            </form>
+    <!-- User Details Modal -->
+    <div id="userDetailsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800 dark:text-white">User Details</h3>
+                <button onclick="adminDashboard.closeUserDetailsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="userDetailsContent">
+                <!-- User details will be loaded here -->
+            </div>
         </div>
     </div>
 
-    <!-- Add Admin Modal -->
-    <div id="addAdminModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New Admin</h3>
-            <form id="addAdminForm" class="space-y-4">
-                <div>
-                    <label for="newAdminUserId" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select User</label>
-                    <select id="newAdminUserId" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="">Select a user</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="newAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
-                    <select id="newAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="moderator">Moderator</option>
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeAddAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="button" onclick="addAdminUser()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Add Admin</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600 dark:text-gray-300">Loading...</p>
+</div>
+</div>
+    
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <!-- Edit Admin Modal -->
-    <div id="editAdminModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Edit Admin</h3>
-            <form id="editAdminForm" class="space-y-4">
-                <input type="hidden" id="editAdminId">
-                <div>
-                    <label for="editAdminName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                    <input type="text" id="editAdminName" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="editAdminEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="editAdminEmail" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="editAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
-                    <select id="editAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="moderator">Moderator</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="flex items-center">
-                        <input type="checkbox" id="editAdminActive" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
-                    </label>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeEditAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="button" onclick="saveAdminUser()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Admin Modal -->
-    <div id="addAdminModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add New Admin</h3>
-            <form id="addAdminForm" class="space-y-4">
-                <div>
-                    <label for="newAdminUserId" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select User</label>
-                    <select id="newAdminUserId" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="">Select a user</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="newAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
-                    <select id="newAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="moderator">Moderator</option>
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeAddAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="button" onclick="addAdminUser()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Add Admin</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Admin Modal -->
-    <div id="editAdminModal" class="modal-overlay">
-        <div class="modal-content dark:bg-gray-700 dark:text-white">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Edit Admin</h3>
-            <form id="editAdminForm" class="space-y-4">
-                <input type="hidden" id="editAdminId">
-                <div>
-                    <label for="editAdminName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                    <input type="text" id="editAdminName" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="editAdminEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="editAdminEmail" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                </div>
-                <div>
-                    <label for="editAdminLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Level</label>
-                    <select id="editAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="moderator">Moderator</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="flex items-center">
-                        <input type="checkbox" id="editAdminActive" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
-                    </label>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeEditAdminModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="button" onclick="saveAdminUser()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-        // Development mode - bypass authentication
-        async function checkAdminAuth() {
-            // Set mock admin user for development
-            const user = {
-                full_name: 'Development Admin',
-                role: 'admin',
-                isAdmin: true
-            };
-
-            // Update admin name
-            document.getElementById('welcomeName').textContent = user.full_name || 'Admin';
-
-        // Show welcome message
-        const welcomeSection = document.getElementById('welcomeSection');
-        const dashboardContent = document.getElementById('dashboardContent');
-        
-        if (welcomeSection && dashboardContent) {
-            welcomeSection.classList.remove('hidden');
-            setTimeout(() => {
-                welcomeSection.classList.add('welcome-fade-out');
-                setTimeout(() => {
-                    welcomeSection.classList.add('hidden');
-                }, 300);
-            }, 2000);
-        }
-
-        // Logout functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'login.html';
-                });
-            }
-        });
-        }
-
-        // Load dashboard stats
-        async function loadDashboardStats() {
-            try {
-                const res = await axios.get('/api/admin/dashboard', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const stats = res.data;
-                document.getElementById('totalUsers').textContent = stats.users || 0;
-                document.getElementById('totalPartners').textContent = stats.partners || 0;
-                document.getElementById('totalScholarships').textContent = stats.scholarships || 0;
-                document.getElementById('totalApplications').textContent = stats.applications || 0;
-            } catch (error) {
-                console.error('Error loading dashboard stats:', error);
-                
-                if (error.response?.status === 401) {
-                    console.log('Authentication failed, clearing session and redirecting to login');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                // Show error message to user
-                showNotification('Error loading dashboard statistics. Please refresh the page.', 'error');
-            }
-        }
-
-        // Load admin users
-        async function loadAdminUsers() {
-            try {
-                const res = await axios.get('/api/admin/admin-users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const adminUsers = res.data;
-                const adminUsersList = document.getElementById('adminUsersList');
-                
-                if (adminUsersList) {
-                    adminUsersList.innerHTML = '';
-
-                    if (adminUsers.length === 0) {
-                        adminUsersList.innerHTML = `
-                            <tr>
-                                <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    No admin users found
-                                </td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
-                    adminUsers.forEach(admin => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${admin.full_name || 'N/A'}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${admin.email || 'N/A'}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    admin.admin_level === 'super_admin' ? 'bg-red-100 text-red-800' :
-                                    admin.admin_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-green-100 text-green-800'
-                                }">
-                                    ${admin.admin_level || 'N/A'}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    admin.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }">
-                                    ${admin.is_active ? 'Active' : 'Inactive'}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${admin.last_login ? new Date(admin.last_login).toLocaleDateString() : 'Never'}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editAdminUser(${admin.id})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
-                                    Edit
-                                </button>
-                                <button onclick="deleteAdminUser(${admin.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                    Delete
-                                </button>
-                            </td>
-                        `;
-                        adminUsersList.appendChild(row);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading admin users:', error);
-                showNotification('Error loading admin users', 'error');
-            }
-        }
-
-        // Initialize charts
-        let applicationTrendsChart, scholarshipDistributionChart, userRegistrationChart, statusOverviewChart;
-
-        function initializeCharts() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#F3F4F6' : '#374151';
-            const gridColor = isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(55, 65, 81, 0.1)';
-
-            const chartOptions = (type) => ({
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: textColor, font: { size: 12 } }
-                    }
-                },
-                scales: type === 'bar' || type === 'line' ? {
-                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
-                    x: { grid: { color: gridColor }, ticks: { color: textColor } }
-                } : {}
-            });
-
-            const scatterOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: textColor, font: { size: 12 } }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'month',
-                            parser: 'yyyy-MM',
-                            tooltipFormat: 'MMM yyyy'
-                        },
-                        adapters: {
-                            date: {
-                                zone: 'UTC'
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Month'
-                        },
-                        grid: { color: gridColor },
-                        ticks: { color: textColor }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Number of Applications'
-                        },
-                        grid: { color: gridColor },
-                        ticks: { color: textColor }
-                    }
-                }
-            };
-
-            // Application Trends
-            const applicationTrendsCtx = document.getElementById('applicationTrendsChart');
-            if (applicationTrendsCtx) {
-                applicationTrendsChart = new Chart(applicationTrendsCtx.getContext('2d'), {
-                    type: 'scatter',
-                    data: {
-                        datasets: [{
-                            label: 'Applications',
-                            data: [], // Populated from API
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)'
-                        }]
-                    },
-                    options: scatterOptions
-                });
-            }
-
-            // Scholarship Distribution
-            const scholarshipDistributionCtx = document.getElementById('scholarshipDistributionChart');
-            if (scholarshipDistributionCtx) {
-                scholarshipDistributionChart = new Chart(scholarshipDistributionCtx.getContext('2d'), {
-                    type: 'pie',
-                    data: {
-                        labels: ['Government', 'Private', 'NGO', 'Other'],
-                        datasets: [{
-                            data: [], // Populated from API
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
-                        }]
-                    },
-                    options: chartOptions()
-                });
-            }
-
-            // User Registration
-            const userRegistrationCtx = document.getElementById('userRegistrationChart');
-            if (userRegistrationCtx) {
-                userRegistrationChart = new Chart(userRegistrationCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Users', 'Admins'],
-                        datasets: [{
-                            label: 'Count',
-                            data: [], // Populated from API
-                            backgroundColor: ['#90EE90', '#ADD8E6']
-                        }]
-                    },
-                    options: chartOptions('bar')
-                });
-            }
-
-            // Status Overview
-            const statusOverviewCtx = document.getElementById('statusOverviewChart');
-            if (statusOverviewCtx) {
-                statusOverviewChart = new Chart(statusOverviewCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Undergraduate', 'Graduate', 'PhD'],
-                        datasets: [{
-                            label: 'Count',
-                            data: [], // Populated from API
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
-                        }]
-                    },
-                    options: chartOptions('bar')
-                });
-            }
-        }
-
-        // Update charts with data from API
-        async function updateCharts() {
-            try {
-                const res = await axios.get('/api/admin/chart-stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const chartData = res.data;
-
-                // Application Trends
-                if (applicationTrendsChart && chartData.applicationTrends) {
-                    const trendData = chartData.applicationTrends.map(d => ({
-                        x: d.month,
-                        y: d.count
-                    }));
-                    applicationTrendsChart.data.datasets[0].data = trendData;
-                    applicationTrendsChart.update();
-                }
-
-                // Scholarship Distribution
-                if (scholarshipDistributionChart && chartData.scholarshipDistribution) {
-                    scholarshipDistributionChart.data.datasets[0].data = chartData.scholarshipDistribution;
-                    scholarshipDistributionChart.update();
-                }
-
-                // User Registration
-                if (userRegistrationChart && chartData.userRegistration) {
-                    userRegistrationChart.data.datasets[0].data = chartData.userRegistration;
-                    userRegistrationChart.update();
-                }
-
-                // Status Overview
-                if (statusOverviewChart && chartData.statusOverview) {
-                    statusOverviewChart.data.datasets[0].data = chartData.statusOverview;
-                    statusOverviewChart.update();
-                }
-
-            } catch (error) {
-                console.error('Error updating charts:', error);
-                showNotification('Error loading chart data', 'error');
-            }
-        }
-
-        // Show notification function
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-                type === 'error' ? 'bg-red-500 text-white' : 
-                type === 'success' ? 'bg-green-500 text-white' : 
-                'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-        
-        // Load all data
-        async function initializeDashboard() {
-            try {
-                await Promise.all([
-                    loadDashboardStats(),
-                    loadApplications(),
-                    loadUsers(),
-                    loadAdminUsers(),
-                    loadSystemStats()
-                ]);
-                showNotification('Dashboard loaded successfully', 'success');
-            } catch (error) {
-                console.error('Error initializing dashboard:', error);
-                showNotification('Error loading dashboard data', 'error');
-            }
-        }
-
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeDashboard();
-            
-            // Add form submission handlers
-            const addUserForm = document.getElementById('addUserForm');
-            const editUserForm = document.getElementById('editUserForm');
-            
-            if (addUserForm) {
-                addUserForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const formData = {
-                        fullName: document.getElementById('newUserName').value,
-                        email: document.getElementById('newUserEmail').value,
-                        password: document.getElementById('newUserPassword').value,
-                        role: document.getElementById('newUserRole').value
-                    };
-                    
-                    try {
-                        const res = await axios.post('/api/admin/users', formData, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        showNotification('User created successfully', 'success');
-                        closeAddUserModal();
-                        loadUsers();
-                        addUserForm.reset();
-                    } catch (error) {
-                        console.error('Error creating user:', error);
-                        showNotification('Error creating user', 'error');
-                    }
-                });
-            }
-            
-            if (editUserForm) {
-                editUserForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const userId = document.getElementById('editUserId').value;
-                    const formData = {
-                        fullName: document.getElementById('editUserName').value,
-                        email: document.getElementById('editUserEmail').value,
-                        role: document.getElementById('editUserRole').value,
-                        status: document.getElementById('editUserStatus').value
-                    };
-                    
-                    try {
-                        await axios.put(`/api/admin/users/${userId}`, formData, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        showNotification('User updated successfully', 'success');
-                        closeEditUserModal();
-                        loadUsers();
-                    } catch (error) {
-                        console.error('Error updating user:', error);
-                        showNotification('Error updating user', 'error');
-                    }
-                });
-            }
-        });
-
-        // User management functions
-        function showAddUserModal() {
-            document.getElementById('addUserModal').classList.add('show');
-        }
-
-        function closeAddUserModal() {
-            document.getElementById('addUserModal').classList.remove('show');
-        }
-
-        function closeEditUserModal() {
-            document.getElementById('editUserModal').classList.remove('show');
-        }
-
-        // Load users function
-        async function loadUsers() {
-            try {
-                const res = await axios.get('/api/admin/users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = res.data;
-                const users = data.users || [];
-                const usersList = document.getElementById('usersList');
-                
-                if (usersList) {
-                    usersList.innerHTML = '';
-
-                    if (users.length === 0) {
-                        usersList.innerHTML = `
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    No users found
-                                </td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
-                    users.forEach(user => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${user.full_name || 'N/A'}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                ${user.email || 'N/A'}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                    User
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    user.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                }">
-                                    ${user.status || 'active'}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="editUser(${user.id})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        `;
-                        usersList.appendChild(row);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading users:', error);
-                showNotification('Error loading users', 'error');
-            }
-        }
-
-        // Load system stats function
-        async function loadSystemStats() {
-            try {
-                const res = await axios.get('/api/admin/system-stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const stats = res.data;
-                const systemStats = document.getElementById('systemStats');
-                
-                if (systemStats) {
-                    systemStats.innerHTML = `
-                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                            <h4 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Database</h4>
-                            <p class="text-blue-600 dark:text-blue-300">Tables: ${stats.database?.tables || 0}</p>
-                            <p class="text-blue-600 dark:text-blue-300">Size: ${stats.database?.size || 'N/A'}</p>
-                        </div>
-                        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                            <h4 class="text-lg font-semibold text-green-800 dark:text-green-200">Storage</h4>
-                            <p class="text-green-600 dark:text-green-300">Files: ${stats.storage?.files || 0}</p>
-                            <p class="text-green-600 dark:text-green-300">Size: ${stats.storage?.size || 'N/A'}</p>
-                        </div>
-                        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                            <h4 class="text-lg font-semibold text-purple-800 dark:text-purple-200">Performance</h4>
-                            <p class="text-purple-600 dark:text-purple-300">Uptime: ${stats.performance?.uptime || 'N/A'}</p>
-                            <p class="text-purple-600 dark:text-purple-300">Response: ${stats.performance?.responseTime || 'N/A'}</p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading system stats:', error);
-                showNotification('Error loading system statistics', 'error');
-            }
-        }
-
-        // User management functions
-        function showAddUserModal() {
-            document.getElementById('addUserModal').classList.add('show');
-        }
-
-        function closeAddUserModal() {
-            document.getElementById('addUserModal').classList.remove('show');
-        }
-
-        function closeEditUserModal() {
-            document.getElementById('editUserModal').classList.remove('show');
-        }
-
-        async function editUser(userId) {
-            try {
-                const res = await axios.get(`/api/admin/users/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const user = res.data;
-                
-                document.getElementById('editUserId').value = user.id;
-                document.getElementById('editUserName').value = user.full_name || '';
-                document.getElementById('editUserEmail').value = user.email || '';
-                // role removed in backend; no longer set editUserRole
-                document.getElementById('editUserStatus').value = user.status || 'active';
-                
-                document.getElementById('editUserModal').classList.add('show');
-            } catch (error) {
-                console.error('Error loading user details:', error);
-                showNotification('Error loading user details', 'error');
-            }
-        }
-
-        async function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                try {
-                    await axios.delete(`/api/admin/users/${userId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    showNotification('User deleted successfully', 'success');
-                    loadUsers();
-                } catch (error) {
-                    console.error('Error deleting user:', error);
-                    showNotification('Error deleting user', 'error');
-                }
-            }
-        }
-
-        // Application management functions
-        async function editApplication(applicationId) {
-            try {
-                const res = await axios.get(`/api/admin/applications/${applicationId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const application = res.data;
-                
-                showNotification(`Editing application: ${application.fullName || 'Unknown'}`, 'info');
-                console.log('Application details:', application);
-            } catch (error) {
-                console.error('Error loading application details:', error);
-                showNotification('Error loading application details', 'error');
-            }
-        }
-
-        async function deleteApplication(applicationId) {
-            if (confirm('Are you sure you want to delete this application?')) {
-                try {
-                    await axios.delete(`/api/admin/applications/${applicationId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    showNotification('Application deleted successfully', 'success');
-                    loadApplications();
-                } catch (error) {
-                    console.error('Error deleting application:', error);
-                    showNotification('Error deleting application', 'error');
-                }
-            }
-        }
-
-        // Export data function
-        function exportData(type) {
-            try {
-                const link = document.createElement('a');
-                link.href = `/api/admin/export/${type}`;
-                link.download = `${type}_export.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showNotification(`${type} data exported successfully`, 'success');
-                    } catch (error) {
-                console.error('Error exporting data:', error);
-                showNotification('Error exporting data', 'error');
-            }
-        }
-    </script>
+    <!-- Admin Dashboard JavaScript -->
+    <script src="js/admin-dashboard.js"></script>
+    <script src="js/include-admin-sidebar.js"></script>
 </body>
 </html>

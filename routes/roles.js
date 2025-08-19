@@ -37,21 +37,27 @@ router.get('/permissions', async (req, res) => {
 // Get a single role (with permissions)
 router.get('/roles/:id', async (req, res) => {
   const { id } = req.params;
+  // Validate id
+  const roleId = parseInt(id, 10);
+  if (Number.isNaN(roleId)) {
+    return res.status(400).json({ message: 'Invalid role id' });
+  }
   try {
-    const [roles] = await db.query('SELECT * FROM roles WHERE role_id = ?', [id]);
+    const [roles] = await db.query('SELECT * FROM roles WHERE role_id = ?', [roleId]);
     if (roles.length === 0) return res.status(404).json({ message: 'Role not found' });
 
     const [perms] = await db.query(
       `SELECT p.permission_id, p.permission_name, p.description, p.category
        FROM permissions p
        JOIN role_permissions rp ON rp.permission_id = p.permission_id
-       WHERE rp.role_id = ?`, [id]
+       WHERE rp.role_id = ?`, [roleId]
     );
 
     const role = roles[0];
     role.permissions = perms;
     res.json(role);
   } catch (err) {
+    console.error('Error fetching role:', err);
     res.status(500).json({ message: 'Error fetching role', error: err.message });
   }
 });

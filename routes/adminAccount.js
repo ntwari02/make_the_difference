@@ -1,47 +1,16 @@
 import express from 'express';
-import multer from 'multer';
+// Removed multer/profile upload per requirements
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import db from '../config/database.js';
-import { bypassAuth } from '../middleware/auth.js';
+import { auth, bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
 import fs from 'fs';
-const uploadsDir = path.join(__dirname, '../uploads/profile_pictures');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for profile picture uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        // Check file type
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed'), false);
-        }
-    }
-});
 
 // GET admin account settings
 router.get('/account', bypassAuth, async (req, res) => {
@@ -108,7 +77,7 @@ router.get('/account', bypassAuth, async (req, res) => {
 });
 
 // POST/UPDATE admin account settings
-router.post('/account', bypassAuth, upload.single('profilePicture'), async (req, res) => {
+router.post('/account', bypassAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         const {
@@ -119,7 +88,6 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
             bio,
             timezone,
             language,
-            theme,
             notifications
         } = req.body;
         
@@ -138,13 +106,8 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
             return res.status(400).json({ error: 'Email is already taken by another user' });
         }
         
-        let profilePicturePath = null;
-        
-        // Handle profile picture upload
-        if (req.file) {
-            profilePicturePath = `/uploads/profile_pictures/${req.file.filename}`;
-        }
-        
+        // Profile picture handling removed per requirements
+
         // Parse notifications JSON
         let notificationsObj = {};
         if (notifications) {
@@ -183,16 +146,11 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
             const updateValues = [];
             
             updateFields.push('full_name = ?', 'email = ?', 'phone_number = ?', 'position = ?', 
-                            'bio = ?', 'timezone = ?', 'language = ?', 'theme_preference = ?', 
+                            'bio = ?', 'timezone = ?', 'language = ?', 
                             'email_notifications = ?', 'sms_notifications = ?', 'push_notifications = ?');
             updateValues.push(fullName, email, phone || null, position || null, bio || null,
-                            timezone || 'UTC', language || 'en', theme || 'auto',
+                            timezone || 'UTC', language || 'en',
                             emailNotifications ? 1 : 0, smsNotifications ? 1 : 0, pushNotifications ? 1 : 0);
-            
-            if (profilePicturePath) {
-                updateFields.push('profile_picture_path = ?');
-                updateValues.push(profilePicturePath);
-            }
             
             updateValues.push(userId);
             
@@ -204,10 +162,10 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
             // Create new admin settings
             await db.query(
                 `INSERT INTO admin_account_settings 
-                (user_id, full_name, email, phone_number, position, bio, timezone, language, theme_preference, profile_picture_path, email_notifications, sms_notifications, push_notifications) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (user_id, full_name, email, phone_number, position, bio, timezone, language, email_notifications, sms_notifications, push_notifications) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [userId, fullName, email, phone || null, position || null, bio || null,
-                 timezone || 'UTC', language || 'en', theme || 'auto', profilePicturePath,
+                 timezone || 'UTC', language || 'en',
                  emailNotifications ? 1 : 0, smsNotifications ? 1 : 0, pushNotifications ? 1 : 0]
             );
         }
@@ -231,8 +189,8 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
             bio: bio,
             timezone: timezone || 'UTC',
             language: language || 'en',
-            theme_preference: theme || 'auto',
-            profile_picture: profilePicturePath,
+            // theme_preference removed
+            // profile_picture removed
             notifications: {
                 email: emailNotifications,
                 sms: smsNotifications,
@@ -246,8 +204,46 @@ router.post('/account', bypassAuth, upload.single('profilePicture'), async (req,
     }
 });
 
+// PUT update only theme preference (quick save)
+router.put('/account/theme', bypassAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { theme } = req.body || {};
+        const allowed = ['light', 'dark', 'auto'];
+        if (!allowed.includes(theme)) {
+            return res.status(400).json({ error: 'Invalid theme preference' });
+        }
+
+        // Try update first
+        const [updateResult] = await db.query(
+            'UPDATE admin_account_settings SET theme_preference = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
+            [theme, userId]
+        );
+
+        if (updateResult.affectedRows === 0) {
+            // No existing settings row; insert a minimal record using users table info
+            const [users] = await db.query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+            if (!users || users.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            const { full_name, email } = users[0];
+            await db.query(
+                `INSERT INTO admin_account_settings 
+                 (user_id, full_name, email, theme_preference) 
+                 VALUES (?, ?, ?, ?)`,
+                [userId, full_name || '', email || '', theme]
+            );
+        }
+
+        return res.json({ message: 'Theme updated', theme });
+    } catch (error) {
+        console.error('Error updating theme preference:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // POST change password
-router.post('/change-password', bypassAuth, async (req, res) => {
+router.post('/change-password', auth, async (req, res) => {
     try {
         const userId = req.user.id;
         const { currentPassword, newPassword } = req.body;

@@ -2,7 +2,11 @@
 
 async function includeAdminSidebar() {
     try {
-        const response = await fetch('navbar.html');
+        const container = document.getElementById('admin-sidebar-container');
+        if (!container) return;
+        
+        const response = await fetch('components/admin-sidebar.html');
+        if (!response.ok) throw new Error('Failed to load admin sidebar');
         const sidebarHtml = await response.text();
         
         // Create a temporary container to parse the HTML
@@ -13,8 +17,7 @@ async function includeAdminSidebar() {
         const sidebarContent = tempDiv.querySelector('#admin-sidebar');
         
         if (sidebarContent) {
-            // Insert sidebar at the beginning of the body
-            document.body.insertBefore(sidebarContent, document.body.firstChild);
+            container.appendChild(sidebarContent);
             
             // Initialize sidebar functionality
             initializeSidebar();
@@ -31,7 +34,7 @@ function initializeSidebar() {
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const mobileBackdrop = document.getElementById('mobileBackdrop');
 
-    if (!sidebar || !mainContent) return;
+    if (!sidebar) return;
 
     // Check if device is mobile/tablet
     const isMobileDevice = window.innerWidth <= 1024;
@@ -45,7 +48,7 @@ function initializeSidebar() {
         localStorage.setItem('sidebarCollapsed', 'true');
     }
     
-    if (isCollapsed) {
+    if (isCollapsed && mainContent) {
         sidebar.classList.add('collapsed');
         mainContent.classList.add('collapsed');
     }
@@ -54,7 +57,9 @@ function initializeSidebar() {
     if (sidebarCollapseBtn) {
         sidebarCollapseBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('collapsed');
+            if (mainContent) {
+                mainContent.classList.toggle('collapsed');
+            }
             
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
@@ -77,7 +82,7 @@ function initializeSidebar() {
         }
     }
 
-    // Mobile sidebar toggle
+    // Mobile sidebar toggle (for expanded view on mobile)
     if (mobileSidebarToggle) {
         mobileSidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('mobile-open');
@@ -95,10 +100,10 @@ function initializeSidebar() {
         });
     }
 
-    // Close sidebar when clicking outside on mobile
+    // Close sidebar when clicking outside on mobile (only for expanded view)
     document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(e.target) && !mobileSidebarToggle.contains(e.target)) {
+        if (window.innerWidth <= 768 && sidebar.classList.contains('mobile-open')) {
+            if (!sidebar.contains(e.target) && !(mobileSidebarToggle && mobileSidebarToggle.contains(e.target))) {
                 sidebar.classList.remove('mobile-open');
                 if (mobileBackdrop) {
                     mobileBackdrop.classList.remove('show');
@@ -109,6 +114,8 @@ function initializeSidebar() {
 
     // Update help badge count
     updateHelpBadge();
+    // Poll periodically to keep badge fresh
+    setInterval(updateHelpBadge, 30000);
 
     // Function to update help badge count
     async function updateHelpBadge() {
@@ -140,12 +147,14 @@ function initializeSidebar() {
             // Only auto-expand if user hasn't manually set a preference
             if (!localStorage.getItem('sidebarCollapsed')) {
                 sidebar.classList.remove('collapsed');
-                mainContent.classList.remove('collapsed');
+                if (mainContent) {
+                    mainContent.classList.remove('collapsed');
+                }
             }
         }
         
-        // Close mobile sidebar when switching to desktop
-        if (window.innerWidth > 768) {
+        // Close mobile sidebar expanded view when switching to desktop
+        if (window.innerWidth > 1023) {
             sidebar.classList.remove('mobile-open');
             if (mobileBackdrop) {
                 mobileBackdrop.classList.remove('show');

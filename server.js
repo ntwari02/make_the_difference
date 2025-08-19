@@ -19,6 +19,8 @@ import newsletterRoutes from './routes/newsletter.js';
 import applicationRoutes from './routes/applications.js';
 import adminRoutes from './routes/admin.js';
 import adminAccountRoutes from './routes/adminAccount.js';
+import adminDashboardRoutes from './routes/admin-dashboard.js';
+import adminApplicationsRoutes from './routes/admin-applications.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
 import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
 import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
@@ -69,6 +71,8 @@ app.use('/api/subscribe-newsletter', newsletterRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminAccountRoutes);
+app.use('/api/admin-dashboard', adminDashboardRoutes);
+app.use('/api/admin-dashboard', adminApplicationsRoutes);
 app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
 app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
 app.use('/api/security-questions', securityQuestionsRoutes); // ✅ ADDED HERE

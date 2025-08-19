@@ -286,7 +286,7 @@
                                         Email
                                     </th>
                                     <th class="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Account
+                                        Role
                                     </th>
                                     <th class="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Status
@@ -353,6 +353,16 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
+                
+                <!-- Permissions (visible when role is admin) -->
+                <div id="permissionsSection" class="mt-4 hidden">
+                    <div class="flex items-center mb-2">
+                        <input type="checkbox" id="grantAllPerms" class="mr-2">
+                        <label for="grantAllPerms" class="text-sm text-gray-700 dark:text-gray-300">Grant all permissions (Super Admin)</label>
+                    </div>
+                    <div id="permissionsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Note: Enabling "Grant all permissions" will elevate this user to Super Admin.</p>
+                </div>
                 <div>
                     <label for="userStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
                     <select id="userStatus" name="status" required
@@ -386,6 +396,9 @@
         let totalUsers = 0;
         let filteredUsers = [];
         let currentSearch = '';
+        // Permissions cache
+        let availablePermissions = null; // grouped from API
+        let permissionsLoaded = false;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -400,39 +413,88 @@
             setupEventListeners();
             initializeSidebar();
             
-            // Update admin name in header
-            document.getElementById('adminName').textContent = user.fullName || 'Admin';
+            // Update admin name in header if available (header is injected asynchronously)
+            const adminNameEl = document.getElementById('adminName');
+            if (adminNameEl) adminNameEl.textContent = user.fullName || 'Admin';
         });
 
         // Event Listeners
         function setupEventListeners() {
-            document.getElementById('searchInput').addEventListener('input', handleSearch);
-            document.getElementById('prevPage').addEventListener('click', () => changePage(-1));
-            document.getElementById('nextPage').addEventListener('click', () => changePage(1));
-            document.getElementById('userForm').addEventListener('submit', handleUserSubmit);
+            const searchInput = document.getElementById('searchInput');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const userForm = document.getElementById('userForm');
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            const mobileToggle = document.getElementById('mobileSidebarToggle');
+            const logoutBtn = document.getElementById('logoutBtn');
 
-            document.getElementById('sidebarCollapseBtn').addEventListener('click', toggleSidebar);
-            document.getElementById('mobileSidebarToggle').addEventListener('click', toggleMobileSidebar);
-            document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (searchInput) searchInput.addEventListener('input', handleSearch);
+            if (prevBtn) prevBtn.addEventListener('click', () => changePage(-1));
+            if (nextBtn) nextBtn.addEventListener('click', () => changePage(1));
+            if (userForm) userForm.addEventListener('submit', handleUserSubmit);
+
+            // Toggle permissions UI when role changes
+            const roleSelect = document.getElementById('userRole');
+            if (roleSelect) {
+                roleSelect.addEventListener('change', async () => {
+                    await ensurePermissionsLoaded();
+                    togglePermissionsSection(roleSelect.value === 'admin');
+                });
+            }
+
+            // Grant all checkbox
+            const grantAll = document.getElementById('grantAllPerms');
+            if (grantAll) {
+                grantAll.addEventListener('change', () => {
+                    const container = document.getElementById('permissionsContainer');
+                    if (container) {
+                        container.querySelectorAll('input[type="checkbox"][data-perm-key]')
+                            .forEach(cb => { cb.disabled = grantAll.checked; });
+                    }
+                });
+            }
+
+            // Header/sidebar are injected asynchronously and already wire up their own events
+            if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebar);
+            if (mobileToggle) mobileToggle.addEventListener('click', toggleMobileSidebar);
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 window.location.href = 'login.html';
             });
+            }
         }
 
         // User CRUD Operations
         async function loadUsers(page = 1, search = '') {
             try {
+                const token = localStorage.getItem('token');
                 let url = `/api/admin/users?page=${page}&limit=${usersPerPage}`;
                 if (search) url += `&search=${encodeURIComponent(search)}`;
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
                 if (!response.ok) {
-                    throw new Error('Failed to fetch users');
+                    let message = 'Failed to fetch users';
+                    let code;
+                    try {
+                        const errBody = await response.json();
+                        if (errBody && (errBody.message || errBody.error || errBody.code)) {
+                            message = errBody.message || message;
+                            code = errBody.code;
+                        }
+                    } catch {}
+                    const err = new Error(message);
+                    err.httpStatus = response.status;
+                    if (code) err.code = code;
+                    throw err;
                 }
-                const data = await response.json();
+                const payload = await response.json();
+                const data = payload && payload.data ? payload.data : payload;
                 users = Array.isArray(data.users) ? data.users : [];
-                totalUsers = data.pagination ? data.pagination.total : users.length;
-                currentPage = data.pagination ? data.pagination.page : 1;
+                totalUsers = data.pagination ? (data.pagination.total ?? data.pagination.totalItems ?? users.length) : users.length;
+                currentPage = data.pagination ? (data.pagination.page ?? data.pagination.currentPage ?? 1) : 1;
                 filteredUsers = [...users];
                 updateUsersTable();
                 updatePagination();
@@ -443,16 +505,21 @@
 
         async function createUser(userData) {
             try {
+                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/users', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                     },
                     body: JSON.stringify(userData)
                 });
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Failed to create user');
+                    let message = 'Failed to create user';
+                    try { const error = await response.json(); message = error.message || message; } catch {}
+                    const err = new Error(message);
+                    err.httpStatus = response.status;
+                    throw err;
                 }
                 await response.json();
                 return true;
@@ -476,15 +543,119 @@
                     body: JSON.stringify(userData)
                 });
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Failed to update user');
+                    let message = 'Failed to update user';
+                    try { const error = await response.json(); message = error.message || message; } catch {}
+                    const err = new Error(message);
+                    err.httpStatus = response.status;
+                    throw err;
                 }
-                await response.json();
+                const result = await response.json();
+                // Optimistically update in-memory list if present
+                const idx = users.findIndex(u => String(u.id) === String(userId));
+                if (idx !== -1) {
+                    users[idx] = {
+                        ...users[idx],
+                        full_name: userData.fullName ?? users[idx].full_name,
+                        email: userData.email ?? users[idx].email,
+                        role: userData.role ?? users[idx].role,
+                        status: userData.status ?? users[idx].status
+                    };
+                }
+                // Refresh from server to ensure consistency
+                await loadUsers(currentPage, currentSearch);
                 return true;
             } catch (error) {
                 handleApiError(error);
                 return false;
             }
+        }
+
+        // Permissions helpers
+        async function ensurePermissionsLoaded() {
+            if (permissionsLoaded && availablePermissions) return;
+            try {
+                const resp = await fetch('/api/roles/permissions', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!resp.ok) return;
+                availablePermissions = await resp.json();
+                permissionsLoaded = true;
+                renderPermissionsCheckboxes(availablePermissions);
+            } catch (e) {
+                console.warn('Failed to load permissions', e);
+            }
+        }
+
+        function renderPermissionsCheckboxes(grouped, preselected = null, grantAll = false) {
+            const container = document.getElementById('permissionsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const selectedKeys = new Set();
+            if (preselected === '*') {
+                grantAll = true;
+            } else if (preselected && typeof preselected === 'object') {
+                // object map {key: true}
+                Object.keys(preselected).forEach(k => preselected[k] && selectedKeys.add(k));
+            } else if (Array.isArray(preselected)) {
+                preselected.forEach(k => selectedKeys.add(k));
+            }
+
+            Object.keys(grouped).forEach(category => {
+                const perms = grouped[category];
+                const section = document.createElement('div');
+                section.className = 'border rounded-md p-3';
+                const title = document.createElement('div');
+                title.className = 'font-medium mb-2 text-gray-700 dark:text-gray-300';
+                title.textContent = category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                section.appendChild(title);
+
+                perms.forEach(p => {
+                    const row = document.createElement('label');
+                    row.className = 'flex items-center space-x-2 mb-2 text-sm text-gray-700 dark:text-gray-300';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.dataset.permKey = p.permission_name || p.key || p.permission_id;
+                    cb.checked = selectedKeys.has(cb.dataset.permKey);
+                    cb.disabled = grantAll;
+                    row.appendChild(cb);
+                    const span = document.createElement('span');
+                    span.textContent = p.permission_name || p.name || cb.dataset.permKey;
+                    row.appendChild(span);
+                    // Make the whole row toggle the checkbox when clicked
+                    row.addEventListener('click', (e) => {
+                        if (cb.disabled) return;
+                        if (e.target !== cb) {
+                            e.preventDefault();
+                            cb.checked = !cb.checked;
+                        }
+                    });
+                    section.appendChild(row);
+                });
+                container.appendChild(section);
+            });
+
+            const grantAllEl = document.getElementById('grantAllPerms');
+            if (grantAllEl) grantAllEl.checked = grantAll;
+        }
+
+        function collectSelectedPermissions() {
+            const role = (document.getElementById('userRole') || {}).value;
+            if (role !== 'admin') return null;
+            const grantAllEl = document.getElementById('grantAllPerms');
+            if (grantAllEl && grantAllEl.checked) return '*';
+            const container = document.getElementById('permissionsContainer');
+            if (!container) return null;
+            const keys = [];
+            container.querySelectorAll('input[type="checkbox"][data-perm-key]').forEach(cb => {
+                if (cb.checked) keys.push(cb.dataset.permKey);
+            });
+            return keys;
+        }
+
+        function togglePermissionsSection(show) {
+            const sec = document.getElementById('permissionsSection');
+            if (!sec) return;
+            sec.classList.toggle('hidden', !show);
         }
 
         async function deleteUser(userId) {
@@ -529,7 +700,7 @@
                                 ${user.email || ''}
                             </div>
                             <div class="mt-1 sm:hidden text-xs text-gray-500 dark:text-gray-400">
-                                User
+                                ${(user.admin_level === 'super_admin') ? 'super_admin' : (user.role || 'user')}
                             </div>
                             <div class="mt-1 sm:hidden">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -545,7 +716,7 @@
                         ${user.email || ''}
                     </td>
                     <td class="hidden md:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        User
+                        ${(user.admin_level === 'super_admin') ? 'super_admin' : (user.role || 'user')}
                     </td>
                     <td class="hidden sm:table-cell px-4 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -609,6 +780,10 @@
             document.getElementById('modalTitle').textContent = 'Add New User';
             document.getElementById('userForm').reset();
             document.getElementById('userPassword').required = true;
+            ensurePermissionsLoaded().then(() => {
+                togglePermissionsSection((document.getElementById('userRole') || {}).value === 'admin');
+                renderPermissionsCheckboxes(availablePermissions);
+            });
             showModal();
         }
 
@@ -620,10 +795,27 @@
             document.getElementById('modalTitle').textContent = 'Edit User';
             document.getElementById('userName').value = user.full_name || '';
             document.getElementById('userEmail').value = user.email || '';
-            // role removed in backend
+            document.getElementById('userRole').value = user.role || 'user';
             document.getElementById('userStatus').value = user.status || 'active';
             document.getElementById('userPassword').value = '';
             document.getElementById('userPassword').required = false;
+            
+            // Load permissions and preselect if admin
+            ensurePermissionsLoaded().then(async () => {
+                const isAdmin = (user.role || 'user') === 'admin';
+                togglePermissionsSection(isAdmin);
+                let preselected = null;
+                if (isAdmin) {
+                    try {
+                        const resp = await fetch(`/api/admin/users/${userId}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            preselected = data && data.data ? data.data.permissions : null;
+                        }
+                    } catch (e) { console.warn('Failed to fetch user permissions', e); }
+                }
+                renderPermissionsCheckboxes(availablePermissions, preselected);
+            });
             
             showModal();
         }
@@ -655,6 +847,9 @@
                 }
                 userData.password = password;
             }
+            // Attach permissions if admin role
+            const perms = collectSelectedPermissions();
+            if (perms) userData.permissions = perms;
             let success = false;
             if (currentUserId) {
                 success = await updateUser(currentUserId, userData);
@@ -692,22 +887,23 @@
         // Sidebar functionality
         function initializeSidebar() {
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
+            const sidebar = document.getElementById('sidebar') || document.getElementById('admin-sidebar');
+            const mainContent = document.querySelector('.admin-main-content');
             
-            if (isCollapsed) {
+            if (isCollapsed && sidebar && mainContent) {
                 sidebar.classList.add('collapsed');
                 mainContent.classList.add('collapsed');
             }
             
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 768 && mainContent) {
                 mainContent.style.marginLeft = '0';
             }
         }
 
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
+            const sidebar = document.getElementById('sidebar') || document.getElementById('admin-sidebar');
+            const mainContent = document.querySelector('.admin-main-content');
+            if (!sidebar || !mainContent) return;
             
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('collapsed');
@@ -718,14 +914,17 @@
         }
 
         function toggleMobileSidebar() {
-            const sidebar = document.getElementById('sidebar');
+            const sidebar = document.getElementById('sidebar') || document.getElementById('admin-sidebar');
+            if (!sidebar) return;
             sidebar.classList.toggle('mobile-open');
         }
 
         // Handle window resize
         window.addEventListener('resize', () => {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
+            const sidebar = document.getElementById('sidebar') || document.getElementById('admin-sidebar');
+            const mainContent = document.querySelector('.admin-main-content');
+            
+            if (!sidebar || !mainContent) return;
             
             if (window.innerWidth <= 768) {
                 mainContent.style.marginLeft = '0';

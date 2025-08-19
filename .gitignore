@@ -3,3 +3,7 @@ README.md
 .env
 setup_database.js
 DATABASE_SETUP.md
+scripts/
+js/
+config/
+STATUS_REPORT.md

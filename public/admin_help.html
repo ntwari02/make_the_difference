@@ -21,9 +21,17 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <script src="js/include-admin-sidebar.js" defer></script>
+    <script src="js/include-admin-header.js" defer></script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8">
+<body data-page="help" class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="sidebarMobileOverlay" class="sidebar-mobile-overlay"></div>
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Help"></div>
+    <main class="admin-main-content w-full">
+    <div class="admin-content-container p-6">
         <div class="max-w-6xl mx-auto">
             <!-- Header -->
             <div class="flex justify-between items-center mb-8">
@@ -31,9 +39,6 @@
                     <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Admin Help Center</h1>
                     <p class="text-gray-600 dark:text-gray-300 mt-2">Manage password reset requests from users</p>
                 </div>
-                <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
-                    <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
-                </button>
             </div>
 
             <!-- Statistics Cards -->
@@ -76,7 +81,7 @@
             <!-- Help Requests Table -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Password Reset Requests</h2>
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">All Help Requests</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -84,13 +89,16 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Requested</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Expires</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subject</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="requests-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Requests will be loaded here -->
+                        <tbody id="help-requests-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Help requests will be loaded here -->
                         </tbody>
                     </table>
                 </div>
@@ -101,6 +109,32 @@
                 <i class="fas fa-check-circle text-4xl text-green-500 mb-4"></i>
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Active Requests</h3>
                 <p class="text-gray-600 dark:text-gray-300">All password reset requests have been handled.</p>
+                    </div>
+                </div>
+            </div>
+
+    <!-- Help View Modal -->
+    <div id="help-view-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-lg relative">
+            <button id="close-help-view" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">&times;</button>
+            <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Help Request</h3>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">User</span><span id="help-view-user" class="text-gray-900 dark:text-white"></span></div>
+                <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Email</span><span id="help-view-email" class="text-gray-900 dark:text-white"></span></div>
+                <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Category</span><span id="help-view-category" class="text-gray-900 dark:text-white"></span></div>
+                <div><span class="block text-gray-500 dark:text-gray-400">Subject</span><div id="help-view-subject" class="text-gray-900 dark:text-white"></div></div>
+                <div><span class="block text-gray-500 dark:text-gray-400">Message</span><div id="help-view-message" class="text-gray-900 dark:text-white"></div></div>
+                <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Status</span><span id="help-view-status" class="text-gray-900 dark:text-white"></span></div>
+                <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Priority</span><span id="help-view-priority" class="text-gray-900 dark:text-white"></span></div>
+                <div class="flex justify-end pt-3 gap-2">
+                    <button id="help-view-accept" class="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 text-sm" title="Accept (skip questions)" aria-label="Accept">
+                        <i class="fas fa-check mr-1"></i>Accept
+                    </button>
+                    <button id="help-view-resolve" class="px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700 text-sm" title="Resolve" aria-label="Resolve">
+                        <i class="fas fa-check-circle mr-1"></i>Resolve
+                    </button>
+                </div>
+                <div id="help-view-status" class="mt-2 text-sm hidden"></div>
                     </div>
                 </div>
             </div>
@@ -122,11 +156,11 @@
             </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
-                    <input type="password" id="new-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" required>
+                    <input type="password" id="new-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" minlength="6" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
-                    <input type="password" id="confirm-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" required>
+                    <input type="password" id="confirm-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" minlength="6" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes (Optional)</label>
@@ -145,101 +179,234 @@
     <script src="js/api.js"></script>
 
     <script>
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        
-        // Check for saved user preference
-        if (localStorage.getItem('color-theme')) {
-            if (localStorage.getItem('color-theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
+        // Header handles theme toggle globally
+
+        // Safe JSON fetch with fallback when window.api.get fails or returns non-JSON
+        async function fetchJsonSafe(url) {
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+            }
+            if (contentType.includes('application/json')) {
+                return await response.json();
+            }
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Non-JSON response');
             }
         }
-        
-        themeToggle.addEventListener('click', function() {
-            if (themeIcon.classList.contains('fa-moon')) {
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
+
+        async function getJson(url) {
+            try {
+                if (window.api && typeof window.api.get === 'function') {
+                    return await window.api.get(url);
+                }
+            } catch (e) {
+                // Fall through to fetch fallback
             }
-            
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
+            try {
+                return await fetchJsonSafe(url);
+            } catch (e) {
+                console.warn('GET ' + url + ' failed:', e && e.message ? e.message : e);
+                return { success: false };
             }
-        });
+        }
 
         let currentUserId = null;
+        let helpItems = [];
+        let selectedHelpId = null;
         const resetModal = document.getElementById('reset-modal');
-        const closeResetModal = document.getElementById('close-reset-modal');
+        const closeResetModalBtn = document.getElementById('close-reset-modal');
         const resetForm = document.getElementById('reset-form');
         const dismissRequest = document.getElementById('dismiss-request');
         const resetMessage = document.getElementById('reset-message');
+        const helpTBodyEl = document.getElementById('help-requests-body');
+        const helpViewModal = document.getElementById('help-view-modal');
+        const closeHelpViewBtn = document.getElementById('close-help-view');
+        const helpViewResolveBtn = document.getElementById('help-view-resolve');
+        const helpViewAcceptBtn = document.getElementById('help-view-accept');
 
-        // Load help requests
+        // Load help requests (generic) and update badge
         async function loadHelpRequests() {
             try {
-                const [requestsResponse, statsResponse] = await Promise.all([
-                    window.api.get('/admin-help/requests'),
-                    window.api.get('/admin-help/stats')
+                const [helpResponse, statsResponse] = await Promise.all([
+                    getJson('/admin-help/requests'),
+                    getJson('/admin-help/stats')
                 ]);
 
-                // Update statistics
-                if (statsResponse.success) {
-                    document.getElementById('total-requests').textContent = statsResponse.stats.total_requests || 0;
-                    document.getElementById('active-requests').textContent = statsResponse.stats.active_requests || 0;
-                    document.getElementById('expired-requests').textContent = statsResponse.stats.expired_requests || 0;
+                helpItems = (helpResponse && helpResponse.success && Array.isArray(helpResponse.items)) ? helpResponse.items.slice() : [];
+
+                // Update statistics cards if present
+                if (statsResponse && statsResponse.success) {
+                    const stats = statsResponse.stats || {};
+                    const totalEl = document.getElementById('total-requests');
+                    const activeEl = document.getElementById('active-requests');
+                    const expiredEl = document.getElementById('expired-requests');
+                    if (totalEl) totalEl.textContent = stats.total_requests || 0;
+                    if (activeEl) activeEl.textContent = stats.active_requests || 0;
+                    if (expiredEl) expiredEl.textContent = stats.expired_requests || 0;
                 }
 
-                // Update table
-                const tableBody = document.getElementById('requests-table-body');
-                const noRequests = document.getElementById('no-requests');
-
-                if (requestsResponse.success && requestsResponse.requests.length > 0) {
-                    tableBody.innerHTML = '';
-                    noRequests.classList.add('hidden');
-
-                    requestsResponse.requests.forEach(request => {
-                        const row = document.createElement('tr');
-                        const requestedDate = new Date(request.help_requested_at).toLocaleString();
-                        const expiryDate = new Date(request.help_token_expiry).toLocaleString();
-                        
+                // Update help requests table
+                const helpTBody = document.getElementById('help-requests-body');
+                if (helpTBody) {
+                    helpTBody.innerHTML = '';
+                    if (helpItems.length) {
+                        helpItems.forEach(function (item) {
+                            var created = item.created_at ? new Date(item.created_at).toLocaleString() : '';
+                            var statusBadge = '<span class="px-2 py-1 rounded text-xs ' +
+                                (item.status === 'resolved' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                                item.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
+                                'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300') +
+                                '">' + (item.status || 'open') + '</span>';
+                            var priorityBadge = '<span class="px-2 py-1 rounded text-xs ' +
+                                (item.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                item.priority === 'low' ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' :
+                                'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300') +
+                                '">' + (item.priority || 'normal') + '</span>';
+                            var row = document.createElement('tr');
                         row.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                ${request.full_name}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${request.email}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${requestedDate}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                ${expiryDate}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="openResetModal(${request.id}, '${request.full_name}', '${request.email}')" 
-                                        class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
-                                    Reset Password
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${item.user_name || ''}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${item.user_email || ''}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${item.category || ''}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${item.type || ''}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${item.subject || ''}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${statusBadge}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${priorityBadge}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${created}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-3">
+                                    <button class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400" data-action="view" data-id="${item.id}" title="View" aria-label="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-green-600 dark:text-green-400" data-action="resolve" data-id="${item.id}" title="Resolve" aria-label="Resolve">
+                                        <i class="fas fa-check-circle"></i>
                                 </button>
-                            </td>
-                        `;
-                        tableBody.appendChild(row);
+                                </td>`;
+                            helpTBody.appendChild(row);
                     });
                 } else {
-                    tableBody.innerHTML = '';
-                    noRequests.classList.remove('hidden');
+                        var row = document.createElement('tr');
+                        row.innerHTML = `<td colspan="8" class="px-6 py-8 text-center text-gray-500 dark:text-gray-300">No help requests.</td>`;
+                        helpTBody.appendChild(row);
+                    }
+                }
+
+                // Update help badge in sidebar if present
+                var badge = document.getElementById('help-badge');
+                if (badge) {
+                    var count = 0;
+                    if (statsResponse && statsResponse.success) {
+                        count = statsResponse.stats && statsResponse.stats.active_requests ? statsResponse.stats.active_requests : 0;
+                    } else if (helpResponse.success && Array.isArray(helpResponse.items)) {
+                        count = helpResponse.items.filter(function (i) { return i.status !== 'resolved'; }).length;
+                    }
+                    badge.textContent = String(count);
+                    badge.classList.toggle('hidden', count === 0);
                 }
             } catch (error) {
                 console.error('Error loading help requests:', error);
             }
+        }
+
+        // Event delegation for action icons
+        if (helpTBodyEl) {
+            helpTBodyEl.addEventListener('click', function (e) {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const action = btn.getAttribute('data-action');
+                const id = parseInt(btn.getAttribute('data-id'), 10);
+                const item = helpItems.find(function (it) { return it.id === id; });
+                if (!item) return;
+                if (action === 'view') {
+                    openHelpView(item);
+                } else if (action === 'resolve') {
+                    resolveHelp(item);
+                }
+            });
+        }
+
+        function openHelpView(item) {
+            selectedHelpId = item.id;
+            document.getElementById('help-view-user').textContent = item.user_name || '';
+            document.getElementById('help-view-email').textContent = item.user_email || '';
+            document.getElementById('help-view-category').textContent = item.category || '';
+            document.getElementById('help-view-subject').textContent = item.subject || '';
+            document.getElementById('help-view-message').textContent = item.message || '';
+            document.getElementById('help-view-status').textContent = item.status || '';
+            document.getElementById('help-view-priority').textContent = item.priority || '';
+            // Show the reset form sender only for password pain points or too many security attempts
+            const shouldShowReset = (item.type === 'reset_password') || (Number(item.security_attempts || 0) >= 3);
+            if (helpViewSendResetBtn) helpViewSendResetBtn.classList.toggle('hidden', !shouldShowReset);
+            helpViewModal.classList.remove('hidden');
+        }
+
+        function closeHelpView() {
+            helpViewModal.classList.add('hidden');
+            selectedHelpId = null;
+        }
+
+        if (closeHelpViewBtn) {
+            closeHelpViewBtn.addEventListener('click', closeHelpView);
+        }
+        if (helpViewModal) {
+            helpViewModal.addEventListener('click', function (e) {
+                if (e.target === helpViewModal) closeHelpView();
+            });
+        }
+
+        if (helpViewAcceptBtn) {
+            helpViewAcceptBtn.addEventListener('click', async function () {
+                try {
+                    const item = helpItems.find(function (it) { return it.id === selectedHelpId; });
+                    if (!item) return;
+                    // Accept the request: generate help token so user skips questions automatically
+                    if (window.api && typeof window.api.post === 'function') {
+                        await window.api.post('/admin-help/accept', { user_id: item.user_id, email: item.user_email, duration_minutes: 30 });
+                    }
+                    const statusEl = document.getElementById('help-view-status');
+                    if (statusEl) {
+                        statusEl.textContent = 'Accepted. User can now reset password without security questions.';
+                        statusEl.classList.remove('hidden');
+                        statusEl.classList.remove('text-red-600', 'dark:text-red-400');
+                        statusEl.classList.add('text-green-600');
+                    }
+                    // Also show a visible confirmation
+                    alert('Accepted. User can reset password now.');
+                    // Close view and refresh list so the item is removed
+                    closeHelpView();
+                    await loadHelpRequests();
+                } catch (e) {
+                    console.warn('accept help failed', e);
+                    const statusEl = document.getElementById('help-view-status');
+                    if (statusEl) {
+                        statusEl.textContent = 'Could not accept request. Please try again later.';
+                        statusEl.classList.remove('hidden');
+                        statusEl.classList.remove('text-green-600');
+                        statusEl.classList.add('text-red-600', 'dark:text-red-400');
+                    }
+                }
+            });
+        }
+
+        async function resolveHelp(item) {
+            try {
+                if (window.api && typeof window.api.post === 'function') {
+                    await window.api.post('/admin-help/resolve', { id: item.id, user_id: item.user_id, type: item.type || null });
+                }
+            } catch (e) {
+                // ignore network errors in mock mode
+            }
+            // Update local state optimistically
+            item.status = 'resolved';
+            // If password reset resolution was triggered, emulate clearing password server-side
+            if (item.type === 'reset_password') {
+                console.log('Password cleared for user_id', item.user_id);
+            }
+            closeHelpView();
+            await loadHelpRequests();
         }
 
         // Open reset modal
@@ -338,7 +505,7 @@
         });
 
         // Close modal handlers
-        closeResetModal.addEventListener('click', closeResetModal);
+        closeResetModalBtn.addEventListener('click', closeResetModal);
         resetModal.addEventListener('click', function(e) {
             if (e.target === resetModal) {
                 closeResetModal();

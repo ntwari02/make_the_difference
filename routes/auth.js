@@ -100,6 +100,19 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Account is inactive. Please contact admin.' });
     }
 
+    // Check if user is an admin - if so, redirect them to admin login
+    const [adminCheck] = await db.query(
+      'SELECT id FROM admin_users WHERE user_id = ? AND is_active = TRUE',
+      [user.id]
+    );
+
+    if (adminCheck.length > 0) {
+      return res.status(403).json({ 
+        message: 'This is an admin account. Please use the admin login instead.',
+        code: 'ADMIN_ACCOUNT'
+      });
+    }
+
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -129,13 +142,53 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Forgot Password - Get security questions
+// Forgot Password - Get security questions (for both regular users and admin users)
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+  if (!email) return res.json({ success: false, message: 'Email is required' });
   
   try {
-    // Check if user exists and has security questions set up
+    // First check if it's an admin user
+    const [admins] = await db.query(`
+      SELECT au.id, au.email, au.user_id, u.security_questions_setup,
+             COUNT(usa.id) as question_count
+      FROM admin_users au
+      LEFT JOIN users u ON au.user_id = u.id
+      LEFT JOIN user_security_answers usa ON u.id = usa.user_id
+      WHERE au.email = ? AND au.is_active = TRUE
+      GROUP BY au.id
+    `, [email]);
+    
+    if (admins.length > 0) {
+      // It's an admin user
+      const admin = admins[0];
+      
+      if (!admin.security_questions_setup || admin.question_count < 2) {
+        return res.json({ 
+          success: false, 
+          message: 'Security questions not set up for this admin account. Please contact super administrator.' 
+        });
+      }
+      
+      // Get admin's security questions
+      const [questions] = await db.query(`
+        SELECT sq.id, sq.question
+        FROM security_questions sq
+        INNER JOIN user_security_answers usa ON sq.id = usa.question_id
+        WHERE usa.user_id = ?
+        ORDER BY sq.question
+      `, [admin.user_id]);
+      
+      res.json({ 
+        success: true, 
+        message: 'Security questions retrieved successfully',
+        questions: questions,
+        isAdmin: true
+      });
+      return;
+    }
+    
+    // Check if it's a regular user
     const [users] = await db.query(`
       SELECT u.id, u.email, u.security_questions_setup,
              COUNT(usa.id) as question_count
@@ -146,16 +199,16 @@ router.post('/forgot-password', async (req, res) => {
     `, [email]);
     
     if (users.length === 0) {
-      return res.status(404).json({ 
+      return res.json({ 
         success: false, 
-        message: 'No account found with this email address' 
+        message: 'If this email exists, we have sent instructions to proceed.' 
       });
     }
     
     const user = users[0];
     
     if (!user.security_questions_setup || user.question_count < 2) {
-      return res.status(400).json({ 
+      return res.json({ 
         success: false, 
         message: 'Security questions not set up for this account. Please contact administrator.' 
       });
@@ -173,7 +226,8 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Security questions retrieved successfully',
-      questions: questions
+      questions: questions,
+      isAdmin: false
     });
     
   } catch (error) {
@@ -253,6 +307,14 @@ router.post('/admin-login', async (req, res) => {
       console.error('Error updating admin last login:', error);
     }
 
+    // Safely parse permissions
+    let parsedPermissions = {};
+    try {
+      parsedPermissions = typeof admin.permissions === 'string' ? JSON.parse(admin.permissions || '{}') : (admin.permissions || {});
+    } catch (e) {
+      parsedPermissions = {};
+    }
+
     res.json({
       message: 'Admin login successful',
       token,
@@ -262,7 +324,7 @@ router.post('/admin-login', async (req, res) => {
         email: admin.email,
         isAdmin: true,
         adminLevel: admin.admin_level,
-        permissions: typeof admin.permissions === 'string' ? JSON.parse(admin.permissions || '{}') : (admin.permissions || {})
+        permissions: parsedPermissions
       }
     });
   } catch (error) {

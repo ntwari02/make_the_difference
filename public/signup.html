@@ -6,8 +6,22 @@
     <title>Secure Signup - Scholarship Management System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="js/api.js"></script>
-    <script src="js/secure-signup.js"></script>
     <style>
         .password-strength-meter {
             height: 4px;
@@ -76,14 +90,14 @@
     </div>
 
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
+        <div class="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
             <!-- Header -->
-            <div class="text-center">
+            <div class="text-center border-b border-gray-200 dark:border-gray-700 pb-6 mb-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
                         Create Secure Account
                     </h2>
-                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors shadow-sm">
                         <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
                     </button>
                 </div>
@@ -252,8 +266,11 @@
                 </div>
 
                 <!-- Security Questions -->
-                <div class="space-y-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Security Questions</h3>
+                <div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                        <i class="fas fa-shield-alt mr-2 text-blue-600 dark:text-blue-400"></i>
+                        Security Questions
+                    </h3>
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                         These questions will help secure your account and enable password recovery.
                     </p>
@@ -261,10 +278,11 @@
                     <div id="securityQuestions" class="space-y-4">
                         <!-- Security questions will be loaded here -->
                     </div>
+                    <div id="securityQuestions-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
                 </div>
 
                 <!-- Terms and Conditions -->
-                <div class="flex items-start">
+                <div class="flex items-start p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <input 
                         type="checkbox" 
                         id="termsAccepted" 
@@ -273,17 +291,18 @@
                     >
                     <label for="termsAccepted" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
                         I agree to the 
-                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a> 
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Terms of Service</a> 
                         and 
-                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</a>
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Privacy Policy</a>
                     </label>
                 </div>
+                <div id="terms-error" class="hidden text-sm text-red-600 dark:text-red-400 mt-1"></div>
 
                 <!-- Submit Button -->
                 <button 
                     type="submit" 
                     id="signupButton"
-                    class="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-800 dark:hover:to-blue-900 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                     <span id="signupButtonText">Create Account</span>
                     <i id="signupButtonIcon" class="fas fa-user-plus ml-2"></i>
@@ -291,27 +310,42 @@
             </form>
 
             <!-- Login Link -->
-            <div class="text-center">
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                 <p class="text-gray-600 dark:text-gray-400">
                     Already have an account? 
-                    <a href="login.html" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors">
+                    <a href="login.html" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors hover:underline">
                         Sign in here
                     </a>
                 </p>
             </div>
 
             <!-- Security Features Info -->
-            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-                    <i class="fas fa-shield-alt mr-2"></i>
-                    Security Features
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl border border-green-200 dark:border-green-800 shadow-lg">
+                <h4 class="text-sm font-medium text-green-900 dark:text-green-100 mb-3 flex items-center">
+                    <i class="fas fa-shield-alt mr-2 text-green-600 dark:text-green-400"></i>
+                    Enterprise Security Features
                 </h4>
-                <ul class="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                    <li>• Input validation & sanitization</li>
-                    <li>• SQL injection prevention</li>
-                    <li>• Role-based access control</li>
-                    <li>• Secure password handling</li>
-                    <li>• Session management</li>
+                <ul class="text-xs text-green-800 dark:text-green-200 space-y-2">
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2"></i>
+                        Input validation & sanitization
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2"></i>
+                        SQL injection prevention
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2"></i>
+                        Role-based access control
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2"></i>
+                        Secure password handling
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2"></i>
+                        Session management
+                    </li>
                 </ul>
             </div>
         </div>
@@ -339,5 +373,7 @@
             </button>
         </div>
     </div>
+
+    <script src="js/secure-signup.js"></script>
 </body>
 </html>

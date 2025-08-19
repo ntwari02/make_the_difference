@@ -167,12 +167,13 @@ router.get('/top-scholarships', bypassAuth, async (req, res) => {
         s.id,
         s.name as title,
         s.description,
-        s.university,
+        s.sponsor AS university,
+        s.scholarship_type,
         s.application_deadline as deadline,
         COUNT(sa.application_id) as application_count
       FROM scholarships s
       LEFT JOIN scholarship_applications sa ON s.id = sa.scholarship_id
-      GROUP BY s.id, s.name, s.description, s.university, s.application_deadline
+      GROUP BY s.id, s.name, s.description, s.sponsor, s.scholarship_type, s.application_deadline
       ORDER BY application_count DESC, s.name ASC
       LIMIT 10
     `);
@@ -188,15 +189,15 @@ router.get('/top-scholarships', bypassAuth, async (req, res) => {
       ORDER BY month ASC
     `, [period]);
 
-    // 4. Scholarship categories (by university)
+    // 4. Scholarship categories (by scholarship_type)
     const [categories] = await db.query(`
       SELECT 
-        s.university as name,
+        s.scholarship_type as name,
         COUNT(sa.application_id) as count
       FROM scholarships s
       LEFT JOIN scholarship_applications sa ON s.id = sa.scholarship_id
-      WHERE s.university IS NOT NULL AND s.university != ''
-      GROUP BY s.university
+      WHERE s.scholarship_type IS NOT NULL AND s.scholarship_type != ''
+      GROUP BY s.scholarship_type
       ORDER BY count DESC
       LIMIT 5
     `);
@@ -388,7 +389,7 @@ router.get('/export', bypassAuth, async (req, res) => {
     
     if (type === 'all' || type === 'scholarships') {
       const [scholarships] = await db.query(`
-        SELECT id, name, description, application_deadline, status, scholarship_type, 
+        SELECT id, name, description, application_deadline, status, scholarship_type
         FROM scholarships
         ORDER BY created_at DESC
       `);

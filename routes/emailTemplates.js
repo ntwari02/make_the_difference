@@ -7,7 +7,7 @@ const router = express.Router();
 // GET all email templates
 router.get('/', bypassAuth, async (req, res) => {
     try {
-        const [rows] = await pool.promise().query("SELECT * FROM email_templates ORDER BY id");
+        const [rows] = await pool.query("SELECT * FROM email_templates ORDER BY id");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -17,7 +17,7 @@ router.get('/', bypassAuth, async (req, res) => {
 // GET email template by ID
 router.get('/:id', bypassAuth, async (req, res) => {
     try {
-        const [rows] = await pool.promise().query("SELECT * FROM email_templates WHERE id = ?", [req.params.id]);
+        const [rows] = await pool.query("SELECT * FROM email_templates WHERE id = ?", [req.params.id]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Email template not found' });
         }
@@ -36,12 +36,12 @@ router.post('/', bypassAuth, async (req, res) => {
             return res.status(400).json({ error: 'Name, subject, and content are required' });
         }
 
-        const [result] = await pool.promise().query(
+        const [result] = await pool.query(
             "INSERT INTO email_templates (name, subject, content, category, is_active) VALUES (?, ?, ?, ?, ?)",
             [name, subject, content, category || 'custom', is_active !== undefined ? is_active : true]
         );
 
-        const [newTemplate] = await pool.promise().query("SELECT * FROM email_templates WHERE id = ?", [result.insertId]);
+        const [newTemplate] = await pool.query("SELECT * FROM email_templates WHERE id = ?", [result.insertId]);
         res.status(201).json(newTemplate[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -55,17 +55,17 @@ router.put('/:id', bypassAuth, async (req, res) => {
         const templateId = req.params.id;
 
         // Check if template exists
-        const [existing] = await pool.promise().query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
+        const [existing] = await pool.query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
         if (existing.length === 0) {
             return res.status(404).json({ error: 'Email template not found' });
         }
 
-        const [result] = await pool.promise().query(
+        const [result] = await pool.query(
             "UPDATE email_templates SET name = ?, subject = ?, content = ?, category = ?, is_active = ?, updated_at = NOW() WHERE id = ?",
             [name, subject, content, category, is_active, templateId]
         );
 
-        const [updatedTemplate] = await pool.promise().query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
+        const [updatedTemplate] = await pool.query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
         res.json(updatedTemplate[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -78,12 +78,12 @@ router.delete('/:id', bypassAuth, async (req, res) => {
         const templateId = req.params.id;
 
         // Check if template exists
-        const [existing] = await pool.promise().query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
+        const [existing] = await pool.query("SELECT * FROM email_templates WHERE id = ?", [templateId]);
         if (existing.length === 0) {
             return res.status(404).json({ error: 'Email template not found' });
         }
 
-        await pool.promise().query("DELETE FROM email_templates WHERE id = ?", [templateId]);
+        await pool.query("DELETE FROM email_templates WHERE id = ?", [templateId]);
         res.json({ message: 'Email template deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -108,7 +108,7 @@ router.post('/test-send', bypassAuth, async (req, res) => {
             emailSubject = 'Custom Test Email';
         } else {
             // Get template from database
-            const [templates] = await pool.promise().query(
+            const [templates] = await pool.query(
                 "SELECT * FROM email_templates WHERE category = ? OR name LIKE ? LIMIT 1",
                 [template_type, `%${template_type}%`]
             );
@@ -191,7 +191,7 @@ router.post('/test-send', bypassAuth, async (req, res) => {
 // GET templates by category
 router.get('/category/:category', bypassAuth, async (req, res) => {
     try {
-        const [rows] = await pool.promise().query(
+        const [rows] = await pool.query(
             "SELECT * FROM email_templates WHERE category = ? ORDER BY name",
             [req.params.category]
         );
@@ -216,13 +216,13 @@ router.post('/bulk-update', bypassAuth, async (req, res) => {
 
             if (id) {
                 // Update existing template
-                await pool.promise().query(
+                await pool.query(
                     "UPDATE email_templates SET name = ?, subject = ?, content = ?, category = ?, is_active = ?, updated_at = NOW() WHERE id = ?",
                     [name, subject, content, category, is_active, id]
                 );
             } else {
                 // Create new template
-                const [result] = await pool.promise().query(
+                const [result] = await pool.query(
                     "INSERT INTO email_templates (name, subject, content, category, is_active) VALUES (?, ?, ?, ?, ?)",
                     [name, subject, content, category, is_active]
                 );
@@ -272,7 +272,7 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
         }
 
         // Get users
-        const [users] = await pool.promise().query(
+        const [users] = await pool.query(
             "SELECT id, full_name, email FROM users WHERE id IN (?)",
             [user_ids]
         );

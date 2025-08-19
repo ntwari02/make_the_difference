@@ -42,37 +42,37 @@
     <div id="admin-header-container" data-page-title="Admin Analytics"></div>
     <main class="admin-main-content w-full">
         <div class="admin-content-container">
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Analytics Overview</h2>
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Analytics Overview</h2>
             
             <!-- Loading State -->
             <div id="loadingState" class="text-center py-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p class="mt-2 text-gray-600 dark:text-gray-400">Loading analytics data...</p>
+                <p class="mt-2 text-black dark:text-gray-400">Loading analytics data...</p>
             </div>
 
             <!-- Summary Cards -->
             <div id="summaryCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Active Users</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white">Active Users</h3>
                     <p id="activeUsers" class="text-2xl font-bold text-blue-500">-</p>
                 </div>
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">New Applications</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white">New Applications</h3>
                     <p id="newApplications" class="text-2xl font-bold text-green-500">-</p>
                 </div>
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pending Reviews</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white">Pending Reviews</h3>
                     <p id="pendingReviews" class="text-2xl font-bold text-yellow-500">-</p>
                 </div>
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Completed Scholarships</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white">Completed Scholarships</h3>
                     <p id="completedScholarships" class="text-2xl font-bold text-purple-500">-</p>
                 </div>
             </div>
 
             <!-- Interactive Analytics Section -->
             <div class="flex flex-wrap gap-4 mb-6">
-                <select id="dateFilter" class="px-4 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                <select id="dateFilter" class="px-4 py-2 border rounded-md dark:border-gray-600 dark:text-white">
                     <option value="6">Last 6 Months</option>
                     <option value="12">Last 12 Months</option>
                     <option value="3">Last 3 Months</option>
@@ -86,14 +86,14 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Activity</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white mb-4">User Activity</h3>
                     <div id="userActivityList" class="space-y-2">
                         <!-- User activity data will be loaded here -->
                     </div>
                 </div>
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Applications</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-black dark:text-white mb-4">Scholarship Applications</h3>
                     <div id="scholarshipApplicationsList" class="space-y-2">
                         <!-- Application data will be loaded here -->
                     </div>
@@ -102,21 +102,21 @@
 
             <!-- Advanced Analytics Section -->
             <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Advanced Analytics</h3>
+                <h3 class="text-lg font-semibold text-black dark:text-white mb-4">Advanced Analytics</h3>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">User Growth</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Track user growth trends over time.</p>
+                    <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-black dark:text-white">User Growth</h4>
+                        <p class="text-sm text-black dark:text-gray-300">Track user growth trends over time.</p>
                         <button onclick="showUserGrowthDetails()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">View Details</button>
                     </div>
-                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Application Insights</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Analyze application success rates.</p>
+                    <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-black dark:text-white">Application Insights</h4>
+                        <p class="text-sm text-black dark:text-gray-300">Analyze application success rates.</p>
                         <button onclick="showApplicationInsights()" class="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">View Details</button>
                     </div>
-                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                        <h4 class="text-md font-semibold text-gray-800 dark:text-white">Top Scholarships</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">View most popular scholarships.</p>
+                    <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                        <h4 class="text-md font-semibold text-black dark:text-white">Top Scholarships</h4>
+                        <p class="text-sm text-black dark:text-gray-300">View most popular scholarships.</p>
                         <button onclick="showTopScholarships()" class="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">View Details</button>
                     </div>
                 </div>
@@ -124,18 +124,18 @@
 
             <!-- Chart Section -->
             <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Growth Chart</h3>
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6">
-                    <canvas id="userGrowthChart" class="w-full h-64"></canvas>
+                <h3 class="text-lg font-semibold text-black dark:text-white mb-4">User Growth Chart</h3>
+                <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
+                    <canvas id="userGrowthChart" class="w-full h-48"></canvas>
                 </div>
             </div>
         </div>
     </main>
 
     <!-- User Growth Details Modal -->
-    <div id="userGrowthModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div id="userGrowthModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="if(event.target === this) closeUserGrowthModal()">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xl font-semibold text-gray-800 dark:text-white">User Growth Analytics</h3>
@@ -171,7 +171,7 @@
                         </div>
 
                         <!-- User Demographics -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 w-full">
                             <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Demographics</h4>
                                 <div class="space-y-3">
@@ -194,17 +194,14 @@
                                 </div>
                             </div>
 
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Registration Trends</h4>
-                                <canvas id="registrationTrendChart" class="w-full h-48"></canvas>
-                            </div>
+                            
                         </div>
 
                         <!-- Detailed User Activity -->
-                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6 mb-6">
+                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 mb-4">
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Monthly User Growth</h4>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
+                            <div class="overflow-x-auto text-sm">
+                                <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b border-gray-200 dark:border-gray-600">
                                             <th class="text-left py-2 text-gray-600 dark:text-gray-300">Month</th>
@@ -221,8 +218,8 @@
                         </div>
 
                         <!-- User Engagement -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">User Engagement</h4>
                                 <div class="space-y-3">
                                     <div class="flex justify-between items-center">
@@ -240,7 +237,7 @@
                                 </div>
                             </div>
 
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top User Activities</h4>
                                 <div id="topUserActivities" class="space-y-2">
                                     <!-- Activity data will be populated here -->
@@ -254,9 +251,9 @@
     </div>
 
     <!-- Application Insights Modal -->
-    <div id="applicationInsightsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div id="applicationInsightsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="if(event.target === this) closeApplicationInsightsModal()">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Application Insights Analytics</h3>
@@ -392,7 +389,7 @@
     </div>
 
     <!-- Top Scholarships Modal -->
-    <div id="topScholarshipsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div id="topScholarshipsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="if(event.target === this) closeTopScholarshipsModal()">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -425,23 +422,23 @@
                             </div>
                             <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
                                 <h4 class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Total Applications</h4>
-                                <p id="totalApplicationsCount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
+                                <p id="topTotalApplicationsCount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
                             </div>
                             <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                                 <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Avg Applications/Scholarship</h4>
-                                <p id="avgApplicationsPerScholarship" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
+                                <p id="topAvgApplicationsPerScholarship" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
                             </div>
                         </div>
 
                         <!-- Top Scholarships List -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Scholarships by Applications</h4>
                                 <div id="topScholarshipsList" class="space-y-3">
                                     <!-- Top scholarships will be populated here -->
                                 </div>
                             </div>
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Trends</h4>
                                 <div class="h-64">
                                     <canvas id="scholarshipApplicationTrendsChart" class="w-full h-full"></canvas>
@@ -451,13 +448,13 @@
 
                         <!-- Scholarship Categories and Recent Applications -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Categories</h4>
                                 <div id="scholarshipCategories" class="space-y-2">
                                     <!-- Categories will be populated here -->
                                 </div>
                             </div>
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                            <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                                 <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Applications</h4>
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-sm">
@@ -478,24 +475,24 @@
                         </div>
 
                         <!-- Performance Metrics -->
-                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                        <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Metrics</h4>
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div class="text-center">
                                     <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Completion Rate</h5>
-                                    <p id="completionRate" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</p>
+                                    <p id="topCompletionRate" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</p>
                                 </div>
                                 <div class="text-center">
                                     <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Avg Processing Time</h5>
-                                    <p id="avgProcessingTime" class="text-2xl font-bold text-green-600 dark:text-green-400">-</p>
+                                    <p id="topAvgProcessingTime" class="text-2xl font-bold text-green-600 dark:text-green-400">-</p>
                                 </div>
                                 <div class="text-center">
                                     <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Success Rate</h5>
-                                    <p id="successRate" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</p>
+                                    <p id="topSuccessRate" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</p>
                                 </div>
                                 <div class="text-center">
                                     <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">User Satisfaction</h5>
-                                    <p id="userSatisfaction" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</p>
+                                    <p id="topUserSatisfaction" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</p>
                                 </div>
                             </div>
                         </div>
@@ -505,119 +502,6 @@
         </div>
     </div>
 
-    <!-- Top Scholarships Modal -->
-    <div id="topScholarshipsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Top Scholarships Analytics</h3>
-                        <button onclick="closeTopScholarshipsModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="p-6">
-                    <!-- Loading State -->
-                    <div id="topScholarshipsLoading" class="text-center py-8">
-                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading top scholarships data...</p>
-                    </div>
-
-                    <!-- Top Scholarships Content -->
-                    <div id="topScholarshipsContent" class="hidden">
-                        <!-- Summary Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Scholarships</h4>
-                                <p id="totalScholarshipsCount" class="text-2xl font-bold text-blue-700 dark:text-blue-300">-</p>
-                            </div>
-                            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">Active Scholarships</h4>
-                                <p id="activeScholarshipsCount" class="text-2xl font-bold text-green-700 dark:text-green-300">-</p>
-                            </div>
-                            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-                                <h4 class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Total Applications</h4>
-                                <p id="totalApplicationsCount" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">-</p>
-                            </div>
-                            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                                <h4 class="text-sm font-medium text-purple-600 dark:text-purple-400">Avg Applications/Scholarship</h4>
-                                <p id="avgApplicationsPerScholarship" class="text-2xl font-bold text-purple-700 dark:text-purple-300">-</p>
-                            </div>
-                        </div>
-
-                        <!-- Top Scholarships List -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Scholarships by Applications</h4>
-                                <div id="topScholarshipsList" class="space-y-3">
-                                    <!-- Top scholarships will be populated here -->
-                                </div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Application Trends</h4>
-                                <div class="h-64">
-                                    <canvas id="scholarshipApplicationTrendsChart" class="w-full h-full"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Scholarship Categories and Recent Applications -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Scholarship Categories</h4>
-                                <div id="scholarshipCategories" class="space-y-2">
-                                    <!-- Categories will be populated here -->
-                                </div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Applications</h4>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm">
-                                        <thead>
-                                            <tr class="border-b border-gray-200 dark:border-gray-600">
-                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Applicant</th>
-                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Scholarship</th>
-                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Academic Level</th>
-                                                <th class="text-left py-2 text-gray-600 dark:text-gray-300">Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="topScholarshipsRecentTable">
-                                            <!-- Recent applications will be populated here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Performance Metrics -->
-                        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Metrics</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div class="text-center">
-                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Completion Rate</h5>
-                                    <p id="completionRate" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</p>
-                                </div>
-                                <div class="text-center">
-                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Avg Processing Time</h5>
-                                    <p id="avgProcessingTime" class="text-2xl font-bold text-green-600 dark:text-green-400">-</p>
-                                </div>
-                                <div class="text-center">
-                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">Success Rate</h5>
-                                    <p id="successRate" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</p>
-                                </div>
-                                <div class="text-center">
-                                    <h5 class="text-sm font-medium text-gray-600 dark:text-gray-300">User Satisfaction</h5>
-                                    <p id="userSatisfaction" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -630,6 +514,7 @@
 
         let userGrowthChart = null;
         let registrationTrendChart = null;
+        let applicationTrendChartInstance = null;
         let currentPeriod = 6;
 
         // Initialize analytics
@@ -652,7 +537,9 @@
         // Load summary data
         async function loadSummaryData() {
             try {
-                const response = await fetch('/api/analytics/summary');
+                const response = await fetch('/api/analytics/summary', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -670,7 +557,9 @@
         // Load user growth data
         async function loadUserGrowthData() {
             try {
-                const response = await fetch(`/api/analytics/user-growth?period=${currentPeriod}`);
+                const response = await fetch(`/api/analytics/user-growth?period=${currentPeriod}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -685,7 +574,9 @@
         // Load application statistics
         async function loadApplicationStats() {
             try {
-                const response = await fetch(`/api/analytics/application-stats?period=${currentPeriod}`);
+                const response = await fetch(`/api/analytics/application-stats?period=${currentPeriod}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -699,6 +590,9 @@
         // Update user growth chart
         function updateUserGrowthChart(data) {
         const ctx = document.getElementById('userGrowthChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#ffffff' : '#111827';
+            const gridColor = isDark ? '#374151' : '#e5e7eb';
             
             if (userGrowthChart) {
                 userGrowthChart.destroy();
@@ -737,7 +631,7 @@
                     legend: {
                         display: true,
                         labels: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                color: textColor,
                                 usePointStyle: true,
                                 pointStyle: 'circle'
                             }
@@ -746,22 +640,24 @@
                 scales: {
                     x: {
                         ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                color: textColor,
+                                font: { size: 12, weight: '600' },
                                 maxRotation: 45,
                                 minRotation: 0
                             },
                             grid: {
-                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                                color: gridColor,
                                 display: false
                             }
                         },
                         y: {
                             ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                color: textColor,
+                                font: { size: 12, weight: '600' },
                                 stepSize: 1
                             },
                             grid: {
-                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                                color: gridColor
                             }
                         }
                     },
@@ -776,13 +672,15 @@
         // Update user activity list
         function updateUserActivityList(data) {
             const container = document.getElementById('userActivityList');
+            const isDark = document.documentElement.classList.contains('dark');
+            const textClass = isDark ? 'text-white' : 'text-black';
             container.innerHTML = data.map(item => {
                 const date = new Date(item.month + '-01');
                 const monthName = date.toLocaleDateString('en-US', { month: 'long' });
                 return `
-                    <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                        <span>${monthName}</span>
-                        <span>${item.new_users} New Users</span>
+                    <li class="flex justify-between">
+                        <span class=\"text-black dark:text-white\">${monthName}</span>
+                        <span class=\"text-black dark:text-white\">${item.new_users} New Users</span>
                     </li>
                 `;
             }).join('');
@@ -791,13 +689,15 @@
         // Update application list
         function updateApplicationList(data) {
             const container = document.getElementById('scholarshipApplicationsList');
+            const isDark = document.documentElement.classList.contains('dark');
+            const textClass = isDark ? 'text-white' : 'text-black';
             container.innerHTML = data.map(item => {
                 const date = new Date(item.month + '-01');
                 const monthName = date.toLocaleDateString('en-US', { month: 'long' });
                 return `
-                    <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                        <span>${monthName}</span>
-                        <span>${item.total_applications} Applications</span>
+                    <li class="flex justify-between">
+                        <span class=\"text-black dark:text-white\">${monthName}</span>
+                        <span class=\"text-black dark:text-white\">${item.total_applications} Applications</span>
                     </li>
                 `;
             }).join('');
@@ -815,7 +715,8 @@
 
         // User Growth Modal Functions
         async function showUserGrowthDetails() {
-            document.getElementById('userGrowthModal').classList.remove('hidden');
+            const modal = document.getElementById('userGrowthModal');
+            modal.classList.remove('hidden');
             document.getElementById('userGrowthLoading').classList.remove('hidden');
             document.getElementById('userGrowthContent').classList.add('hidden');
             
@@ -834,12 +735,16 @@
         async function loadUserGrowthDetails() {
             try {
                 // Load summary data for the modal
-                const summaryResponse = await fetch('/api/analytics/summary');
+                const summaryResponse = await fetch('/api/analytics/summary', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 const summaryData = await summaryResponse.json();
                 
                 // Load user growth data
-                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`);
+                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 const growthData = await growthResponse.json();
                 
@@ -885,9 +790,6 @@
             // Update growth table
             updateUserGrowthTable(growthData);
             
-            // Update registration trend chart
-            updateRegistrationTrendChart(growthData);
-            
             // Update top activities
             updateTopUserActivities();
         }
@@ -913,69 +815,7 @@
             }).join('');
         }
 
-        function updateRegistrationTrendChart(growthData) {
-            const ctx = document.getElementById('registrationTrendChart').getContext('2d');
-            
-            if (registrationTrendChart) {
-                registrationTrendChart.destroy();
-            }
-
-            const labels = growthData.map(item => {
-                const date = new Date(item.month + '-01');
-                return date.toLocaleDateString('en-US', { month: 'short' });
-            });
-            
-            const values = growthData.map(item => item.new_users);
-
-            registrationTrendChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'New Registrations',
-                        data: values,
-                        backgroundColor: 'rgba(147, 51, 234, 0.8)',
-                        borderColor: 'rgba(147, 51, 234, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 750
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
-                                maxRotation: 45,
-                                minRotation: 0
-                            },
-                            grid: {
-                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
-                                display: false
-                        }
-                    },
-                    y: {
-                        ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
-                                stepSize: 1
-                            },
-                            grid: {
-                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        function updateRegistrationTrendChart(growthData) { /* Registration Trends removed */ }
 
         function updateTopUserActivities() {
             const activitiesContainer = document.getElementById('topUserActivities');
@@ -1066,7 +906,8 @@
 
         // Detail view functions
         async function showApplicationInsights() {
-            document.getElementById('applicationInsightsModal').classList.remove('hidden');
+            const modal = document.getElementById('applicationInsightsModal');
+            modal.classList.remove('hidden');
             document.getElementById('applicationInsightsLoading').classList.remove('hidden');
             document.getElementById('applicationInsightsContent').classList.add('hidden');
             
@@ -1085,7 +926,9 @@
         async function loadApplicationInsights() {
             try {
                 // Load application statistics
-                const statsResponse = await fetch(`/api/analytics/application-stats?period=12`);
+                const statsResponse = await fetch(`/api/analytics/application-stats?period=12`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 
                 const statsData = await statsResponse.json();
                 
@@ -1178,7 +1021,7 @@
                     scales: {
                         x: {
                             ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#374151',
                                 maxRotation: 45,
                                 minRotation: 0
                             },
@@ -1189,7 +1032,7 @@
                         },
                         y: {
                             ticks: {
-                                color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#374151',
                                 stepSize: 1
                             },
                             grid: {
@@ -1338,7 +1181,8 @@
         }
 
         function showTopScholarships() {
-            document.getElementById('topScholarshipsModal').classList.remove('hidden');
+            const modal = document.getElementById('topScholarshipsModal');
+            modal.classList.remove('hidden');
             loadTopScholarships();
         }
 
@@ -1353,7 +1197,7 @@
             loadingDiv.classList.remove('hidden');
             contentDiv.classList.add('hidden');
 
-            fetch('/api/analytics/top-scholarships')
+            fetch('/api/analytics/top-scholarships', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
                 .then(response => response.json())
                 .then(data => {
                     loadingDiv.classList.add('hidden');
@@ -1374,8 +1218,8 @@
             // Update summary cards
             document.getElementById('totalScholarshipsCount').textContent = data.total_scholarships || '0';
             document.getElementById('activeScholarshipsCount').textContent = data.active_scholarships || '0';
-            document.getElementById('totalApplicationsCount').textContent = data.total_applications || '0';
-            document.getElementById('avgApplicationsPerScholarship').textContent = data.avg_applications || '0';
+            document.getElementById('topTotalApplicationsCount').textContent = data.total_applications || '0';
+            document.getElementById('topAvgApplicationsPerScholarship').textContent = data.avg_applications || '0';
 
             // Update top scholarships list
             updateTopScholarshipsList(data.top_scholarships || []);
@@ -1410,13 +1254,13 @@
                                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">#${index + 1}</span>
                                     <h4 class="font-semibold text-gray-800 dark:text-white">${scholarship.title}</h4>
                                 </div>
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">${scholarship.university || 'N/A'}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">${scholarship.university || scholarship.scholarship_type || '-'}</p>
                                 <div class="flex items-center gap-4 text-sm">
                                     <span class="text-blue-600 dark:text-blue-400">
                                         <i class="fas fa-users mr-1"></i>${scholarship.application_count} applications
                                     </span>
                                     <span class="text-green-600 dark:text-green-400">
-                                        <i class="fas fa-calendar mr-1"></i>${scholarship.deadline || 'N/A'}
+                                        <i class="fas fa-calendar mr-1"></i>${(scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-')}
                                     </span>
                                 </div>
                             </div>
@@ -1431,16 +1275,21 @@
         }
 
         function updateScholarshipApplicationTrends(trends) {
-            const ctx = document.getElementById('scholarshipApplicationTrendsChart');
-            
-            if (window.scholarshipApplicationTrendsChart) {
-                window.scholarshipApplicationTrendsChart.destroy();
+            const canvas = document.getElementById('scholarshipApplicationTrendsChart');
+
+            const existingChart = (typeof Chart !== 'undefined' && Chart.getChart) ? Chart.getChart(canvas) : null;
+            if (existingChart && typeof existingChart.destroy === 'function') {
+                existingChart.destroy();
             }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const axisColor = isDark ? '#ffffff' : '#000000';
+            const gridColor = isDark ? '#374151' : '#e5e7eb';
 
             const labels = trends.map(t => t.month);
             const data = trends.map(t => t.applications);
 
-            window.scholarshipApplicationTrendsChart = new Chart(ctx, {
+            new Chart(canvas, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -1463,9 +1312,11 @@
                     scales: {
                         x: {
                             grid: {
-                                display: false
+                                display: false,
+                                color: gridColor
                             },
                             ticks: {
+                                color: axisColor,
                                 maxRotation: 45,
                                 minRotation: 0
                             }
@@ -1473,7 +1324,11 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
+                                color: axisColor,
                                 stepSize: 1
+                            },
+                            grid: {
+                                color: gridColor
                             }
                         }
                     },
@@ -1520,10 +1375,10 @@
         }
 
         function updateScholarshipPerformanceMetrics(performance) {
-            document.getElementById('completionRate').textContent = performance.completion_rate || '85%';
-            document.getElementById('avgProcessingTime').textContent = performance.avg_processing_time || '3.2 days';
-            document.getElementById('successRate').textContent = performance.success_rate || '78%';
-            document.getElementById('userSatisfaction').textContent = performance.user_satisfaction || '4.2/5';
+            document.getElementById('topCompletionRate').textContent = performance.completion_rate || '85%';
+            document.getElementById('topAvgProcessingTime').textContent = performance.avg_processing_time || '3.2 days';
+            document.getElementById('topSuccessRate').textContent = performance.success_rate || '78%';
+            document.getElementById('topUserSatisfaction').textContent = performance.user_satisfaction || '4.2/5';
         }
 
         function showTopScholarshipsError(message) {

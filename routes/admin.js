@@ -2,10 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
-<<<<<<< HEAD
-=======
 import { bypassAuth } from '../middleware/auth.js';
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
 import multer from 'multer';
 import { body, validationResult, param, query } from 'express-validator';
 import rateLimit from 'express-rate-limit';
@@ -150,9 +147,14 @@ const adminAuth = async (req, res, next) => {
     }
 };
 
-// Permission-based middleware
+// Permission-based middleware (super admin bypasses all checks)
 const requirePermission = (permission) => {
     return (req, res, next) => {
+        // Super admin: full access
+        if (req.user && req.user.admin_level === 'super_admin') {
+            return next();
+        }
+
         if (!req.user || !req.user.permissions) {
             return res.status(403).json({
                 success: false,
@@ -161,7 +163,15 @@ const requirePermission = (permission) => {
             });
         }
 
-        if (!req.user.permissions[permission]) {
+        // Support boolean flags or array-style permissions
+        const perms = req.user.permissions;
+        const hasPermission = Boolean(
+            (typeof perms === 'object' && perms !== null && perms[permission]) ||
+            (Array.isArray(perms) && perms.includes(permission)) ||
+            perms === '*'
+        );
+
+        if (!hasPermission) {
             return res.status(403).json({
                 success: false,
                 message: `Access denied. Permission '${permission}' required.`,
@@ -255,53 +265,7 @@ const upload = multer({
     }
 });
 
-// Dashboard statistics with enhanced security
-router.get('/dashboard', adminAuth, async (req, res) => {
-    try {
-        // Use parameterized queries to prevent SQL injection
-        const [usersCount] = await db.query('SELECT COUNT(*) as count FROM users WHERE status = ?', ['active']);
-        const [partnersCount] = await db.query('SELECT COUNT(*) as count FROM partners');
-        const [scholarshipsCount] = await db.query('SELECT COUNT(*) as count FROM scholarships WHERE status = ?', ['active']);
-        const [applicationsCount] = await db.query('SELECT COUNT(*) as count FROM scholarship_applications');
-        const [pendingApplications] = await db.query('SELECT COUNT(*) as count FROM scholarship_applications WHERE status = ?', ['pending']);
-        const [approvedApplications] = await db.query('SELECT COUNT(*) as count FROM scholarship_applications WHERE status = ?', ['approved']);
-
-        // Get recent activity (last 7 days)
-        const [recentActivity] = await db.query(`
-            SELECT 
-                'applications' as type,
-                COUNT(*) as count
-            FROM scholarship_applications 
-            WHERE application_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            UNION ALL
-            SELECT 
-                'users' as type,
-                COUNT(*) as count
-            FROM users 
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        `);
-
-        res.json({
-            success: true,
-            data: {
-                users: usersCount[0].count,
-                partners: partnersCount[0].count,
-                scholarships: scholarshipsCount[0].count,
-                applications: applicationsCount[0].count,
-                pendingApplications: pendingApplications[0].count,
-                approvedApplications: approvedApplications[0].count,
-                recentActivity
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard statistics:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error fetching dashboard statistics',
-            code: 'DASHBOARD_ERROR'
-        });
-    }
-});
+// Dashboard route moved to admin-dashboard.js
 
 // Get users with enhanced security and pagination
 router.get('/users', adminAuth, requirePermission('can_manage_users'), async (req, res) => {
@@ -319,8 +283,11 @@ router.get('/users', adminAuth, requirePermission('can_manage_users'), async (re
         }
 
         let query = `
-            SELECT id, full_name, email, role, status, created_at, last_login 
-            FROM users 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+            LEFT JOIN admin_users au ON au.user_id = u.id
             WHERE 1=1
         `;
         let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
@@ -330,7 +297,7 @@ router.get('/users', adminAuth, requirePermission('can_manage_users'), async (re
         // Add search filter
         if (search && search.trim()) {
             const searchTerm = `%${search.trim()}%`;
-            query += ' AND (full_name LIKE ? OR email LIKE ?)';
+            query += ' AND (u.full_name LIKE ? OR u.email LIKE ?)';
             countQuery += ' AND (full_name LIKE ? OR email LIKE ?)';
             params.push(searchTerm, searchTerm);
             countParams.push(searchTerm, searchTerm);
@@ -338,7 +305,7 @@ router.get('/users', adminAuth, requirePermission('can_manage_users'), async (re
 
         // Add role filter
         if (role && ['user', 'admin'].includes(role)) {
-            query += ' AND role = ?';
+            query += ' AND u.role = ?';
             countQuery += ' AND role = ?';
             params.push(role);
             countParams.push(role);
@@ -346,13 +313,13 @@ router.get('/users', adminAuth, requirePermission('can_manage_users'), async (re
 
         // Add status filter
         if (status && ['active', 'inactive'].includes(status)) {
-            query += ' AND status = ?';
+            query += ' AND u.status = ?';
             countQuery += ' AND status = ?';
             params.push(status);
             countParams.push(status);
         }
 
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY u.created_at DESC LIMIT ? OFFSET ?';
         params.push(parseInt(limit), offset);
 
         const [users] = await db.query(query, params);
@@ -385,7 +352,6 @@ router.get('/users', adminAuth, requirePermission('can_manage_users'), async (re
     }
 });
 
-<<<<<<< HEAD
 // Create user with validation
 router.post('/users', 
     adminAuth, 
@@ -418,32 +384,19 @@ router.post('/users',
     async (req, res) => {
         try {
             const { fullName, email, password, role = 'user', status = 'active' } = req.body;
-=======
-// Get dashboard statistics
-router.get('/dashboard', bypassAuth, async (req, res) => {
-  try {
-    // Get total users
-    const [usersCount] = await db.query('SELECT COUNT(*) as count FROM users');
-    
-    // Get total partners
-    const [partnersCount] = await db.query('SELECT COUNT(*) as count FROM partners');
-    
-    // Get total scholarships
-    const [scholarshipsCount] = await db.query('SELECT COUNT(*) as count FROM scholarships');
-    
-    // Get total applications
-    const [applicationsCount] = await db.query('SELECT COUNT(*) as count FROM scholarship_applications');
-    
-    // Get total active subscriptions
-    const [subscriptionsCount] = await db.query(
-      'SELECT COUNT(*) as count FROM plan_subscriptions WHERE status = "active"'
-    );
-    
-    // Get total revenue
-    const [revenue] = await db.query(
-      'SELECT SUM(amount) as total FROM payments WHERE status = "completed"'
-    );
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
+            // Normalize permissions input (object of booleans, array of keys, or '*')
+            const normalizePermissions = (input) => {
+                if (!input) return null;
+                if (input === '*' || input === '"*"') return '*';
+                if (Array.isArray(input)) {
+                    const obj = {};
+                    input.forEach(key => { obj[String(key)] = true; });
+                    return obj;
+                }
+                if (typeof input === 'object') return input;
+                return null;
+            };
+            const requestedPermissions = normalizePermissions(req.body.permissions);
 
             // Check if email already exists
             const [existingUsers] = await db.query(
@@ -451,7 +404,6 @@ router.get('/dashboard', bypassAuth, async (req, res) => {
                 [email]
             );
 
-<<<<<<< HEAD
             if (existingUsers.length > 0) {
                 return res.status(400).json({
                     success: false,
@@ -459,18 +411,6 @@ router.get('/dashboard', bypassAuth, async (req, res) => {
                     code: 'EMAIL_EXISTS'
                 });
             }
-=======
-// Get all users with pagination and search
-router.get('/users', bypassAuth, async (req, res) => {
-  try {
-    const { page = 1, limit = 10, search = '' } = req.query;
-    const offset = (page - 1) * limit;
-    
-    let query = 'SELECT id, full_name, email, status, created_at FROM users WHERE 1=1';
-    let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
-    const params = [];
-    const countParams = [];
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
 
             // Hash password with high cost factor
             const saltRounds = 12;
@@ -484,6 +424,30 @@ router.get('/users', bypassAuth, async (req, res) => {
 
             // Log user creation
             console.log(`User created by admin ${req.user.email}: ${email} (${role})`);
+
+            // If creating an admin, create admin_users linkage with permissions
+            try {
+                if (role === 'admin') {
+                    const isSuper = requestedPermissions === '*';
+                    const adminLevel = isSuper ? 'super_admin' : 'admin';
+                    const permissionsJson = isSuper
+                        ? JSON.stringify('*')
+                        : JSON.stringify(requestedPermissions || { can_manage_users: true });
+                    await db.query(
+                        `INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions, is_active)
+                         VALUES (?, ?, ?, ?, ?, 1)
+                         ON DUPLICATE KEY UPDATE
+                           full_name = VALUES(full_name),
+                           email = VALUES(email),
+                           admin_level = VALUES(admin_level),
+                           permissions = VALUES(permissions),
+                           is_active = 1`,
+                        [result.insertId, fullName, email, adminLevel, permissionsJson]
+                    );
+                }
+            } catch (linkErr) {
+                console.warn('Admin linkage create warning:', linkErr?.message || linkErr);
+            }
 
             res.status(201).json({
                 success: true,
@@ -505,7 +469,6 @@ router.get('/users', bypassAuth, async (req, res) => {
     }
 );
 
-<<<<<<< HEAD
 // Update user with validation
 router.put('/users/:id',
     adminAuth,
@@ -533,6 +496,19 @@ router.put('/users/:id',
         try {
             const { fullName, email, role, status } = req.body;
             const userId = parseInt(req.params.id);
+            // Normalize optional permissions
+            const normalizePermissions = (input) => {
+                if (!input) return null;
+                if (input === '*' || input === '"*"') return '*';
+                if (Array.isArray(input)) {
+                    const obj = {};
+                    input.forEach(key => { obj[String(key)] = true; });
+                    return obj;
+                }
+                if (typeof input === 'object') return input;
+                return null;
+            };
+            const requestedPermissions = normalizePermissions(req.body.permissions);
 
             if (isNaN(userId)) {
                 return res.status(400).json({
@@ -579,14 +555,48 @@ router.put('/users/:id',
             // Log user update
             console.log(`User updated by admin ${req.user.email}: ${email} (${role})`);
 
+            // If role changed to admin, ensure admin_users row exists and active; apply permissions if provided
+            try {
+                if (role === 'admin') {
+                    // Get existing admin linkage
+                    const [adminRows] = await db.query('SELECT admin_level, permissions FROM admin_users WHERE user_id = ?', [userId]);
+                    let adminLevel = (adminRows[0] && adminRows[0].admin_level) || 'admin';
+                    let existingPerms = (adminRows[0] && adminRows[0].permissions) || null;
+                    // Preserve existing permissions if none provided; else use requested
+                    const isSuper = requestedPermissions === '*';
+                    if (isSuper) {
+                        adminLevel = 'super_admin';
+                    }
+                    const finalPermissions = isSuper
+                        ? JSON.stringify('*')
+                        : JSON.stringify(requestedPermissions || existingPerms || { can_manage_users: true });
+                    await db.query(`
+                        INSERT INTO admin_users (user_id, full_name, email, admin_level, permissions, is_active)
+                        SELECT u.id, u.full_name, u.email, ?, ?, 1 FROM users u WHERE u.id = ?
+                        ON DUPLICATE KEY UPDATE
+                          full_name = VALUES(full_name),
+                          email = VALUES(email),
+                          admin_level = VALUES(admin_level),
+                          permissions = VALUES(permissions),
+                          is_active = 1;
+                    `, [adminLevel, finalPermissions, userId]);
+                } else {
+                    // If demoted from admin, deactivate admin_users link
+                    await db.query('UPDATE admin_users SET is_active = 0 WHERE user_id = ?', [userId]);
+                }
+            } catch (linkErr) {
+                console.warn('Admin linkage update warning:', linkErr?.message || linkErr);
+            }
+
             res.json({
                 success: true,
                 message: 'User updated successfully',
                 data: {
-                    userId: userId,
+                    id: userId,
+                    full_name: sanitizeInput(fullName),
                     email: sanitizeInput(email),
-                    role: role,
-                    status: status
+                    role,
+                    status
                 }
             });
         } catch (error) {
@@ -599,9 +609,42 @@ router.put('/users/:id',
         }
     }
 );
-=======
-    // role filtering removed; admin is determined via admin_users
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
+
+// Get user with admin permissions
+router.get('/users/:id', adminAuth, requirePermission('can_manage_users'), async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const [rows] = await db.query(`
+            SELECT u.id, u.full_name, u.email, u.role, u.status,
+                   au.admin_level, au.permissions, au.is_active
+            FROM users u
+            LEFT JOIN admin_users au ON au.user_id = u.id
+            WHERE u.id = ?
+        `, [userId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const user = rows[0];
+        let permissionsParsed = null;
+        try { permissionsParsed = user.permissions ? JSON.parse(user.permissions) : null; } catch {}
+        res.json({
+            success: true,
+            data: {
+                id: user.id,
+                full_name: user.full_name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                admin_level: user.admin_level,
+                permissions: permissionsParsed === null ? user.permissions : permissionsParsed,
+                is_admin_active: user.is_active === 1
+            }
+        });
+    } catch (error) {
+        console.error('Get user (with permissions) error:', error);
+        res.status(500).json({ success: false, message: 'Error fetching user' });
+    }
+});
 
 // Delete user with safety checks
 router.delete('/users/:id',
@@ -628,21 +671,11 @@ router.delete('/users/:id',
                 });
             }
 
-<<<<<<< HEAD
             // Check if user has applications
             const [applications] = await db.query(
                 'SELECT COUNT(*) as count FROM scholarship_applications WHERE email_address IN (SELECT email FROM users WHERE id = ?)',
                 [userId]
             );
-=======
-// Get user by ID
-router.get('/users/:id', bypassAuth, async (req, res) => {
-  try {
-    const [users] = await db.query(
-      'SELECT id, full_name, email, status FROM users WHERE id = ?',
-      [req.params.id]
-    );
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
 
             if (applications[0].count > 0) {
                 return res.status(400).json({
@@ -684,767 +717,9 @@ router.get('/users/:id', bypassAuth, async (req, res) => {
     }
 );
 
-// Get applications with enhanced security
-router.get('/applications',
-    adminAuth,
-    requirePermission('can_view_applications'),
-    async (req, res) => {
-        try {
-            const { page = 1, limit = 10, status = '', search = '' } = req.query;
-            const offset = (parseInt(page) - 1) * parseInt(limit);
+// Application management routes moved to admin-dashboard.js
 
-<<<<<<< HEAD
-            let query = `
-                SELECT 
-                    sa.application_id, 
-                    sa.full_name, 
-                    sa.email_address, 
-                    sa.status,
-                    sa.application_date,
-                    sa.academic_level,
-                    sa.country,
-                    COALESCE(s.name, 'Unknown Scholarship') as scholarship_name
-                FROM scholarship_applications sa
-                LEFT JOIN scholarships s ON sa.scholarship_id = s.id
-                WHERE 1=1
-            `;
-            let countQuery = `
-                SELECT COUNT(*) as total 
-                FROM scholarship_applications sa
-                LEFT JOIN scholarships s ON sa.scholarship_id = s.id
-                WHERE 1=1
-            `;
-            const params = [];
-            const countParams = [];
-
-            if (status && ['pending', 'approved', 'rejected'].includes(status)) {
-                query += ' AND sa.status = ?';
-                countQuery += ' AND sa.status = ?';
-                params.push(status);
-                countParams.push(status);
-            }
-
-            if (search && search.trim()) {
-                const searchTerm = `%${search.trim()}%`;
-                query += ' AND (sa.full_name LIKE ? OR sa.email_address LIKE ?)';
-                countQuery += ' AND (sa.full_name LIKE ? OR sa.email_address LIKE ?)';
-                params.push(searchTerm, searchTerm);
-                countParams.push(searchTerm, searchTerm);
-            }
-
-            query += ' ORDER BY sa.application_date DESC LIMIT ? OFFSET ?';
-            params.push(parseInt(limit), offset);
-
-            const [applications] = await db.query(query, params);
-            const [totalResult] = await db.query(countQuery, countParams);
-            const total = totalResult[0].total;
-
-            res.json({
-                success: true,
-                data: {
-                    applications: applications.map(app => ({
-                        ...app,
-                        full_name: sanitizeInput(app.full_name),
-                        email_address: sanitizeInput(app.email_address)
-                    })),
-                    pagination: {
-                        page: parseInt(page),
-                        limit: parseInt(limit),
-                        total,
-                        pages: Math.ceil(total / parseInt(limit))
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error fetching applications:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error fetching applications',
-                code: 'APPLICATIONS_FETCH_ERROR'
-            });
-        }
-    }
-);
-
-// Update application status
-router.put('/applications/:id/status',
-    adminAuth,
-    requirePermission('can_manage_applications'),
-    [
-        body('status')
-            .isIn(['pending', 'approved', 'rejected'])
-            .withMessage('Status must be pending, approved, or rejected'),
-        body('reviewer_notes')
-            .optional()
-            .isLength({ max: 1000 })
-            .withMessage('Reviewer notes must be less than 1000 characters')
-    ],
-    validateInput,
-    async (req, res) => {
-        try {
-            const { status, reviewer_notes } = req.body;
-            const applicationId = parseInt(req.params.id);
-=======
-// Create new user
-router.post('/users', bypassAuth, async (req, res) => {
-  try {
-    const { fullName, email, password, status = 'active' } = req.body;
-    
-    // Validate required fields
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ message: 'Full name, email, and password are required' });
-    }
-
-    // Check if email already exists
-    const [existingUsers] = await db.query(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-
-    // Hash password
-    const bcrypt = await import('bcryptjs');
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert new user
-    const [result] = await db.query(
-      'INSERT INTO users (full_name, email, password, status) VALUES (?, ?, ?, ?)',
-      [fullName, email, hashedPassword, status]
-    );
-
-    res.status(201).json({ 
-      message: 'User created successfully',
-      userId: result.insertId 
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-});
-
-// Update user
-router.put('/users/:id', bypassAuth, async (req, res) => {
-  try {
-    const { fullName, email, status } = req.body;
-    
-    // Validate required fields
-    if (!fullName || !email) {
-      return res.status(400).json({ message: 'Full name and email are required' });
-    }
-
-    // Check if email exists for other users
-    const [existingUsers] = await db.query(
-      'SELECT id FROM users WHERE email = ? AND id != ?',
-      [email, req.params.id]
-    );
-
-    if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-
-    // Update user
-    const [result] = await db.query(
-      'UPDATE users SET full_name = ?, email = ?, status = ? WHERE id = ?',
-      [fullName, email, status || 'active', req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ message: 'User updated successfully' });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ message: 'Error updating user' });
-  }
-});
-
-// Delete user
-router.delete('/users/:id', bypassAuth, async (req, res) => {
-  try {
-    // Check if user has applications
-    const [applications] = await db.query(
-      'SELECT COUNT(*) as count FROM scholarship_applications WHERE email_address IN (SELECT email FROM users WHERE id = ?)',
-      [req.params.id]
-    );
-
-    if (applications[0].count > 0) {
-      return res.status(400).json({ 
-        message: 'Cannot delete user with existing applications. Please delete applications first.' 
-      });
-    }
-
-    const [result] = await db.query(
-      'DELETE FROM users WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Error deleting user' });
-  }
-});
-
-// Get all newsletter subscribers
-router.get('/newsletter-subscribers', bypassAuth, async (req, res) => {
-  try {
-    const [subscribers] = await db.query('SELECT * FROM newsletter_subscribers');
-    res.json(subscribers);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching newsletter subscribers' });
-  }
-});
-
-// Delete newsletter subscriber
-router.delete('/newsletter-subscribers/:id', bypassAuth, async (req, res) => {
-  try {
-    const [result] = await db.query(
-      'DELETE FROM newsletter_subscribers WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Subscriber not found' });
-    }
-
-    res.json({ message: 'Subscriber deleted successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error deleting subscriber' });
-  }
-});
-
-// Get chart statistics
-router.get('/chart-stats', bypassAuth, async (req, res) => {
-  try {
-    // Application trends by month
-    const [applicationTrends] = await db.query(`
-      SELECT DATE_FORMAT(application_date, '%Y-%m') as month, COUNT(*) as count
-      FROM scholarship_applications
-      WHERE application_date IS NOT NULL
-      GROUP BY month
-      ORDER BY month ASC
-      LIMIT 12
-    `);
-
-    // Scholarship distribution by type
-    const [scholarshipDistribution] = await db.query(`
-      SELECT scholarship_type, COUNT(*) as count
-      FROM scholarships
-      GROUP BY scholarship_type
-    `);
-    const scholarshipDistData = {
-      'gov': 0,
-      'private': 0,
-      'ngo': 0,
-      'other': 0
-    };
-    scholarshipDistribution.forEach(row => {
-      scholarshipDistData[row.scholarship_type] = row.count;
-    });
-
-    // User registration stats (users vs admins)
-    const [[usersCountRow]] = await db.query(`
-      SELECT COUNT(*) as count FROM users
-    `);
-    const [[adminsCountRow]] = await db.query(`
-      SELECT COUNT(*) as count FROM admin_users WHERE is_active = TRUE
-    `);
-
-    // Applications by academic level
-    const [statusOverview] = await db.query(`
-      SELECT academic_level, COUNT(*) as count
-      FROM scholarship_applications
-      GROUP BY academic_level
-    `);
-    const statusOverviewData = {
-      undergraduate: 0,
-      graduate: 0,
-      phd: 0
-    };
-    statusOverview.forEach(row => {
-      statusOverviewData[row.academic_level] = row.count;
-    });
-
-    res.json({
-      applicationTrends: applicationTrends.map(trend => ({
-        month: trend.month,
-        count: trend.count
-      })),
-      scholarshipDistribution: Object.values(scholarshipDistData),
-      userRegistration: [usersCountRow.count, adminsCountRow.count],
-      statusOverview: Object.values(statusOverviewData)
-    });
-  } catch (error) {
-    console.error('Error fetching chart stats:', error);
-    res.status(500).json({ message: 'Error fetching chart stats' });
-  }
-});
-
-// Update user status
-router.put('/users/:id/status', bypassAuth, async (req, res) => {
-  try {
-    const { status } = req.body;
-    
-    // Validate status
-    if (!['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
-    }
-
-    // Check if status column exists
-    const [columns] = await db.query(`
-      SELECT COLUMN_NAME 
-      FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users' 
-      AND COLUMN_NAME = 'status'
-    `);
-
-    // Add status column if it doesn't exist
-    if (columns.length === 0) {
-      await db.query(`
-        ALTER TABLE users 
-        ADD COLUMN status ENUM('active', 'inactive') 
-        DEFAULT 'active'
-      `);
-    }
-
-    const [result] = await db.query(
-      'UPDATE users SET status = ? WHERE id = ?',
-      [status, req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ message: 'User status updated successfully' });
-  } catch (error) {
-    console.error('Error updating user status:', error);
-    res.status(500).json({ message: 'Error updating user status' });
-  }
-});
-
-// Update application status
-router.put('/applications/:id/status', bypassAuth, async (req, res) => {
-  try {
-    const { status, reviewer_notes } = req.body;
-    const applicationId = req.params.id;
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
-
-            if (isNaN(applicationId)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid application ID',
-                    code: 'INVALID_APPLICATION_ID'
-                });
-            }
-
-            // Check if application exists
-            const [application] = await db.query(
-                'SELECT application_id, email_address, status FROM scholarship_applications WHERE application_id = ?',
-                [applicationId]
-            );
-
-            if (application.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Application not found',
-                    code: 'APPLICATION_NOT_FOUND'
-                });
-            }
-
-            // Update application status
-            const [result] = await db.query(
-                'UPDATE scholarship_applications SET status = ?, reviewer_notes = ?, reviewed_at = NOW() WHERE application_id = ?',
-                [status, reviewer_notes || null, applicationId]
-            );
-
-<<<<<<< HEAD
-            // Log status update
-            console.log(`Application status updated by admin ${req.user.email}: ${applicationId} -> ${status}`);
-
-            res.json({
-                success: true,
-                message: 'Application status updated successfully',
-                data: {
-                    applicationId: applicationId,
-                    status: status,
-                    reviewer_notes: reviewer_notes
-                }
-            });
-        } catch (error) {
-            console.error('Error updating application status:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error updating application status',
-                code: 'APPLICATION_UPDATE_ERROR'
-=======
-// Create user (admin only)
-router.post('/users', bypassAuth, async (req, res) => {
-  try {
-    const { fullName, email, status } = req.body;
-    
-    // Validate required fields
-    if (!fullName || !email) {
-      return res.status(400).json({ message: 'Full name and email are required' });
-    }
-
-    // Check if email already exists
-    const [existingUsers] = await db.query(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-
-    // Create user with default password (they can reset it later)
-    const defaultPassword = Math.random().toString(36).slice(-8); // Generate random password
-    const [result] = await db.query(
-      'INSERT INTO users (full_name, email, password, status) VALUES (?, ?, ?, ?)',
-      [fullName, email, defaultPassword, status || 'active']
-    );
-
-    res.status(201).json({
-      message: 'User created successfully',
-      id: result.insertId,
-      defaultPassword // Send this only in development environment
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-});
-
-// Get all scholarship applications
-router.get('/applications', bypassAuth, async (req, res) => {
-    try {
-        const [applications] = await db.query(`
-            SELECT 
-                sa.application_id, 
-                sa.full_name, 
-                sa.email_address, 
-                sa.profile_picture_url,
-                sa.date_of_birth,
-                sa.gender,
-                sa.phone_number,
-                sa.address,
-                sa.preferred_university,
-                sa.country,
-                sa.academic_level,
-                sa.intended_major,
-                sa.gpa_academic_performance,
-                sa.uploaded_documents_json,
-                sa.extracurricular_activities,
-                sa.parent_guardian_name,
-                sa.parent_guardian_contact,
-                sa.financial_need_statement,
-                sa.how_heard_about,
-                sa.scholarship_id,
-                sa.motivation_statement,
-                sa.terms_agreed,
-                sa.application_date,
-                sa.status,
-                COALESCE(s.name, 'Unknown Scholarship') as scholarship_name
-            FROM scholarship_applications sa
-            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
-            ORDER BY sa.application_date DESC
-        `);
-        // Map to camelCase for frontend
-        const mapped = applications.map(app => ({
-            applicationId: app.application_id,
-            fullName: app.full_name,
-            emailAddress: app.email_address,
-            profilePictureUrl: app.profile_picture_url,
-            dateOfBirth: app.date_of_birth,
-            gender: app.gender,
-            phoneNumber: app.phone_number,
-            address: app.address,
-            preferredUniversity: app.preferred_university,
-            country: app.country,
-            academicLevel: app.academic_level,
-            intendedMajor: app.intended_major,
-            gpaAcademicPerformance: app.gpa_academic_performance,
-            uploadedDocumentsJson: app.uploaded_documents_json,
-            extracurricularActivities: app.extracurricular_activities,
-            parentGuardianName: app.parent_guardian_name,
-            parentGuardianContact: app.parent_guardian_contact,
-            financialNeedStatement: app.financial_need_statement,
-            howHeardAbout: app.how_heard_about,
-            scholarshipId: app.scholarship_id,
-            motivationStatement: app.motivation_statement,
-            termsAgreed: !!app.terms_agreed,
-            applicationDate: app.application_date,
-            status: app.status,
-            scholarshipName: app.scholarship_name
-        }));
-        res.json(mapped);
-    } catch (error) {
-        console.error('Error fetching applications:', error);
-        res.status(500).json({ message: 'Error fetching applications' });
-    }
-});
-
-// Get application details
-router.get('/applications/:id', bypassAuth, async (req, res) => {
-    try {
-        const [applications] = await db.query(`
-            SELECT 
-                sa.application_id, 
-                sa.full_name, 
-                sa.email_address, 
-                sa.profile_picture_url,
-                sa.date_of_birth,
-                sa.gender,
-                sa.phone_number,
-                sa.address,
-                sa.preferred_university,
-                sa.country,
-                sa.academic_level,
-                sa.intended_major,
-                sa.gpa_academic_performance,
-                sa.uploaded_documents_json,
-                sa.extracurricular_activities,
-                sa.parent_guardian_name,
-                sa.parent_guardian_contact,
-                sa.financial_need_statement,
-                sa.how_heard_about,
-                sa.scholarship_id,
-                sa.motivation_statement,
-                sa.terms_agreed,
-                sa.application_date,
-                sa.status,
-                sa.reviewer_notes,
-                COALESCE(s.name, 'Unknown Scholarship') as scholarship_name
-            FROM scholarship_applications sa
-            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
-            WHERE sa.application_id = ?
-        `, [req.params.id]);
-
-        if (applications.length === 0) {
-            return res.status(404).json({ message: 'Application not found' });
-        }
-
-        // Map to camelCase for frontend consistency
-        const app = applications[0];
-        const mapped = {
-            applicationId: app.application_id,
-            fullName: app.full_name,
-            emailAddress: app.email_address,
-            profilePictureUrl: app.profile_picture_url,
-            dateOfBirth: app.date_of_birth,
-            gender: app.gender,
-            phoneNumber: app.phone_number,
-            address: app.address,
-            preferredUniversity: app.preferred_university,
-            country: app.country,
-            academicLevel: app.academic_level,
-            intendedMajor: app.intended_major,
-            gpaAcademicPerformance: app.gpa_academic_performance,
-            uploadedDocumentsJson: app.uploaded_documents_json,
-            extracurricularActivities: app.extracurricular_activities,
-            parentGuardianName: app.parent_guardian_name,
-            parentGuardianContact: app.parent_guardian_contact,
-            financialNeedStatement: app.financial_need_statement,
-            howHeardAbout: app.how_heard_about,
-            scholarshipId: app.scholarship_id,
-            motivationStatement: app.motivation_statement,
-            termsAgreed: !!app.terms_agreed,
-            applicationDate: app.application_date,
-            status: app.status,
-            reviewerNotes: app.reviewer_notes,
-            scholarshipName: app.scholarship_name
-        };
-
-        res.json(mapped);
-    } catch (error) {
-        console.error('Error fetching application details:', error);
-        res.status(500).json({ message: 'Error fetching application details' });
-    }
-});
-
-// Delete application
-router.delete('/applications/:id', bypassAuth, async (req, res) => {
-    try {
-        const [result] = await db.query(
-            'DELETE FROM scholarship_applications WHERE application_id = ?',
-            [req.params.id]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Application not found' });
-        }
-
-        res.json({ message: 'Application deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting application:', error);
-        res.status(500).json({ message: 'Error deleting application' });
-    }
-});
-
-// Create application (admin)
-router.post('/applications', bypassAuth, upload.fields([
-    { name: 'profile_picture_url', maxCount: 1 },
-    { name: 'uploaded_documents_json', maxCount: 10 }
-]), async (req, res) => {
-    try {
-        // Handle file uploads
-        let profile_picture_url = null;
-        if (req.files['profile_picture_url'] && req.files['profile_picture_url'][0]) {
-            profile_picture_url = req.files['profile_picture_url'][0].path.replace(/\\/g, '/');
-        }
-        let uploaded_documents_json = null;
-        if (req.files['uploaded_documents_json']) {
-            const uploadedDocuments = req.files['uploaded_documents_json'].map(file => file.path.replace(/\\/g, '/'));
-            uploaded_documents_json = JSON.stringify(uploadedDocuments);
-        }
-
-        const {
-            full_name,
-            email_address,
-            date_of_birth,
-            gender,
-            phone_number,
-            address,
-            preferred_university,
-            country,
-            academic_level,
-            intended_major,
-            gpa_academic_performance,
-            extracurricular_activities,
-            parent_guardian_name,
-            parent_guardian_contact,
-            financial_need_statement,
-            how_heard_about,
-            scholarship_id,
-            motivation_statement,
-            terms_agreed
-        } = req.body;
-        
-        // Validate required fields (adjust as needed)
-        if (!full_name || !email_address || !country || !motivation_statement || !scholarship_id) {
-            return res.status(400).json({ 
-                message: 'Missing required fields.' 
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
-            });
-        }
-    }
-);
-
-<<<<<<< HEAD
-// System audit log
-router.get('/audit-log',
-    adminAuth,
-    requireSuperAdmin,
-    async (req, res) => {
-        try {
-            const { page = 1, limit = 50 } = req.query;
-            const offset = (parseInt(page) - 1) * parseInt(limit);
-=======
-// Update application (admin)
-router.put('/applications/:id', bypassAuth, upload.fields([
-    { name: 'profile_picture_url', maxCount: 1 },
-    { name: 'uploaded_documents_json', maxCount: 10 }
-]), async (req, res) => {
-    try {
-        const applicationId = req.params.id;
-        
-        // Check if application exists
-        const [existingApplication] = await db.query(
-            'SELECT * FROM scholarship_applications WHERE application_id = ?',
-            [applicationId]
-        );
-        if (existingApplication.length === 0) {
-            return res.status(404).json({ message: 'Application not found' });
-        }
-        
-        // Handle file uploads
-        let profile_picture_url = existingApplication[0].profile_picture_url;
-        if (req.files && req.files['profile_picture_url'] && req.files['profile_picture_url'][0]) {
-            profile_picture_url = req.files['profile_picture_url'][0].path.replace(/\\/g, '/');
-        }
-        
-        let uploaded_documents_json = existingApplication[0].uploaded_documents_json;
-        if (req.files && req.files['uploaded_documents_json']) {
-            const uploadedDocuments = req.files['uploaded_documents_json'].map(file => file.path.replace(/\\/g, '/'));
-            uploaded_documents_json = JSON.stringify(uploadedDocuments);
-        }
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42
-
-            // This would typically come from an audit_log table
-            // For now, we'll return a placeholder
-            res.json({
-                success: true,
-                data: {
-                    logs: [],
-                    pagination: {
-                        page: parseInt(page),
-                        limit: parseInt(limit),
-                        total: 0,
-                        pages: 0
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error fetching audit log:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error fetching audit log',
-                code: 'AUDIT_LOG_ERROR'
-            });
-        }
-    }
-);
-
-// Security settings
-router.get('/security-settings',
-    adminAuth,
-    requireSuperAdmin,
-    async (req, res) => {
-        try {
-            res.json({
-                success: true,
-                data: {
-                    rateLimiting: {
-                        enabled: true,
-                        windowMs: 15 * 60 * 1000,
-                        maxRequests: 100
-                    },
-                    passwordPolicy: {
-                        minLength: 8,
-                        requireUppercase: true,
-                        requireLowercase: true,
-                        requireNumbers: true,
-                        requireSpecialChars: false
-                    },
-                    sessionPolicy: {
-                        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-                        secure: true,
-                        httpOnly: true
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error fetching security settings:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error fetching security settings',
-                code: 'SECURITY_SETTINGS_ERROR'
-            });
-        }
-    }
-);
+// Audit log and security settings routes moved to admin-dashboard.js
 
 // Health check endpoint
 router.get('/health',
@@ -1482,209 +757,4 @@ router.get('/health',
     }
 );
 
-<<<<<<< HEAD
 export default router;
-=======
-// Alter scholarships table to add university column
-router.post('/alter-scholarships', bypassAuth, async (req, res) => {
-    try {
-        await db.query(
-            `ALTER TABLE scholarships ADD COLUMN university VARCHAR(255) NOT NULL`
-        );
-        res.json({ message: 'Scholarships table altered successfully' });
-    } catch (error) {
-        console.error('Error altering scholarships table:', error);
-        res.status(500).json({ message: 'Error altering scholarships table' });
-    }
-});
-
-router.get('/dashboard/stats', bypassAuth, async (req, res) => {
-    try {
-        // Return user count only; admin users tracked separately in admin_users
-        const [userStats] = await db.query(
-            `SELECT COUNT(*) as count FROM users`
-        );
-        const [adminStats] = await db.query(
-            `SELECT COUNT(*) as count FROM admin_users WHERE is_active = TRUE`
-        );
-
-        res.json({
-            users: userStats[0].count,
-            admins: adminStats[0].count
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        res.status(500).json({ message: 'Error fetching dashboard stats' });
-    }
-});
-
-// Get system statistics
-router.get('/system-stats', bypassAuth, async (req, res) => {
-  try {
-    // Database size
-    const [dbSize] = await db.query(`
-      SELECT 
-        ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'DB Size in MB'
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE()
-    `);
-
-    // Table row counts
-    const [tableStats] = await db.query(`
-      SELECT 
-        table_name,
-        table_rows
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE()
-      ORDER BY table_rows DESC
-    `);
-
-    // Recent activity (last 7 days)
-    const [recentActivity] = await db.query(`
-      SELECT 
-        'applications' as type,
-        COUNT(*) as count
-      FROM scholarship_applications 
-      WHERE application_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-      UNION ALL
-      SELECT 
-        'users' as type,
-        COUNT(*) as count
-      FROM users 
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-    `);
-
-    res.json({
-      databaseSize: dbSize[0]['DB Size in MB'],
-      tableStats,
-      recentActivity
-    });
-  } catch (error) {
-    console.error('Error fetching system stats:', error);
-    res.status(500).json({ message: 'Error fetching system statistics' });
-  }
-});
-
-// Get application statistics
-router.get('/application-stats', bypassAuth, async (req, res) => {
-  try {
-    // Applications by status
-    const [statusStats] = await db.query(`
-      SELECT 
-        COALESCE(status, 'pending') as status,
-        COUNT(*) as count
-      FROM scholarship_applications 
-      GROUP BY status
-    `);
-
-    // Applications by academic level
-    const [levelStats] = await db.query(`
-      SELECT 
-        academic_level,
-        COUNT(*) as count
-      FROM scholarship_applications 
-      GROUP BY academic_level
-    `);
-
-    // Applications by month (last 12 months)
-    const [monthlyStats] = await db.query(`
-      SELECT 
-        DATE_FORMAT(application_date, '%Y-%m') as month,
-        COUNT(*) as count
-      FROM scholarship_applications 
-      WHERE application_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-      GROUP BY month
-      ORDER BY month ASC
-    `);
-
-    res.json({
-      statusStats,
-      levelStats,
-      monthlyStats
-    });
-  } catch (error) {
-    console.error('Error fetching application stats:', error);
-    res.status(500).json({ message: 'Error fetching application statistics' });
-  }
-});
-
-// Export data
-router.get('/export/:type', bypassAuth, async (req, res) => {
-  try {
-    const { type } = req.params;
-    const { format = 'json' } = req.query;
-
-    let data;
-    let filename;
-
-    switch (type) {
-      case 'applications':
-        const [applications] = await db.query(`
-          SELECT 
-            sa.*,
-            s.name as scholarship_name
-          FROM scholarship_applications sa
-          LEFT JOIN scholarships s ON sa.scholarship_id = s.id
-          ORDER BY sa.application_date DESC
-        `);
-        data = applications;
-        filename = 'applications';
-        break;
-
-      case 'users':
-        const [users] = await db.query(`
-          SELECT id, full_name, email, status, created_at
-          FROM users
-          ORDER BY created_at DESC
-        `);
-        data = users;
-        filename = 'users';
-        break;
-
-      case 'scholarships':
-        const [scholarships] = await db.query(`
-          SELECT * FROM scholarships ORDER BY created_at DESC
-        `);
-        data = scholarships;
-        filename = 'scholarships';
-        break;
-
-      default:
-        return res.status(400).json({ message: 'Invalid export type' });
-    }
-
-    if (format === 'csv') {
-      // Convert to CSV
-      const csv = convertToCSV(data);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
-      res.send(csv);
-    } else {
-      res.json(data);
-    }
-  } catch (error) {
-    console.error('Error exporting data:', error);
-    res.status(500).json({ message: 'Error exporting data' });
-  }
-});
-
-// Helper function to convert data to CSV
-function convertToCSV(data) {
-  if (data.length === 0) return '';
-  
-  const headers = Object.keys(data[0]);
-  const csvRows = [headers.join(',')];
-  
-  for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header];
-      return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-    });
-    csvRows.push(values.join(','));
-  }
-  
-  return csvRows.join('\n');
-}
-
-export default router; 
->>>>>>> 9414e4dfd9fa5224f2112664b58d35261a786e42

@@ -1,0 +1,652 @@
+/* Admin Dashboard CSS */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-pulse-slow {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Glassmorphism effect */
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hover effects */
+.hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Loading skeleton */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Modal animations */
+.modal-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Chart period buttons */
+.chart-period-btn {
+    transition: all 0.2s ease;
+}
+
+.chart-period-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Mobile-first responsive design */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-main-content {
+    flex: 1;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+/* Sidebar responsive behavior */
+@media (min-width: 1024px) {
+    .admin-main-content {
+        margin-left: 280px; /* Full sidebar width */
+    }
+    
+    .sidebar-collapsed .admin-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+    }
+}
+
+@media (max-width: 1023px) {
+    .admin-main-content {
+        margin-left: 80px; /* Icon-only sidebar width */
+    }
+    
+    /* Mobile sidebar overlay */
+    .sidebar-mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-mobile-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Mobile sidebar */
+    .sidebar-mobile {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        z-index: 50;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .sidebar-mobile.active {
+        left: 0;
+    }
+    
+    .dark .sidebar-mobile {
+        background: #1f2937;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-main-content {
+        margin-left: 60px; /* Smaller icon-only sidebar width */
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-main-content {
+        margin-left: 50px; /* Compact icon-only sidebar width */
+    }
+}
+
+/* Mobile responsive content */
+@media (max-width: 768px) {
+    .admin-content-container {
+        padding: 0.75rem;
+    }
+    
+    /* Stats cards - single column on mobile */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    /* Charts - full width on mobile */
+    .charts-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .chart-card {
+        min-height: 300px;
+    }
+    
+    /* Tables - horizontal scroll on mobile */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table-container table {
+        min-width: 600px;
+    }
+    
+    /* Cards - full width on mobile */
+    .glass {
+        margin-bottom: 1rem;
+    }
+    
+    /* Buttons - stack vertically on mobile */
+    .button-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .button-group button {
+        width: 100%;
+    }
+    
+    /* Search bar - full width on mobile */
+    .search-container {
+        width: 100%;
+    }
+    
+    /* Modals - full screen on mobile */
+    .modal-content {
+        margin: 0.5rem;
+        max-width: none;
+        width: calc(100% - 1rem);
+        max-height: calc(100vh - 1rem);
+    }
+    
+    /* Header - compact on mobile */
+    .admin-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .header-title {
+        font-size: 1.25rem;
+    }
+    
+    /* Welcome section - hidden on mobile */
+    .welcome-section {
+        display: none;
+    }
+    
+    /* Chart controls - stacked on mobile */
+    .chart-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .chart-period-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-content-container {
+        padding: 0.5rem;
+    }
+    
+    /* Even smaller padding for very small screens */
+    .glass {
+        padding: 1rem;
+    }
+    
+    /* Compact table cells */
+    .table-container td,
+    .table-container th {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Compact buttons */
+    .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Compact form inputs */
+    input, select, textarea {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Tablet responsive */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .admin-content-container {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Large screens */
+@media (min-width: 1024px) {
+    .admin-content-container {
+        padding: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    button, .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Larger table row height */
+    .table-container tr {
+        min-height: 44px;
+    }
+    
+    /* Larger form inputs */
+    input, select, textarea {
+        min-height: 44px;
+    }
+    
+    /* Better spacing for touch */
+    .glass {
+        margin-bottom: 1rem;
+    }
+    
+    /* Larger icons for touch */
+    .icon-button {
+        padding: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    /* Better touch targets for sidebar */
+    .admin-sidebar a {
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Better touch targets for buttons */
+    .button-group button {
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Better touch targets for chart controls */
+    .chart-period-buttons button {
+        min-height: 40px;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 480px) {
+    /* Compact spacing */
+    .glass {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Compact headers */
+    h1, h2, h3 {
+        font-size: 1.125rem;
+        line-height: 1.5;
+    }
+    
+    /* Compact buttons */
+    .btn, button {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Compact tables */
+    .table-container th,
+    .table-container td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Compact forms */
+    input, select, textarea {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+    
+    /* Better mobile navigation */
+    .admin-sidebar {
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    /* Mobile-friendly modals */
+    .modal-content {
+        margin: 1rem;
+        padding: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+}
+
+/* Dark mode transitions */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Focus states */
+button:focus,
+input:focus,
+select:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.success {
+    background-color: #10b981;
+}
+
+.toast.error {
+    background-color: #ef4444;
+}
+
+.toast.warning {
+    background-color: #f59e0b;
+}
+
+.toast.info {
+    background-color: #3b82f6;
+}
+
+/* Enhanced animations for search and welcome message */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Deluxe fade-out with slight scale and blur for a premium feel */
+@keyframes fadeOutDeluxe {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+    }
+    60% {
+        opacity: 0.5;
+        transform: translateY(-6px) scale(0.995);
+        filter: blur(1px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-14px) scale(0.985);
+        filter: blur(2px);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+.animate-fade-out-deluxe {
+    animation: fadeOutDeluxe 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Search results styling */
+#searchResultsCount {
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.5rem;
+    border-left: 3px solid #3b82f6;
+    margin-bottom: 1rem;
+}
+
+.dark #searchResultsCount {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+/* Welcome message animations */
+.welcome-section {
+    transition: all 0.5s ease;
+}
+
+.welcome-section.hidden {
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+}
+
+/* Profile picture enhancements */
+.profile-picture {
+    transition: all 0.3s ease;
+}
+
+.profile-picture:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Export button animations */
+.export-button {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.export-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.export-button:hover::before {
+    left: 100%;
+}

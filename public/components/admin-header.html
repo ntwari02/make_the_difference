@@ -1,18 +1,52 @@
-<nav class="admin-header bg-white">
+<nav class="admin-header bg-white shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <h1 id="admin-page-title" class="text-xl font-bold text-gray-800 dark:text-white">Admin</h1>
+                <!-- Mobile menu button (will be added by JavaScript) -->
+                <div id="mobileMenuContainer"></div>
+                <h1 id="admin-page-title" class="text-xl font-bold text-gray-800 dark:text-white ml-2 lg:ml-0">Admin</h1>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-4">
                 <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" aria-label="Toggle theme">
                     <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
                 </button>
-                <span id="adminName" class="text-gray-600 dark:text-gray-300 font-medium"></span>
+                <span id="adminName" class="hidden sm:inline text-gray-600 dark:text-gray-300 font-medium"></span>
+                <button id="profileBtn" class="relative w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 focus:outline-none" title="Profile">
+                    <img id="profileAvatar" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                    <div id="profileFallback" class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold">U</div>
+                </button>
                 <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 font-medium transition-colors duration-200">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    <i class="fas fa-sign-out-alt mr-1"></i> <span class="hidden sm:inline">Logout</span>
                 </button>
             </div>
         </div>
     </div>
 </nav> 
+
+<!-- Profile Modal -->
+<div id="profileModal" class="fixed inset-0 bg-black/40 hidden z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-auto mt-16 border border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-black dark:text-white">My Profile</h3>
+      <button onclick="document.getElementById('profileModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex items-center gap-4 mb-4">
+      <img id="profileModalAvatar" src="" alt="Avatar" class="w-16 h-16 rounded-full object-cover hidden">
+      <div id="profileModalFallback" class="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-300 font-bold">U</div>
+      <div>
+        <div id="profileModalName" class="text-base font-semibold text-black dark:text-white">User</div>
+        <div id="profileModalEmail" class="text-sm text-gray-600 dark:text-gray-300">email@example.com</div>
+      </div>
+    </div>
+    <form id="profileAvatarForm" class="space-y-3">
+      <div>
+        <label class="block text-sm font-semibold text-black dark:text-white mb-1">Change Profile Picture</label>
+        <input id="profileAvatarInput" type="file" accept="image/*" class="w-full text-sm">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="document.getElementById('profileModal').classList.add('hidden')" class="px-3 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Close</button>
+        <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

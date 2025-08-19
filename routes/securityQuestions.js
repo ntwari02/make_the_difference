@@ -30,7 +30,97 @@ router.post('/verify', async (req, res) => {
             });
         }
 
-        // Get user and their security answers
+        // First check if it's an admin user
+        const [admins] = await db.query(`
+            SELECT au.id, au.email, au.user_id, u.security_questions_setup,
+                   usa.question_id, usa.answer
+            FROM admin_users au
+            LEFT JOIN users u ON au.user_id = u.id
+            LEFT JOIN user_security_answers usa ON u.id = usa.user_id
+            WHERE au.email = ? AND au.is_active = TRUE
+        `, [email]);
+
+        if (admins.length > 0) {
+            // It's an admin user
+            const admin = admins[0];
+            
+            if (!admin.security_questions_setup) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Security questions not set up for this admin account' 
+                });
+            }
+
+            // Group answers by admin
+            const adminAnswers = {};
+            admins.forEach(row => {
+                if (row.question_id && row.answer) {
+                    adminAnswers[row.question_id] = row.answer;
+                }
+            });
+
+            // Check if admin has at least 2 security questions set up
+            if (Object.keys(adminAnswers).length < 2) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Insufficient security questions set up for admin account' 
+                });
+            }
+
+            // Verify answers (case-insensitive comparison)
+            let correctAnswers = 0;
+            const requiredCorrect = Math.min(2, answers.length);
+
+            answers.forEach(answer => {
+                const questionId = answer.question_id;
+                const providedAnswer = answer.answer.toLowerCase().trim();
+                const storedAnswer = adminAnswers[questionId];
+                
+                if (storedAnswer && storedAnswer.toLowerCase().trim() === providedAnswer) {
+                    correctAnswers++;
+                }
+            });
+
+            if (correctAnswers >= requiredCorrect) {
+                // Generate a temporary token for password reset
+                const resetToken = crypto.randomBytes(32).toString('hex');
+                const expiry = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+                
+                await db.query(
+                    'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+                    [resetToken, expiry, admin.user_id]
+                );
+
+                res.json({ 
+                    success: true, 
+                    message: 'Security questions verified successfully. You can now reset your password.',
+                    reset_token: resetToken,
+                    can_reset: true,
+                    isAdmin: true
+                });
+            } else {
+                // Create admin help request
+                const helpToken = crypto.randomBytes(32).toString('hex');
+                const helpExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+                
+                await db.query(
+                    'UPDATE users SET help_token = ?, help_token_expiry = ?, help_requested_at = NOW() WHERE id = ?',
+                    [helpToken, helpExpiry, admin.user_id]
+                );
+
+                res.json({ 
+                    success: false, 
+                    message: 'Incorrect answers. Super admin help has been requested. You will be notified when assistance is available.',
+                    help_token: helpToken,
+                    can_reset: false,
+                    requires_admin: true,
+                    isAdmin: true
+                });
+            }
+            return;
+        }
+
+        // Check if it's a regular user
         const [users] = await db.query(`
             SELECT u.id, u.email, u.security_questions_setup,
                    usa.question_id, usa.answer
@@ -40,9 +130,9 @@ router.post('/verify', async (req, res) => {
         `, [email]);
 
         if (users.length === 0) {
-            return res.status(404).json({ 
+            return res.json({ 
                 success: false, 
-                message: 'User not found' 
+                message: 'If this email exists, we have sent instructions to proceed.' 
             });
         }
 
@@ -65,7 +155,7 @@ router.post('/verify', async (req, res) => {
 
         // Check if user has at least 2 security questions set up
         if (Object.keys(userAnswers).length < 2) {
-            return res.status(400).json({ 
+            return res.json({ 
                 success: false, 
                 message: 'Insufficient security questions set up' 
             });
@@ -99,7 +189,8 @@ router.post('/verify', async (req, res) => {
                 success: true, 
                 message: 'Security questions verified successfully. You can now reset your password.',
                 reset_token: resetToken,
-                can_reset: true
+                can_reset: true,
+                isAdmin: false
             });
         } else {
                             // Create admin help request
@@ -116,7 +207,8 @@ router.post('/verify', async (req, res) => {
                 message: 'Incorrect answers. Admin help has been requested. You will be notified when an admin can assist you.',
                 help_token: helpToken,
                 can_reset: false,
-                requires_admin: true
+                requires_admin: true,
+                isAdmin: false
             });
         }
 

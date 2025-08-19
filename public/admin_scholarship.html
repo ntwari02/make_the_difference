@@ -115,20 +115,23 @@
                     </div>
                 </div>
                 
-                <!-- Scholarship Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-white">
-                        <thead class="bg-gray-100 dark:bg-gray-700">
+                <!-- Scholarship Table (layout aligned with Roles & Permissions) -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-black dark:text-white">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Deadline</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applications</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Level</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Deadline</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Awards</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Applications</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="scholarshipsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody id="scholarshipsTableBody" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md divide-y divide-gray-200 dark:divide-gray-700 text-black dark:text-white">
                             <!-- Scholarships will be loaded here -->
                             <tr>
                                 <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
@@ -137,26 +140,21 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div class="px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 dark:border-gray-700">
+                        <div id="schPageInfo" class="text-sm text-gray-700 dark:text-gray-300">
+                            Showing <span id="showingFrom">1</span> - <span id="showingTo">10</span> of <span id="totalItems">0</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">Previous</button>
+                            <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">Next</button>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Pagination -->
-                <div class="flex justify-between items-center mt-4">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                        Showing <span id="showingFrom">1</span> to <span id="showingTo">10</span> of <span id="totalItems">0</span> scholarships
-                    </div>
-                    <div class="flex gap-1">
-                        <button id="prevPage" class="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/80 backdrop-blur-md text-gray-700 dark:text-gray-300 disabled:opacity-50">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button id="nextPage" class="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/80 backdrop-blur-md text-gray-700 dark:text-gray-300 disabled:opacity-50">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
             </div>
             
-            <!-- Status Summary Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Status Summary Cards (moved above, remove duplicate below) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
                 <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow p-4 border border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
                         <div>
@@ -519,21 +517,19 @@
                 `;
                 
                 const searchTerm = searchScholarships.value.trim();
-                let url = `/api/scholarships?page=${currentPage}&limit=${itemsPerPage}`;
-                if (searchTerm) {
-                    url += `&search=${encodeURIComponent(searchTerm)}`;
-                }
-                
+                const url = new URL('/api/scholarships', window.location.origin);
+                url.searchParams.set('page', currentPage);
+                url.searchParams.set('limit', itemsPerPage);
+                if (searchTerm) url.searchParams.set('search', searchTerm);
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch scholarships');
-                }
-                
-                const scholarships = await response.json();
+                if (!response.ok) throw new Error('Failed to fetch scholarships');
+                const payload = await response.json();
+                const data = payload && payload.data ? payload.data : { items: Array.isArray(payload) ? payload : [], pagination: null };
+                const scholarships = data.items || [];
                 allScholarships = scholarships;
                 renderScholarshipsTable(scholarships);
                 updateSummaryCards(scholarships);
+                updatePager(data.pagination);
                 
             } catch (error) {
                 console.error('Error loading scholarships:', error);
@@ -561,47 +557,40 @@
             }
             
             let html = '';
-            scholarships.forEach(scholarship => {
-                const deadline = new Date(scholarship.application_deadline).toLocaleDateString();
-                const statusClass = scholarship.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-                                  scholarship.status === 'expired' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
-                                  'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
-                
+            scholarships.forEach(s => {
+                const deadline = s.application_deadline ? new Date(s.application_deadline).toLocaleDateString() : '';
+                const statusClass = 'border border-current rounded px-2 py-0.5 text-xs';
+                const statusColor = s.status === 'active' ? 'text-green-600 dark:text-green-400' :
+                                    s.status === 'expired' ? 'text-red-600 dark:text-red-400' :
+                                    'text-gray-600 dark:text-gray-300';
                 html += `
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="font-medium text-gray-900 dark:text-white">${scholarship.name}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">${scholarship.sponsor || 'No sponsor'}</div>
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-black dark:text-white">${s.name}</div>
+                            <div class="text-xs text-black/60 dark:text-white/70">${s.sponsor || ''}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-gray-900 dark:text-white">${deadline}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                ${scholarship.status === 'expired' ? 'Expired' : scholarship.days_remaining ? `${scholarship.days_remaining} days left` : ''}
-                            </div>
+                        <td class="px-6 py-4 text-black dark:text-white">${s.academic_level || ''}</td>
+                        <td class="px-6 py-4 text-black dark:text-white">${s.scholarship_type || ''}</td>
+                        <td class="px-6 py-4 text-black dark:text-white">${deadline}</td>
+                        <td class="px-6 py-4 text-black dark:text-white">$${s.award_amount ? parseFloat(s.award_amount).toFixed(2) : '0.00'}</td>
+                        <td class="px-6 py-4 text-black dark:text-white">${s.number_of_awards || 0}</td>
+                        <td class="px-6 py-4">
+                            <span class="${statusClass} ${statusColor}">${s.status ? (s.status.charAt(0).toUpperCase() + s.status.slice(1)) : ''}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                            $${scholarship.award_amount ? parseFloat(scholarship.award_amount).toFixed(2) : '0.00'}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">
-                                ${scholarship.status.charAt(0).toUpperCase() + scholarship.status.slice(1)}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                            <button class="view-applications text-blue-600 dark:text-blue-400 hover:underline" data-id="${scholarship.id}">
-                                ${scholarship.application_count || 0} applications
+                        <td class="px-6 py-4">
+                            <button class="view-applications text-blue-600 dark:text-blue-400 hover:underline" data-id="${s.id}">
+                                ${s.application_count || 0} applications
                             </button>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="edit-scholarship text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3" data-id="${scholarship.id}">
+                        <td class="px-6 py-4 text-right text-sm font-medium">
+                            <button class="edit-scholarship text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3" data-id="${s.id}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="delete-scholarship text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" data-id="${scholarship.id}">
+                            <button class="delete-scholarship text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" data-id="${s.id}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             });
             
             scholarshipsTableBody.innerHTML = html;
@@ -627,6 +616,38 @@
                     viewApplications(id);
                 });
             });
+        }
+
+        function updatePager(pagination) {
+            const fromEl = document.getElementById('showingFrom');
+            const toEl = document.getElementById('showingTo');
+            const totalEl = document.getElementById('totalItems');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            if (!fromEl || !toEl || !totalEl || !prevBtn || !nextBtn) return;
+            if (!pagination) {
+                // Fallback when API returns array (legacy)
+                const total = allScholarships.length;
+                const start = total === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+                const end = Math.min(currentPage * itemsPerPage, total);
+                fromEl.textContent = start;
+                toEl.textContent = end;
+                totalEl.textContent = total;
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = end >= total;
+                return;
+            }
+            const page = pagination.page || pagination.currentPage || 1;
+            const perPage = pagination.perPage || pagination.limit || itemsPerPage;
+            const total = pagination.total || 0;
+            const pages = pagination.pages || Math.ceil(total / perPage);
+            const start = total === 0 ? 0 : (page - 1) * perPage + 1;
+            const end = Math.min(page * perPage, total);
+            fromEl.textContent = start;
+            toEl.textContent = end;
+            totalEl.textContent = total;
+            prevBtn.disabled = page <= 1;
+            nextBtn.disabled = page >= pages || pages === 0;
         }
         
         // Update summary cards
