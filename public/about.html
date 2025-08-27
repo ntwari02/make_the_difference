@@ -342,40 +342,7 @@
     <section class="py-16 md:py-24 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-12 text-center">Meet Our Dedicated Team</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div class="team-member-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <img src="./img/testimonials-3.jpg" 
-                 alt="Sarah Johnson" 
-                 class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2">
-            <div class="p-6 text-center">
-              <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Sarah Johnson</h3>
-              <p class="mb-4 font-semibold" style="color: var(--accent-darkblue);">Founder & CEO</p>
-              <p class="text-gray-600 dark:text-gray-300 text-sm">Visionary leader with 15 years of experience in higher education and student advocacy.</p>
-            </div>
-          </div>
-
-          <div class="team-member-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <img src="./img/testimonials-1.jpg" 
-                 alt="David Chen" 
-                 class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2">
-            <div class="p-6 text-center">
-              <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">David Chen</h3>
-              <p class="mb-4 font-semibold" style="color: var(--accent-darkblue);">Head of Partnerships</p>
-              <p class="text-gray-600 dark:text-gray-300 text-sm">Expert in forging strategic alliances with educational institutions and organizations.</p>
-            </div>
-          </div>
-
-          <div class="team-member-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <img src="./img/testimonials-4.jpg" 
-                 alt="Emily Martinez" 
-                 class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2">
-            <div class="p-6 text-center">
-              <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Emily Martinez</h3>
-              <p class="mb-4 font-semibold" style="color: var(--accent-darkblue);">Student Success Manager</p>
-              <p class="text-gray-600 dark:text-gray-300 text-sm">Passionate about guiding students through their academic journey and beyond.</p>
-            </div>
-          </div>
-        </div>
+        <div id="teamCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
       </div>
     </section>
     <div class="section-divider"></div>
@@ -501,8 +468,26 @@
 
   <script src="js/include-navbar.js" defer></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      includeNavbar(); // Load and initialize the navbar
+    document.addEventListener('DOMContentLoaded', async () => {
+      includeNavbar();
+      const teamContainer = document.getElementById('teamCards');
+      if (teamContainer) {
+        try{
+          const res = await fetch('/api/team');
+          const data = await res.json().catch(()=>({}));
+          const team = data.team || [];
+          const norm = p => { if(!p) return ''; let s=String(p).replace(/\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+          teamContainer.innerHTML = team.map(m => `
+            <div class="team-member-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <img src="${m.image_path?norm(m.image_path):'./img/testimonials-1.jpg'}" alt="${m.name}" class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2">
+              <div class="p-6 text-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">${m.name}</h3>
+                <p class="mb-4 font-semibold" style="color: var(--accent-darkblue);">${m.title||''}</p>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">${m.bio||''}</p>
+              </div>
+            </div>`).join('');
+        }catch{ teamContainer.innerHTML = '<div class="text-center text-gray-500">Failed to load team.</div>'; }
+      }
     });
 
     // Scroll Top Button (kept here as it's page-specific functionality)

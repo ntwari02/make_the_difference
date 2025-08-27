@@ -3,44 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Analytics</title>
+    <title>Admin Dashboard - Make The Difference</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('color-theme');
+                if (
+                    theme === 'dark' ||
+                    (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CSS Files -->
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    
+    <!-- JavaScript Files -->
     <script src="js/include-admin-sidebar.js" defer></script>
     <script src="js/include-admin-header.js" defer></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .sidebar { width: 280px; transition: all 0.3s ease; }
-        .sidebar.collapsed { width: 80px; }
-        .sidebar-item-text { transition: opacity 0.3s ease; }
-        .sidebar.collapsed .sidebar-item-text { opacity: 0; display: none; }
-        .main-content { transition: margin-left 0.3s ease; }
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -280px; z-index: 40; }
-            .sidebar.mobile-open { left: 0; }
-        }
-    </style>
-    <script>
-      (function() {
-        try {
-          var theme = localStorage.getItem('color-theme');
-          if (
-            theme === 'dark' ||
-            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          ) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        } catch (e) {}
-      })();
-    </script>
 </head>
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Admin Analytics"></div>
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
             <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Analytics Overview</h2>
             
@@ -73,8 +89,9 @@
             <!-- Interactive Analytics Section -->
             <div class="flex flex-wrap gap-4 mb-6">
                 <select id="dateFilter" class="px-4 py-2 border rounded-md dark:border-gray-600 dark:text-white">
-                    <option value="6">Last 6 Months</option>
+                    <option value="all">All Months</option>
                     <option value="12">Last 12 Months</option>
+                    <option value="6">Last 6 Months</option>
                     <option value="3">Last 3 Months</option>
                 </select>
                 <button id="refreshBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
@@ -124,7 +141,7 @@
 
             <!-- Chart Section -->
             <div class="mt-8">
-                <h3 class="text-lg font-semibold text-black dark:text-white mb-4">User Growth Chart</h3>
+                <h3 class="text-lg font-semibold text-black dark:text-white mb-4">User Growth Frequency Chart</h3>
                 <div class="bg-white dark:bg-transparent rounded-lg shadow-md p-6">
                     <canvas id="userGrowthChart" class="w-full h-48"></canvas>
                 </div>
@@ -515,7 +532,7 @@
         let userGrowthChart = null;
         let registrationTrendChart = null;
         let applicationTrendChartInstance = null;
-        let currentPeriod = 6;
+        let currentPeriod = 'all';
 
         // Initialize analytics
         async function initializeAnalytics() {
@@ -563,6 +580,7 @@
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Received user growth data:', data);
                     updateUserGrowthChart(data);
                     updateUserActivityList(data);
                 }
@@ -591,7 +609,8 @@
         function updateUserGrowthChart(data) {
         const ctx = document.getElementById('userGrowthChart').getContext('2d');
             const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#ffffff' : '#111827';
+            // Force labels to black regardless of theme
+            const textColor = '#000000';
             const gridColor = isDark ? '#374151' : '#e5e7eb';
             
             if (userGrowthChart) {
@@ -606,19 +625,17 @@
             const values = data.map(item => item.new_users);
 
             userGrowthChart = new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
                     labels: labels,
                 datasets: [{
                         label: 'New Users',
                         data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgba(59, 130, 246, 1)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
                 }]
             },
             options: {
@@ -646,7 +663,6 @@
                                 minRotation: 0
                             },
                             grid: {
-                                color: gridColor,
                                 display: false
                             }
                         },
@@ -657,7 +673,7 @@
                                 stepSize: 1
                             },
                             grid: {
-                                color: gridColor
+                                display: false
                             }
                         }
                     },
@@ -742,7 +758,7 @@
                 const summaryData = await summaryResponse.json();
                 
                 // Load user growth data
-                const growthResponse = await fetch(`/api/analytics/user-growth?period=12`, {
+                const growthResponse = await fetch(`/api/analytics/user-growth?period=all`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 
@@ -802,14 +818,32 @@
                 cumulativeTotal += item.new_users;
                 const date = new Date(item.month + '-01');
                 const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                const growthPercent = index > 0 ? ((item.new_users / growthData[index - 1].new_users) * 100 - 100).toFixed(1) : 0;
+                
+                // Calculate growth percentage
+                let growthPercent = 0;
+                if (index > 0) {
+                    const previousMonth = growthData[index - 1].new_users;
+                    if (previousMonth > 0) {
+                        growthPercent = ((item.new_users - previousMonth) / previousMonth) * 100;
+                    } else if (item.new_users > 0) {
+                        growthPercent = 100; // If previous month was 0 and current month has users, it's 100% growth
+                    }
+                }
+                
+                // Format growth percentage with proper styling
+                const growthText = growthPercent > 0 ? `+${growthPercent.toFixed(1)}%` : 
+                                 growthPercent < 0 ? `${growthPercent.toFixed(1)}%` : 
+                                 '0%';
+                const growthClass = growthPercent > 0 ? 'text-green-600 dark:text-green-400' : 
+                                  growthPercent < 0 ? 'text-red-600 dark:text-red-400' : 
+                                  'text-gray-600 dark:text-gray-400';
                 
                 return `
                     <tr class="border-b border-gray-200 dark:border-gray-600">
                         <td class="py-2 text-gray-800 dark:text-gray-200">${monthName}</td>
                         <td class="py-2 text-right text-gray-800 dark:text-gray-200">${item.new_users}</td>
                         <td class="py-2 text-right text-gray-800 dark:text-gray-200">${cumulativeTotal}</td>
-                        <td class="py-2 text-right ${growthPercent >= 0 ? 'text-green-600' : 'text-red-600'}">${growthPercent}%</td>
+                        <td class="py-2 text-right ${growthClass} font-semibold">${growthText}</td>
                     </tr>
                 `;
             }).join('');

@@ -79,7 +79,7 @@
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Roles & Permissions"></div>
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 
@@ -166,6 +166,17 @@
                                 <!-- Permission checkboxes will be dynamically added here -->
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Team Members Management -->
+                <div class="mt-12">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Team Members</h2>
+                        <button id="tmNewBtn" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded">New Member</button>
+                    </div>
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow p-4">
+                        <div id="tmList" class="divide-y divide-gray-200 dark:divide-gray-700"></div>
                     </div>
                 </div>
             </div>
@@ -979,8 +990,150 @@
                 });
             }
             if (refreshUsersPrivileges) refreshUsersPrivileges.addEventListener('click', () => loadUsersPrivileges());
+
+            // Team members init
+            initTeamMembersAdmin();
         });
         // Role management UI removed
+
+        // ---- Team Members Admin ----
+        function initTeamMembersAdmin(){
+            const list = document.getElementById('tmList');
+            const newBtn = document.getElementById('tmNewBtn');
+            if (!list || !newBtn) return;
+            const norm = p => { if(!p) return ''; let s=String(p).replace(/\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+            async function load(){
+                try{
+                    const res = await fetch('/api/team/all', { headers:{ 'Authorization': `Bearer ${localStorage.getItem('token')}` }});
+                    const data = await res.json().catch(()=>({}));
+                    const team = data.team || [];
+                    list.innerHTML = team.map(m => `
+                      <div class="py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          ${m.image_path?`<img src="${norm(m.image_path)}" class="w-10 h-10 rounded object-cover border">`:`<div class='w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400'><i class='fas fa-user'></i></div>`}
+                          <div>
+                            <div class="font-medium text-gray-900 dark:text-white">${m.name}</div>
+                            <div class="text-sm text-gray-500">${m.title||''}</div>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button class="px-2 py-1 text-blue-600" data-edit="${m.id}"><i class="fas fa-edit"></i></button>
+                          <button class="px-2 py-1 text-red-600" data-del="${m.id}"><i class="fas fa-trash"></i></button>
+                        </div>
+                      </div>`).join('');
+                    // Bind actions
+                    list.querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=> openForm(b.dataset.edit)));
+                    list.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=> removeMember(b.dataset.del)));
+                }catch{ list.innerHTML = '<div class="text-sm text-red-500">Failed to load team</div>'; }
+            }
+            async function removeMember(id){
+                if (!confirm('Delete this member?')) return;
+                const res = await fetch(`/api/team/${id}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${localStorage.getItem('token')}` }});
+                if (!res.ok) return alert('Delete failed');
+                load();
+            }
+            function openForm(id){
+                const holder = document.createElement('div');
+                holder.id = 'tmModal';
+                holder.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+                holder.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
+                  <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${id?'Edit':'Add'} Team Member</h3>
+                    <button id="tmClose" class="text-gray-500"><i class="fas fa-times"></i></button>
+                  </div>
+                  <div class="p-4 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div><label class="text-sm">Name</label><input id="tmName" class="w-full px-3 py-2 rounded border"></div>
+                      <div><label class="text-sm">Title</label><input id="tmTitle" class="w-full px-3 py-2 rounded border"></div>
+                    </div>
+                    <div><label class="text-sm">Bio</label><textarea id="tmBio" rows="3" class="w-full px-3 py-2 rounded border"></textarea></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div><label class="text-sm">Email</label><input id="tmEmail" class="w-full px-3 py-2 rounded border"></div>
+                      <div><label class="text-sm">Phone</label><input id="tmPhone" class="w-full px-3 py-2 rounded border"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div><label class="text-sm">LinkedIn</label><input id="tmLinkedin" class="w-full px-3 py-2 rounded border"></div>
+                      <div><label class="text-sm">Twitter</label><input id="tmTwitter" class="w-full px-3 py-2 rounded border"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div><label class="text-sm">Display Order</label><input id="tmOrder" type="number" value="0" class="w-full px-3 py-2 rounded border"></div>
+                      <div class="flex items-center gap-2"><input id="tmActive" type="checkbox" checked><label for="tmActive">Active</label></div>
+                    </div>
+                    <div>
+                      <label class="text-sm">Photo</label>
+                      <input id="tmPhoto" type="file" accept="image/*" class="sr-only">
+                      <div id="tmDrop" class="p-4 border-2 border-dashed rounded text-gray-500 cursor-pointer">Drag & drop or click to select</div>
+                      <div class="mt-2"><img id="tmPreview" class="hidden w-24 h-24 rounded object-cover border"></div>
+                    </div>
+                  </div>
+                  <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                    <button id="tmCancel" class="px-4 py-2 rounded border">Cancel</button>
+                    <button id="tmSave" class="px-4 py-2 rounded bg-primary-600 text-white">Save</button>
+                  </div>
+                </div>`;
+                document.body.appendChild(holder);
+                const close = ()=> holder.remove();
+                holder.querySelector('#tmClose').onclick = close;
+                holder.querySelector('#tmCancel').onclick = close;
+                // drag-drop
+                const fileEl = holder.querySelector('#tmPhoto');
+                const dropEl = holder.querySelector('#tmDrop');
+                const preview = holder.querySelector('#tmPreview');
+                const setPrev = f=>{ if(!f||!f.type.startsWith('image/')){ preview.classList.add('hidden'); return;} const u=URL.createObjectURL(f); preview.src=u; preview.classList.remove('hidden'); };
+                dropEl.addEventListener('click', ()=> fileEl.click());
+                dropEl.addEventListener('dragover', e=>{ e.preventDefault(); dropEl.classList.add('ring','ring-blue-400'); });
+                dropEl.addEventListener('dragleave', ()=> dropEl.classList.remove('ring','ring-blue-400'));
+                dropEl.addEventListener('drop', e=>{ e.preventDefault(); dropEl.classList.remove('ring','ring-blue-400'); const f=e.dataTransfer.files[0]; if(!f) return; const dt=new DataTransfer(); dt.items.add(f); fileEl.files=dt.files; setPrev(f); });
+                fileEl.addEventListener('change', ()=> setPrev(fileEl.files[0]));
+                // load existing
+                if (id){ fetch(`/api/team/all`, { headers:{ 'Authorization': `Bearer ${localStorage.getItem('token')}` }}).then(r=>r.json()).then(d=>{
+                    const m = (d.team||[]).find(x=> String(x.id)===String(id)); if (!m) return;
+                    holder.querySelector('#tmName').value = m.name||'';
+                    holder.querySelector('#tmTitle').value = m.title||'';
+                    holder.querySelector('#tmBio').value = m.bio||'';
+                    holder.querySelector('#tmEmail').value = m.email||'';
+                    holder.querySelector('#tmPhone').value = m.phone||'';
+                    holder.querySelector('#tmLinkedin').value = m.linkedin||'';
+                    holder.querySelector('#tmTwitter').value = m.twitter||'';
+                    holder.querySelector('#tmOrder').value = m.display_order||0;
+                    holder.querySelector('#tmActive').checked = !!m.is_active;
+                    if (m.image_path){ preview.src = norm(m.image_path); preview.classList.remove('hidden'); }
+                }); }
+                // save
+                holder.querySelector('#tmSave').onclick = async ()=>{
+                    const payload = {
+                        name: holder.querySelector('#tmName').value.trim(),
+                        title: holder.querySelector('#tmTitle').value.trim(),
+                        bio: holder.querySelector('#tmBio').value.trim(),
+                        email: holder.querySelector('#tmEmail').value.trim(),
+                        phone: holder.querySelector('#tmPhone').value.trim(),
+                        linkedin: holder.querySelector('#tmLinkedin').value.trim(),
+                        twitter: holder.querySelector('#tmTwitter').value.trim(),
+                        display_order: parseInt(holder.querySelector('#tmOrder').value||0,10),
+                        is_active: holder.querySelector('#tmActive').checked?1:0
+                    };
+                    if (!payload.name) return alert('Name is required');
+                    const token = localStorage.getItem('token');
+                    if (!id){
+                        const res = await fetch('/api/team', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+                        if (!res.ok) return alert('Save failed');
+                        const data = await res.json().catch(()=>({}));
+                        const newId = data.member && data.member.id;
+                        const file = fileEl.files && fileEl.files[0];
+                        if (newId && file){ const fd=new FormData(); fd.append('photo', file); await fetch(`/api/team/${newId}/photo`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd }); }
+                    } else {
+                        const res = await fetch(`/api/team/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+                        if (!res.ok) return alert('Update failed');
+                        const file = fileEl.files && fileEl.files[0];
+                        if (file){ const fd=new FormData(); fd.append('photo', file); await fetch(`/api/team/${id}/photo`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd }); }
+                    }
+                    close(); load();
+                };
+            }
+            newBtn.addEventListener('click', ()=> openForm(null));
+            load();
+        }
     </script>
 </body>
 </html> 

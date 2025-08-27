@@ -3,15 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scholarships Management</title>
+    <title>Admin Dashboard - Make The Difference</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('color-theme');
+                if (
+                    theme === 'dark' ||
+                    (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <!-- CSS Files -->
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    
+    <!-- JavaScript Files -->
     <script src="js/include-admin-sidebar.js" defer></script>
     <script src="js/include-admin-header.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <style>
         /* Enhanced form styling with larger inputs */
         .enhanced-input {
@@ -98,8 +139,44 @@
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Scholarships Management"></div>
     
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
+            <!-- Status Summary Cards (top) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Scholarships</p>
+                            <h3 id="totalScholarships" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-blue-100 dark:bg-transparent text-blue-600 dark:text-blue-300">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                    </div>      
+                </div>
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
+                            <h3 id="activeScholarships" class="text-2xl font-bold text-green-600 dark:text-green-400">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-green-100 dark:bg-transparent text-green-600 dark:text-green-300">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Inactive</p>
+                            <h3 id="inactiveScholarships" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-transparent text-yellow-600 dark:text-yellow-300">
+                            <i class="fas fa-pause-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Scholarship List and Actions -->
             <div class="backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 dark:border-gray-700">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -153,53 +230,7 @@
                 
             </div>
             
-            <!-- Status Summary Cards (moved above, remove duplicate below) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Scholarships</p>
-                            <h3 id="totalScholarships" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
-                        </div>
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
-                            <h3 id="activeScholarships" class="text-2xl font-bold text-green-600 dark:text-green-400">0</h3>
-                        </div>
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Expired</p>
-                            <h3 id="expiredScholarships" class="text-2xl font-bold text-red-600 dark:text-red-400">0</h3>
-                        </div>
-                        <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300">
-                            <i class="fas fa-times-circle"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
-                            <h3 id="totalApplications" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
-                        </div>
-                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
         
         <!-- Scholarship Form Modal -->
@@ -297,55 +328,101 @@
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="sponsor" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sponsor</label>
-                            <input type="text" id="sponsor"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                    <!-- PDF Documents Section -->
+                    <div class="form-section">
+                        <h4 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-file-pdf mr-3 text-red-500"></i>PDF Documents
+                        </h4>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="documentTitle" class="enhanced-label">Document Title</label>
+                                <input type="text" id="documentTitle" 
+                                    class="enhanced-input w-full" placeholder="Enter document title">
+                            </div>
+                            <div>
+                                <label for="documentDescription" class="enhanced-label">Description</label>
+                                <textarea id="documentDescription" rows="3"
+                                    class="enhanced-input w-full resize-none" placeholder="Describe the document..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="documentCategory" class="enhanced-label">Category</label>
+                                    <select id="documentCategory" class="enhanced-input w-full">
+                                        <option value="application">Application Form</option>
+                                        <option value="guidelines">Guidelines</option>
+                                        <option value="requirements">Requirements</option>
+                                        <option value="general">General Information</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="documentFile" class="enhanced-label">PDF File</label>
+                                    <input type="file" id="documentFile" accept=".pdf" 
+                                        class="enhanced-input w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button" id="addDocumentBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-2">
+                                    <i class="fas fa-plus"></i>
+                                    Add Document
+                                </button>
+                            </div>
+                            
+                            <!-- Documents List -->
+                            <div id="documentsList" class="space-y-3">
+                                <!-- Documents will be listed here -->
+                            </div>
                         </div>
-                        <div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label for="sponsor" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Country</label>
+                            <input type="text" id="sponsor"
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                        </div>
+                        <div class="md:col-span-2">
                             <label for="contact_email" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Contact Email</label>
                             <input type="email" id="contact_email"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="link_to_application" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Application Link</label>
                             <input type="url" id="link_to_application"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="min_gpa" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Minimum GPA</label>
                             <input type="number" id="min_gpa" min="0" max="4" step="0.1"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="field_of_study" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Field of Study</label>
                             <input type="text" id="field_of_study"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="documents_required" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Documents Required</label>
                             <input type="text" id="documents_required" placeholder="Comma separated list"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex items-center">
+                        <div class="flex items-center md:col-span-2 py-3">
                             <input type="checkbox" id="is_recurring"
                                 class="light-input rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
                             <label for="is_recurring" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Recurring Scholarship</label>
                         </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="number_of_awards" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Number of Awards</label>
                             <input type="number" id="number_of_awards" min="1"
-                                class="light-input w-full rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="light-input w-full rounded-lg border px-4 py-3 text-base md:text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         </div>
                     </div>
                     
@@ -363,7 +440,7 @@
         
         <!-- Applications Modal -->
         <div id="applicationsModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
-            <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl p-6 w-full max-w-6xl mx-4 border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl p-6 w-full max-w-6xl mx-4 border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto dark:text-white">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="applicationsModalTitle" class="text-xl font-bold text-gray-800 dark:text-white">Applications</h3>
                     <button id="closeApplicationsModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -382,7 +459,7 @@
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="applicationsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody id="applicationsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 dark:text-white">
                             <!-- Applications will be loaded here -->
                         </tbody>
                     </table>
@@ -402,6 +479,7 @@
         const itemsPerPage = 10;
         let allScholarships = [];
         let currentScholarshipId = null;
+        let lastPagination = null;
         
         // DOM elements
         const scholarshipsTableBody = document.getElementById('scholarshipsTableBody');
@@ -417,18 +495,8 @@
             minDate: 'today'
         });
         
-        // Development mode - bypass authentication
-        async function testAuth() {
-            console.log('Development mode - authentication bypassed');
-            // Set mock admin user for development
-            const user = {
-                full_name: 'Development Admin',
-                role: 'admin',
-                isAdmin: true
-            };
-            localStorage.setItem('user', JSON.stringify(user));
-            console.log('Mock admin user set for development');
-        }
+        // Production: no hardcoded auth/user seeding
+        async function testAuth() { /* removed dev seeding */ }
         
         // Load statistics
         async function loadStats() {
@@ -445,21 +513,21 @@
                 // Calculate stats from scholarships data
                 const totalScholarships = scholarships.length || 0;
                 const activeScholarships = scholarships.filter(s => s.status === 'active').length || 0;
-                const expiredScholarships = scholarships.filter(s => s.status === 'expired').length || 0;
+                const inactiveScholarships = scholarships.filter(s => s.status === 'inactive').length || 0;
                 
                 // Update summary cards
                 document.getElementById('totalScholarships').textContent = totalScholarships;
                 document.getElementById('activeScholarships').textContent = activeScholarships;
-                document.getElementById('expiredScholarships').textContent = expiredScholarships;
-                document.getElementById('totalApplications').textContent = '0'; // Will be updated when applications endpoint is available
+                const inactiveEl = document.getElementById('inactiveScholarships');
+                if (inactiveEl) inactiveEl.textContent = inactiveScholarships;
                 
             } catch (error) {
                 console.error('Error loading stats:', error);
                 // Set default values if stats fail to load
                 document.getElementById('totalScholarships').textContent = '0';
                 document.getElementById('activeScholarships').textContent = '0';
-                document.getElementById('expiredScholarships').textContent = '0';
-                document.getElementById('totalApplications').textContent = '0';
+                const inactiveEl = document.getElementById('inactiveScholarships');
+                if (inactiveEl) inactiveEl.textContent = '0';
             }
         }
         
@@ -467,7 +535,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadScholarships();
             loadStats();
-            // Test authentication on page load
+            // No dev auth seeding
             testAuth();
             
             // Set up event listeners
@@ -478,16 +546,21 @@
             document.getElementById('closeApplicationsBtn').addEventListener('click', closeApplicationsModal);
             
             scholarshipForm.addEventListener('submit', handleScholarshipSubmit);
-            searchScholarships.addEventListener('input', debounce(loadScholarships, 300));
+            searchScholarships.addEventListener('input', debounce(() => { currentPage = 1; loadScholarships(); }, 300));
+            const addDocBtn = document.getElementById('addDocumentBtn');
+            if (addDocBtn) addDocBtn.addEventListener('click', handleAddDocument);
+            // Load existing documents into the admin list
+            refreshAdminDocumentsList();
             
             document.getElementById('prevPage').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadScholarships();
-                }
+                if (currentPage <= 1) return;
+                currentPage--;
+                loadScholarships();
             });
             
             document.getElementById('nextPage').addEventListener('click', () => {
+                const totalPages = lastPagination && (lastPagination.pages || Math.ceil((lastPagination.total||0) / (lastPagination.perPage||itemsPerPage))) || null;
+                if (totalPages && currentPage >= totalPages) return;
                 currentPage++;
                 loadScholarships();
             });
@@ -527,6 +600,10 @@
                 const data = payload && payload.data ? payload.data : { items: Array.isArray(payload) ? payload : [], pagination: null };
                 const scholarships = data.items || [];
                 allScholarships = scholarships;
+                lastPagination = data.pagination || null;
+                if (lastPagination && lastPagination.pages && currentPage > lastPagination.pages) {
+                    currentPage = lastPagination.pages;
+                }
                 renderScholarshipsTable(scholarships);
                 updateSummaryCards(scholarships);
                 updatePager(data.pagination);
@@ -540,6 +617,102 @@
                         </td>
                     </tr>
                 `;
+            }
+        }
+
+        // Admin: Upload scholarship PDFs
+        async function handleAddDocument(){
+            const title = document.getElementById('documentTitle').value.trim();
+            const description = document.getElementById('documentDescription').value.trim();
+            const category = document.getElementById('documentCategory').value;
+            const file = document.getElementById('documentFile').files[0];
+            if (!title || !file){
+                try { displayMessageBox('Please provide a title and select a PDF file.', 'error'); } catch { alert('Please provide a title and select a PDF file.'); }
+                return;
+            }
+            if (!file.type || file.type !== 'application/pdf'){
+                try { displayMessageBox('Please select a valid PDF file.', 'error'); } catch { alert('Please select a valid PDF file.'); }
+                return;
+            }
+            try{
+                const token = localStorage.getItem('token');
+                if (!token){
+                    try { displayMessageBox('You must be logged in as admin to upload documents.', 'error'); } catch { alert('You must be logged in as admin to upload documents.'); }
+                    return;
+                }
+                const fd = new FormData();
+                fd.append('document', file);
+                fd.append('title', title);
+                fd.append('description', description);
+                fd.append('category', category);
+                const resp = await fetch('/api/scholarship-documents', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: fd
+                });
+                const result = await resp.json().catch(()=>({}));
+                if (!resp.ok || result.success === false){
+                    throw new Error(result.error || 'Failed to upload document');
+                }
+                try { displayMessageBox('Document uploaded successfully!', 'success'); } catch { console.log('Document uploaded successfully!'); }
+                document.getElementById('documentTitle').value='';
+                document.getElementById('documentDescription').value='';
+                document.getElementById('documentCategory').value='application';
+                document.getElementById('documentFile').value='';
+                await refreshAdminDocumentsList();
+            }catch(err){
+                console.error('Upload document error:', err);
+                try { displayMessageBox(err.message || 'Failed to upload document', 'error'); } catch { alert(err.message || 'Failed to upload document'); }
+            }
+        }
+
+        async function refreshAdminDocumentsList(){
+            const wrap = document.getElementById('documentsList');
+            if (!wrap) return;
+            try{
+                wrap.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400">Loading documents...</div>';
+                const resp = await fetch('/api/scholarship-documents');
+                const data = await resp.json().catch(()=>({}));
+                const docs = data && (data.documents || data.data || data) && (data.success !== false) ? (data.documents || data.data || data) : [];
+                if (!Array.isArray(docs) || docs.length === 0){
+                    wrap.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400">No documents uploaded yet.</div>';
+                    return;
+                }
+                wrap.innerHTML = docs.map(d=>{
+                    const size = Number(d.file_size||0);
+                    const sizeLabel = size ? (Math.ceil(size/1024)+' KB') : '';
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-file-pdf text-red-500"></i>
+                                <div>
+                                    <div class="font-medium">${(d.title||'Document')}</div>
+                                    <div class="text-xs text-gray-500">${(d.category||'general')}${sizeLabel?(' • '+sizeLabel):''}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <a href="/api/scholarship-documents/download/${d.id}" class="text-blue-600 hover:underline">Download</a>
+                                <button class="text-red-600 hover:underline" onclick="deleteAdminDocument(${d.id})">Delete</button>
+                            </div>
+                        </div>`;
+                }).join('');
+            }catch(e){
+                wrap.innerHTML = '<div class="text-sm text-red-500">Failed to load documents.</div>';
+            }
+        }
+
+        async function deleteAdminDocument(id){
+            try{
+                const token = localStorage.getItem('token');
+                if (!token){ try { displayMessageBox('Not authorized', 'error'); } catch { alert('Not authorized'); } return; }
+                if (!confirm('Delete this document?')) return;
+                const resp = await fetch(`/api/scholarship-documents/${id}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` }});
+                const resj = await resp.json().catch(()=>({}));
+                if (!resp.ok || resj.success === false){ throw new Error(resj.error || 'Failed to delete'); }
+                try { displayMessageBox('Document deleted', 'success'); } catch { console.log('Document deleted'); }
+                await refreshAdminDocumentsList();
+            }catch(e){
+                try { displayMessageBox(e.message || 'Delete failed', 'error'); } catch { alert(e.message || 'Delete failed'); }
             }
         }
         
@@ -654,13 +827,14 @@
         function updateSummaryCards(scholarships) {
             const total = scholarships.length;
             const active = scholarships.filter(s => s.status === 'active').length;
-            const expired = scholarships.filter(s => s.status === 'expired').length;
-            // Note: Application count would come from a separate API endpoint or be included in the scholarships data
-            
-            document.getElementById('totalScholarships').textContent = total;
-            document.getElementById('activeScholarships').textContent = active;
-            document.getElementById('expiredScholarships').textContent = expired;
-            // document.getElementById('totalApplications').textContent = totalApplications;
+            const inactive = scholarships.filter(s => s.status === 'inactive').length;
+
+            const totalEl = document.getElementById('totalScholarships');
+            const activeEl = document.getElementById('activeScholarships');
+            const inactiveEl = document.getElementById('inactiveScholarships');
+            if (totalEl) totalEl.textContent = total;
+            if (activeEl) activeEl.textContent = active;
+            if (inactiveEl) inactiveEl.textContent = inactive;
         }
         
         // Open new scholarship modal
@@ -945,15 +1119,15 @@
                             ${appDate}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/admin/application/${application.id}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3">
+                            <button class="view-application text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3" data-id="${application.application_id || application.id}">
                                 <i class="fas fa-eye"></i>
-                            </a>
+                            </button>
                             <button class="change-status text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3" 
-                                data-id="${application.id}" data-status="approved">
+                                data-id="${application.application_id || application.id}" data-status="approved">
                                 <i class="fas fa-check"></i>
                             </button>
                             <button class="change-status text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" 
-                                data-id="${application.id}" data-status="rejected">
+                                data-id="${application.application_id || application.id}" data-status="rejected">
                                 <i class="fas fa-times"></i>
                             </button>
                         </td>
@@ -971,15 +1145,25 @@
                     updateApplicationStatus(applicationId, newStatus, scholarshipId);
                 });
             });
+
+            // Add event listeners to view buttons
+            document.querySelectorAll('.view-application').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const applicationId = e.currentTarget.getAttribute('data-id');
+                    openApplicationDetailModal(applicationId);
+                });
+            });
         }
         
         // Update application status
         async function updateApplicationStatus(applicationId, newStatus, scholarshipId) {
             try {
-                const response = await fetch(`/api/applications/${applicationId}/status`, {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}/status`, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                     },
                     body: JSON.stringify({ status: newStatus })
                 });
@@ -996,6 +1180,84 @@
                 alert('Failed to update application status. Please try again.');
             }
         }
+    </script>
+    
+    <!-- Application Detail Modal -->
+    <div id="applicationDetailModal" class="fixed inset-0 bg-black/40 hidden z-50">
+        <div class="bg-white dark:bg-gray-800/80 dark:text-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-4 mt-16 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold">Application Details</h3>
+                <button id="closeApplicationDetail" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="applicationDetailBody" class="space-y-4 text-sm"></div>
+        </div>
+    </div>
+    <script>
+        async function openApplicationDetailModal(applicationId) {
+            try {
+                const token = localStorage.getItem('token');
+                const resp = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!resp.ok) throw new Error('Failed to fetch application');
+                const payload = await resp.json();
+                const data = (payload && payload.data) ? payload.data : payload;
+                const body = document.getElementById('applicationDetailBody');
+                if (!body) return;
+                const img = data.profile_picture_url ? `/${data.profile_picture_url}` : '';
+                const profile = img ? `<img src="${img}" onerror="this.style.display='none'" class="w-20 h-20 rounded-full object-cover border"/>` : `<div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-gray-400"></i></div>`;
+                body.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        ${profile}
+                        <div>
+                            <div class="text-lg font-semibold">${data.full_name || ''}</div>
+                            <div class="text-gray-600 dark:text-gray-300">${data.email_address || ''}</div>
+                            <div class="text-gray-600 dark:text-gray-300">${data.phone_number || ''}</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div><span class="font-medium">Date of Birth:</span> ${data.date_of_birth || ''}</div>
+                        <div><span class="font-medium">Gender:</span> ${data.gender || ''}</div>
+                        <div><span class="font-medium">Preferred University:</span> ${data.preferred_university || ''}</div>
+                        <div><span class="font-medium">Country:</span> ${data.country || ''}</div>
+                        <div><span class="font-medium">Academic Level:</span> ${data.academic_level || ''}</div>
+                        <div><span class="font-medium">Intended Major:</span> ${data.intended_major || ''}</div>
+                        <div><span class="font-medium">GPA:</span> ${data.gpa_academic_performance || ''}</div>
+                    </div>
+                    <div>
+                        <div class="font-medium">Extracurricular Activities</div>
+                        <div class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">${data.extracurricular_activities || ''}</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div><span class="font-medium">Parent/Guardian:</span> ${data.parent_guardian_name || ''}</div>
+                        <div><span class="font-medium">Contact:</span> ${data.parent_guardian_contact || ''}</div>
+                    </div>
+                    <div>
+                        <div class="font-medium">Financial Need Statement</div>
+                        <div class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">${data.financial_need_statement || ''}</div>
+                    </div>
+                    <div>
+                        <div class="font-medium">Motivation Statement</div>
+                        <div class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">${data.motivation_statement || ''}</div>
+                    </div>
+                `;
+                const modal = document.getElementById('applicationDetailModal');
+                if (modal) modal.classList.remove('hidden');
+            } catch (e) {
+                console.error('Failed to load application details', e);
+                alert('Failed to load application details');
+            }
+        }
+        const closeBtn = document.getElementById('closeApplicationDetail');
+        if (closeBtn) closeBtn.addEventListener('click', ()=>{
+            const modal = document.getElementById('applicationDetailModal');
+            if (modal) modal.classList.add('hidden');
+        });
+        document.addEventListener('click', (e)=>{
+            const modal = document.getElementById('applicationDetailModal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            if (e.target === modal) modal.classList.add('hidden');
+        });
     </script>
 </body>
 </html>

@@ -118,6 +118,38 @@ async function initializeTables() {
 // Initialize tables on startup
 initializeTables();
 
+// User: create a new notification and conversation to contact admin
+router.post('/create-from-user', auth, async (req, res) => {
+  try {
+    const { title, message } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ message: 'Title and message are required.' });
+    }
+
+    // Create the notification bound to the user
+    const [notifResult] = await db.query(
+      'INSERT INTO notifications (user_id, email, title, message) VALUES (?, ?, ?, ?)',
+      [req.user.id, req.user.email, title, message]
+    );
+
+    // Create conversation without admin assignment
+    const [convResult] = await db.query(
+      'INSERT INTO conversations (notification_id, user_id, email, admin_id, subject) VALUES (?, ?, ?, ?, ?)',
+      [notifResult.insertId, req.user.id, req.user.email, null, title]
+    );
+
+    return res.status(201).json({
+      success: true,
+      notificationId: notifResult.insertId,
+      conversationId: convResult.insertId,
+      message: 'Your message has been sent to admin.'
+    });
+  } catch (error) {
+    console.error('Error creating user conversation:', error);
+    return res.status(500).json({ message: 'Failed to send message.' });
+  }
+});
+
 // Create notification (admin only)
 router.post('/', bypassAuth, async (req, res) => {
   const { email, title, message } = req.body;

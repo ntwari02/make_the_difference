@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Advertisement Test - Sound Controls</title>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            transition: background 0.2s;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Video Advertisement Test</h1>
+            <p class="text-lg text-center mb-8 text-gray-600">Testing improved video ads with sound controls and enhanced functionality</p>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Features Added:</h2>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Sound Enabled by Default:</strong> Videos now play with sound instead of being muted
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Volume Controls:</strong> Mute/unmute button and volume slider for precise control
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Play/Pause Button:</strong> Custom play/pause control with visual feedback
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Fullscreen Support:</strong> Dedicated fullscreen button for better viewing
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Keyboard Shortcuts:</strong> Space (play/pause), M (mute), F (fullscreen), arrows (seek)
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <strong>Enhanced UI:</strong> Beautiful overlay controls that appear on hover
+                    </li>
+                </ul>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Basic Advertisement Test -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Basic Advertisement System</h3>
+                    <p class="text-gray-600 mb-4">Test the improved basic advertisement system with sound controls.</p>
+                    <button id="test-basic-ad" class="w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Test Basic Video Ad
+                    </button>
+                </div>
+
+                <!-- Advanced Advertisement Test -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Advanced Advertisement System</h3>
+                    <p class="text-gray-600 mb-4">Test the enhanced advanced advertisement system with all features.</p>
+                    <button id="test-advanced-ad" class="w-full bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-star mr-2"></i>Test Advanced Video Ad
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Keyboard Shortcuts</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                    <div>
+                        <h4 class="font-semibold mb-2">Video Controls:</h4>
+                        <ul class="space-y-1">
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">Space</kbd> Play/Pause</li>
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">M</kbd> Mute/Unmute</li>
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">F</kbd> Fullscreen</li>
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">←</kbd> Rewind 10s</li>
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">→</kbd> Forward 10s</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Navigation:</h4>
+                        <ul class="space-y-1">
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">0-9</kbd> Jump to percentage</li>
+                            <li><kbd class="bg-gray-200 px-2 py-1 rounded">Escape</kbd> Close ad (after delay)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-blue-800">Important Notes</h3>
+                <ul class="space-y-2 text-blue-700">
+                    <li class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mr-3 mt-1"></i>
+                        <span>Videos now play with sound by default instead of being muted</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mr-3 mt-1"></i>
+                        <span>Custom controls overlay appears when hovering over the video</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mr-3 mt-1"></i>
+                        <span>All controls are fully functional and provide visual feedback</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mr-3 mt-1"></i>
+                        <span>Keyboard shortcuts work when the video is focused</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Video Modal -->
+    <div id="test-video-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full mx-4 relative overflow-hidden">
+            <button id="close-test-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl font-bold z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="relative">
+                <video id="test-video" class="w-full h-64 object-cover" controls autoplay preload="metadata">
+                    <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                
+                <!-- Custom Video Controls Overlay -->
+                <div class="video-controls-overlay absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                    <div class="flex items-center justify-between text-white">
+                        <!-- Volume Control -->
+                        <div class="flex items-center space-x-2">
+                            <button id="test-volume-btn" class="text-white hover:text-gray-300 transition-colors" title="Toggle Mute">
+                                <i class="fas fa-volume-up text-lg"></i>
+                            </button>
+                            <div class="relative">
+                                <input type="range" id="test-volume-slider" min="0" max="100" value="100" 
+                                       class="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                                       title="Volume Control">
+                            </div>
+                        </div>
+                        
+                        <!-- Play/Pause Button -->
+                        <button id="test-play-pause-btn" class="text-white hover:text-gray-300 transition-colors" title="Play/Pause">
+                            <i class="fas fa-pause text-lg"></i>
+                        </button>
+                        
+                        <!-- Fullscreen Button -->
+                        <button id="test-fullscreen-btn" class="text-white hover:text-gray-300 transition-colors" title="Fullscreen">
+                            <i class="fas fa-expand text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Test Video Advertisement</h3>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">This is a test video to demonstrate the improved sound controls and video functionality.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Try the custom controls, keyboard shortcuts, and volume adjustments!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test video functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const testModal = document.getElementById('test-video-modal');
+            const closeBtn = document.getElementById('close-test-modal');
+            const testBasicBtn = document.getElementById('test-basic-ad');
+            const testAdvancedBtn = document.getElementById('test-advanced-ad');
+            
+            // Close modal
+            closeBtn.addEventListener('click', () => {
+                testModal.classList.add('hidden');
+                const video = document.getElementById('test-video');
+                if (video) {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+            
+            // Test basic ad
+            testBasicBtn.addEventListener('click', () => {
+                testModal.classList.remove('hidden');
+                initializeTestVideo();
+            });
+            
+            // Test advanced ad
+            testAdvancedBtn.addEventListener('click', () => {
+                testModal.classList.remove('hidden');
+                initializeTestVideo();
+            });
+            
+            function initializeTestVideo() {
+                const video = document.getElementById('test-video');
+                if (!video) return;
+                
+                // Initialize video with sound enabled
+                video.volume = 1.0;
+                video.muted = false;
+                
+                // Add custom control event listeners
+                addTestVideoControls(video);
+            }
+            
+            function addTestVideoControls(video) {
+                // Volume button
+                const volumeBtn = document.getElementById('test-volume-btn');
+                if (volumeBtn) {
+                    volumeBtn.addEventListener('click', () => {
+                        video.muted = !video.muted;
+                        updateTestVolumeButton(video.muted);
+                    });
+                }
+                
+                // Volume slider
+                const volumeSlider = document.getElementById('test-volume-slider');
+                if (volumeSlider) {
+                    volumeSlider.addEventListener('input', (e) => {
+                        const volume = e.target.value / 100;
+                        video.volume = volume;
+                        video.muted = volume === 0;
+                        updateTestVolumeButton(video.muted);
+                    });
+                }
+                
+                // Play/Pause button
+                const playPauseBtn = document.getElementById('test-play-pause-btn');
+                if (playPauseBtn) {
+                    playPauseBtn.addEventListener('click', () => {
+                        if (video.paused) {
+                            video.play();
+                        } else {
+                            video.pause();
+                        }
+                    });
+                }
+                
+                // Fullscreen button
+                const fullscreenBtn = document.getElementById('test-fullscreen-btn');
+                if (fullscreenBtn) {
+                    fullscreenBtn.addEventListener('click', () => {
+                        if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                        } else {
+                            video.requestFullscreen();
+                        }
+                    });
+                }
+                
+                // Update play/pause button on video events
+                video.addEventListener('play', () => updateTestPlayPauseButton(true));
+                video.addEventListener('pause', () => updateTestPlayPauseButton(false));
+            }
+            
+            function updateTestVolumeButton(muted) {
+                const volumeBtn = document.getElementById('test-volume-btn');
+                if (volumeBtn) {
+                    volumeBtn.innerHTML = muted ? 
+                        '<i class="fas fa-volume-mute text-lg"></i>' : 
+                        '<i class="fas fa-volume-up text-lg"></i>';
+                }
+            }
+            
+            function updateTestPlayPauseButton(playing) {
+                const playPauseBtn = document.getElementById('test-play-pause-btn');
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = playing ? 
+                        '<i class="fas fa-pause text-lg"></i>' : 
+                        '<i class="fas fa-play text-lg"></i>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

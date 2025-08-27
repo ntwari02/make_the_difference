@@ -1,10 +1,10 @@
 import express from 'express';
-// Removed multer/profile upload per requirements
+import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import db from '../config/database.js';
-import { auth, bypassAuth } from '../middleware/auth.js';
+import { auth, adminAuth, bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -15,6 +15,7 @@ import fs from 'fs';
 // GET admin account settings
 router.get('/account', bypassAuth, async (req, res) => {
     try {
+        
         const userId = req.user.id;
         
         // First try to get from admin_account_settings table
@@ -35,6 +36,7 @@ router.get('/account', bypassAuth, async (req, res) => {
                 language: settings.language,
                 theme_preference: settings.theme_preference,
                 profile_picture: settings.profile_picture_path,
+                profile_picture_path: settings.profile_picture_path,
                 notifications: {
                     email: settings.email_notifications === 1,
                     sms: settings.sms_notifications === 1,
@@ -76,9 +78,54 @@ router.get('/account', bypassAuth, async (req, res) => {
     }
 });
 
+// Upload profile picture (multipart)
+const profileStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = path.join(__dirname, '..', 'uploads', 'profile_pictures');
+        fs.mkdirSync(dest, { recursive: true });
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const safe = (file.originalname || 'avatar.png').replace(/[^a-zA-Z0-9_.-]/g, '_');
+        cb(null, `${uniqueSuffix}-${safe}`);
+    }
+});
+const uploadProfile = multer({ storage: profileStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+router.post('/account/profile-picture', bypassAuth, uploadProfile.single('profilePicture'), async (req, res) => {
+    try {
+        
+        const userId = req.user.id;
+        if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+        const relPath = `uploads/profile_pictures/${req.file.filename}`.replace(/\\/g, '/');
+
+        // Ensure settings row exists, then update
+        const [exists] = await db.query('SELECT id FROM admin_account_settings WHERE user_id = ?', [userId]);
+        if (exists.length === 0) {
+            // Create minimal row
+            const [users] = await db.query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+            const fullName = (users[0] && (users[0].full_name || '')) || '';
+            const email = (users[0] && users[0].email) || '';
+            await db.query(
+                `INSERT INTO admin_account_settings (user_id, full_name, email, profile_picture_path) VALUES (?, ?, ?, ?)`,
+                [userId, fullName, email, relPath]
+            );
+        } else {
+            await db.query('UPDATE admin_account_settings SET profile_picture_path = ? WHERE user_id = ?', [relPath, userId]);
+        }
+
+        return res.json({ success: true, profile_picture: relPath });
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // POST/UPDATE admin account settings
 router.post('/account', bypassAuth, async (req, res) => {
     try {
+        
         const userId = req.user.id;
         const {
             fullName,
@@ -243,7 +290,7 @@ router.put('/account/theme', bypassAuth, async (req, res) => {
 });
 
 // POST change password
-router.post('/change-password', auth, async (req, res) => {
+router.post('/change-password', bypassAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         const { currentPassword, newPassword } = req.body;
@@ -346,6 +393,29 @@ router.delete('/profile-picture', bypassAuth, async (req, res) => {
         
     } catch (error) {
         console.error('Error removing profile picture:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Debug endpoint to check admin status
+router.get('/debug/admin-status', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get user from users table
+        const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [userId]);
+        
+        // Get admin user from admin_users table
+        const [adminUsers] = await db.query('SELECT * FROM admin_users WHERE user_id = ? AND is_active = TRUE', [userId]);
+        
+        res.json({
+            user: users[0] || null,
+            adminUser: adminUsers[0] || null,
+            isAdmin: adminUsers.length > 0,
+            message: adminUsers.length > 0 ? 'User has admin privileges' : 'User does not have admin privileges'
+        });
+    } catch (error) {
+        console.error('Debug admin status error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

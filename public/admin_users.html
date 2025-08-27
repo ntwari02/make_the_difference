@@ -249,8 +249,45 @@
 <body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="User Management"></div>
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 pt-6">
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                            <h3 id="totalUsersCard" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-blue-100 dark:bg-transparent text-blue-600 dark:text-blue-300">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
+                            <h3 id="activeUsersCard" class="text-2xl font-bold text-green-600 dark:text-green-400">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-green-100 dark:bg-transparent text-green-600 dark:text-green-300">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Inactive</p>
+                            <h3 id="inactiveUsersCard" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</h3>
+                        </div>
+                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-transparent text-yellow-600 dark:text-yellow-300">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="p-6">
                 <div class="flex justify-between items-center">
                     <div>
@@ -402,20 +439,11 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            // Development mode - bypass authentication
-            const user = {
-                fullName: 'Development Admin',
-                isAdmin: true
-            };
-
             // Initialize
             loadUsers();
+            loadUserCounts();
             setupEventListeners();
             initializeSidebar();
-            
-            // Update admin name in header if available (header is injected asynchronously)
-            const adminNameEl = document.getElementById('adminName');
-            if (adminNameEl) adminNameEl.textContent = user.fullName || 'Admin';
         });
 
         // Event Listeners
@@ -459,10 +487,11 @@
             if (mobileToggle) mobileToggle.addEventListener('click', toggleMobileSidebar);
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'login.html';
-            });
+                    if (!confirm('Are you sure you want to log out?')) return;
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                });
             }
         }
 
@@ -470,7 +499,7 @@
         async function loadUsers(page = 1, search = '') {
             try {
                 const token = localStorage.getItem('token');
-                let url = `/api/admin/users?page=${page}&limit=${usersPerPage}`;
+                let url = `/api/admin/users?page=${page}&limit=${usersPerPage}&status=active`;
                 if (search) url += `&search=${encodeURIComponent(search)}`;
                 const response = await fetch(url, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -498,8 +527,40 @@
                 filteredUsers = [...users];
                 updateUsersTable();
                 updatePagination();
+                // Update total in card if available
+                const totalEl = document.getElementById('totalUsersCard');
+                if (totalEl) totalEl.textContent = totalUsers;
             } catch (error) {
                 handleApiError(error);
+            }
+        }
+
+        // Load counts for cards (total, active, inactive)
+        async function loadUserCounts() {
+            try {
+                const token = localStorage.getItem('token');
+                async function fetchCount(query) {
+                    const url = `/api/admin/users?page=1&limit=1${query}`;
+                    const resp = await fetch(url, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+                    if (!resp.ok) return 0;
+                    const payload = await resp.json();
+                    const data = payload && payload.data ? payload.data : payload;
+                    const pag = data && data.pagination ? data.pagination : null;
+                    return pag ? (pag.total ?? pag.totalItems ?? 0) : (Array.isArray(data.users) ? data.users.length : 0);
+                }
+                const [total, active, inactive] = await Promise.all([
+                    fetchCount(''),
+                    fetchCount('&status=active'),
+                    fetchCount('&status=inactive')
+                ]);
+                const totalEl = document.getElementById('totalUsersCard');
+                const activeEl = document.getElementById('activeUsersCard');
+                const inactiveEl = document.getElementById('inactiveUsersCard');
+                if (totalEl) totalEl.textContent = total;
+                if (activeEl) activeEl.textContent = active;
+                if (inactiveEl) inactiveEl.textContent = inactive;
+            } catch (e) {
+                // Silent fail for cards
             }
         }
 
@@ -679,8 +740,14 @@
                     throw new Error(error.message || 'Failed to delete user');
                 }
 
+                // Optimistically remove from local state and refresh UI immediately
+                if (Array.isArray(users)) {
+                    users = users.filter(u => String(u.id) !== String(userId));
+                    updateUsersTable();
+                }
+                showNotification('User deactivated successfully', 'success');
+                // Refresh the list to remove the user from the active view
                 await loadUsers(currentPage, currentSearch);
-                showNotification('User deleted successfully', 'success');
             } catch (error) {
                 handleApiError(error);
             }

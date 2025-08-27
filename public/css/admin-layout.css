@@ -4,12 +4,12 @@
 .admin-layout {
     display: flex;
     min-height: 100vh;
-    background-color: #f9fafb;
+    background-color: #f9fafb; /* Force white background for all admin pages */
     transition: background-color 0.3s ease;
 }
 
 .admin-layout.dark {
-    background-color: #111827;
+    background-color: #111827; /* Dark mode background */
 }
 
 /* Header styles */

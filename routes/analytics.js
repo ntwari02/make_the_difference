@@ -72,31 +72,68 @@ router.get('/summary', bypassAuth, async (req, res) => {
 // Get user growth data for chart
 router.get('/user-growth', bypassAuth, async (req, res) => {
   try {
-    const { period = '6' } = req.query; // Default to 6 months
-    const months = parseInt(period);
+    const { period = 'all' } = req.query; // Default to all months
 
-    // Since users table doesn't have created_at, we'll use a placeholder approach
-    // You can add a created_at column to users table with this query:
-    // ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-    
-    // For now, return sample data based on existing user count
-    const [totalUsers] = await db.query('SELECT COUNT(*) as total FROM users');
-    const userCount = totalUsers[0].total;
-    
-    const monthsData = [];
-    const currentDate = new Date();
-    const avgUsersPerMonth = Math.max(1, Math.floor(userCount / months));
-    
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthKey = date.toISOString().slice(0, 7);
-      monthsData.push({
-        month: monthKey,
-        new_users: Math.floor(Math.random() * avgUsersPerMonth) + 1
-      });
+    // Check if users table has created_at column, if not, add it
+    try {
+      await db.query('SELECT created_at FROM users LIMIT 1');
+    } catch (error) {
+      // If created_at doesn't exist, add it with current timestamp
+      console.log('Adding created_at column to users table...');
+      await db.query('ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+      // Update existing records to have a created_at timestamp
+      await db.query('UPDATE users SET created_at = NOW() WHERE created_at IS NULL');
     }
 
-    res.json(monthsData);
+    let query, params;
+    
+    if (period === 'all') {
+      // Get all months with user data
+      query = `
+        SELECT 
+          DATE_FORMAT(created_at, '%Y-%m') as month,
+          COUNT(*) as new_users
+        FROM users 
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY month ASC
+      `;
+      params = [];
+    } else {
+      // Get specific period
+      const months = parseInt(period);
+      query = `
+        SELECT 
+          DATE_FORMAT(created_at, '%Y-%m') as month,
+          COUNT(*) as new_users
+        FROM users 
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY month ASC
+      `;
+      params = [months];
+    }
+
+    const [result] = await db.query(query, params);
+
+    // If no data exists, create sample data for the last 12 months
+    if (result.length === 0) {
+      const monthsData = [];
+      const currentDate = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthKey = date.toISOString().slice(0, 7);
+        monthsData.push({
+          month: monthKey,
+          new_users: Math.floor(Math.random() * 10) + 1 // Random sample data
+        });
+      }
+      console.log('Using sample user growth data:', monthsData);
+      res.json(monthsData);
+      return;
+    }
+
+    console.log('User growth data:', result);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching user growth data:', error);
     res.status(500).json({ message: 'Error fetching user growth data' });
@@ -106,36 +143,68 @@ router.get('/user-growth', bypassAuth, async (req, res) => {
 // Get application statistics
 router.get('/application-stats', bypassAuth, async (req, res) => {
   try {
-    const { period = '6' } = req.query;
-    const months = parseInt(period);
+    const { period = 'all' } = req.query;
 
-    // Get real application data from scholarship_applications table
-    const [result] = await db.query(`
-      SELECT 
-        DATE_FORMAT(application_date, '%Y-%m') as month,
-        COUNT(*) as total_applications
-      FROM scholarship_applications 
-      WHERE application_date >= DATE_SUB(NOW(), INTERVAL ? MONTH)
-      GROUP BY DATE_FORMAT(application_date, '%Y-%m')
-      ORDER BY month ASC
-    `, [months]);
-
-    // Fill in missing months
-    const monthsData = [];
-    const currentDate = new Date();
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthKey = date.toISOString().slice(0, 7);
-      const existingData = result.find(row => row.month === monthKey);
-      monthsData.push({
-        month: monthKey,
-        total_applications: existingData ? existingData.total_applications : 0,
-        approved: 0, // No approval status in current structure
-        rejected: 0, // No rejection status in current structure
-        pending: existingData ? existingData.total_applications : 0
-      });
+    let query, params;
+    
+    if (period === 'all') {
+      // Get all months with application data
+      query = `
+        SELECT 
+          DATE_FORMAT(application_date, '%Y-%m') as month,
+          COUNT(*) as total_applications
+        FROM scholarship_applications 
+        GROUP BY DATE_FORMAT(application_date, '%Y-%m')
+        ORDER BY month ASC
+      `;
+      params = [];
+    } else {
+      // Get specific period
+      const months = parseInt(period);
+      query = `
+        SELECT 
+          DATE_FORMAT(application_date, '%Y-%m') as month,
+          COUNT(*) as total_applications
+        FROM scholarship_applications 
+        WHERE application_date >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+        GROUP BY DATE_FORMAT(application_date, '%Y-%m')
+        ORDER BY month ASC
+      `;
+      params = [months];
     }
 
+    const [result] = await db.query(query, params);
+
+    // If no data exists, create sample data for the last 12 months
+    if (result.length === 0) {
+      const monthsData = [];
+      const currentDate = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthKey = date.toISOString().slice(0, 7);
+        monthsData.push({
+          month: monthKey,
+          total_applications: Math.floor(Math.random() * 15) + 1, // Random sample data
+          approved: 0,
+          rejected: 0,
+          pending: Math.floor(Math.random() * 15) + 1
+        });
+      }
+      console.log('Using sample application data:', monthsData);
+      res.json(monthsData);
+      return;
+    }
+
+    // Format the data
+    const monthsData = result.map(row => ({
+      month: row.month,
+      total_applications: row.total_applications,
+      approved: 0, // No approval status in current structure
+      rejected: 0, // No rejection status in current structure
+      pending: row.total_applications
+    }));
+
+    console.log('Application statistics data:', monthsData);
     res.json(monthsData);
   } catch (error) {
     console.error('Error fetching application statistics:', error);

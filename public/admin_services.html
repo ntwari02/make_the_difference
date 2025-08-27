@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Service Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/admin-layout.css">
+  <script src="js/include-admin-sidebar.js" defer></script>
+  <script src="js/include-admin-header.js" defer></script>
+</head>
+<body class="admin-layout bg-white text-gray-900" data-page="services">
+  <div id="admin-sidebar-container"></div>
+  <div id="admin-header-container" data-page-title="Service Management"></div>
+
+  <main class="admin-main-content w-full bg-white">
+    <div class="admin-content-container p-6">
+      <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div class="text-center">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total Services</div>
+            <div id="svcTotal" class="text-3xl font-bold">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Monetized</div>
+            <div id="svcMonetized" class="text-3xl font-bold text-green-600">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Automation</div>
+            <div id="svcAutomated" class="text-3xl font-bold text-blue-600">0</div>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button id="addServiceBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>Add Service</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-blue-500 dark:border-blue-400 divide-y divide-gray-200 dark:divide-gray-700">
+        <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <input id="svcSearch" placeholder="Search services..." class="w-full sm:w-64 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-800 text-white placeholder-gray-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400" />
+          </div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Manage services, pricing, and automation</div>
+        </div>
+        <div id="servicesList" class="space-y-3"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="svcModal" class="fixed inset-0 bg-black/50 hidden z-50">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="p-4 border-b border-gray-200">
+          <h3 id="svcModalTitle" class="text-lg font-semibold text-gray-900">Add Service</h3>
+        </div>
+        <form id="svcForm" class="p-4 space-y-4">
+          <input type="hidden" id="svcId" />
+          <div>
+            <label class="block text-sm mb-1 text-gray-700">Name</label>
+            <input id="svcName" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" required />
+          </div>
+          <div>
+            <label class="block text-sm mb-1 text-gray-700">Description</label>
+            <textarea id="svcDesc" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" required></textarea>
+          </div>
+          <div>
+            <label class="block text-sm mb-1 text-gray-700">Image URL</label>
+            <input id="svcImageUrl" type="url" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+            <div id="svcImageDrop" class="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-3 text-center text-sm text-gray-600 cursor-pointer hover:bg-gray-50">
+              <i class="fas fa-cloud-upload-alt mr-2"></i>
+              Drag & drop an image or click to upload
+              <input type="file" id="svcImageFile" accept="image/*" class="hidden" />
+            </div>
+            <div class="mt-2">
+              <img id="svcImagePreview" class="hidden w-28 h-16 object-cover rounded border border-gray-200" alt="preview" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Monetization</label>
+              <select id="svcPricingType" class="w-full px-3 py-2 rounded border border-gray-300 bg-white">
+                <option value="free">Free</option>
+                <option value="one_time">One-time</option>
+                <option value="subscription">Subscription</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Price (USD)</label>
+              <input id="svcPrice" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+            </div>
+            <div class="flex items-end">
+              <label class="inline-flex items-center gap-2">
+                <input id="svcAutomate" type="checkbox" class="h-4 w-4"> <span>Enable automation</span>
+              </label>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" id="svcCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Cancel</button>
+            <button type="submit" id="svcSaveBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2">
+              <i id="svcSaveIcon" class="fas fa-save"></i>
+              <span id="svcSaveText">Save</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Modal -->
+  <div id="svcChartModal" class="fixed inset-0 bg-black/50 hidden z-50">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 id="svcChartTitle" class="text-lg font-semibold text-gray-900">Service Usage</h3>
+          <button id="svcChartClose" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm text-gray-600">Timeframe</div>
+            <select id="svcChartTf" class="text-xs px-2 py-1 rounded border border-gray-300 bg-white text-gray-700">
+              <option value="daily">Daily</option>
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual</option>
+            </select>
+          </div>
+          <canvas id="svcChartCanvas" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin-services.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof includeAdminSidebar === 'function') includeAdminSidebar();
+      if (typeof includeAdminHeader === 'function') includeAdminHeader();
+    });
+  </script>
+</body>
+</html>
+
+

@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
+import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -208,6 +209,63 @@ router.get('/stats', adminAuth, async (req, res) => {
         `);
         console.log('📊 Total revenue:', totalRevenue[0].total);
         
+        // Calculate growth percentages based on daily changes
+        // Users growth: compare today vs yesterday
+        const [userGrowthData] = await db.query(`
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as yesterday
+            FROM users 
+            WHERE status = 'active'
+        `);
+        
+        // Applications growth: compare today vs yesterday
+        const [applicationGrowthData] = await db.query(`
+            SELECT 
+                COUNT(CASE WHEN DATE(application_date) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(application_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as yesterday
+            FROM scholarship_applications
+        `);
+        
+        // Scholarships growth: compare today vs yesterday
+        const [scholarshipGrowthData] = await db.query(`
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as yesterday
+            FROM scholarships 
+            WHERE status = 'active'
+        `);
+        
+        // Revenue growth: compare today vs yesterday
+        const [revenueGrowthData] = await db.query(`
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN s.award_amount END), 0) as yesterday
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'approved'
+        `);
+        
+        // Calculate growth percentages
+        const calculateGrowth = (today, yesterday) => {
+            if (yesterday === 0) {
+                return today > 0 ? 100 : 0; // If no data yesterday but data today, 100% growth
+            }
+            return Math.round(((today - yesterday) / yesterday) * 100);
+        };
+        
+        const usersGrowth = calculateGrowth(userGrowthData[0].today, userGrowthData[0].yesterday);
+        const applicationsGrowth = calculateGrowth(applicationGrowthData[0].today, applicationGrowthData[0].yesterday);
+        const scholarshipsGrowth = calculateGrowth(scholarshipGrowthData[0].today, scholarshipGrowthData[0].yesterday);
+        const revenueGrowth = calculateGrowth(revenueGrowthData[0].today, revenueGrowthData[0].yesterday);
+        
+        console.log('📊 Growth calculations:', {
+            users: { today: userGrowthData[0].today, yesterday: userGrowthData[0].yesterday, growth: usersGrowth },
+            applications: { today: applicationGrowthData[0].today, yesterday: applicationGrowthData[0].yesterday, growth: applicationsGrowth },
+            scholarships: { today: scholarshipGrowthData[0].today, yesterday: scholarshipGrowthData[0].yesterday, growth: scholarshipsGrowth },
+            revenue: { today: revenueGrowthData[0].today, yesterday: revenueGrowthData[0].yesterday, growth: revenueGrowth }
+        });
+        
         res.json({
             success: true,
             data: {
@@ -215,10 +273,10 @@ router.get('/stats', adminAuth, async (req, res) => {
                 activeApplications: activeApplications[0].total,
                 totalScholarships: scholarshipCount[0].total,
                 totalRevenue: totalRevenue[0].total,
-                usersGrowth: 12,
-                applicationsGrowth: 8,
-                scholarshipsGrowth: 15,
-                revenueGrowth: 23
+                usersGrowth,
+                applicationsGrowth,
+                scholarshipsGrowth,
+                revenueGrowth
             }
         });
         
@@ -797,6 +855,40 @@ router.get('/users/:id', adminAuth, async (req, res) => {
             message: 'Error fetching user details',
             code: 'USER_DETAILS_ERROR'
         });
+    }
+});
+
+// Reveal user's stored password hash after verifying admin's own password
+router.post('/users/:id/reveal-password', adminAuth, async (req, res) => {
+    try {
+        const targetUserId = req.params.id;
+        const adminId = req.user.id;
+        const adminPassword = String((req.body && req.body.admin_password) || '').trim();
+        if (!adminPassword) {
+            return res.status(400).json({ success: false, message: 'Admin password is required' });
+        }
+
+        // Fetch admin's hashed password
+        const [adminRows] = await db.query('SELECT password FROM users WHERE id = ? LIMIT 1', [adminId]);
+        if (!adminRows || adminRows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Admin not found' });
+        }
+        const adminHash = adminRows[0].password || '';
+        const ok = await bcrypt.compare(adminPassword, adminHash);
+        if (!ok) {
+            return res.status(403).json({ success: false, message: 'Invalid admin password' });
+        }
+
+        // Fetch target user's stored hash
+        const [userRows] = await db.query('SELECT password FROM users WHERE id = ? LIMIT 1', [targetUserId]);
+        if (!userRows || userRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const userHash = userRows[0].password || '';
+        return res.json({ success: true, hash: userHash });
+    } catch (error) {
+        console.error('reveal-password error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 

@@ -113,10 +113,26 @@ const adminAuth = async (req, res, next) => {
             });
         }
 
-        // Parse permissions safely
+        // Parse permissions safely (supports JSON string, object, or "*")
         let permissions = {};
         try {
-            permissions = user.permissions ? JSON.parse(user.permissions) : {};
+            if (user.permissions === null || user.permissions === undefined) {
+                permissions = {};
+            } else if (typeof user.permissions === 'object') {
+                // MySQL JSON column may already return an object
+                permissions = user.permissions;
+            } else if (typeof user.permissions === 'string') {
+                const trimmed = user.permissions.trim();
+                if (trimmed === '*' || trimmed === '"*"') {
+                    permissions = '*';
+                } else {
+                    // Only parse if it looks like JSON
+                    const looksJson = (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'));
+                    permissions = looksJson ? JSON.parse(trimmed) : {};
+                }
+            } else {
+                permissions = {};
+            }
         } catch (error) {
             console.error('Error parsing permissions:', error);
             permissions = {};

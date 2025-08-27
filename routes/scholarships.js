@@ -22,6 +22,20 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Normalize various incoming date formats to 'YYYY-MM-DD' for MySQL DATE columns
+function toDateOnly(value) {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    // If already 'YYYY-MM-DD' or starts with it, take first 10 chars
+    const m = value.match(/^\d{4}-\d{2}-\d{2}/);
+    if (m) return m[0];
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  // Use UTC date portion to avoid TZ shifts
+  return d.toISOString().split('T')[0];
+}
+
 // Function to update expired scholarships
 async function updateExpiredScholarships() {
   try {
@@ -112,11 +126,13 @@ router.get('/', async (req, res) => {
          ORDER BY s.${sortColumn} ${order}`,
         params
       );
+      // Strong caching validators
+      res.setHeader('Cache-Control', 'public, max-age=60');
       return res.json(rows);
     }
 
-    const page = pageParam;
-    const limit = limitParam;
+    const page = Math.min(Math.max(pageParam, 1), 1000000);
+    const limit = Math.min(Math.max(limitParam, 1), 100); // hard cap 100 per request
     const offset = (page - 1) * limit;
 
     // Total count
@@ -159,6 +175,7 @@ router.get('/', async (req, res) => {
       [...params, limit, offset]
     );
 
+    res.setHeader('Cache-Control', 'public, max-age=30');
     return res.json({
       success: true,
       data: {
@@ -275,7 +292,7 @@ router.post('/', bypassAuth, async (req, res) => {
       name,
       description,
       eligibility_criteria,
-      application_deadline,
+      toDateOnly(application_deadline),
       parseFloat(award_amount) || 0,
       parseInt(is_recurring) || 0,
       parseInt(number_of_awards) || 1,
@@ -336,7 +353,13 @@ router.put('/:id', bypassAuth, async (req, res) => {
       scholarship_type
     } = req.body;
     
-    let calculatedStatus = status;
+    // Validate required fields similar to create to avoid NOT NULL violations
+    if (!name || !description || !eligibility_criteria || !application_deadline || !award_amount || !number_of_awards || !academic_level || !scholarship_type) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Ensure we always send a valid status (enum not null)
+    let calculatedStatus = status || 'active';
     if (application_deadline) {
       const currentDate = new Date().toISOString().split('T')[0];
       const deadlineDate = new Date(application_deadline).toISOString().split('T')[0];
@@ -353,7 +376,7 @@ router.put('/:id', bypassAuth, async (req, res) => {
       name,
       description,
       eligibility_criteria,
-      application_deadline || null,
+      toDateOnly(application_deadline),
       parseFloat(award_amount) || 0,
       parseInt(is_recurring) || 0,
       parseInt(number_of_awards) || 1,
@@ -408,7 +431,7 @@ router.put('/:id', bypassAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating scholarship:', error);
-    res.status(500).json({ message: 'Error updating scholarship' });
+    res.status(500).json({ message: 'Error updating scholarship', error: error?.message });
   }
 });
 
@@ -432,64 +455,34 @@ router.delete('/:id', bypassAuth, async (req, res) => {
   }
 });
 
-// Apply for scholarship
-router.post('/:id/apply', upload.fields([
-  { name: 'profilePicture', maxCount: 1 },
-  { name: 'documents', maxCount: 10 }
-]), async (req, res) => {
+// Apply for scholarship (public submission disabled - use admin dashboard)
+router.post('/:id/apply', async (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Public applications are disabled. Please apply via the admin dashboard.'
+  });
+});
+
+// Check if an email has already applied to a specific scholarship (lightweight)
+router.get('/:id/has-applied', async (req, res) => {
   try {
-    const scholarship_id = req.params.id;
-    const {
-      fullName, emailAddress, dateOfBirth, gender, phoneNumber, address,
-      preferredUniversity, country, academicLevel, intendedMajor, gpaAcademicPerformance,
-      extracurricularActivities, parentGuardianName, parentGuardianContact,
-      financialNeedStatement, howHeardAbout, motivationStatement, termsAgreed
-    } = req.body;
-
-    if (!fullName || !emailAddress || !dateOfBirth) {
-      return res.status(400).json({ error: 'Missing required fields.' });
+    const scholarshipId = req.params.id;
+    const emailRaw = (req.query.email || '').trim();
+    if (!emailRaw) {
+      return res.status(400).json({ message: 'Email query parameter is required' });
     }
-
-    const [existingApplications] = await db.query(
-      'SELECT * FROM scholarship_applications WHERE scholarship_id = ? AND email_address = ?',
-      [scholarship_id, emailAddress]
+    const [rows] = await db.query(
+      `SELECT COUNT(*) AS cnt
+       FROM scholarship_applications
+       WHERE scholarship_id = ?
+         AND LOWER(TRIM(email_address)) = LOWER(TRIM(?))`,
+      [scholarshipId, emailRaw]
     );
-    if (existingApplications.length > 0) {
-      return res.status(400).json({ message: 'You have already applied for this scholarship' });
-    }
-
-    let profilePictureUrl = null;
-    if (req.files['profilePicture'] && req.files['profilePicture'][0]) {
-      profilePictureUrl = req.files['profilePicture'][0].path.replace(/\\/g, '/');
-    }
-    let uploadedDocuments = [];
-    if (req.files['documents']) {
-      uploadedDocuments = req.files['documents'].map(file => file.path.replace(/\\/g, '/'));
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO scholarship_applications (
-        profile_picture_url, full_name, email_address, date_of_birth, gender, phone_number, address,
-        preferred_university, country, academic_level, intended_major, gpa_academic_performance,
-        uploaded_documents_json, extracurricular_activities, parent_guardian_name, parent_guardian_contact,
-        financial_need_statement, how_heard_about, scholarship_id, motivation_statement, terms_agreed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        profilePictureUrl, fullName, emailAddress, dateOfBirth, gender, phoneNumber, address,
-        preferredUniversity, country, academicLevel, intendedMajor, gpaAcademicPerformance,
-        JSON.stringify(uploadedDocuments), extracurricularActivities, parentGuardianName, parentGuardianContact,
-        financialNeedStatement, howHeardAbout, scholarship_id, motivationStatement, 
-        termsAgreed === 'on' || termsAgreed === true || termsAgreed === 'true' ? 1 : 0
-      ]
-    );
-
-    res.status(201).json({
-      message: 'Application submitted successfully',
-      id: result.insertId
-    });
+    const count = rows && rows[0] ? Number(rows[0].cnt) : 0;
+    return res.json({ hasApplied: count > 0, count });
   } catch (error) {
-    console.error('Error submitting application:', error);
-    res.status(500).json({ error: 'Failed to submit application' });
+    console.error('Error checking has-applied:', error);
+    return res.status(500).json({ message: 'Error checking application status' });
   }
 });
 

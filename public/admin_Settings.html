@@ -55,10 +55,10 @@
         }
     </style>
 </head>
-<body class="admin-layout transition-colors duration-200">
+<body class="admin-layout transition-colors duration-200" data-page="account-settings">
     <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Admin Account Settings"></div>
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
             <!-- Hero Section -->
             <div class="gradient-bg rounded-md shadow-2xl p-4 mb-4 text-white">
@@ -193,26 +193,26 @@
                         <label class="block text-lg font-semibold text-black mb-4">
                             <i class="fas fa-bell mr-2 text-blue-500"></i>Notification Preferences
                         </label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <label class="flex items-center p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur">
-                                <input type="checkbox" id="emailNotifications" class="mr-3 w-5 h-5 text-blue-600 rounded">
-                                <div class="flex items-center">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <label class="w-full flex items-center p-3 sm:p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur break-words">
+                                <input type="checkbox" id="emailNotifications" class="mr-3 w-5 h-5 min-w-[1.25rem] text-blue-600 rounded">
+                                <div class="flex items-center flex-1 min-w-0">
                                     <i class="fas fa-envelope text-blue-500 mr-3"></i>
-                                    <span class="text-black font-medium">Email Notifications</span>
+                                    <span class="text-black font-medium truncate sm:whitespace-normal">Email Notifications</span>
                                 </div>
                             </label>
-                            <label class="flex items-center p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur">
-                                <input type="checkbox" id="smsNotifications" class="mr-3 w-5 h-5 text-blue-600 rounded">
-                                <div class="flex items-center">
+                            <label class="w-full flex items-center p-3 sm:p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur break-words">
+                                <input type="checkbox" id="smsNotifications" class="mr-3 w-5 h-5 min-w-[1.25rem] text-blue-600 rounded">
+                                <div class="flex items-center flex-1 min-w-0">
                                     <i class="fas fa-sms text-green-500 mr-3"></i>
-                                    <span class="text-black font-medium">SMS Notifications</span>
+                                    <span class="text-black font-medium truncate sm:whitespace-normal">SMS Notifications</span>
                                 </div>
                             </label>
-                            <label class="flex items-center p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur">
-                                <input type="checkbox" id="pushNotifications" class="mr-3 w-5 h-5 text-blue-600 rounded">
-                                <div class="flex items-center">
+                            <label class="w-full flex items-center p-3 sm:p-4 bg-white/80 dark:bg-transparent rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 cursor-pointer backdrop-blur break-words">
+                                <input type="checkbox" id="pushNotifications" class="mr-3 w-5 h-5 min-w-[1.25rem] text-blue-600 rounded">
+                                <div class="flex items-center flex-1 min-w-0">
                                     <i class="fas fa-mobile-alt text-purple-500 mr-3"></i>
-                                    <span class="text-black font-medium">Push Notifications</span>
+                                    <span class="text-black font-medium truncate sm:whitespace-normal">Push Notifications</span>
                                 </div>
                             </label>
                         </div>
@@ -234,19 +234,56 @@
                         </button>
                     </div>
                 </form>
+        </div>
+        
+            <!-- Inline Change Password Section -->
+            <div id="changePasswordSection" class="hidden bg-white dark:bg-transparent backdrop-blur-md rounded-2xl shadow-2xl p-6 mb-6 card-hover">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-lock text-base text-blue-600 dark:text-blue-400 mr-2"></i>
+                    <h2 class="text-sm font-bold text-black dark:text-white">Change Password</h2>
+                </div>
+                <form id="inlinePasswordForm" class="space-y-6">
+                    <div>
+                        <label for="cpCurrent" class="block text-sm font-semibold text-black dark:text-white mb-2">Current Password <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="cpCurrent" class="input-focus w-full pr-10 px-3 py-2 text-sm rounded-md border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300" required>
+                            <button type="button" id="cpToggleCurrent" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300" aria-label="Show/Hide Current Password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                        <p class="mt-1 text-xs text-red-600 hidden" id="cpCurrentError">Current password is required</p>
+                    </div>
+                    <div>
+                        <label for="cpNew" class="block text-sm font-semibold text-black dark:text-white mb-2">New Password <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="cpNew" class="input-focus w-full pr-10 px-3 py-2 text-sm rounded-md border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300" required minlength="8">
+                            <button type="button" id="cpToggleNew" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300" aria-label="Show/Hide New Password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                        <p class="mt-1 text-xs text-red-600 hidden" id="cpNewError">Password must be at least 8 characters</p>
+                    </div>
+                    <div>
+                        <label for="cpConfirm" class="block text-sm font-semibold text-black dark:text-white mb-2">Confirm New Password <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="password" id="cpConfirm" class="input-focus w-full pr-10 px-3 py-2 text-sm rounded-md border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300" required>
+                            <button type="button" id="cpToggleConfirm" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300" aria-label="Show/Hide Confirm Password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                        <p class="mt-1 text-xs text-red-600 hidden" id="cpConfirmError">Passwords do not match</p>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" id="cpCancel" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200">Cancel</button>
+                        <button type="submit" id="cpSubmit" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold flex items-center justify-center min-w-32 transition-all duration-300">
+                            <span id="cpText">Change Password</span>
+                            <svg id="cpSpinner" class="hidden w-5 h-5 ml-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+                <div id="cpSuccess" class="hidden mt-4 p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-center">Password changed successfully!</div>
+                <div id="cpError" class="hidden mt-4 p-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-semibold text-center"><span id="cpErrorMsg"></span></div>
             </div>
         </div>
         
-        <!-- Account Settings Modal -->
-        <div id="accountSettingsModal" class="fixed inset-0 bg-black/40 hidden z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-auto mt-16 border border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-black dark:text-white">Account Settings</h3>
-                    <button onclick="document.getElementById('accountSettingsModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="text-sm text-gray-700 dark:text-gray-300">Use the main form below to update your account details.</div>
-            </div>
-        </div>
+        <!-- Account Settings Modal (removed) -->
 
         <!-- System Settings Section (inline) -->
         <div id="systemSettingsSection" class="bg-white dark:bg-transparent rounded-2xl shadow-2xl p-6 w-full mb-6 hidden">
@@ -282,6 +319,11 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Temporarily hide the site from users while you work.</p>
                     </div>
                     <div id="systemSettingsNotice" class="hidden mb-3 p-3 rounded-md text-sm"></div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-black dark:text-white mb-2">Maintenance - Disable specific pages</label>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">When maintenance mode is ON, checked pages below will be unavailable to users.</p>
+                        <div id="maintenancePagesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+                    </div>
                     <div class="flex justify-end gap-2 pt-2">
                     <button type="submit" aria-label="Save system settings" class="w-[14vh] h-[9vh] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 flex items-center justify-center gap-2 text-base">
                         <i class="fas fa-save text-lg"></i>
@@ -296,65 +338,7 @@
 
         
         
-        <!-- Password Change Modal -->
-        <div id="passwordModal" class="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-            <div class="bg-white dark:bg-transparent backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
-                <div class="text-center mb-6">
-                    <div class="p-4 bg-transparent dark:bg-blue-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <i class="fas fa-lock text-2xl text-blue-600 dark:text-blue-400"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-black dark:text-white">Change Password</h3>
-                    <p class="text-gray-600 dark:text-gray-300 mt-2">Enter your current and new password</p>
-                </div>
-                
-                <form id="passwordForm" class="space-y-6">
-                    <div>
-                        <label for="currentPassword" class="block text-lg font-semibold text-black dark:text-white mb-3">
-                            <i class="fas fa-key mr-2 text-blue-500"></i>Current Password <span class="text-red-500">*</span>
-                        </label>
-                        <input type="password" id="currentPassword" required
-                            class="input-focus w-full px-6 py-2 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300">
-                        <p class="mt-2 text-sm text-red-600 hidden" id="currentPasswordError">Current password is required</p>
-                    </div>
-                    <div>
-                        <label for="newPassword" class="block text-lg font-semibold text-black dark:text-white mb-3">
-                            <i class="fas fa-lock mr-2 text-blue-500"></i>New Password <span class="text-red-500">*</span>
-                        </label>
-                        <input type="password" id="newPassword" required minlength="8"
-                            class="input-focus w-full px-6 py-2 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300">
-                        <p class="mt-2 text-sm text-red-600 hidden" id="newPasswordError">Password must be at least 8 characters</p>
-                    </div>
-                    <div>
-                        <label for="confirmPassword" class="block text-lg font-semibold text-black dark:text-white mb-3">
-                            <i class="fas fa-check-circle mr-2 text-blue-500"></i>Confirm New Password <span class="text-red-500">*</span>
-                        </label>
-                        <input type="password" id="confirmPassword" required
-                            class="input-focus w-full px-6 py-2 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 text-black dark:text-white bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300">
-                        <p class="mt-2 text-red-600 hidden" id="confirmPasswordError">Passwords do not match</p>
-                    </div>
-                    <div class="flex justify-end gap-4 pt-6">
-                        <button type="button" id="closePasswordModal" 
-                            class="px-6 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200 font-semibold">
-                            Cancel
-                        </button>
-                        <button type="submit" id="changePasswordBtnSubmit" 
-                            class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-bold flex items-center justify-center min-w-32 transition-all duration-300">
-                            <span id="changePassText">Change</span>
-                            <svg id="changePassSpinner" class="hidden w-5 h-5 ml-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </form>
-                <div id="passwordSuccess" class="hidden mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-center">
-                    <i class="fas fa-check-circle mr-2"></i> Password changed successfully!
-                </div>
-                <div id="passwordError" class="hidden mt-6 p-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-semibold text-center">
-                    <i class="fas fa-exclamation-circle mr-2"></i> <span id="passwordErrorMessage"></span>
-                </div>
-            </div>
-        </div>
+        <!-- Password Change Modal removed -->
     </main>
 
 <script>
@@ -576,7 +560,7 @@ async function loadAccountData() {
 }
 
 // Submit account form
-accountForm.addEventListener('submit', (e) => {
+accountForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     if (!validateAccountForm()) return;
@@ -586,108 +570,65 @@ accountForm.addEventListener('submit', (e) => {
     saveAccountBtn.disabled = true;
     accountError.classList.add('hidden');
     
-    const formData = new FormData();
-    formData.append('fullName', document.getElementById('fullName').value);
-    formData.append('email', document.getElementById('email').value);
-    formData.append('phone', document.getElementById('phone').value);
-    formData.append('position', document.getElementById('position').value);
-    formData.append('bio', document.getElementById('bio').value);
-    formData.append('timezone', document.getElementById('timezone').value);
-    formData.append('language', document.getElementById('language').value);
-    
-    // Get theme preference (guard if radios are absent)
-    const themeChecked = document.querySelector('input[name="theme"]:checked');
-    if (themeChecked) {
-        formData.append('theme', themeChecked.value);
-    }
-    
-    // Get notification preferences
-    const notifications = {
+    // Collect values
+    const payload = {
+        fullName: document.getElementById('fullName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        position: document.getElementById('position').value,
+        bio: document.getElementById('bio').value,
+        timezone: document.getElementById('timezone').value,
+        language: document.getElementById('language').value,
+        notifications: {
         email: document.getElementById('emailNotifications').checked,
         sms: document.getElementById('smsNotifications').checked,
         push: document.getElementById('pushNotifications').checked
+        }
     };
-    formData.append('notifications', JSON.stringify(notifications));
+    const themeChecked = document.querySelector('input[name="theme"]:checked');
+    if (themeChecked) payload.theme = themeChecked.value;
 
-    if (profilePicture.files[0]) {
-        formData.append('profilePicture', profilePicture.files[0]);
-    }
-
-    // Get token for authentication
     const token = localStorage.getItem('token');
-
-    fetch('/api/admin/account', {
+    try {
+        const res = await fetch('/api/admin/account', {
         method: 'POST',
         headers: {
+                'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: formData
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Failed to update account');
-        return res.json();
-    })
-    .then((data) => {
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok) throw new Error(data.error || data.message || 'Failed to update account');
         // Update local storage with new user data
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
         const updatedUser = { ...currentUser, ...data };
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        // Update theme and notification preferences
+        // Persist preferences locally
+        const selectedTheme = payload.theme || localStorage.getItem('admin-theme') || 'auto';
         localStorage.setItem('admin-theme', selectedTheme);
-        localStorage.setItem('admin-notifications', JSON.stringify(notifications));
-        
+        localStorage.setItem('admin-notifications', JSON.stringify(payload.notifications));
         accountSuccess.classList.remove('hidden');
         setTimeout(() => accountSuccess.classList.add('hidden'), 3000);
-    })
-    .catch(err => {
+    } catch (err) {
         console.error('Error updating account:', err);
         errorMessage.textContent = err.message || 'Failed to update account. Please try again.';
         accountError.classList.remove('hidden');
-    })
-    .finally(() => {
+    } finally {
         saveText.classList.remove('hidden');
         saveSpinner.classList.add('hidden');
         saveAccountBtn.disabled = false;
-    });
+    }
 });
 
-// Password change modal (robust open handlers)
+// Change password inline section: scroll to section on button click
 if (changePasswordBtn) {
-    changePasswordBtn.addEventListener('click', () => {
-        passwordModal?.classList.remove('hidden');
+    changePasswordBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = document.getElementById('changePasswordSection');
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 }
-// Fallback: event delegation in case the button gets re-rendered
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest && e.target.closest('#changePasswordBtn');
-    if (btn) {
-        const modal = document.getElementById('passwordModal');
-        if (modal) modal.classList.remove('hidden');
-    }
-});
-
-if (closePasswordModal) {
-    closePasswordModal.addEventListener('click', () => {
-        passwordModal?.classList.add('hidden');
-        passwordSuccess?.classList.add('hidden');
-        passwordError?.classList.add('hidden');
-        passwordForm?.reset();
-    });
-}
-// Close on ESC and backdrop click
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        document.getElementById('passwordModal')?.classList.add('hidden');
-    }
-});
-document.addEventListener('click', (e) => {
-    const modal = document.getElementById('passwordModal');
-    if (!modal || modal.classList.contains('hidden')) return;
-    if (e.target === modal) {
-        modal.classList.add('hidden');
-    }
-});
 
 // Validate password form
 function validatePasswordForm() {
@@ -717,57 +658,117 @@ function validatePasswordForm() {
     return isValid;
 }
 
-// Submit password change
-passwordForm.addEventListener('submit', (e) => {
+// Submit password change (inline)
+const inlinePasswordForm = document.getElementById('inlinePasswordForm');
+const cpCurrent = document.getElementById('cpCurrent');
+const cpNew = document.getElementById('cpNew');
+const cpConfirm = document.getElementById('cpConfirm');
+const cpSubmit = document.getElementById('cpSubmit');
+const cpText = document.getElementById('cpText');
+const cpSpinner = document.getElementById('cpSpinner');
+const cpSuccess = document.getElementById('cpSuccess');
+const cpError = document.getElementById('cpError');
+const cpErrorMsg = document.getElementById('cpErrorMsg');
+
+function showCpError(id, msg) { const el = document.getElementById(id); if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function hideCpError(id) { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+
+inlinePasswordForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    if (!validatePasswordForm()) return;
-    
-    changePassText.classList.add('hidden');
-    changePassSpinner.classList.remove('hidden');
-    changePasswordBtnSubmit.disabled = true;
-    passwordError.classList.add('hidden');
+    // Validate
+    hideCpError('cpCurrentError'); hideCpError('cpNewError'); hideCpError('cpConfirmError');
+    let valid = true;
+    const currentVal = (cpCurrent?.value || '').trim();
+    const newVal = (cpNew?.value || '').trim();
+    const confirmVal = (cpConfirm?.value || '').trim();
+    if (!currentVal) { showCpError('cpCurrentError', 'Current password is required'); valid = false; }
+    if (!newVal || newVal.length < 8) { showCpError('cpNewError', 'Password must be at least 8 characters'); valid = false; }
+    if (newVal !== confirmVal) { showCpError('cpConfirmError', 'Passwords do not match'); valid = false; }
+    if (!valid) return;
+
+    cpText.classList.add('hidden');
+    cpSpinner.classList.remove('hidden');
+    cpSubmit.disabled = true;
+    cpError.classList.add('hidden');
     
     const token = localStorage.getItem('token');
+    try {
+        if (currentVal === newVal) throw new Error('New password must be different from current');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
     
-    fetch('/api/admin/change-password', {
+        const res = await fetch('/api/admin/change-password', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-            currentPassword: currentPassword.value,
-            newPassword: newPassword.value
-        })
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Failed to change password');
-        return res.json();
-    })
-    .then(() => {
-        passwordSuccess.classList.remove('hidden');
-        passwordForm.reset();
+            body: JSON.stringify({ currentPassword: currentVal, newPassword: newVal }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok) {
+            throw new Error(data.error || data.message || 'Failed to change password');
+        }
+        cpSuccess.classList.remove('hidden');
+        inlinePasswordForm.reset();
         setTimeout(() => {
-            passwordModal.classList.add('hidden');
-            passwordSuccess.classList.add('hidden');
-        }, 2000);
-    })
-    .catch(err => {
+            cpSuccess.classList.add('hidden');
+            const section = document.getElementById('changePasswordSection');
+            if (section) section.classList.add('hidden');
+        }, 1500);
+    } catch (err) {
         console.error('Error changing password:', err);
-        passwordErrorMessage.textContent = err.message || 'Failed to change password. Please try again.';
-        passwordError.classList.remove('hidden');
-    })
-    .finally(() => {
-        changePassText.classList.remove('hidden');
-        changePassSpinner.classList.add('hidden');
-        changePasswordBtnSubmit.disabled = false;
-    });
+        cpErrorMsg.textContent = (err.name === 'AbortError') ? 'Request timed out. Please try again.' : (err.message || 'Failed to change password. Please try again.');
+        cpError.classList.remove('hidden');
+    } finally {
+        cpText.classList.remove('hidden');
+        cpSpinner.classList.add('hidden');
+        cpSubmit.disabled = false;
+    }
 });
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadAccountData();
+    // Ensure change password button scrolls to the inline section
+    const cpb = document.getElementById('changePasswordBtn');
+    if (cpb) cpb.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const section = document.getElementById('changePasswordSection');
+        if (section) {
+            section.classList.remove('hidden');
+            // Focus first input for better UX
+            setTimeout(()=> document.getElementById('cpCurrent')?.focus(), 50);
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
+    // Cancel button hides the section
+    const cpCancel = document.getElementById('cpCancel');
+    if (cpCancel) cpCancel.addEventListener('click', ()=>{
+        const section = document.getElementById('changePasswordSection');
+        if (section) section.classList.add('hidden');
+    });
+
+    // Password visibility toggles
+    function bindToggle(btnId, inputId) {
+        const btn = document.getElementById(btnId);
+        const inp = document.getElementById(inputId);
+        if (!btn || !inp) return;
+        btn.addEventListener('click', (e)=>{
+            e.preventDefault();
+            const isPwd = inp.type === 'password';
+            inp.type = isPwd ? 'text' : 'password';
+            const icon = btn.querySelector('i');
+            if (icon) icon.className = isPwd ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+    }
+    bindToggle('cpToggleCurrent', 'cpCurrent');
+    bindToggle('cpToggleNew', 'cpNew');
+    bindToggle('cpToggleConfirm', 'cpConfirm');
 
     const openAcc = document.getElementById('openAccountSettings');
     const openSys = document.getElementById('openSystemSettings');
@@ -811,6 +812,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (t) t.value = s.site_title || '';
             if (e) e.value = s.contact_email || '';
             if (m) m.value = s.maintenance_mode || 'off';
+            // Build maintenance pages checklist
+            const pages = [
+                { key: 'home.html', label: 'Home' },
+                { key: 'about.html', label: 'About' },
+                { key: 'service.html', label: 'Services' },
+                { key: 'scholarship.html', label: 'Scholarships' },
+                { key: 'partnership.html', label: 'Partnership' },
+                { key: 'contact.html', label: 'Contact' },
+                { key: 'dashboard.html', label: 'User Dashboard' },
+                { key: 'admin_dashboard.html', label: 'Admin Dashboard (usually allowed)' },
+            ];
+            let selected = [];
+            try { selected = JSON.parse(s.maintenance_pages || '[]'); } catch { selected = []; }
+            const c = document.getElementById('maintenancePagesContainer');
+            if (c) {
+                c.innerHTML = pages.map(p => {
+                    const checked = selected.includes(p.key) ? 'checked' : '';
+                    return `<label class="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-transparent">
+                        <input type="checkbox" class="mp-item" data-key="${p.key}" ${checked}>
+                        <span class="text-sm text-black dark:text-white">${p.label}</span>
+                    </label>`;
+                }).join('');
+            }
         }).catch(()=>{});
         // Always show General by default inside System Settings
         const sysGeneral = document.getElementById('systemGeneralSubsection');
@@ -831,6 +855,10 @@ document.addEventListener('DOMContentLoaded', () => {
         form.append('siteTitle', document.getElementById('sysSiteTitle')?.value || '');
         form.append('contactEmail', document.getElementById('sysContactEmail')?.value || '');
         form.append('maintenanceMode', document.getElementById('sysMaintenance')?.value || 'off');
+        // Gather maintenance pages
+        const selected = Array.from(document.querySelectorAll('#maintenancePagesContainer .mp-item'))
+            .filter(cb => cb.checked).map(cb => cb.getAttribute('data-key'));
+        form.append('maintenancePages', JSON.stringify(selected));
         try {
             const res = await fetch('/api/settings', { method: 'POST', body: form });
             if (!res.ok) throw new Error('Failed');

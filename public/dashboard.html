@@ -54,13 +54,21 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
     <!-- Navigation -->
-    <nav class="bg-white dark:bg-gray-800 shadow-md">
+    <nav class="bg-white dark:bg-gray-800 shadow-md fixed top-0 left-0 right-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <h1 class="text-xl font-bold text-gray-800 dark:text-white">Mbappe Dashboard</h1>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <a href="home.html" id="homeIcon" class="p-2 rounded-lg focus:outline-none bg-blue-900 text-white hover:bg-blue-800 dark:bg-blue-900 dark:hover:bg-blue-800" title="Go Home">
+                        <i class="fas fa-home"></i>
+                    </a>
+
+                    <a href="scholarship.html" id="applyBtn" class="hidden sm:inline-flex items-center gap-2 bg-blue-900 text-white px-3 py-2 rounded-md hover:bg-blue-800 transition-colors" title="Go to Scholarships">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Apply</span>
+                    </a>
                     <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none">
                         <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
                     </button>
@@ -74,7 +82,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <!-- Welcome Section -->
         <div id="welcomeSection" class="welcome-section bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Welcome, <span id="welcomeName"></span>!</h2>
@@ -193,8 +201,22 @@
         }
 
         // Update user name in navigation and welcome section
-        document.getElementById('userName').textContent = user.fullName || 'User';
-        document.getElementById('welcomeName').textContent = user.fullName || 'User';
+        async function loadCurrentUser() {
+            try {
+                const me = await window.api.get('/auth/me');
+                const displayName = me.full_name || me.fullName || user.fullName || 'User';
+                document.getElementById('userName').textContent = displayName;
+                document.getElementById('welcomeName').textContent = displayName;
+                // cache locally
+                const cached = { ...(user || {}), fullName: displayName, email: me.email };
+                localStorage.setItem('user', JSON.stringify(cached));
+            } catch (e) {
+                const displayName = user.fullName || 'User';
+                document.getElementById('userName').textContent = displayName;
+                document.getElementById('welcomeName').textContent = displayName;
+            }
+        }
+        loadCurrentUser();
 
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -355,6 +377,7 @@
         loadScholarships();
         initializeCharts();
         updateCharts();
+        initializeProgressDiagrams();
 
         // Initialize Progress Diagrams
         function initializeProgressDiagrams() {
@@ -365,7 +388,7 @@
                 data: {
                     labels: ['Approved', 'Pending', 'Rejected'],
                     datasets: [{
-                        data: [30, 50, 20],
+                        data: [0, 0, 0],
                         backgroundColor: [
                             '#10B981', // green
                             '#F59E0B', // yellow
@@ -386,6 +409,22 @@
                     }
                 }
             });
+
+            // Load real data for progress chart
+            async function updateProgressChart() {
+                try {
+                    const summary = await window.api.get('/applications/progress');
+                    const approved = Number(summary.approved || 0);
+                    const pending = Number(summary.pending || 0) + Number(summary.under_review || 0) + Number(summary.waitlisted || 0);
+                    const rejected = Number(summary.rejected || 0);
+                    progressChart.data.datasets[0].data = [approved, pending, rejected];
+                    progressChart.update();
+                } catch (e) {
+                    console.error('Error loading progress summary:', e);
+                }
+            }
+
+            updateProgressChart();
 
             // Toggle chart type
             document.getElementById('toggleChart').addEventListener('click', () => {
@@ -457,7 +496,7 @@
         }
 
         // Start fadeout after a short delay
-        setTimeout(fadeOutWelcome, 800);
+        const fadeOutTimeout = setTimeout(fadeOutWelcome, 800);
 
         // Allow manual dismiss by clicking
         welcomeSection.addEventListener('click', () => {

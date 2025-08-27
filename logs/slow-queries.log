@@ -1,0 +1,296 @@
+2025-08-27T04:41:18.505Z [408ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T04:46:22.278Z [806ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-27T04:46:25.580Z [366ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T04:47:02.818Z [388ms] UPDATE scholarship_applications SET status = ?, reviewer_notes = ?, reviewed_at = CURRENT_TIMESTAMP WHERE application_id = ?
+2025-08-27T04:56:03.061Z [443ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T05:00:24.374Z [334ms] INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)
+2025-08-27T05:04:26.096Z [567ms] UPDATE partners SET name=?, email=?, organization=?, phone=?, message=?, status=? WHERE id=?
+2025-08-27T05:38:37.309Z [333ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-27T05:38:37.941Z [634ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-08-27T05:38:39.137Z [370ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T05:38:39.484Z [364ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-27T05:38:39.724Z [589ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-27T05:38:40.169Z [478ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T05:38:40.404Z [467ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T05:38:40.471Z [591ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T05:38:42.608Z [389ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-27T05:38:42.873Z [620ms] SELECT COUNT(*) as total FROM users
+2025-08-27T05:52:46.914Z [449ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-08-27T05:52:46.948Z [524ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T05:52:47.031Z [715ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T05:54:13.726Z [32002ms] UPDATE partners SET name=?, email=?, organization=?, phone=?, message=?, status=?, partner_type=? WHERE id=?
+2025-08-27T06:03:07.465Z [2367ms] UPDATE partners SET name=?, email=?, organization=?, phone=?, message=?, status=?, partner_type=? WHERE id=?
+2025-08-27T06:17:16.871Z [342ms] UPDATE partners SET name=?, email=?, organization=?, phone=?, message=?, status=?, partner_type=? WHERE id=?
+2025-08-27T06:37:45.753Z [602ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T06:50:00.686Z [474ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T06:50:00.938Z [719ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T06:50:01.155Z [703ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-27T06:50:01.235Z [761ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-27T06:50:01.393Z [815ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T06:55:13.083Z [465ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T06:56:17.976Z [628ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-27T06:56:18.040Z [681ms] SELECT COUNT(*) as total FROM users
+2025-08-27T07:20:22.194Z [465ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T07:20:22.230Z [302ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-27T07:20:22.256Z [359ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T07:20:22.283Z [534ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T07:41:06.331Z [450ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T07:54:42.582Z [365ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T08:12:09.504Z [385ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T08:12:11.304Z [401ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-27T08:12:11.846Z [653ms] SELECT COUNT(*) as total FROM users
+2025-08-27T08:30:25.884Z [312ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-27T08:30:29.333Z [564ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:30:29.687Z [845ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-27T08:30:29.772Z [872ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:30:29.930Z [1011ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:30:29.989Z [811ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:41:46.650Z [6518ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-27T08:41:51.372Z [1235ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:41:52.073Z [1439ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-27T08:41:52.317Z [1450ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:41:52.621Z [1399ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:41:53.014Z [776ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-27T08:41:53.131Z [1283ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-27T08:41:53.265Z [647ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T08:41:53.605Z [2261ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T08:41:53.862Z [508ms] 
+            SELECT u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login
+            FROM users u
+            WHERE 1=1
+            ORDER BY u.created_at DESC
+            LIMIT ? O
+2025-08-27T08:41:53.906Z [458ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-08-27T08:41:53.966Z [2709ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-27T09:46:55.113Z [513ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T10:34:41.519Z [350ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-27T10:34:41.683Z [502ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T10:51:57.204Z [618ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T10:51:57.271Z [624ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T10:51:57.571Z [918ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-27T11:45:53.141Z [308ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-27T12:19:35.796Z [489ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T12:20:19.325Z [921ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T13:07:35.246Z [615ms] SELECT COUNT(*) as total FROM users
+2025-08-27T13:07:36.412Z [932ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-27T13:08:11.436Z [430ms] SELECT COUNT(*) as total FROM reports
+2025-08-27T13:09:36.374Z [465ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-27T13:39:25.035Z [310ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T13:55:52.791Z [352ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T13:55:52.887Z [372ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-27T13:55:52.935Z [477ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T13:58:32.630Z [3114ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-27T14:40:40.733Z [413ms] UPDATE scholarships 
+       SET status = 'expired' 
+       WHERE application_deadline < ? 
+       AND status = 'active'
+2025-08-27T14:40:41.102Z [438ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-27T14:40:41.137Z [451ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1

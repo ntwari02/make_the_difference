@@ -1,6 +1,10 @@
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 dotenv.config();
+
+const SLOW_MS = parseInt(process.env.DB_SLOW_MS || '300', 10);
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -23,4 +27,31 @@ pool.getConnection((err, connection) => {
 });
 
 // Export both pool and db for consistency
-export default pool.promise(); 
+const promised = pool.promise();
+
+// Wrap query to log slow queries
+const originalQuery = promised.query.bind(promised);
+const logsDir = path.resolve(process.cwd(), 'logs');
+const slowLogFile = path.join(logsDir, 'slow-queries.log');
+try { if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true }); } catch {}
+
+promised.query = async (...args) => {
+    const start = Date.now();
+    try {
+        const result = await originalQuery(...args);
+        const elapsed = Date.now() - start;
+        if (elapsed >= SLOW_MS) {
+            const sqlPreview = typeof args[0] === 'string' ? args[0].slice(0, 200) : '[non-string-sql]';
+            const line = `${new Date().toISOString()} [${elapsed}ms] ${sqlPreview}\n`;
+            console.warn('[SLOW-QUERY]', line.trim());
+            try { fs.appendFileSync(slowLogFile, line); } catch {}
+        }
+        return result;
+    } catch (err) {
+        const elapsed = Date.now() - start;
+        console.error(`[QUERY-ERROR ${elapsed}ms]`, err.message);
+        throw err;
+    }
+};
+
+export default promised;

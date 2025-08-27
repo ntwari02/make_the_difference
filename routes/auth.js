@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
+import { auth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Register new user
@@ -34,9 +35,10 @@ router.post('/register', async (req, res) => {
 
     try {
       // Insert new user
+      const defaultRole = 'user';
       const [result] = await connection.query(
-        'INSERT INTO users (full_name, email, password, security_questions_setup) VALUES (?, ?, ?, ?)',
-        [full_name, email, hashedPassword, true]
+        'INSERT INTO users (full_name, email, password, role, security_questions_setup) VALUES (?, ?, ?, ?, ?)',
+        [full_name, email, hashedPassword, defaultRole, true]
       );
 
       const userId = result.insertId;
@@ -119,6 +121,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Get user's profile picture from user_profile_pictures table
+    let profilePicture = null;
+    try {
+      const [profilePics] = await db.query(
+        'SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?',
+        [user.id]
+      );
+      
+      if (profilePics.length > 0 && profilePics[0].profile_picture_path) {
+        profilePicture = profilePics[0].profile_picture_path;
+      }
+    } catch (error) {
+      console.log('Could not fetch profile picture:', error.message);
+    }
+
     // Create token
     const token = jwt.sign(
       { id: user.id },
@@ -133,7 +150,9 @@ router.post('/login', async (req, res) => {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        profile_picture: profilePicture,
+        profile_picture_path: profilePicture
       }
     });
   } catch (error) {
@@ -162,30 +181,28 @@ router.post('/forgot-password', async (req, res) => {
     if (admins.length > 0) {
       // It's an admin user
       const admin = admins[0];
-      
-      if (!admin.security_questions_setup || admin.question_count < 2) {
-        return res.json({ 
-          success: false, 
-          message: 'Security questions not set up for this admin account. Please contact super administrator.' 
-        });
-      }
-      
-      // Get admin's security questions
-      const [questions] = await db.query(`
-        SELECT sq.id, sq.question
-        FROM security_questions sq
-        INNER JOIN user_security_answers usa ON sq.id = usa.question_id
-        WHERE usa.user_id = ?
-        ORDER BY sq.question
-      `, [admin.user_id]);
-      
-      res.json({ 
+
+      // Try to get admin's security questions if any are set up
+      let questions = [];
+      try {
+        const [q] = await db.query(`
+          SELECT sq.id, sq.question
+          FROM security_questions sq
+          INNER JOIN user_security_answers usa ON sq.id = usa.question_id
+          WHERE usa.user_id = ?
+          ORDER BY sq.question
+        `, [admin.user_id]);
+        questions = q || [];
+      } catch {}
+
+      // Always allow admins to proceed, even if questions are not set up
+      // Frontend can branch on questions.length === 0 to use email/OTP fallback
+      return res.json({ 
         success: true, 
-        message: 'Security questions retrieved successfully',
-        questions: questions,
+        message: questions.length ? 'Security questions retrieved successfully' : 'No security questions set for this admin. Proceed with email verification.',
+        questions,
         isAdmin: true
       });
-      return;
     }
     
     // Check if it's a regular user
@@ -334,3 +351,37 @@ router.post('/admin-login', async (req, res) => {
 });
 
 export default router; 
+
+// Get current authenticated user
+router.get('/me', auth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT id, full_name, email, role, status, created_at FROM users WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Optional: fetch profile picture
+    let profile_picture = null;
+    try {
+      const [pics] = await db.query('SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ? LIMIT 1', [req.user.id]);
+      if (pics && pics.length && pics[0].profile_picture_path) profile_picture = pics[0].profile_picture_path;
+    } catch {}
+
+    const user = rows[0];
+    res.json({
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      created_at: user.created_at,
+      profile_picture
+    });
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    res.status(500).json({ message: 'Error fetching current user' });
+  }
+});

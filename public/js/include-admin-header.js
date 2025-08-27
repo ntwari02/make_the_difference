@@ -14,19 +14,33 @@ async function includeAdminHeader() {
         const titleElem = document.getElementById('admin-page-title');
         if (titleElem) titleElem.textContent = pageTitle;
 
-        // Development mode - bypass authentication
-        const user = {
-            full_name: 'Development Admin',
-            role: 'admin',
-            isAdmin: true
-        };
-        document.getElementById('adminName').textContent = user.full_name || 'Admin';
+        // Use stored/remote user for header display
+        (async () => {
+            try {
+                const token = localStorage.getItem('token');
+                let user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (token) {
+                    const res = await fetch('/api/admin/account', { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (res.ok) {
+                        const profile = await res.json();
+                        user = { ...user, ...profile };
+                        if (profile.profile_picture_path && !profile.profile_picture) {
+                            user.profile_picture = profile.profile_picture_path;
+                        }
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
+                }
+                const nameTarget = document.getElementById('adminName');
+                if (nameTarget) nameTarget.textContent = user.full_name || 'Admin';
+            } catch {}
+        })();
 
         // Initialize profile avatar
         initializeProfileControls();
 
-        // Logout
+        // Logout with confirmation
         document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (!confirm('Are you sure you want to log out?')) return;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = 'login.html';
@@ -55,16 +69,17 @@ function initializeProfileControls() {
     const stored = JSON.parse(localStorage.getItem('user') || '{}');
     const fullName = stored.full_name || 'User';
     const email = stored.email || '';
-    const photo = stored.profile_picture || '';
+    const photo = stored.profile_picture || stored.profile_picture_path || '';
 
     nameEl && (nameEl.textContent = fullName);
     emailEl && (emailEl.textContent = email);
 
     const setAvatar = (url) => {
         if (url) {
-            if (avatar) { avatar.src = url; avatar.classList.remove('hidden'); }
+            const src = (url.startsWith('http') || url.startsWith('/')) ? url : `/${url}`;
+            if (avatar) { avatar.src = src; avatar.classList.remove('hidden'); }
             if (fallback) fallback.classList.add('hidden');
-            if (modalAvatar) { modalAvatar.src = url; modalAvatar.classList.remove('hidden'); }
+            if (modalAvatar) { modalAvatar.src = src; modalAvatar.classList.remove('hidden'); }
             if (modalFallback) modalFallback.classList.add('hidden');
         } else {
             const initials = (fullName || 'U').trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
@@ -89,12 +104,10 @@ function initializeProfileControls() {
             const token = localStorage.getItem('token');
             const fd = new FormData();
             fd.append('profilePicture', input.files[0]);
-            // Reuse account endpoint for upload only, with minimal fields
-            fd.append('fullName', fullName);
-            fd.append('email', email);
-            const res = await fetch('/api/admin/account', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+            // Use dedicated profile-picture endpoint
+            const res = await fetch('/api/admin/account/profile-picture', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
             const data = await res.json();
-            const newPhoto = data.profile_picture;
+            const newPhoto = data.profile_picture || data.profile_picture_path;
             if (newPhoto) {
                 const u = JSON.parse(localStorage.getItem('user') || '{}');
                 u.profile_picture = newPhoto;

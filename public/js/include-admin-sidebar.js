@@ -21,6 +21,9 @@ async function includeAdminSidebar() {
             
             // Initialize sidebar functionality
             initializeSidebar();
+
+            // Mark active link
+            try { markActiveSidebarLink(); } catch {}
         }
     } catch (error) {
         console.error('Error loading admin sidebar:', error);
@@ -33,6 +36,7 @@ function initializeSidebar() {
     const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const mobileBackdrop = document.getElementById('mobileBackdrop');
+    const mobileNavToggle = document.getElementById('mobile-nav-toggle');
 
     if (!sidebar) return;
 
@@ -90,6 +94,37 @@ function initializeSidebar() {
                 mobileBackdrop.classList.toggle('show');
             }
         });
+    }
+
+    // Mobile navigation toggle (for showing/hiding sidebar on mobile)
+    if (mobileNavToggle) {
+        mobileNavToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('expanded');
+            
+            // Update button icon
+            const icon = mobileNavToggle.querySelector('i');
+            const text = mobileNavToggle.querySelector('span');
+            
+            if (sidebar.classList.contains('expanded')) {
+                if (icon) icon.className = 'fas fa-times w-5 text-center';
+                if (text) text.textContent = 'Close';
+                localStorage.setItem('mobileSidebarExpanded', 'true');
+            } else {
+                if (icon) icon.className = 'fas fa-bars w-5 text-center';
+                if (text) text.textContent = 'Menu';
+                localStorage.setItem('mobileSidebarExpanded', 'false');
+            }
+        });
+        
+        // Restore mobile sidebar state on page load
+        const wasExpanded = localStorage.getItem('mobileSidebarExpanded') === 'true';
+        if (wasExpanded && window.innerWidth <= 768) {
+            sidebar.classList.add('expanded');
+            const icon = mobileNavToggle.querySelector('i');
+            const text = mobileNavToggle.querySelector('span');
+            if (icon) icon.className = 'fas fa-times w-5 text-center';
+            if (text) text.textContent = 'Close';
+        }
     }
 
     // Mobile backdrop click
@@ -241,6 +276,27 @@ function initializeSidebar() {
                 });
             }
         });
+    }
+}
+
+function markActiveSidebarLink() {
+    const sidebar = document.getElementById('admin-sidebar');
+    if (!sidebar) return;
+    const links = Array.from(sidebar.querySelectorAll('a[href$=".html"]'));
+    const pageAttr = (document.body && document.body.getAttribute('data-page')) || '';
+    const hrefFromAttr = pageAttr ? `admin_${pageAttr}.html` : '';
+    const path = window.location.pathname.split('/').pop();
+
+    let matched = null;
+    if (hrefFromAttr) {
+        matched = links.find(a => a.getAttribute('href').endsWith(hrefFromAttr));
+    }
+    if (!matched && path) {
+        matched = links.find(a => a.getAttribute('href').endsWith(path));
+    }
+    if (matched) {
+        links.forEach(a => a.classList.remove('active'));
+        matched.classList.add('active');
     }
 }
 

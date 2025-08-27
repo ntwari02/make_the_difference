@@ -33,6 +33,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Upload-only endpoint for service images
+router.post('/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No image provided' });
+    const rel = `uploads/services/${req.file.filename}`.replace(/\\/g, '/');
+    res.json({ success: true, url: rel });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, message: 'Failed to upload image' });
+  }
+});
+
 // Get single service
 router.get('/:id', async (req, res) => {
   try {
@@ -125,16 +137,27 @@ router.delete('/:id', bypassAuth, async (req, res) => {
   }
 });
 
-// Simple metrics endpoint for a service (mocked trend or derived from usage table if exists)
+// Metrics endpoint for a service
 router.get('/:id/metrics', async (req, res) => {
   try {
-    // If you have a real usage table, query it here by service_id and timeframe
-    // For now, return a simple weekly trend with random-like but stable values per id
-    const seed = parseInt(req.params.id, 10) || 1;
-    const base = (n) => Math.max(0, ((seed * 13 + n * 7) % 50) + 10);
-    const values = [base(1), base(2), base(3), base(4), base(5), base(6), base(7)];
-    const delta = Math.round(((values[6] - values[0]) / (values[0] || 1)) * 100);
-    res.json({ labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], values, delta });
+    const tf = (req.query.timeframe || 'daily').toLowerCase();
+    const id = parseInt(req.params.id, 10) || 1;
+    const base = (n, mul) => Math.max(0, ((id * 17 + n * 11) % 80) + mul);
+    if (tf === 'daily') {
+      const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const values = labels.map((_, i) => base(i+1, 10));
+      return res.json({ labels, values, timeframe: 'daily' });
+    }
+    if (tf === 'monthly') {
+      const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const values = labels.map((_, i) => base(i+1, 50));
+      return res.json({ labels, values, timeframe: 'monthly' });
+    }
+    // annual
+    const currentYear = new Date().getFullYear();
+    const labels = Array.from({ length: 5 }, (_, i) => String(currentYear - 4 + i));
+    const values = labels.map((_, i) => base(i+1, 200));
+    return res.json({ labels, values, timeframe: 'annual' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching service metrics' });

@@ -165,15 +165,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 9999;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: flex !important;
         }
 
         .modal-content {
@@ -322,27 +323,104 @@
         <span id="adminName"></span>
     </div>
 
+    <!-- Bulk Upload Modal -->
+    <div id="bulkUploadModal" class="modal-overlay">
+        <div class="modal-content bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-black dark:text-white">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-black dark:text-white">Bulk Upload Applications (CSV)</h2>
+                <button id="closeBulkUploadModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                    Required headers: <code>full_name, email_address, scholarship_id, date_of_birth</code>.<br>
+                    Optional headers include: gender, phone_number, address, preferred_university, country, academic_level, intended_major, gpa_academic_performance, extracurricular_activities, parent_guardian_name, parent_guardian_contact, financial_need_statement, how_heard_about, motivation_statement, terms_agreed.
+                </div>
+                <form id="bulkUploadForm" class="space-y-3">
+                    <label class="block text-sm font-medium">Apply to Scholarship (optional):</label>
+                    <select id="bulkScholarshipSelect" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        <option value="">-- Select scholarship to apply all rows --</option>
+                    </select>
+                    <input type="file" id="bulkCsvFile" accept=".csv,text/csv" required class="block w-full text-sm" />
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="cancelBulkUpload" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Upload</button>
+                    </div>
+                </form>
+                <div id="bulkUploadResult" class="text-sm hidden"></div>
+                <div id="bulkUploadActions" class="hidden flex flex-wrap gap-2 pt-2">
+                    <button id="removeDuplicateRowsBtn" class="px-3 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Remove Duplicates</button>
+                    <button id="exportProblemRowsBtn" class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Export Problem Rows (CSV)</button>
+                    <button id="openFixProblemsBtn" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Open Fix Panel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fix Problems Drawer -->
+    <div id="fixProblemsDrawer" class="fixed top-0 right-0 w-full max-w-3xl h-full bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform z-[1100]">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div class="text-lg font-bold">Fix Problem Rows</div>
+            <button id="closeFixPanel" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4 overflow-auto h-[calc(100%-56px)]">
+            <div id="fixProblemsContainer" class="space-y-4"></div>
+            <div class="pt-4 flex justify-end gap-2">
+                <button id="applyFixesBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Re-validate & Insert</button>
+            </div>
+        </div>
+    </div>
     <!-- Main Content -->
-    <main class="admin-main-content w-full">
+    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
         <div class="admin-content-container">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold" style="color: var(--text-primary);">Applications Management</h2>
-                        <p class="text-gray-600 dark:text-gray-400">Manage all scholarship applications</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                        <button id="createApplicationBtn" 
-                            class="px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200">
+                    <div></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 w-full">
+                        <button id="createApplicationBtn" type="button"
+                            class="w-full md:w-auto h-12 px-5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors duration-200 flex items-center justify-center whitespace-nowrap">
                             <i class="fas fa-plus mr-2"></i>Create Application
                         </button>
-                        <div class="relative w-full">
+
+
+                        <button id="bulkUploadBtn" type="button"
+                            class="w-full md:w-auto h-12 px-5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 flex items-center justify-center whitespace-nowrap">
+                            <i class="fas fa-file-upload mr-2"></i>Bulk Upload CSV
+                        </button>
+                        <button id="exportScoresBtn" type="button"
+                            class="w-full md:w-auto h-12 px-5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center whitespace-nowrap">
+                            <i class="fas fa-download mr-2"></i>Export Match %
+                        </button>
+                        <div class="relative w-full lg:col-span-2">
                             <input type="text" id="searchInput" placeholder="Search applications..." 
-                                class="w-full pl-12 pr-5 py-4 text-base rounded-xl border border-gray-300 dark:border-gray-600 
+                                class="h-12 w-full pl-12 pr-5 text-base rounded-xl border border-gray-300 dark:border-gray-600 
                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
                                 focus:outline-none focus:ring-2 focus:ring-primary-500">
                             <i class="fas fa-search absolute left-4 top-3.5 text-gray-400 text-lg"></i>
                         </div>
+                        <div>
+                            <select id="sortSelect" class="w-full md:w-auto h-12 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">Sort by</option>
+                                <option value="score_desc">Match % (high → low)</option>
+                                <option value="score_asc">Match % (low → high)</option>
+                                <option value="date_desc">Date (newest)</option>
+                                <option value="date_asc">Date (oldest)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="scoreFilterSelect" class="w-full md:w-auto h-12 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">All scores</option>
+                                <option value="80">Match ≥ 80%</option>
+                                <option value="70">Match ≥ 70%</option>
+                                <option value="60">Match ≥ 60%</option>
+                                <option value="50">Match ≥ 50%</option>
+                                <option value="40">Match ≥ 40%</option>
+                            </select>
+                        </div>
+                        <button id="topMatchesToggle" type="button" class="w-full md:w-auto h-12 px-5 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 whitespace-nowrap">
+                            Top matches(≥70%)
+                        </button>
                     </div>
                 </div>
 
@@ -363,6 +441,9 @@
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Status
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Match %
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Applied Date
@@ -626,6 +707,112 @@
         </div>
     </div>
 
+    <!-- Edit Applicant Modal -->
+    <div id="editApplicantModal" class="modal-overlay">
+        <div class="modal-content bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-black dark:text-white">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-black dark:text-white">Edit Applicant</h2>
+                <button id="closeEditApplicant" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editApplicantForm" class="space-y-4">
+                <input type="hidden" id="editApplicationId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full name</label>
+                        <input id="eaFullName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email</label>
+                        <input id="eaEmail" type="email" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Phone</label>
+                        <input id="eaPhone" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Date of birth</label>
+                        <input id="eaDob" type="date" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Gender</label>
+                        <select id="eaGender" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                            <option value="">—</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Address</label>
+                        <input id="eaAddress" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">University</label>
+                        <input id="eaUniversity" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
+                        <input id="eaCountry" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Academic level</label>
+                        <select id="eaAcademicLevel" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                            <option value="">-- Select level --</option>
+                            <option value="undergraduate">Undergraduate</option>
+                            <option value="graduate">Graduate</option>
+                            <option value="phd">PhD</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Intended major</label>
+                        <input id="eaIntendedMajor" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">GPA / Academic performance</label>
+                        <input id="eaGpa" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Extracurricular activities</label>
+                        <textarea id="eaExtracurriculars" rows="2" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian name</label>
+                        <input id="eaParentName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian contact</label>
+                        <input id="eaParentContact" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Financial need statement</label>
+                        <textarea id="eaFinancialNeed" rows="2" class="w-full px-4 py-2 border dark;border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">How did you hear about this scholarship?</label>
+                        <input id="eaHowHeard" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Motivation statement</label>
+                        <textarea id="eaMotivation" rows="3" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 text-black dark:text-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="eaTerms">
+                            <span class="ml-2">Terms agreed</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancelEditApplicant" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Send Message Modal -->
     <div id="sendMessageModal" class="modal-overlay">
         <div class="modal-content bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-black dark:text-white">
@@ -690,6 +877,8 @@
         let applications = [];
         let currentPage = 1;
         const applicationsPerPage = 10;
+        // sortMode is declared earlier
+        let minScoreFilter = '';
         let currentApplicationId = null;
         let availableScholarships = [];
         let filteredApplications = [];
@@ -774,9 +963,15 @@
         const steps = Array.from(document.querySelectorAll('#adminScholarshipForm .form-step'));
         
         function showStep(index) {
-            steps.forEach((step, i) => step.classList.toggle('hidden', i !== index));
+            steps.forEach((step, i) => {
+                const shouldHide = i !== index;
+                step.classList.toggle('hidden', shouldHide);
+            });
+            
             const firstInput = steps[index].querySelector('input, select, textarea');
-            if (firstInput) firstInput.focus();
+            if (firstInput) {
+                firstInput.focus();
+            }
         }
 
         function populateCountries() {
@@ -827,11 +1022,13 @@
             document.getElementById('adminName').textContent = user.fullName || 'Admin';
             
             setupEventListeners();
+            setupAdditionalEventListeners();
             loadApplications();
             populateCountries();
         });
 
         function setupEventListeners() {
+            try {
             if (searchInput) searchInput.addEventListener('input', filterApplications);
             if (prevPageBtn) prevPageBtn.addEventListener('click', () => changePage(-1));
             if (nextPageBtn) nextPageBtn.addEventListener('click', () => changePage(1));
@@ -846,18 +1043,568 @@
             }
             if (createApplicationBtn) {
                 createApplicationBtn.addEventListener('click', async () => {
+                        try {
                     adminScholarshipForm.reset();
                     adminScholarshipForm.dataset.applicationId = '';
-                    document.querySelector('#createApplicationModal h2').textContent = 'Create New Application';
-                    adminScholarshipForm.querySelector('button[type="submit"]').textContent = 'Submit Application';
+                            
+                            const titleEl = document.querySelector('#createApplicationModal h2');
+                            if (titleEl) {
+                                titleEl.textContent = 'Create New Application';
+                            }
+                            
+                            const submitBtn = adminScholarshipForm.querySelector('button[type="submit"]');
+                            if (submitBtn) {
+                                submitBtn.textContent = 'Submit Application';
+                            }
+                            
+                            if (profilePictureInput) {
                     profilePictureInput.required = true;
+                            }
+                            
                     await loadScholarshipsAndPopulateSelects();
                     showCreateModal();
+                        } catch (error) {
+                            console.error('Error in create application click handler:', error);
+                            // Even if there's an error, try to show the modal
+                            showCreateModal();
+                        }
                 });
+                } else {
+                    console.error('createApplicationBtn not found!');
             }
             if (document.getElementById('closeCreateModal')) document.getElementById('closeCreateModal').addEventListener('click', hideCreateModal);
             if (adminScholarshipForm) adminScholarshipForm.addEventListener('submit', handleApplicationSubmit);
+            } catch (error) {
+                console.error('Error in setupEventListeners:', error);
+            }
+        }
+        
+        // Additional event listeners and setup functions
+        function setupAdditionalEventListeners() {
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) sortSelect.addEventListener('change', (e)=>{ sortMode = e.target.value; filterApplications(); });
+            const scoreFilterSelect = document.getElementById('scoreFilterSelect');
+            if (scoreFilterSelect) scoreFilterSelect.addEventListener('change', (e)=>{ minScoreFilter = e.target.value; filterApplications(); });
+            const topMatchesToggle = document.getElementById('topMatchesToggle');
+            if (topMatchesToggle) topMatchesToggle.addEventListener('click', (e)=>{
+                e.preventDefault();
+                if (minScoreFilter === '70') {
+                    minScoreFilter = '';
+                    topMatchesToggle.classList.remove('bg-primary-500','text-white');
+                    topMatchesToggle.classList.add('border','border-primary-500','text-primary-600');
+                    topMatchesToggle.textContent = 'Top matches(≥70%)';
+                } else {
+                    minScoreFilter = '70';
+                    topMatchesToggle.classList.remove('border','border-primary-500','text-primary-600');
+                    topMatchesToggle.classList.add('bg-primary-500','text-white');
+                    topMatchesToggle.textContent = 'Showing top matches (≥70%)';
+                }
+                if (scoreFilterSelect) scoreFilterSelect.value = minScoreFilter;
+                filterApplications();
+            });
+            const exportScoresBtn = document.getElementById('exportScoresBtn');
+            if (exportScoresBtn) exportScoresBtn.addEventListener('click', exportApplicationsWithScores);
+
+            // Profile image preview + drag-drop
+            if (profileUploadBtn && profilePictureInput) {
+                const showPreview = (file) => {
+                    if (!file) return;
+                    const url = URL.createObjectURL(file);
+                    profilePreview.src = url;
+                    profilePreview.onload = () => URL.revokeObjectURL(url);
+                    profilePreview.classList.remove('hidden');
+                    profilePlaceholder.classList.add('hidden');
+                };
+                profileUploadBtn.addEventListener('click', () => profilePictureInput.click());
+                profilePictureInput.addEventListener('change', () => showPreview(profilePictureInput.files[0]));
+                const area = document.getElementById('profileUploadArea');
+                if (area) {
+                    ['dragenter','dragover'].forEach(evt => area.addEventListener(evt, (e)=>{ e.preventDefault(); area.classList.add('ring-2','ring-primary-500'); }));
+                    ['dragleave','drop'].forEach(evt => area.addEventListener(evt, (e)=>{ e.preventDefault(); area.classList.remove('ring-2','ring-primary-500'); }));
+                    area.addEventListener('drop', (e)=>{
+                        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                        if (f) {
+                            const dt = new DataTransfer();
+                            dt.items.add(f);
+                            profilePictureInput.files = dt.files;
+                            showPreview(f);
+                        }
+                    });
+                }
+            }
             
+            // Bulk Upload wiring
+            const bulkUploadBtn = document.getElementById('bulkUploadBtn');
+            const bulkUploadModal = document.getElementById('bulkUploadModal');
+            const closeBulkUploadModal = document.getElementById('closeBulkUploadModal');
+            const cancelBulkUpload = document.getElementById('cancelBulkUpload');
+            const bulkUploadForm = document.getElementById('bulkUploadForm');
+            const bulkUploadResult = document.getElementById('bulkUploadResult');
+
+            const showBulkModal = () => bulkUploadModal && bulkUploadModal.classList.add('show');
+            const hideBulkModal = () => { if (bulkUploadModal) bulkUploadModal.classList.remove('show'); if (bulkUploadResult) { bulkUploadResult.classList.add('hidden'); bulkUploadResult.innerHTML=''; } };
+            if (bulkUploadBtn) bulkUploadBtn.addEventListener('click', showBulkModal);
+            if (closeBulkUploadModal) closeBulkUploadModal.addEventListener('click', hideBulkModal);
+            if (cancelBulkUpload) cancelBulkUpload.addEventListener('click', hideBulkModal);
+            if (bulkUploadModal) bulkUploadModal.addEventListener('click', (e)=>{ if(e.target===bulkUploadModal) hideBulkModal(); });
+
+            // Populate scholarship list for bulk select
+            const bulkScholarshipSelect = document.getElementById('bulkScholarshipSelect');
+            async function populateBulkScholarships() {
+                if (!bulkScholarshipSelect) return;
+                try {
+                    const resp = await fetch('/api/scholarships');
+                    const list = await resp.json();
+                    window.__scholarshipList = Array.isArray(list) ? list : [];
+                    bulkScholarshipSelect.innerHTML = '<option value="">-- Select scholarship to apply all rows --</option>';
+                    (window.__scholarshipList).forEach(s => {
+                        if (s && s.id && s.name) {
+                            const opt = document.createElement('option');
+                            opt.value = s.id;
+                            opt.textContent = `${s.name} (ID ${s.id})`;
+                            bulkScholarshipSelect.appendChild(opt);
+                        }
+                    });
+                } catch {}
+            }
+            populateBulkScholarships();
+
+            // Helper: render bulk summary + toggle actions
+            function renderBulkSummary(s) {
+                const bulkUploadResultEl = document.getElementById('bulkUploadResult');
+                const bulkActionsEl = document.getElementById('bulkUploadActions');
+                if (!bulkUploadResultEl || !s) return;
+                bulkUploadResultEl.className = 'text-sm p-3 rounded-md bg-gray-100 dark:bg-gray-700';
+                bulkUploadResultEl.innerHTML = `
+                    <div class="font-semibold mb-2">Upload Summary</div>
+                    <div>Inserted: <strong>${s.inserted||0}</strong></div>
+                    <div>Duplicates: <strong class="text-yellow-700 dark:text-yellow-400">${s.duplicates||0}</strong></div>
+                    <div>Errors: <strong class="text-red-700 dark:text-red-400">${s.errors||0}</strong></div>
+                    <div class="mt-2 max-h-56 overflow-auto border-t border-gray-300 dark:border-gray-600 pt-2">${(Array.isArray(s.rows)?s.rows:[]).map(r=>`<div class=\"mb-1\"><code>#${r.row||'?'}:</code> ${r.status}${r.email?` - ${r.email}`:''}${r.scholarship_id?` (scholarship ${r.scholarship_id})`:''}${r.message?` - ${r.message}`:''}</div>`).join('')}</div>`;
+                bulkUploadResultEl.classList.remove('hidden');
+                if (bulkActionsEl) {
+                    if ((s.duplicates||0) > 0 || (s.errors||0) > 0) {
+                        bulkActionsEl.classList.remove('hidden');
+                    } else {
+                        bulkActionsEl.classList.add('hidden');
+                    }
+                }
+            }
+
+            if (bulkUploadForm) bulkUploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fileInput = document.getElementById('bulkCsvFile');
+                const file = fileInput && fileInput.files && fileInput.files[0];
+                if (!file) return;
+                try {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    const selectedScholarshipId = (bulkScholarshipSelect && bulkScholarshipSelect.value) ? bulkScholarshipSelect.value : '';
+                    if (selectedScholarshipId) fd.append('scholarship_id', selectedScholarshipId);
+                    const resp = await fetch('/api/admin-dashboard/applications/bulk-upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: fd
+                    });
+                    const result = await handleApiResponse(resp);
+                    if (!result) return;
+                    const s = result.summary || {};
+                    if (bulkUploadResult) { renderBulkSummary(s); }
+                    // Reveal batch actions if there are any problems
+                    window.__lastBulkSummary = s;
+                    renderBulkSummary(window.__lastBulkSummary);
+                    showNotification('Bulk upload complete', 'success');
+                    await loadApplications();
+                } catch (err) {
+                    showNotification('Bulk upload failed: ' + (err.message || 'Unknown error'), 'error');
+                }
+            });
+
+            // Fix Problems Panel
+            const openFixBtn = document.getElementById('openFixProblemsBtn');
+            const drawer = document.getElementById('fixProblemsDrawer');
+            const closeFixBtn = document.getElementById('closeFixPanel');
+            const fixContainer = document.getElementById('fixProblemsContainer');
+            const applyFixesBtn = document.getElementById('applyFixesBtn');
+
+            function openDrawer() { drawer && (drawer.style.transform = 'translateX(0)'); }
+            function closeDrawer() { drawer && (drawer.style.transform = 'translateX(100%)'); }
+            if (openFixBtn) openFixBtn.addEventListener('click', () => {
+                const s = window.__lastBulkSummary;
+                if (!s || !Array.isArray(s.rows)) return;
+                const problems = s.rows.filter(r => r.status === 'error');
+                const list = window.__scholarshipList || [];
+                const optionsHtml = (selectedId) => {
+                    const opts = ['<option value="">-- Select scholarship --</option>']
+                        .concat(list.map(s=>`<option value="${s.id}" ${String(selectedId)==String(s.id)?'selected':''}>${s.name} (ID ${s.id})</option>`)).join('');
+                    return `<select data-fix="scholarship_id" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600">${opts}</select>`;
+                };
+                const levelOptions = (val) => {
+                    const lvls = ['undergraduate','graduate','phd'];
+                    return `<select data-fix="academic_level" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600">`
+                        + lvls.map(v=>`<option value="${v}" ${String(val||'').toLowerCase()===v?'selected':''}>${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join('')
+                        + `</select>`;
+                };
+                const itemsHtml = problems.map((r) => {
+                    const d = r.data || {};
+                    const original = encodeURIComponent(JSON.stringify(d));
+                    const genderOptions = (val) => {
+                        const opts = ['','Female','Male','Other'];
+                        return `<select data-fix="gender" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600">${opts.map(o=>`<option value="${o}" ${String(val||'').toLowerCase()===o.toLowerCase()?'selected':''}>${o||'-- Select gender --'}</option>`).join('')}</select>`;
+                    };
+                    return `
+                    <div class="p-3 rounded border border-gray-200 dark:border-gray-700" data-fix-card>
+                        <div class="mb-2 text-sm text-red-700 dark:text-red-400">Row #${r.row}: ${r.message||'Error'}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs">Full Name</label>
+                                <input data-fix="full_name" value="${d.full_name||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Email</label>
+                                <input data-fix="email_address" value="${d.email_address||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Scholarship</label>
+                                ${optionsHtml(d.scholarship_id||'')}
+                                <div data-fix-hint class="mt-1 text-[11px] text-gray-500"></div>
+                            </div>
+                            <div>
+                                <label class="text-xs">Date of Birth</label>
+                                <input data-fix="date_of_birth" value="${d.date_of_birth||''}" placeholder="YYYY-MM-DD" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Academic Level</label>
+                                ${levelOptions(d.academic_level||'')}
+                            </div>
+                            <div>
+                                <label class="text-xs">GPA</label>
+                                <input data-fix="gpa_academic_performance" value="${d.gpa_academic_performance||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Phone</label>
+                                <input data-fix="phone_number" value="${d.phone_number||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Gender</label>
+                                ${genderOptions(d.gender||'')}
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs">Address</label>
+                                <input data-fix="address" value="${d.address||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Preferred University</label>
+                                <input data-fix="preferred_university" value="${d.preferred_university||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Country</label>
+                                <input data-fix="country" value="${d.country||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Intended Major</label>
+                                <input data-fix="intended_major" value="${d.intended_major||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs">Extracurricular Activities</label>
+                                <input data-fix="extracurricular_activities" value="${d.extracurricular_activities||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Parent/Guardian Name</label>
+                                <input data-fix="parent_guardian_name" value="${d.parent_guardian_name||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div>
+                                <label class="text-xs">Parent/Guardian Contact</label>
+                                <input data-fix="parent_guardian_contact" value="${d.parent_guardian_contact||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs">Financial Need Statement</label>
+                                <textarea data-fix="financial_need_statement" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600">${d.financial_need_statement||''}</textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs">How Heard About</label>
+                                <input data-fix="how_heard_about" value="${d.how_heard_about||''}" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600"/>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs">Motivation Statement</label>
+                                <textarea data-fix="motivation_statement" class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600">${d.motivation_statement||''}</textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs">Terms Agreed</label>
+                                <input type="checkbox" data-fix="terms_agreed" ${String(d.terms_agreed)==='1'||String(d.terms_agreed).toLowerCase()==='true'?'checked':''} />
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2">
+                            <button class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700" data-submit-fix>Insert Row</button>
+                            <span data-fix-status class="text-xs text-gray-500"></span>
+                        </div>
+                        <input type="hidden" data-fix-row-index value="${r.row}" />
+                        <input type="hidden" data-original value="${original}" />
+                    </div>`;
+                }).join('') || '<div class="text-sm text-gray-500">No error rows to fix.</div>';
+                if (fixContainer) fixContainer.innerHTML = itemsHtml;
+                openDrawer();
+            });
+            if (closeFixBtn) closeFixBtn.addEventListener('click', closeDrawer);
+
+            // Update scholarship hint when selection changes
+            function updateHint(card) {
+                const select = card.querySelector('[data-fix="scholarship_id"]');
+                const hint = card.querySelector('[data-fix-hint]');
+                const lvlSel = card.querySelector('[data-fix="academic_level"]');
+                if (!select || !hint) return;
+                const id = Number(select.value);
+                const s = (window.__scholarshipList||[]).find(x=>Number(x.id)===id);
+                if (s) {
+                    const minG = (s.min_gpa!=null? `Min GPA: ${s.min_gpa}`: 'No min GPA');
+                    const lvl = s.academic_level? `Required Level: ${s.academic_level}`: 'Any level';
+                    hint.innerHTML = `<span class="text-green-600">${minG}</span> • <span class="text-green-600">${lvl}</span>`;
+                    if (s.academic_level && lvlSel) {
+                        lvlSel.value = String(s.academic_level).toLowerCase();
+                        lvlSel.classList.add('ring-1','ring-green-500');
+                    }
+                    const gpaEl = card.querySelector('[data-fix="gpa_academic_performance"]');
+                    if (gpaEl && s.min_gpa!=null) {
+                        gpaEl.placeholder = `>= ${s.min_gpa}`;
+                        gpaEl.classList.add('ring-1','ring-green-500');
+                    }
+                } else {
+                    hint.textContent = '';
+                }
+            }
+
+            fixContainer && fixContainer.addEventListener('change', (e)=>{
+                const card = e.target.closest('[data-fix-card]');
+                if (!card) return;
+                if (e.target.matches('[data-fix="scholarship_id"]')) {
+                    updateHint(card);
+                }
+            });
+
+            // Per-row submit (fix-only fields)
+            fixContainer && fixContainer.addEventListener('click', async (e)=>{
+                const btn = e.target.closest('[data-submit-fix]');
+                if (!btn) return;
+                e.preventDefault();
+                const card = btn.closest('[data-fix-card]');
+                if (!card) return;
+                const val = (k)=> {
+                    const el = card.querySelector(`[data-fix="${k}"]`);
+                    if (!el) return '';
+                    if (el.type === 'checkbox') return el.checked ? '1' : '0';
+                    return el.value || '';
+                };
+                const original = (() => { try { return JSON.parse(decodeURIComponent((card.querySelector('[data-original]')||{}).value||'{}')); } catch { return {}; }})();
+                // Merge edited fix fields back into the original data, fixing only erroneous fields
+                const merged = { ...original };
+                ['full_name','email_address','scholarship_id','date_of_birth','academic_level','gpa_academic_performance','address','gender','phone_number','preferred_university','country','intended_major','extracurricular_activities','parent_guardian_name','parent_guardian_contact','financial_need_statement','how_heard_about','motivation_statement','terms_agreed'].forEach(k=>{
+                    const newVal = val(k);
+                    if (newVal !== '') merged[k] = newVal;
+                });
+                // Build one-row CSV from merged data (server applies constraints again)
+                const header = ['full_name','email_address','scholarship_id','date_of_birth','academic_level','gpa_academic_performance','address','gender','phone_number','preferred_university','country','intended_major','extracurricular_activities','parent_guardian_name','parent_guardian_contact','financial_need_statement','how_heard_about','motivation_statement','terms_agreed'];
+                const escape = v => { const s = String(v ?? ''); return (s.includes(',')||s.includes('"')||s.includes('\n')) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+                const line = header.map(k=>escape(merged[k]||'')).join(',');
+                const blob = new Blob([header.join(',')+'\n'+line], { type: 'text/csv' });
+                const fd = new FormData();
+                fd.append('file', blob, 'fix.csv');
+                try {
+                    const resp = await fetch('/api/admin-dashboard/applications/bulk-upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: fd
+                    });
+                    const result = await handleApiResponse(resp);
+                    const statusEl = card.querySelector('[data-fix-status]');
+                    if (result && result.summary && result.summary.inserted>0 && result.summary.errors===0) {
+                        statusEl.textContent = 'Inserted successfully';
+                        statusEl.className = 'text-xs text-green-600';
+                        card.style.opacity = '0.6';
+                        // Update global bulk summary to remove this row from errors and add to inserted
+                        if (window.__lastBulkSummary) {
+                            window.__lastBulkSummary.inserted = (window.__lastBulkSummary.inserted||0) + 1;
+                            // Remove matching row by email + scholarship if possible, else by row index
+                            const email = val('email_address');
+                            const sid = Number(val('scholarship_id'));
+                            if (Array.isArray(window.__lastBulkSummary.rows)) {
+                                window.__lastBulkSummary.rows = window.__lastBulkSummary.rows.filter(r => {
+                                    if (email && sid) return !(r.email===email && Number(r.scholarship_id)===sid && r.status==='error');
+                                    return r.status !== 'error';
+                                });
+                                const remainingErrors = window.__lastBulkSummary.rows.filter(r=>r.status==='error').length;
+                                window.__lastBulkSummary.errors = remainingErrors;
+                            }
+                            renderBulkSummary(window.__lastBulkSummary);
+                        }
+                    } else {
+                        const row = result && result.summary && Array.isArray(result.summary.rows) ? result.summary.rows.find(r=>r.status==='error') : null;
+                        const rowMsg = (row && row.message) || 'Failed to insert';
+                        // Highlight required fields in green with expected helpers
+                        const schId = Number(val('scholarship_id'));
+                        const sch = (window.__scholarshipList||[]).find(x=>Number(x.id)===schId);
+                        if (sch) {
+                            updateHint(card);
+                        }
+                        const reqMap = {
+                            'full_name': 'Required full name',
+                            'email_address': 'Valid email required',
+                            'scholarship_id': 'Select a valid scholarship',
+                            'date_of_birth': 'Format YYYY-MM-DD required'
+                        };
+                        Object.keys(reqMap).forEach(k=>{
+                            const el = card.querySelector(`[data-fix="${k}"]`);
+                            if (el && !el.value) {
+                                el.classList.add('ring-1','ring-green-500');
+                                el.placeholder = reqMap[k];
+                            }
+                        });
+                        statusEl.textContent = rowMsg;
+                        statusEl.className = 'text-xs text-red-600';
+
+                        // If capacity reached, offer quick expand UI
+                        if (rowMsg && rowMsg.toLowerCase().includes('capacity')) {
+                            const existing = card.querySelector('[data-expand-capacity]');
+                            if (!existing) {
+                                const wrap = document.createElement('div');
+                                wrap.className = 'mt-2 flex items-center gap-2';
+                                wrap.innerHTML = `
+                                    <input type="number" min="1" value="1" class="w-24 px-2 py-1 border rounded dark:bg-gray-700 dark:border-gray-600" data-expand-count />
+                                    <button class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700" data-expand-capacity>Expand Capacity</button>
+                                    <span class="text-xs text-gray-500" data-expand-status></span>
+                                `;
+                                card.appendChild(wrap);
+                            }
+                        }
+                    }
+                    await loadApplications();
+                } catch (err) {
+                    const statusEl = card.querySelector('[data-fix-status]');
+                    statusEl.textContent = 'Network error submitting fix';
+                    statusEl.className = 'text-xs text-red-600';
+                }
+            });
+
+            // Handle expand capacity action
+            fixContainer && fixContainer.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-expand-capacity]');
+                if (!btn) return;
+                const card = btn.closest('[data-fix-card]');
+                const countEl = card.querySelector('[data-expand-count]');
+                const statusEl = card.querySelector('[data-expand-status]');
+                const schId = Number((card.querySelector('[data-fix="scholarship_id"]')||{}).value || 0);
+                const add = Number((countEl && countEl.value) || 0);
+                if (!schId || !add || add < 1) {
+                    if (statusEl) { statusEl.textContent = 'Enter a valid increment'; statusEl.className = 'text-xs text-red-600'; }
+                    return;
+                }
+                try {
+                    const resp = await fetch(`/api/admin-dashboard/scholarships/${schId}/expand-capacity`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ add })
+                    });
+                    const res = await handleApiResponse(resp);
+                    if (statusEl) { statusEl.textContent = `Capacity updated to ${res.scholarship && res.scholarship.number_of_awards}`; statusEl.className = 'text-xs text-green-600'; }
+                } catch (err2) {
+                    if (statusEl) { statusEl.textContent = 'Failed to expand capacity'; statusEl.className = 'text-xs text-red-600'; }
+                }
+            });
+
+            if (applyFixesBtn) applyFixesBtn.addEventListener('click', async () => {
+                // Build a small CSV from the edited rows and re-run upload with the same selected scholarship override
+                const s = window.__lastBulkSummary;
+                if (!s || !Array.isArray(s.rows)) return;
+                const problems = s.rows.filter(r => r.status === 'error');
+                const groups = Array.from(fixContainer.querySelectorAll('[data-fix-row-index]')).map(hidden => hidden.closest('div'));
+                const header = ['full_name','email_address','scholarship_id','date_of_birth','academic_level','gpa_academic_performance','address'];
+                const escape = v => {
+                    const s = String(v ?? '');
+                    return (s.includes(',')||s.includes('"')||s.includes('\n')) ? '"'+s.replace(/"/g,'""')+'"' : s;
+                };
+                const csvLines = [header.join(',')];
+                groups.forEach(g => {
+                    const val = key => (g.querySelector(`[data-fix="${key}"]`)||{}).value || '';
+                    csvLines.push(header.map(k => escape(val(k))).join(','));
+                });
+                const blob = new Blob([csvLines.join('\n')], { type: 'text/csv' });
+                const fd = new FormData();
+                fd.append('file', blob, 'fixes.csv');
+                const selectedScholarshipId = (document.getElementById('bulkScholarshipSelect')||{}).value || '';
+                if (selectedScholarshipId) fd.append('scholarship_id', selectedScholarshipId);
+                try {
+                    const resp = await fetch('/api/admin-dashboard/applications/bulk-upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: fd
+                    });
+                    const result = await handleApiResponse(resp);
+                    showNotification('Fixes processed', 'success');
+                    closeDrawer();
+                    window.__lastBulkSummary = result && result.summary ? result.summary : null;
+                    await loadApplications();
+                } catch (e) {
+                    showNotification('Failed to process fixes', 'error');
+                }
+            });
+
+            // Remove duplicates action
+            const removeDuplicateRowsBtn2 = document.getElementById('removeDuplicateRowsBtn');
+            if (removeDuplicateRowsBtn2) removeDuplicateRowsBtn2.addEventListener('click', async () => {
+                const s = window.__lastBulkSummary;
+                if (!s || !Array.isArray(s.rows)) return;
+                const dupItems = s.rows.filter(r => r.status === 'duplicate' && r.email && r.scholarship_id)
+                    .map(r => ({ email_address: r.email, scholarship_id: r.scholarship_id }));
+                if (!dupItems.length) {
+                    showNotification('No duplicates to remove', 'error');
+                    return;
+                }
+                try {
+                    const resp = await fetch('/api/admin-dashboard/applications/bulk-delete-duplicates', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ items: dupItems })
+                    });
+                    const res = await handleApiResponse(resp);
+                    showNotification(`Removed ${res.deleted||0} duplicate entries`, 'success');
+                    await loadApplications();
+                } catch (e) {
+                    showNotification('Failed to remove duplicates', 'error');
+                }
+            });
+
+            // Export problem rows (duplicates + errors)
+            const exportProblemRowsBtn2 = document.getElementById('exportProblemRowsBtn');
+            function toCsvRow(arr){
+                return arr.map(v => {
+                    const s = String(v ?? '');
+                    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                        return '"' + s.replace(/"/g,'""') + '"';
+                    }
+                    return s;
+                }).join(',');
+            }
+            if (exportProblemRowsBtn2) exportProblemRowsBtn2.addEventListener('click', () => {
+                const s = window.__lastBulkSummary;
+                if (!s || !Array.isArray(s.rows)) return;
+                const rows = s.rows.filter(r => r.status === 'duplicate' || r.status === 'error');
+                const header = ['row','status','email','scholarship_id','message'];
+                const data = [header.join(',')].concat(rows.map(r => toCsvRow([r.row||'', r.status||'', r.email||'', r.scholarship_id||'', r.message||''])));
+                const blob = new Blob([data.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bulk_upload_problems.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
             // Status modal event listeners
             const statusUpdateForm = document.getElementById('statusUpdateForm');
             const closeStatusModal = document.getElementById('closeStatusModal');
@@ -1012,10 +1759,26 @@
         function filterApplications() {
             const searchTerm = searchInput.value.toLowerCase();
             filteredApplications = applications.filter(app => 
-                Object.values(app).some(val => 
-                    String(val).toLowerCase().includes(searchTerm)
-                )
+                Object.values(app).some(val => String(val).toLowerCase().includes(searchTerm))
             );
+            if (minScoreFilter) {
+                const threshold = parseInt(minScoreFilter, 10);
+                filteredApplications = filteredApplications.filter(a => typeof a.suitability_percent === 'number' && a.suitability_percent >= threshold);
+            }
+            // Apply sorting
+            filteredApplications.sort((a,b)=>{
+                const sa = typeof a.suitability_percent === 'number' ? a.suitability_percent : -1;
+                const sb = typeof b.suitability_percent === 'number' ? b.suitability_percent : -1;
+                const da = a.applicationDate ? new Date(a.applicationDate).getTime() : 0;
+                const db = b.applicationDate ? new Date(b.applicationDate).getTime() : 0;
+                switch (sortMode) {
+                    case 'score_desc': return sb - sa;
+                    case 'score_asc': return sa - sb;
+                    case 'date_asc': return da - db;
+                    case 'date_desc': return db - da;
+                    default: return 0;
+                }
+            });
             currentPage = 1;
             updateApplicationsTable();
             updatePagination();
@@ -1032,6 +1795,7 @@
                 const university = app.preferredUniversity || app.scholarshipTitle || 'N/A';
                 const country = app.country || '';
                 const appDate = app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A';
+                const score = (typeof app.suitability_percent === 'number') ? app.suitability_percent : '';
 
                 return `
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -1040,6 +1804,9 @@
                                 <div class="text-sm font-medium text-gray-900 dark:text-white">${app.fullName}</div>
                                 <div class="text-sm text-gray-500 dark:text-gray-400">${app.emailAddress}</div>
                             </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm ${score>=70? 'text-green-600 dark:text-green-400' : score>=40? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'}">${score!=='' ? score + '%' : ''}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900 dark:text-white">${university}</div>
@@ -1055,7 +1822,8 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button onclick="viewApplication(${app.applicationId || 0})" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3" title="View"><i class="fas fa-eye"></i></button>
-                            <button onclick="updateApplicationStatus(${app.applicationId || 0})" class="text-warning-600 hover:text-warning-900 dark:text-warning-400 dark:hover:text-warning-300 mr-3" title="Update Status"><i class="fas fa-edit"></i></button>
+                            <button onclick="openEditApplicant(${app.applicationId || 0})" class="text-warning-600 hover:text-warning-900 dark:text-warning-400 dark:hover:text-warning-300 mr-3" title="Edit Applicant"><i class="fas fa-edit"></i></button>
+                            <button onclick="updateApplicationStatus(${app.applicationId || 0})" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 mr-3" title="Change Status"><i class="fas fa-exchange-alt"></i></button>
                             <button onclick="sendMessageToUser(${app.applicationId || 0}, '${app.emailAddress || ''}', '${app.fullName || ''}')" class="text-info-600 hover:text-info-900 dark:text-info-400 dark:hover:text-info-300 mr-3" title="Message"><i class="fas fa-envelope"></i></button>
                             <button onclick="deleteApplication(${app.applicationId || 0})" class="text-danger-600 hover:text-danger-900 dark:text-danger-400 dark:hover:text-danger-300" title="Delete"><i class="fas fa-trash"></i></button>
                         </td>
@@ -1186,13 +1954,73 @@
             loadingIndicator.classList.toggle('hidden', !isLoading);
         }
 
+        async function exportApplicationsWithScores() {
+            try {
+                const token = localStorage.getItem('token');
+                const perPage = 200;
+                let page = 1;
+                let all = [];
+                while (true) {
+                    const resp = await fetch(`/api/admin-dashboard/applications?page=${page}&limit=${perPage}`, {
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                    });
+                    const payload = await handleApiResponse(resp);
+                    const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+                    if (!items.length) break;
+                    all = all.concat(items);
+                    if (items.length < perPage) break;
+                    page += 1;
+                }
+                if (!all.length) { showNotification('No applications to export', 'info'); return; }
+                const rows = [
+                    ['Applicant Name','Email','Scholarship','Status','Applied Date','Match %']
+                ];
+                all.forEach(a=>{
+                    const date = a.created_at ? new Date(a.created_at).toISOString().split('T')[0] : '';
+                    const score = (typeof a.suitability_percent === 'number') ? a.suitability_percent : '';
+                    rows.push([a.applicant_name||'', a.applicant_email||'', a.scholarship_title||'', a.status||'', date, score]);
+                });
+                const csv = rows.map(r=>r.map(v=>{
+                    const s = String(v ?? '');
+                    return (s.includes(',')||s.includes('"')||s.includes('\n')) ? '"'+s.replace(/"/g,'""')+'"' : s;
+                }).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `applications_with_match_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                showNotification('Failed to export: ' + (e.message||'Unknown error'), 'error');
+            }
+        }
+
         function showModal() { applicationModal.classList.add('show'); }
         function hideModal() { applicationModal.classList.remove('show'); }
 
+
+
         function showCreateModal() {
+            if (createApplicationModal) {
+                // First, show the modal
+                createApplicationModal.classList.add('show');
+                // Force visibility with inline styles as backup
+                createApplicationModal.style.opacity = '1';
+                createApplicationModal.style.visibility = 'visible';
+                createApplicationModal.style.display = 'flex';
+                createApplicationModal.style.zIndex = '9999';
+                
+                // Then, after a short delay, set up the form steps
+                setTimeout(() => {
             currentStepIndex = 0;
             showStep(0);
-            createApplicationModal.classList.add('show');
+                }, 100);
+            } else {
+                console.error('createApplicationModal element not found!');
+            }
         }
         function hideCreateModal() { createApplicationModal.classList.remove('show'); }
 
@@ -1226,8 +2054,15 @@
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     body: formData
                 });
-                await handleApiResponse(response);
+                const apiResult = await handleApiResponse(response);
+                // Prefer showing suitability percent to inform likelihood
+                const data = apiResult && typeof apiResult === 'object' && 'data' in apiResult ? apiResult.data : apiResult;
+                const score = data && typeof data.suitability_percent === 'number' ? data.suitability_percent : null;
+                if (score !== null && !applicationId) {
+                    showNotification(`Application created. Estimated match score: ${score}%`, 'success');
+                } else {
                 showNotification(`Application ${applicationId ? 'updated' : 'created'} successfully`, 'success');
+                }
                 hideCreateModal();
                 loadApplications();
             } catch (error) {
@@ -1256,13 +2091,27 @@
                     universitySelect.appendChild(option);
                 });
 
-                function syncFields() {
+                async function syncFields() {
                     const selectedOption = universitySelect.options[universitySelect.selectedIndex];
                     if (selectedOption && selectedOption.value) {
                         scholarshipIdInput.value = selectedOption.dataset.scholarshipId;
                         // We no longer auto-fill the country. It's an independent selection.
                     } else {
                         scholarshipIdInput.value = '';
+                    }
+
+                    // If email present, check duplicate for this scholarship
+                    const emailEl = document.getElementById('emailAddress');
+                    const email = emailEl?.value?.trim();
+                    const id = scholarshipIdInput.value;
+                    if (email && id) {
+                        try {
+                            const resp = await fetch(`/api/scholarships/${encodeURIComponent(id)}/has-applied?email=${encodeURIComponent(email)}`);
+                            const data = await resp.json();
+                            if (data && data.hasApplied) {
+                                showNotification('This applicant already applied for the selected scholarship.', 'error');
+                            }
+                        } catch {}
                     }
                 }
                 universitySelect.addEventListener('change', syncFields);
@@ -1271,6 +2120,23 @@
                 showNotification('Failed to load scholarships', 'error');
             }
         }
+
+        // Also check duplicate when admin enters email, if scholarship selected
+        (function(){
+            const emailEl = document.getElementById('emailAddress');
+            emailEl?.addEventListener('blur', async function() {
+                const email = emailEl.value.trim();
+                const id = document.getElementById('scholarship_id')?.value?.trim();
+                if (!email || !id) return;
+                try {
+                    const resp = await fetch(`/api/scholarships/${encodeURIComponent(id)}/has-applied?email=${encodeURIComponent(email)}`);
+                    const data = await resp.json();
+                    if (data && data.hasApplied) {
+                        showNotification('This applicant already applied for the selected scholarship.', 'error');
+                    }
+                } catch {}
+            });
+        })();
 
         async function updateApplication(applicationId) {
             try {
@@ -1389,7 +2255,8 @@
                 const response = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-                const appData = await handleApiResponse(response);
+                const apiResult = await handleApiResponse(response);
+                const appData = apiResult && typeof apiResult === 'object' && 'data' in apiResult ? apiResult.data : apiResult;
                 if (!appData) return;
 
                 // Convert to camelCase for consistent field access
@@ -1405,6 +2272,199 @@
             } catch (error) {
                 console.error('Error loading application for status update:', error);
                 showNotification('Unable to load application details.', 'error');
+            }
+        }
+
+        // Edit Applicant Modal Logic
+        function bindEditApplicantModal() {
+            const modal = document.getElementById('editApplicantModal');
+            const closeBtn = document.getElementById('closeEditApplicant');
+            const cancelBtn = document.getElementById('cancelEditApplicant');
+            function close() { modal.classList.remove('show'); }
+            if (closeBtn) closeBtn.onclick = close;
+            if (cancelBtn) cancelBtn.onclick = close;
+            const form = document.getElementById('editApplicantForm');
+            if (form && !form.dataset.bound) {
+                form.dataset.bound = '1';
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    try {
+                        const id = document.getElementById('editApplicationId').value;
+                        const payload = {
+                            full_name: document.getElementById('eaFullName').value.trim(),
+                            email_address: document.getElementById('eaEmail').value.trim(),
+                            phone_number: document.getElementById('eaPhone').value.trim(),
+                            date_of_birth: document.getElementById('eaDob').value,
+                            gender: document.getElementById('eaGender').value,
+                            address: document.getElementById('eaAddress').value.trim(),
+                            preferred_university: document.getElementById('eaUniversity').value.trim(),
+                            country: document.getElementById('eaCountry').value.trim(),
+                            academic_level: document.getElementById('eaAcademicLevel').value.trim(),
+                            intended_major: document.getElementById('eaIntendedMajor').value.trim(),
+                            gpa_academic_performance: document.getElementById('eaGpa').value.trim(),
+                            extracurricular_activities: document.getElementById('eaExtracurriculars').value,
+                            parent_guardian_name: document.getElementById('eaParentName').value.trim(),
+                            parent_guardian_contact: document.getElementById('eaParentContact').value.trim(),
+                            financial_need_statement: document.getElementById('eaFinancialNeed').value,
+                            how_heard_about: document.getElementById('eaHowHeard').value.trim(),
+                            motivation_statement: document.getElementById('eaMotivation').value,
+                            terms_agreed: document.getElementById('eaTerms').checked ? 1 : 0
+                        };
+                        const resp = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(id)}/details`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        await handleApiResponse(resp);
+                        showNotification('Applicant updated successfully.', 'success');
+                        close();
+                        await loadApplications(currentPage);
+                    } catch (err) {
+                        console.error('save edit applicant error:', err);
+                        showNotification(err.message || 'Failed to save changes', 'error');
+                    }
+                });
+            }
+        }
+
+        async function openEditApplicant(applicationId) {
+            try {
+                const resp = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const apiResult = await handleApiResponse(resp);
+                const raw = apiResult && typeof apiResult === 'object' && 'data' in apiResult ? apiResult.data : apiResult;
+                const app = toCamelCase(raw || {});
+                if (!raw || Object.keys(raw || {}).length === 0) {
+                    showNotification('No existing data found for this application.', 'warning');
+                }
+                document.getElementById('editApplicationId').value = applicationId;
+
+                const fieldMap = [
+                    { id: 'eaFullName', keys: ['fullName', 'full_name'] },
+                    { id: 'eaEmail', keys: ['emailAddress', 'email_address'] },
+                    { id: 'eaPhone', keys: ['phoneNumber', 'phone_number'] },
+                    { id: 'eaDob', keys: ['dateOfBirth', 'date_of_birth'], map: (v)=> (v ? String(v).slice(0,10) : '') },
+                    { id: 'eaGender', keys: ['gender'] },
+                    { id: 'eaAddress', keys: ['address'] },
+                    { id: 'eaUniversity', keys: ['preferredUniversity', 'preferred_university'] },
+                    { id: 'eaCountry', keys: ['country'] },
+                    { id: 'eaAcademicLevel', keys: ['academicLevel', 'academic_level'] },
+                    { id: 'eaIntendedMajor', keys: ['intendedMajor', 'intended_major'] },
+                    { id: 'eaGpa', keys: ['gpaAcademicPerformance', 'gpa_academic_performance'] },
+                    { id: 'eaExtracurriculars', keys: ['extracurricularActivities', 'extracurricular_activities'] },
+                    { id: 'eaParentName', keys: ['parentGuardianName', 'parent_guardian_name'] },
+                    { id: 'eaParentContact', keys: ['parentGuardianContact', 'parent_guardian_contact'] },
+                    { id: 'eaFinancialNeed', keys: ['financialNeedStatement', 'financial_need_statement'] },
+                    { id: 'eaHowHeard', keys: ['howHeardAbout', 'how_heard_about'] },
+                    { id: 'eaMotivation', keys: ['motivationStatement', 'motivation_statement'] }
+                ];
+
+                const setValue = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (el.type === 'checkbox') {
+                        el.checked = !!val;
+                    } else {
+                        const finalVal = (val === undefined || val === null) ? '' : String(val);
+                        el.value = finalVal;
+                        // also reflect the existing value in placeholder for visual confirmation
+                        if ('placeholder' in el) el.placeholder = finalVal;
+                    }
+                };
+
+                const getFirst = (keys) => {
+                    for (const k of keys) {
+                        if (k in app && app[k] !== undefined && app[k] !== null && String(app[k]).length) return app[k];
+                        if (k in raw && raw[k] !== undefined && raw[k] !== null && String(raw[k]).length) return raw[k];
+                    }
+                    return '';
+                };
+
+                console.debug('edit modal payload (raw):', raw);
+                console.debug('edit modal payload (camel):', app);
+
+                fieldMap.forEach(({id, keys, map}) => {
+                    const rawVal = getFirst(keys);
+                    setValue(id, map ? map(rawVal) : rawVal);
+                });
+                setValue('eaTerms', !!(app.termsAgreed ?? raw.terms_agreed));
+
+                // Extra-guarantee population for critical fields requested
+                const ensure = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (!el.value) el.value = v ?? '';
+                    if ('placeholder' in el && !el.placeholder) el.placeholder = el.value;
+                };
+                ensure('eaAddress', app.address ?? raw.address);
+                ensure('eaUniversity', app.preferredUniversity ?? raw.preferred_university);
+                ensure('eaCountry', app.country ?? raw.country);
+                ensure('eaIntendedMajor', app.intendedMajor ?? raw.intended_major);
+                ensure('eaGpa', app.gpaAcademicPerformance ?? raw.gpa_academic_performance);
+                ensure('eaExtracurriculars', app.extracurricularActivities ?? raw.extracurricular_activities);
+                ensure('eaParentName', app.parentGuardianName ?? raw.parent_guardian_name);
+                ensure('eaParentContact', app.parentGuardianContact ?? raw.parent_guardian_contact);
+                ensure('eaFinancialNeed', app.financialNeedStatement ?? raw.financial_need_statement);
+                ensure('eaHowHeard', app.howHeardAbout ?? raw.how_heard_about);
+                ensure('eaMotivation', app.motivationStatement ?? raw.motivation_statement);
+
+                bindEditApplicantModal();
+                document.getElementById('editApplicantModal').classList.add('show');
+            } catch (err) {
+                console.error('openEditApplicant error:', err);
+                showNotification('Unable to load applicant details.', 'error');
+            }
+        }
+
+        // Quick Edit Applicant (inline prompts for now)
+        async function editApplicant(applicationId, currentName = '', currentEmail = '') {
+            try {
+                // Fetch latest row to prefill more fields
+                const resp = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const apiResult = await handleApiResponse(resp);
+                const raw = apiResult && typeof apiResult === 'object' && 'data' in apiResult ? apiResult.data : apiResult;
+                const app = toCamelCase(raw || {});
+
+                const name = prompt('Full name:', currentName || app.fullName || '');
+                if (name === null) return; // canceled
+                const email = prompt('Email address:', currentEmail || app.emailAddress || '');
+                if (email === null) return;
+                const phone = prompt('Phone number:', app.phoneNumber || '');
+                if (phone === null) return;
+                const dob = prompt('Date of birth (YYYY-MM-DD):', app.dateOfBirth || '');
+                if (dob === null) return;
+                const university = prompt('University:', app.preferredUniversity || '');
+                if (university === null) return;
+                const country = prompt('Country:', app.country || '');
+                if (country === null) return;
+
+                const res = await fetch(`/api/admin-dashboard/applications/${encodeURIComponent(applicationId)}/details`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        full_name: name,
+                        email_address: email,
+                        phone_number: phone,
+                        date_of_birth: dob,
+                        preferred_university: university,
+                        country: country
+                    })
+                });
+                await handleApiResponse(res);
+                showNotification('Applicant details updated.', 'success');
+                await loadApplications(currentPage);
+            } catch (err) {
+                console.error('editApplicant error:', err);
+                showNotification(err.message || 'Failed to update applicant', 'error');
             }
         }
 
@@ -1462,6 +2522,13 @@
             }
         }
 
+        let sortMode = '';
+
+        function setupEventListeners() {
+            // ... existing code ...
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) sortSelect.addEventListener('change', (e)=>{ sortMode = e.target.value; filterApplications(); });
+        }
 
     </script>
 </body>

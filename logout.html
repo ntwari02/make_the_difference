@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logging Out - ScholarshipHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .fade-out {
+            animation: fadeOut 2s ease-in-out forwards;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <div class="mb-8">
+            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-sign-out-alt text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Logging Out</h1>
+            <p class="text-gray-600 dark:text-gray-400">Please wait while we securely log you out...</p>
+        </div>
+        
+        <div class="flex justify-center mb-6">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+        
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+            <p>Clearing your session data...</p>
+            <p class="mt-1">Redirecting to login page...</p>
+        </div>
+    </div>
+
+    <script>
+        // Logout process
+        function performLogout() {
+            console.log('🔄 Starting logout process...');
+            
+            // Clear all authentication data
+            const itemsToRemove = [
+                'token',
+                'user',
+                'adminToken',
+                'debugInfo',
+                'color-theme',
+                'adminShowWelcome'
+            ];
+            
+            itemsToRemove.forEach(item => {
+                if (localStorage.getItem(item)) {
+                    localStorage.removeItem(item);
+                    console.log(`🧹 Removed: ${item}`);
+                }
+            });
+            
+            // Clear session storage
+            sessionStorage.clear();
+            console.log('🧹 Cleared session storage');
+            
+            // Optional: Call logout API if needed
+            const token = localStorage.getItem('token');
+            if (token) {
+                fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(error => {
+                    console.log('Logout API call failed (this is normal):', error.message);
+                });
+            }
+            
+            console.log('✅ Logout completed successfully');
+            
+            // Show success message briefly
+            setTimeout(() => {
+                document.querySelector('h1').textContent = 'Logged Out Successfully';
+                document.querySelector('p').textContent = 'You have been securely logged out.';
+                document.querySelector('.animate-spin').classList.add('hidden');
+                
+                // Redirect to login page after a short delay
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1500);
+            }, 1000);
+        }
+        
+        // Start logout process when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            performLogout();
+        });
+        
+        // Fallback redirect if something goes wrong
+        setTimeout(() => {
+            if (window.location.pathname.includes('logout.html')) {
+                console.log('⚠️ Fallback redirect triggered');
+                window.location.href = '/login.html';
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -23,6 +23,10 @@ const upload = multer({ storage });
 // GET current settings
 router.get('/', bypassAuth, async (req, res) => {
     try {
+        // Ensure maintenance_pages column exists
+        try {
+            await pool.query("ALTER TABLE general_settings ADD COLUMN maintenance_pages JSON NULL AFTER maintenance_mode");
+        } catch (e) { /* ignore if exists */ }
         const [rows] = await pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
         res.json(rows[0] || {});
     } catch (err) {
@@ -36,7 +40,7 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
         const {
             siteTitle, contactEmail, siteDescription, homepageContent,
             homepageBanner, maintenanceMode,
-            facebookLink, twitterLink, instagramLink, services
+            facebookLink, twitterLink, instagramLink, services, maintenancePages
         } = req.body;
 
         // Get the latest settings row
@@ -54,18 +58,20 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
         }
 
         const servicesJson = JSON.stringify(JSON.parse(services || '[]'));
+        let maintenancePagesJson = null;
+        try { maintenancePagesJson = JSON.stringify(JSON.parse(maintenancePages || '[]')); } catch { maintenancePagesJson = latest?.maintenance_pages || null; }
 
         if (latest) {
             // Update existing row
             const sql = `UPDATE general_settings SET
                 site_title=?, contact_email=?, site_description=?, homepage_content=?,
-                homepage_banner=?, maintenance_mode=?,
+                homepage_banner=?, maintenance_mode=?, maintenance_pages=?,
                 facebook_link=?, twitter_link=?, instagram_link=?,
                 services=?, logo_url=?, favicon_url=?
                 WHERE id=?`;
             const values = [
                 siteTitle, contactEmail, siteDescription, homepageContent,
-                homepageBanner, maintenanceMode,
+                homepageBanner, maintenanceMode, maintenancePagesJson,
                 facebookLink, twitterLink, instagramLink,
                 servicesJson, logo, favicon, latest.id
             ];
@@ -74,13 +80,13 @@ router.post('/', bypassAuth, upload.fields([{ name: 'logo' }, { name: 'favicon' 
             // Insert new row
             const sql = `INSERT INTO general_settings (
                 site_title, contact_email, site_description, homepage_content,
-                homepage_banner, maintenance_mode,
+                homepage_banner, maintenance_mode, maintenance_pages,
                 facebook_link, twitter_link, instagram_link,
                 services, logo_url, favicon_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             const values = [
                 siteTitle, contactEmail, siteDescription, homepageContent,
-                homepageBanner, maintenanceMode,
+                homepageBanner, maintenanceMode, maintenancePagesJson,
                 facebookLink, twitterLink, instagramLink,
                 servicesJson, logo, favicon
             ];

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Login Test Page</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email:</label>
+                    <input type="email" id="email" value="didas@gmail.com" class="w-full px-3 py-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password:</label>
+                    <input type="password" id="password" value="12345678" class="w-full px-3 py-2 border rounded-md">
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                    Test Login
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Current User Data</h2>
+            <div id="userData" class="text-sm font-mono bg-gray-100 p-4 rounded">
+                No user data
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Actions</h2>
+            <div class="space-y-2">
+                <button onclick="checkUserData()" class="block w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
+                    Check User Data
+                </button>
+                <button onclick="clearUserData()" class="block w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+                    Clear User Data
+                </button>
+                <button onclick="testAdminAccount()" class="block w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600">
+                    Test Admin Account API
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            console.log('🔐 Testing login for:', email);
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                console.log('📡 Login response:', data);
+
+                if (response.ok) {
+                    // Store user data
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    console.log('✅ Login successful!');
+                    console.log('👤 User data stored:', data.user);
+                    
+                    // Check what's in localStorage now
+                    checkUserData();
+                } else {
+                    console.log('❌ Login failed:', data.message);
+                    alert('Login failed: ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+                alert('Network error: ' + error.message);
+            }
+        });
+
+        function checkUserData() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            const userDataDiv = document.getElementById('userData');
+            userDataDiv.innerHTML = `
+                <strong>Token:</strong> ${token ? 'Present' : 'Missing'}<br>
+                <strong>User Data:</strong> ${user ? user : 'Missing'}<br>
+                <strong>Parsed User:</strong> ${user ? JSON.stringify(JSON.parse(user), null, 2) : 'N/A'}
+            `;
+        }
+
+        function clearUserData() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkUserData();
+        }
+
+        async function testAdminAccount() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('No token found. Please login first.');
+                return;
+            }
+
+            try {
+                console.log('🧪 Testing admin account API...');
+                const response = await fetch('/api/admin/account', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                console.log('📡 Admin account response:', data);
+                
+                if (response.ok) {
+                    alert('Admin account API response: ' + JSON.stringify(data, null, 2));
+                } else {
+                    alert('Admin account API failed: ' + data.error || data.message);
+                }
+            } catch (error) {
+                console.error('❌ Admin account API error:', error);
+                alert('Admin account API error: ' + error.message);
+            }
+        }
+
+        // Check user data on page load
+        checkUserData();
+    </script>
+</body>
+</html>

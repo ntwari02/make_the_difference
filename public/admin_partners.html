@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Partner Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/admin-layout.css">
+  <script src="js/include-admin-sidebar.js" defer></script>
+  <script src="js/include-admin-header.js" defer></script>
+</head>
+<body class="admin-layout bg-white text-gray-900" data-page="partners">
+  <div id="admin-sidebar-container"></div>
+  <div id="admin-header-container" data-page-title="Partner Management"></div>
+
+  <main class="admin-main-content w-full bg-white">
+    <div class="admin-content-container p-6">
+      <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div class="text-center">
+            <div class="text-sm text-gray-500">Total Partners</div>
+            <div id="ptTotal" class="text-3xl font-bold">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-500">Pending</div>
+            <div id="ptPending" class="text-3xl font-bold text-yellow-600">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-500">Approved</div>
+            <div id="ptApproved" class="text-3xl font-bold text-green-600">0</div>
+          </div>
+        </div>
+        <div class="flex gap-3 w-full sm:w-auto">
+          <input id="ptSearch" placeholder="Search partners..." class="w-full sm:w-64 px-3 py-2 rounded border border-gray-300 bg-gray-900 text-white placeholder-white focus:bg-gray-900 focus:text-white focus:placeholder-white" />
+          <button id="ptAddBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow flex items-center gap-2 whitespace-nowrap">
+            <i class="fas fa-user-plus"></i>
+            <span>Add Partner</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow divide-y divide-gray-200">
+        <div id="partnersList" class="space-y-3"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="ptModal" class="fixed inset-0 bg-black/50 hidden z-50">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+        <div class="p-4 border-b border-gray-200">
+          <h3 id="ptModalTitle" class="text-lg font-semibold text-gray-900">Add Partner</h3>
+        </div>
+        <form id="ptForm" class="p-4 space-y-4 overflow-y-auto max-h-[70vh]">
+          <input type="hidden" id="ptId" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Name</label>
+              <input id="ptName" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" required />
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Email</label>
+              <input id="ptEmail" type="email" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Organization</label>
+              <input id="ptOrg" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Phone</label>
+              <input id="ptPhone" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-gray-700">Partner Type</label>
+              <select id="ptType" class="w-full px-3 py-2 rounded border border-gray-300 bg-white">
+                <option value="corporate">Corporate</option>
+                <option value="academic">Academic</option>
+                <option value="government">Government</option>
+                <option value="nonprofit">Non-Profit</option>
+                <option value="individual">Individual</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm mb-1 text-gray-700">Message</label>
+            <textarea id="ptMessage" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 bg-white"></textarea>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="text-sm text-gray-700">Status</label>
+            <select id="ptStatus" class="px-3 py-2 rounded border border-gray-300 bg-white">
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          
+          <!-- Partner Profile Image Upload -->
+          <div class="border-t pt-4">
+            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+              <i class="fas fa-image mr-2 text-blue-500"></i>Partner Profile Image
+            </h4>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm mb-1 text-gray-700">Image File</label>
+                <input type="file" id="ptImageFile" accept="image/*" class="sr-only" />
+                <div id="ptImageDrop" class="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded bg-white text-gray-600 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition">
+                  <div class="text-sm">Drag & drop image here or <span class="underline">click to select</span></div>
+                  <div class="mt-2 text-xs text-gray-400">JPG, PNG, GIF up to 8MB</div>
+                </div>
+                <div class="mt-3">
+                  <img id="ptImagePreview" alt="preview" class="hidden w-32 h-32 object-cover rounded border" />
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <button type="button" id="ptAddImageBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2">
+                  <i class="fas fa-upload"></i>
+                  Upload Profile Image
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" id="ptCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Cancel</button>
+            <button type="submit" id="ptSaveBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow flex items-center gap-2">
+              <i id="ptSaveIcon" class="fas fa-save"></i>
+              <span id="ptSaveText">Save</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin-partners.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof includeAdminSidebar === 'function') includeAdminSidebar();
+      if (typeof includeAdminHeader === 'function') includeAdminHeader();
+      const addImageBtn = document.getElementById('ptAddImageBtn');
+      if (addImageBtn) addImageBtn.addEventListener('click', handleAddPartnerImage);
+      const fileInput = document.getElementById('ptImageFile');
+      const previewEl = document.getElementById('ptImagePreview');
+      const dropEl = document.getElementById('ptImageDrop');
+      const setPreview = (f) => {
+        if (!f || !f.type || !f.type.startsWith('image/')) { previewEl.classList.add('hidden'); previewEl.removeAttribute('src'); return; }
+        const url = URL.createObjectURL(f); previewEl.src = url; previewEl.classList.remove('hidden');
+      };
+      if (fileInput && previewEl) {
+        fileInput.addEventListener('change', () => setPreview(fileInput.files && fileInput.files[0]));
+      }
+      if (dropEl) {
+        dropEl.addEventListener('click', () => fileInput && fileInput.click());
+        dropEl.addEventListener('dragover', (e) => { e.preventDefault(); dropEl.classList.add('ring','ring-blue-400'); });
+        dropEl.addEventListener('dragleave', () => dropEl.classList.remove('ring','ring-blue-400'));
+        dropEl.addEventListener('drop', (e) => {
+          e.preventDefault(); dropEl.classList.remove('ring','ring-blue-400');
+          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (!f) return;
+          if (!f.type.startsWith('image/')) { alert('Please drop an image file'); return; }
+          try {
+            const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+          } catch {}
+          setPreview(f);
+        });
+      }
+      refreshPartnerImagesList();
+    });
+
+    async function handleAddPartnerImage() {
+      const partnerId = document.getElementById('ptId').value;
+      const file = document.getElementById('ptImageFile').files[0];
+      if (!partnerId) return alert('Save the partner first, then upload the profile image.');
+      if (!file) return alert('Please select an image file.');
+      if (!file.type || !file.type.startsWith('image/')) return alert('Please select an image file.');
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return alert('You must be logged in as admin to upload images.');
+        const fd = new FormData();
+        fd.append('image', file);
+        const resp = await fetch(`/api/partners/${partnerId}/profile-picture`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd });
+        const result = await resp.json().catch(()=>({}));
+        if (!resp.ok || result.success === false) throw new Error(result.message || 'Failed to upload image');
+        alert('Profile image uploaded successfully');
+      } catch (e) {
+        console.error('Upload image error:', e);
+        alert(e.message || 'Failed to upload image');
+      }
+    }
+
+    function clearPartnerImageForm(){ document.getElementById('ptImageFile').value = ''; }
+
+    async function refreshPartnerImagesList(){
+      const list = document.getElementById('ptImagesList');
+      if (!list) return;
+      list.innerHTML = '<div class="text-sm text-gray-500">Loading images...</div>';
+      try{
+        const token = localStorage.getItem('token');
+        let res = await fetch('/api/partnership-images/all', { headers: token? { 'Authorization': `Bearer ${token}` } : {} });
+        if (res.status === 401 || res.status === 403) {
+          // Fallback to public endpoint
+          res = await fetch('/api/partnership-images');
+        }
+        const data = await res.json().catch(()=>({}));
+        const images = Array.isArray(data) ? data : (data.images || data.data || []);
+        if (!images || images.length === 0){
+          list.innerHTML = '<div class="text-sm text-gray-500">No images uploaded yet.</div>';
+          return;
+        }
+        const norm = p => {
+          if (!p) return '';
+          let s = String(p).replace(/\\\\/g, '/');
+          if (!s.startsWith('/')) s = '/' + s;
+          return s;
+        };
+        list.innerHTML = images.map(img => `
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <img src="${norm(img.image_path)}" class="w-12 h-12 object-cover rounded border" onerror="this.style.display='none'"/>
+              <div>
+                <div class="font-medium">${img.title || 'Image'}</div>
+                <div class="text-xs text-gray-500">${img.partner_type || ''}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="${norm(img.image_path)}" target="_blank" class="text-blue-600 hover:underline">Open</a>
+              <button class="text-red-600 hover:underline" onclick="deletePartnerImage(${img.id})">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }catch(e){
+        list.innerHTML = '<div class="text-sm text-red-600">Failed to load images</div>';
+      }
+    }
+
+    async function deletePartnerImage(id){
+      if (!confirm('Delete this image?')) return;
+      try{
+        const token = localStorage.getItem('token');
+        if (!token) return alert('Not authorized');
+        const res = await fetch(`/api/partnership-images/${id}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` }});
+        const j = await res.json().catch(()=>({}));
+        if (!res.ok || j.success === false) throw new Error(j.error || 'Delete failed');
+        await refreshPartnerImagesList();
+      }catch(e){ alert(e.message || 'Delete failed'); }
+    }
+
+    // Upload partner profile picture to partner record
+    async function uploadPartnerProfilePicture(partnerId){
+      try{
+        const file = document.getElementById('ptImageFile').files[0];
+        if (!file) return alert('Select an image first.');
+        if (!file.type.startsWith('image/')) return alert('Please select an image file.');
+        const token = localStorage.getItem('token');
+        if (!token) return alert('Not authorized');
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch(`/api/partners/${partnerId}/profile-picture`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd });
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok || data.success === false) throw new Error(data.message || 'Upload failed');
+        alert('Profile picture updated');
+      }catch(e){ alert(e.message || 'Failed to update profile picture'); }
+    }
+  </script>
+</body>
+</html>
+
+

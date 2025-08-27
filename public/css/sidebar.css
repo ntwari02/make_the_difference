@@ -1,23 +1,14 @@
 /* Admin Sidebar CSS */
 
-/* Sidebar base styles */
+/* Sidebar base styles (no collapse variants) */
 .sidebar {
-    width: 280px;
+    width: 100px;
     transition: all 0.3s ease;
     z-index: 30;
 }
 
-.sidebar.collapsed {
-    width: 80px;
-}
-
 .sidebar-item-text {
     transition: opacity 0.3s ease;
-}
-
-.sidebar.collapsed .sidebar-item-text {
-    opacity: 0;
-    display: none;
 }
 
 /* Main content adjustment */
@@ -29,17 +20,54 @@
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
-        left: -280px;
-        z-index: 40;
-    }
-
-    .sidebar.mobile-open {
         left: 0;
+        z-index: 40;
+        width: 100px;
     }
 
     .main-content {
-        margin-left: 0 !important;
+        margin-left: 100px !important;
     }
+}
+
+/* --- Overrides for admin sidebar component (#admin-sidebar) --- */
+#admin-sidebar {
+    width: 220px !important;
+}
+.admin-main-content {
+    margin-left: 220px !important;
+}
+
+/* Active nav styling */
+.sidebar a {
+    position: relative;
+    border-radius: 8px;
+}
+.sidebar a.active {
+    background: #e5e7eb; /* gray-200 */
+    color: #111827;      /* gray-900 */
+}
+.sidebar a.active i {
+    color: #2563eb;      /* blue-600 */
+}
+.sidebar a.active::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 10%;
+    bottom: 10%;
+    width: 3px;
+    background: #2563eb;
+    border-radius: 9999px;
+}
+
+/* Admin component specific */
+#admin-sidebar a.active {
+    background: #e5e7eb;
+    color: #111827;
+}
+#admin-sidebar a.active i {
+    color: #2563eb;
 }
 
 /* Mobile backdrop */

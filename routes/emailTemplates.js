@@ -258,7 +258,7 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
         let emailContent = custom_content || '';
 
         if (template_id) {
-            const [templates] = await pool.promise().query(
+            const [templates] = await pool.query(
                 "SELECT * FROM email_templates WHERE id = ?",
                 [template_id]
             );
@@ -319,6 +319,22 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
 
                 // Log the email (in production, you'd send it via email service)
                 console.log('Bulk Email Sent:', emailData);
+
+                // Create notification for the user
+                try {
+                    await pool.query(`
+                        INSERT INTO user_notifications (user_id, type, title, message, related_url)
+                        VALUES (?, ?, ?, ?, ?)
+                    `, [
+                        user.id,
+                        'email',
+                        processedSubject,
+                        processedContent.substring(0, 200) + (processedContent.length > 200 ? '...' : ''),
+                        null
+                    ]);
+                } catch (notificationError) {
+                    console.error(`Error creating notification for user ${user.id}:`, notificationError);
+                }
 
                 sentEmails.push({
                     user_id: user.id,

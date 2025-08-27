@@ -59,17 +59,26 @@ export const adminAuth = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        console.log('🔍 AdminAuth - Decoded token:', { id: decoded.id, email: decoded.email });
         
-        // Get user from database to verify role
+        // Get user from database
         const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
+        console.log('🔍 AdminAuth - User from database:', users[0]);
         
         if (users.length === 0) {
             return res.status(401).json({ message: 'User not found' });
         }
+
+        // Get admin user details from admin_users table
+        const [adminUsers] = await db.query('SELECT * FROM admin_users WHERE user_id = ? AND is_active = TRUE', [decoded.id]);
+        console.log('🔍 AdminAuth - Admin users found:', adminUsers.length);
         
-        if (users[0].role !== 'admin') {
-            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+        if (adminUsers.length === 0) {
+            console.log('🔍 AdminAuth - No admin user found for user_id:', decoded.id);
+            return res.status(403).json({ message: 'Admin account not found or inactive' });
         }
+
+        const adminUser = adminUsers[0];
 
         // Add admin user info to request
         req.user = {
@@ -85,4 +94,41 @@ export const adminAuth = async (req, res, next) => {
         console.error('Admin auth error:', error);
         res.status(401).json({ message: 'Token verification failed, authorization denied' });
     }
+};
+
+// Alias for authenticateToken - uses adminAuth for admin routes
+export const authenticateToken = adminAuth;
+
+// Permission checking middleware
+export const checkPermission = (resource, action) => {
+    return (req, res, next) => {
+        // For development, bypass permission checks if using bypassAuth
+        if (req.user && req.user.admin_level === 'super_admin') {
+            return next();
+        }
+
+        if (!req.user || !req.user.permissions) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Insufficient permissions' 
+            });
+        }
+
+        const userPermissions = req.user.permissions;
+        
+        // Check if user has permission for the resource and action
+        if (userPermissions[resource] && userPermissions[resource].includes(action)) {
+            return next();
+        }
+
+        // Check if user has wildcard permissions
+        if (userPermissions[resource] && userPermissions[resource].includes('*')) {
+            return next();
+        }
+
+        return res.status(403).json({ 
+            success: false, 
+            error: `Insufficient permissions: ${resource}:${action}` 
+        });
+    };
 }; 

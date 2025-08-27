@@ -45,6 +45,43 @@ router.get('/stats', auth, async (req, res) => {
   }
 });
 
+// Get progress summary (status breakdown) for the logged-in user
+router.get('/progress', auth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT status, COUNT(*) as count
+       FROM scholarship_applications
+       WHERE email_address = ?
+       GROUP BY status`,
+      [req.user.email]
+    );
+
+    const summary = {
+      approved: 0,
+      pending: 0,
+      rejected: 0,
+      under_review: 0,
+      waitlisted: 0
+    };
+
+    for (const r of rows) {
+      const key = String(r.status || '').toLowerCase();
+      if (key in summary) summary[key] = Number(r.count) || 0;
+    }
+
+    res.json({
+      approved: summary.approved,
+      pending: summary.pending,
+      rejected: summary.rejected,
+      under_review: summary.under_review,
+      waitlisted: summary.waitlisted
+    });
+  } catch (error) {
+    console.error('Error fetching progress summary:', error);
+    res.status(500).json({ message: 'Error fetching progress summary' });
+  }
+});
+
 // Get a single application for the logged-in user
 router.get('/:id', auth, async (req, res) => {
   try {

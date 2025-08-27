@@ -48,11 +48,27 @@ document.addEventListener('DOMContentLoaded', function() {
         toolbar: {
             items: [
                 'heading', '|',
-                'bold', 'italic', '|',
+                'bold', 'italic', 'fontColor', '|',
                 'numberedList', 'bulletedList', '|',
                 'link', 'blockQuote', 'insertTable', '|',
                 'undo', 'redo'
             ]
+        },
+        fontColor: {
+            colors: [
+                { color: '#000000', label: 'Black' },
+                { color: '#ffffff', label: 'White' },
+                { color: '#1f2937', label: 'Slate' },
+                { color: '#3b82f6', label: 'Blue' },
+                { color: '#10b981', label: 'Green' },
+                { color: '#f59e0b', label: 'Amber' },
+                { color: '#ef4444', label: 'Red' },
+                { color: '#8b5cf6', label: 'Purple' },
+                { color: '#ec4899', label: 'Pink' },
+                { color: '#06b6d4', label: 'Cyan' }
+            ],
+            columns: 5,
+            documentColors: 0
         },
         language: 'en',
         licenseKey: '',

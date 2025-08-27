@@ -229,36 +229,8 @@
     <section class="py-16">
       <div class="container mx-auto px-4">
         <h2 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">Available Scholarship Documents</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div class="flex items-start">
-              <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-lg mr-4">
-                <i class="bi bi-file-earmark-pdf-fill text-primary-500 dark:text-primary-400 text-2xl"></i>
-              </div>
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Scholarship List - Universities & Countries</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">View detailed scholarship opportunities based on institutions and regions.</p>
-                <a href="pdf/pdf2.pdf" target="_blank" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
-                  <i class="bi bi-download mr-2"></i> Download PDF
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div class="flex items-start">
-              <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-lg mr-4">
-                <i class="bi bi-file-earmark-spreadsheet-fill text-primary-500 dark:text-primary-400 text-2xl"></i>
-              </div>
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Scholarship Amount Details</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">Includes funding amounts, requirements, and application links.</p>
-                <a href="pdf/pdf1.pdf" target="_blank" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
-                  <i class="bi bi-download mr-2"></i> Download PDF
-                </a>
-              </div>
-            </div>
-          </div>
+        <div id="scholarship-documents" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <!-- Documents loaded via JS -->
         </div>
       </div>
     </section>
@@ -270,7 +242,7 @@
           <p class="text-lg text-gray-600 dark:text-gray-400">Fill in the form below to apply for available scholarship opportunities.</p>
         </div>
 
-        <form id="scholarshipForm" class="max-w-3xl mx-auto bg-white dark:bg-dark-800 p-8 rounded-lg shadow-lg border-l-4 border-primary-500" enctype="multipart/form-data">
+        <form id="scholarshipForm" class="max-w-3xl mx-auto bg-white dark:bg-dark-800 p-8 rounded-lg shadow-lg border-l-4 border-primary-500" enctype="multipart/form-data" novalidate>
           <!-- Hidden input for scholarship_id if needed -->
           <input type="hidden" name="scholarship_id" id="scholarship_id" value="1">
 
@@ -284,7 +256,7 @@
                   <i class="fas fa-user-circle text-6xl text-gray-300 dark:text-white"></i>
                   <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Drag & drop or click</span>
                 </div>
-                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
+                <input type="file" id="profilePicture" name="profile_picture_url" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" required>
               </div>
               <button type="button" id="profileUploadBtn" class="mt-2 px-4 py-2 bg-primary-500 text-white rounded shadow hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500">Choose Photo</button>
               <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max size: 2MB. JPG, PNG, or GIF.</span>
@@ -292,17 +264,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="fullName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Full Name</label>
-                <input type="text" id="fullName" name="fullName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Jane Doe" required>
+                <input type="text" id="fullName" name="full_name" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Jane Doe" required>
               </div>
               <div>
                 <label for="emailAddress" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email Address</label>
-                <input type="email" id="emailAddress" name="emailAddress" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. jane@email.com" required>
+                <input type="email" id="emailAddress" name="email_address" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. jane@email.com" required>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="dob" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Date of Birth</label>
-                <input type="date" id="dob" name="dateOfBirth" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                <input type="date" id="dob" name="date_of_birth" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
               </div>
               <div>
                 <label for="gender" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Gender</label>
@@ -317,7 +289,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="phone" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Phone Number</label>
-                <input type="tel" id="phone" name="phoneNumber" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 123 456 789" required>
+                <input type="tel" id="phone" name="phone_number" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 123 456 789" required>
               </div>
               <div>
                 <label for="address" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Address</label>
@@ -334,45 +306,48 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="preferredUniversity" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Preferred University</label>
-                <select id="preferredUniversity" name="preferredUniversity" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                <select id="preferredUniversity" name="preferred_university" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
                   <option value="">Select a university</option>
                   <!-- Options will be populated by JS -->
                 </select>
-                <input type="hidden" name="scholarship_id" id="scholarship_id" value="">
+                
               </div>
               <div>
                 <label for="country" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Country</label>
-                <input type="text" id="country" name="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Country will auto-fill" readonly>
+                <select id="country" name="country" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                  <option value="">Select a country</option>
+                </select>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="academicLevel" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Academic Level</label>
-                <select id="academicLevel" name="academicLevel" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
+                <select id="academicLevel" name="academic_level" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" required>
                   <option value="">Select level</option>
                   <option value="undergraduate">Undergraduate</option>
                   <option value="graduate">Graduate</option>
                   <option value="phd">PhD</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
               <div>
                 <label for="intendedMajor" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Intended Major/Field of Study</label>
-                <input type="text" id="intendedMajor" name="intendedMajor" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Computer Science">
+                <input type="text" id="intendedMajor" name="intended_major" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. Computer Science">
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="gpa" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">GPA / Academic Performance</label>
-                <input type="text" id="gpaAcademicPerformance" name="gpaAcademicPerformance" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. 3.8/4.0">
+                <input type="text" id="gpaAcademicPerformance" name="gpa_academic_performance" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. 3.8/4.0">
               </div>
               <div>
                 <label for="documents" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Upload Documents</label>
-                <input type="file" id="documents" name="documents" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" multiple>
+                <input type="file" id="documents" name="uploaded_documents_json" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" multiple>
               </div>
             </div>
             <div class="mb-6">
               <label for="extracurriculars" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Extracurricular Activities</label>
-              <textarea id="extracurricularActivities" name="extracurricularActivities" rows="2" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="List your activities, clubs, sports, etc."></textarea>
+              <textarea id="extracurricularActivities" name="extracurricular_activities" rows="2" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="List your activities, clubs, sports, etc."></textarea>
             </div>
             <div class="flex justify-between">
               <button type="button" class="prev-step bg-gray-300 text-gray-700 px-8 py-3 rounded font-semibold hover:bg-gray-400 transition-all duration-300">Back</button>
@@ -385,37 +360,29 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label for="parentName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Name</label>
-                <input type="text" id="parentGuardianName" name="parentGuardianName" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. John Doe">
+                <input type="text" id="parentGuardianName" name="parent_guardian_name" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. John Doe">
               </div>
               <div>
                 <label for="parentContact" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Parent/Guardian Contact</label>
-                <input type="text" id="parentGuardianContact" name="parentGuardianContact" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 987 654 321">
+                <input type="text" id="parentGuardianContact" name="parent_guardian_contact" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. +250 987 654 321">
               </div>
             </div>
             <div class="mb-6">
               <label for="financialNeed" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Financial Need Statement</label>
-              <textarea id="financialNeedStatement" name="financialNeedStatement" rows="3" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Describe your financial situation and why you need this scholarship."></textarea>
+              <textarea id="financialNeedStatement" name="financial_need_statement" rows="3" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Describe your financial situation and why you need this scholarship."></textarea>
             </div>
             <div class="mb-6">
               <label for="referral" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">How did you hear about this scholarship?</label>
-              <input type="text" id="howHeardAbout" name="howHeardAbout" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. School, Social Media, Friend">
+              <input type="text" id="howHeardAbout" name="how_heard_about" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="e.g. School, Social Media, Friend">
             </div>
-            <div class="mb-6">
-              <label for="scholarship-type" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Scholarship Type</label>
-              <select id="scholarship-type" name="scholarshipType" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900">
-                <option value="">Select a scholarship</option>
-                <option value="1">Global Leadership Scholarship</option>
-                <option value="2">STEM Research Scholarship</option>
-                <option value="3">Community Service Scholarship</option>
-              </select>
-            </div>
+            <!-- Scholarship Type removed: admin uses Preferred University to determine scholarship_id -->
             <div class="mb-6">
               <label for="message" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Why Are You Applying?</label>
-              <textarea id="motivationStatement" name="motivationStatement" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Briefly explain your motivation..."></textarea>
+              <textarea id="motivationStatement" name="motivation_statement" rows="4" class="w-full px-4 py-2 border dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900" placeholder="Briefly explain your motivation..."></textarea>
             </div>
             <div class="mb-6">
               <label class="inline-flex items-center">
-                <input type="checkbox" name="termsAgreed" required>
+                <input type="checkbox" name="terms_agreed" required>
                 <span class="ml-2 text-gray-700 dark:text-gray-300">I agree to the terms and conditions</span>
               </label>
             </div>
@@ -535,8 +502,23 @@
       });
     }
 
+    // Validate current step before advancing
+    function validateStep(stepIndex) {
+      const stepEl = steps[stepIndex];
+      const required = Array.from(stepEl.querySelectorAll('[required]'));
+      for (const el of required) {
+        if (!el.checkValidity()) {
+          displayMessageBox(`Please complete ${labelFor(el)}.`, 'error');
+          navigateToField(el);
+          return false;
+        }
+      }
+      return true;
+    }
+
     document.querySelectorAll('.next-step').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (!validateStep(currentStep)) return;
         if (currentStep < steps.length - 1) {
           currentStep++;
           showStep(currentStep);
@@ -554,6 +536,60 @@
     });
 
     showStep(currentStep);
+
+    // Countries list (mirror admin applications page)
+    const countries = [
+      "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+    ];
+
+    function populateCountriesPublic() {
+      const countrySelect = document.getElementById('country');
+      if (!countrySelect) return;
+      const current = countrySelect.value;
+      countrySelect.innerHTML = '<option value="">Select a country</option>';
+      countries.forEach(country => {
+        const option = document.createElement('option');
+        option.value = country;
+        option.textContent = country;
+        countrySelect.appendChild(option);
+      });
+      if (current) countrySelect.value = current;
+    }
+
+    // Load scholarship documents
+    (async function loadScholarshipDocuments(){
+      try {
+        const container = document.getElementById('scholarship-documents');
+        if (!container) return;
+        container.innerHTML = `<div class="col-span-full text-center text-gray-500 dark:text-gray-400">Loading documents...</div>`;
+        const resp = await fetch('/api/scholarship-documents');
+        const data = await resp.json();
+        const docs = data && data.success ? (data.documents || []) : [];
+        if (!docs.length) {
+          container.innerHTML = `<div class="col-span-full text-center text-gray-500 dark:text-gray-400">No documents available yet.</div>`;
+          return;
+        }
+        container.innerHTML = docs.map(d => `
+          <div class="bg-white dark:bg-dark-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-start">
+              <div class="bg-primary-100 dark:bg-primary-900/30 p-3 rounded-lg mr-4">
+                <i class="bi bi-file-earmark-pdf-fill text-primary-500 dark:text-primary-400 text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">${d.title || 'Document'}</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">${d.description || ''}</p>
+                <a href="/api/scholarship-documents/download/${d.id}" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
+                  <i class="bi bi-download mr-2"></i> Download (${(Number(d.file_size)||0) ? (Math.ceil(Number(d.file_size)/1024)+' KB') : 'PDF'})
+                </a>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        const container = document.getElementById('scholarship-documents');
+        if (container) container.innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load documents.</div>`;
+      }
+    })();
 
     // Enhanced Profile Picture Upload
     const profileInput = document.getElementById('profilePicture');
@@ -606,28 +642,153 @@
       }
     });
 
+    // Validate full form across steps and navigate to first error
+    function findFirstInvalidField() {
+      const requiredFields = Array.from(document.querySelectorAll('#scholarshipForm [required]'));
+      return requiredFields.find(el => !el.checkValidity());
+    }
+
+    function labelFor(el) {
+      const id = el.getAttribute('id');
+      if (id) {
+        const lbl = document.querySelector(`label[for="${id}"]`);
+        if (lbl) return lbl.textContent.trim();
+      }
+      return el.name || 'a required field';
+    }
+
+    function navigateToField(el) {
+      const stepEl = el.closest('.form-step');
+      const idx = steps.indexOf(stepEl);
+      if (idx >= 0) {
+        currentStep = idx;
+        showStep(currentStep);
+      }
+      // Focus after the step is visible
+      setTimeout(() => {
+        try { el.focus({ preventScroll: true }); } catch {}
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (el.reportValidity) el.reportValidity();
+      }, 50);
+    }
+
     document.getElementById('scholarshipForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const form = e.target;
+
+      // Client-side validation across steps
+      const invalid = findFirstInvalidField();
+      if (invalid) {
+        displayMessageBox(`Please complete ${labelFor(invalid)}.`, 'error');
+        navigateToField(invalid);
+        return;
+      }
+
       const formData = new FormData(form);
-      // Get the scholarship ID from the hidden input or set dynamically
       const scholarshipId = form.querySelector('[name="scholarship_id"]').value;
+      if (scholarshipId && !formData.has('scholarship_id')) formData.append('scholarship_id', scholarshipId);
+      // Normalize checkbox value like admin
+      if (form.querySelector('input[name="terms_agreed"]') && form.querySelector('input[name="terms_agreed"]').checked) {
+        formData.set('terms_agreed', 'on');
+      }
       try {
-        const response = await fetch(`/api/scholarships/${scholarshipId}/apply`, {
-          method: 'POST',
-          body: formData
-        });
+        const response = await fetch('/api/admin-dashboard/applications', { method: 'POST', body: formData });
         const result = await response.json();
         if (response.ok) {
+          const score = (result && result.data && typeof result.data.suitability_percent === 'number') ? result.data.suitability_percent : null;
+          const breakdown = (result && result.data && Array.isArray(result.data.suitability_breakdown)) ? result.data.suitability_breakdown : [];
+          if (score !== null) {
+            displayMessageBox(`Application submitted! Your match score is ${score}% for this scholarship.`, 'success');
+            // Build actionable tips based on breakdown (admin logic weights)
+            const byKey = Object.fromEntries(breakdown.map(b => [b.key, b.points]));
+            const tips = [];
+            if ((byKey.academic_level ?? 0) < 20) tips.push('Confirm Academic level matches the scholarship requirement.');
+            if ((byKey.gpa ?? 0) < 25) tips.push('Improve or clearly state GPA to meet or exceed the minimum.');
+            if ((byKey.field_of_study ?? 0) < 20) tips.push('Align Intended major with the scholarship’s field of study.');
+            if ((byKey.country ?? 0) < 10) tips.push('Select the correct country or choose scholarships for your country.');
+            if ((byKey.documents ?? 0) < 10) tips.push('Upload all required supporting documents.');
+            if ((byKey.motivation ?? 0) < 10) tips.push('Strengthen your motivation statement (be specific and detailed).');
+            if ((byKey.extracurricular ?? 0) < 5) tips.push('Add more extracurricular activities and leadership roles.');
+            if (tips.length) {
+              const msg = 'Recommended improvements to increase your selection chance:\n- ' + tips.join('\n- ');
+              displayMessageBox(msg, 'info');
+            }
+          } else {
           displayMessageBox('Application submitted successfully!', 'success');
+          }
           form.reset();
+          // Return to first step after successful submission
+          currentStep = 0;
+          showStep(currentStep);
         } else {
-          displayMessageBox('Error: ' + (result.message || result.error), 'error');
+          displayMessageBox('Error: ' + (result.message || result.error || 'Submission failed'), 'error');
         }
       } catch (error) {
         displayMessageBox('Network error: ' + error.message, 'error');
       }
     });
+
+    // Mirror admin: populate universities and country options, and set scholarship_id
+    (async function loadScholarshipsAndPopulateSelectsPublic(){
+      try {
+        const resp = await fetch('/api/scholarships');
+        const scholarships = await resp.json();
+        const universitySelect = document.getElementById('preferredUniversity');
+        const scholarshipIdInput = document.getElementById('scholarship_id');
+        const countrySelect = document.getElementById('country');
+
+        // Universities
+        if (universitySelect) {
+          universitySelect.innerHTML = '<option value="">Select a university</option>';
+          scholarships.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name;
+            opt.textContent = s.name;
+            opt.dataset.scholarshipId = s.id;
+            opt.dataset.country = s.country || '';
+            universitySelect.appendChild(opt);
+          });
+          universitySelect.addEventListener('change', () => {
+            const sel = universitySelect.options[universitySelect.selectedIndex];
+            scholarshipIdInput.value = sel && sel.dataset.scholarshipId ? sel.dataset.scholarshipId : '';
+            // Auto-set country like admin behavior
+            if (countrySelect && sel && sel.dataset.country) {
+              const targetCountry = sel.dataset.country;
+              // ensure option exists
+              let has = false;
+              for (let i = 0; i < countrySelect.options.length; i++) {
+                if (countrySelect.options[i].value === targetCountry) { has = true; break; }
+              }
+              if (!has && targetCountry) {
+                const opt = document.createElement('option');
+                opt.value = targetCountry;
+                opt.textContent = targetCountry;
+                countrySelect.appendChild(opt);
+              }
+              countrySelect.value = targetCountry;
+            }
+          });
+        }
+
+        // Countries: show full list like admin
+        populateCountriesPublic();
+
+        // Duplicate check like admin on email blur when scholarship selected
+        const emailEl = document.getElementById('emailAddress');
+        emailEl?.addEventListener('blur', async function(){
+          const email = emailEl.value.trim();
+          const id = scholarshipIdInput.value.trim();
+          if (!email || !id) return;
+          try {
+            const r = await fetch(`/api/scholarships/${encodeURIComponent(id)}/has-applied?email=${encodeURIComponent(email)}`);
+            const d = await r.json();
+            if (d && d.hasApplied) alert('This email already applied for the selected scholarship.');
+          } catch {}
+        });
+      } catch (e) {
+        console.error('Failed to load scholarships for public form', e);
+      }
+    })();
 
     // Custom message box function (copied from partnership form for consistency)
     function displayMessageBox(message, type = 'info') {
@@ -674,7 +835,7 @@
       });
 
       // When user selects a scholarship, update the hidden scholarship_id and country
-      select.addEventListener('change', function() {
+      select.addEventListener('change', async function() {
         const selectedOption = select.options[select.selectedIndex];
         hiddenId.value = selectedOption.dataset.scholarshipId || '';
         countryInput.value = selectedOption.dataset.country || '';
@@ -685,6 +846,33 @@
           console.log(`Amount: $${selectedOption.dataset.amount}`);
           console.log(`Deadline: ${selectedOption.dataset.deadline}`);
         }
+
+        // Check if this email already applied for the selected scholarship
+        const email = document.getElementById('emailAddress')?.value?.trim();
+        if (hiddenId.value && email) {
+          try {
+            const resp = await fetch(`/api/scholarships/${encodeURIComponent(hiddenId.value)}/has-applied?email=${encodeURIComponent(email)}`);
+            const data = await resp.json();
+            if (data && data.hasApplied) {
+              displayMessageBox('You have already applied for this scholarship with this email.', 'error');
+            }
+          } catch {}
+        }
+      });
+
+      // Also check when email changes (if a scholarship is preselected)
+      const emailEl = document.getElementById('emailAddress');
+      emailEl?.addEventListener('blur', async function() {
+        const email = emailEl.value.trim();
+        const id = hiddenId.value;
+        if (!email || !id) return;
+        try {
+          const resp = await fetch(`/api/scholarships/${encodeURIComponent(id)}/has-applied?email=${encodeURIComponent(email)}`);
+          const data = await resp.json();
+          if (data && data.hasApplied) {
+            displayMessageBox('You have already applied for this scholarship with this email.', 'error');
+          }
+        } catch {}
       });
     });
   </script>
