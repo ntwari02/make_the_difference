@@ -269,6 +269,29 @@
             </div>
         </div>
     </main>
+    <!-- Guaranteed Mobile FAB + Modal -->
+    <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
+    <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
+    <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
+      <div class="p-3 border-b border-gray-200 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button></div>
+      <div class="p-2">
+        <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
+        <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
+        <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
+        <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
+        <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
+        <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
+        <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
+        <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
+        <a href="admin_help.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-question w-5 text-center"></i><span>Help</span></a>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        const fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
+        if(fab&&ov&&md){ const o=()=>{ov.classList.remove('hidden'); md.classList.remove('hidden');}; const c=()=>{ov.classList.add('hidden'); md.classList.add('hidden');}; fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
+      });
+    </script>
     <script src="js/api.js"></script>
     <script src="js/admin_email_template.js"></script>
 </body>

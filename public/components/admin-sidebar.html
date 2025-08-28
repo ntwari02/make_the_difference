@@ -283,6 +283,37 @@
         visibility: visible;
     }
 
+    /* Hard override to ensure sidebar never hides on small widths */
+    @media (max-width: 1024px) {
+        #admin-sidebar {
+            display: block !important;
+            left: 0 !important;
+            transform: none !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+    }
+
+    /* Extra: ensure visibility and layout below 768px */
+    @media (max-width: 768px) {
+        #admin-sidebar {
+            width: 60px !important;
+            display: block !important;
+            left: 0 !important;
+            transform: none !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        .admin-main-content {
+            margin-left: 60px !important;
+        }
+        #admin-sidebar .sidebar-item-text {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+    }
+
     .admin-sidebar a {
         position: relative;
         border-radius: 0.5rem;

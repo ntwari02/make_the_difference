@@ -98,15 +98,17 @@ router.get('/stats', async (req, res) => {
             });
         }
 
-        res.json({
+        return res.json({
             success: true,
             stats: helpStats[0]
         });
 
     } catch (error) {
         console.error('help stats error:', error);
+        // Avoid double-send if a response was already sent
+        if (res.headersSent) { return; }
         // Return default stats if there's an error
-        res.json({
+        return res.json({
             success: true,
             stats: {
                 total_requests: 0,

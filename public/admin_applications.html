@@ -38,6 +38,13 @@
         }
     </script>
     <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        var fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
+        if(fab&&ov&&md){ function o(){ov.classList.remove('hidden'); md.classList.remove('hidden');} function c(){ov.classList.add('hidden'); md.classList.add('hidden');}
+          fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
+      });
+    </script>
+    <script>
       (function() {
         try {
           var theme = localStorage.getItem('color-theme');
@@ -314,7 +321,7 @@
         }
     </style>
 </head>
-<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<body class="admin-layout bg-white text-black transition-colors duration-200">
     <!-- Admin Sidebar Container -->
     <div id="admin-sidebar-container"></div>
 
@@ -388,10 +395,7 @@
                             class="w-full md:w-auto h-12 px-5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 flex items-center justify-center whitespace-nowrap">
                             <i class="fas fa-file-upload mr-2"></i>Bulk Upload CSV
                         </button>
-                        <button id="exportScoresBtn" type="button"
-                            class="w-full md:w-auto h-12 px-5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center whitespace-nowrap">
-                            <i class="fas fa-download mr-2"></i>Export Match %
-                        </button>
+                        
                         <div class="relative w-full lg:col-span-2">
                             <input type="text" id="searchInput" placeholder="Search applications..." 
                                 class="h-12 w-full pl-12 pr-5 text-base rounded-xl border border-gray-300 dark:border-gray-600 
@@ -402,25 +406,11 @@
                         <div>
                             <select id="sortSelect" class="w-full md:w-auto h-12 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                                 <option value="">Sort by</option>
-                                <option value="score_desc">Match % (high → low)</option>
-                                <option value="score_asc">Match % (low → high)</option>
                                 <option value="date_desc">Date (newest)</option>
                                 <option value="date_asc">Date (oldest)</option>
                             </select>
                         </div>
-                        <div>
-                            <select id="scoreFilterSelect" class="w-full md:w-auto h-12 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                                <option value="">All scores</option>
-                                <option value="80">Match ≥ 80%</option>
-                                <option value="70">Match ≥ 70%</option>
-                                <option value="60">Match ≥ 60%</option>
-                                <option value="50">Match ≥ 50%</option>
-                                <option value="40">Match ≥ 40%</option>
-                            </select>
-                        </div>
-                        <button id="topMatchesToggle" type="button" class="w-full md:w-auto h-12 px-5 rounded-xl border border-primary-500 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 whitespace-nowrap">
-                            Top matches(≥70%)
-                        </button>
+                        
                     </div>
                 </div>
 
@@ -436,15 +426,11 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         University
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Country
-                                    </th>
+                                    
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Match %
-                                    </th>
+                                    
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Applied Date
                                     </th>
@@ -489,13 +475,30 @@
             </div>
         </div>
     </main>
+    <!-- Guaranteed Mobile FAB + Modal -->
+    <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
+    <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
+    <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
+      <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times"></i></button></div>
+      <div class="p-2">
+        <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
+        <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
+        <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
+        <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
+        <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
+        <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
+        <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
+        <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
+        <a href="admin_help.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-question w-5 text-center"></i><span>Help</span></a>
+      </div>
+    </div>
 
     <!-- Application Details Modal -->
     <div id="applicationModal" class="modal-overlay">
         <div class="modal-content dark:bg-gray-800">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-white">Application Details</h2>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <button id="closeModal" type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -959,6 +962,9 @@
             "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
         ];
         
+        // Robust score extractor to handle various API field names and formats
+        // Removed match score and country derivation helpers (columns removed)
+        
         // Make steps available everywhere
         const steps = Array.from(document.querySelectorAll('#adminScholarshipForm .form-step'));
         
@@ -1032,8 +1038,16 @@
             if (searchInput) searchInput.addEventListener('input', filterApplications);
             if (prevPageBtn) prevPageBtn.addEventListener('click', () => changePage(-1));
             if (nextPageBtn) nextPageBtn.addEventListener('click', () => changePage(1));
-            if (closeBtn) closeBtn.addEventListener('click', hideModal);
-            if (closeModalBtn) closeModalBtn.addEventListener('click', hideModal);
+            if (closeBtn) closeBtn.addEventListener('click', (e)=>{ e.preventDefault(); hideModal(); });
+            if (closeModalBtn) closeModalBtn.addEventListener('click', (e)=>{ e.preventDefault(); hideModal(); });
+            if (applicationModal) {
+                applicationModal.addEventListener('click', (e) => {
+                    if (e.target === applicationModal) hideModal();
+                });
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && applicationModal.classList.contains('show')) hideModal();
+                });
+            }
             if (document.getElementById('logoutBtn')) {
                 document.getElementById('logoutBtn').addEventListener('click', () => {
                     localStorage.removeItem('token');
@@ -1073,6 +1087,11 @@
                     console.error('createApplicationBtn not found!');
             }
             if (document.getElementById('closeCreateModal')) document.getElementById('closeCreateModal').addEventListener('click', hideCreateModal);
+            // Close create modal on overlay click and Escape
+            if (createApplicationModal) {
+                createApplicationModal.addEventListener('click', (e)=>{ if (e.target === createApplicationModal) hideCreateModal(); });
+                document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && createApplicationModal.classList.contains('show')) hideCreateModal(); });
+            }
             if (adminScholarshipForm) adminScholarshipForm.addEventListener('submit', handleApplicationSubmit);
             } catch (error) {
                 console.error('Error in setupEventListeners:', error);
@@ -1084,26 +1103,7 @@
             const sortSelect = document.getElementById('sortSelect');
             if (sortSelect) sortSelect.addEventListener('change', (e)=>{ sortMode = e.target.value; filterApplications(); });
             const scoreFilterSelect = document.getElementById('scoreFilterSelect');
-            if (scoreFilterSelect) scoreFilterSelect.addEventListener('change', (e)=>{ minScoreFilter = e.target.value; filterApplications(); });
-            const topMatchesToggle = document.getElementById('topMatchesToggle');
-            if (topMatchesToggle) topMatchesToggle.addEventListener('click', (e)=>{
-                e.preventDefault();
-                if (minScoreFilter === '70') {
-                    minScoreFilter = '';
-                    topMatchesToggle.classList.remove('bg-primary-500','text-white');
-                    topMatchesToggle.classList.add('border','border-primary-500','text-primary-600');
-                    topMatchesToggle.textContent = 'Top matches(≥70%)';
-                } else {
-                    minScoreFilter = '70';
-                    topMatchesToggle.classList.remove('border','border-primary-500','text-primary-600');
-                    topMatchesToggle.classList.add('bg-primary-500','text-white');
-                    topMatchesToggle.textContent = 'Showing top matches (≥70%)';
-                }
-                if (scoreFilterSelect) scoreFilterSelect.value = minScoreFilter;
-                filterApplications();
-            });
-            const exportScoresBtn = document.getElementById('exportScoresBtn');
-            if (exportScoresBtn) exportScoresBtn.addEventListener('click', exportApplicationsWithScores);
+            
 
             // Profile image preview + drag-drop
             if (profileUploadBtn && profilePictureInput) {
@@ -1761,19 +1761,13 @@
             filteredApplications = applications.filter(app => 
                 Object.values(app).some(val => String(val).toLowerCase().includes(searchTerm))
             );
-            if (minScoreFilter) {
-                const threshold = parseInt(minScoreFilter, 10);
-                filteredApplications = filteredApplications.filter(a => typeof a.suitability_percent === 'number' && a.suitability_percent >= threshold);
-            }
+            // Removed score-based filtering
             // Apply sorting
             filteredApplications.sort((a,b)=>{
-                const sa = typeof a.suitability_percent === 'number' ? a.suitability_percent : -1;
-                const sb = typeof b.suitability_percent === 'number' ? b.suitability_percent : -1;
+                // Default sorting (no score sorting since match % removed)
                 const da = a.applicationDate ? new Date(a.applicationDate).getTime() : 0;
                 const db = b.applicationDate ? new Date(b.applicationDate).getTime() : 0;
                 switch (sortMode) {
-                    case 'score_desc': return sb - sa;
-                    case 'score_asc': return sa - sb;
                     case 'date_asc': return da - db;
                     case 'date_desc': return db - da;
                     default: return 0;
@@ -1793,9 +1787,8 @@
             const tableHtml = applicationsToDisplay.map(app => {
                 const profileImgSrc = app.profilePictureUrl ? `/${app.profilePictureUrl}` : defaultAvatar;
                 const university = app.preferredUniversity || app.scholarshipTitle || 'N/A';
-                const country = app.country || '';
                 const appDate = app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A';
-                const score = (typeof app.suitability_percent === 'number') ? app.suitability_percent : '';
+                
 
                 return `
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -1806,13 +1799,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm ${score>=70? 'text-green-600 dark:text-green-400' : score>=40? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'}">${score!=='' ? score + '%' : ''}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900 dark:text-white">${university}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-500 dark:text-gray-400">${country}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="status-badge ${getStatusClass(app.status || 'pending')}">${getStatusText(app.status || 'pending')}</span>
@@ -1954,7 +1941,7 @@
             loadingIndicator.classList.toggle('hidden', !isLoading);
         }
 
-        async function exportApplicationsWithScores() {
+        /* async function exportApplicationsWithScores() {
             try {
                 const token = localStorage.getItem('token');
                 const perPage = 200;
@@ -1971,14 +1958,23 @@
                     if (items.length < perPage) break;
                     page += 1;
                 }
+                // Apply current score threshold (if any)
+                const threshold = parseInt(minScoreFilter || '0', 10) || 0;
+                if (threshold > 0) {
+                    all = all.filter(a => {
+                        const sp = getMatchScore(a);
+                        return !Number.isNaN(sp) && sp >= threshold;
+                    });
+                }
                 if (!all.length) { showNotification('No applications to export', 'info'); return; }
                 const rows = [
-                    ['Applicant Name','Email','Scholarship','Status','Applied Date','Match %']
+                    ['Applicant Name','Email','Scholarship','Country','Status','Applied Date','Match %']
                 ];
                 all.forEach(a=>{
                     const date = a.created_at ? new Date(a.created_at).toISOString().split('T')[0] : '';
-                    const score = (typeof a.suitability_percent === 'number') ? a.suitability_percent : '';
-                    rows.push([a.applicant_name||'', a.applicant_email||'', a.scholarship_title||'', a.status||'', date, score]);
+                    const score = (function(){ const n = getMatchScore(a); return Number.isNaN(n)?'':n; })();
+                    const country = getCountry(a);
+                    rows.push([a.applicant_name||'', a.applicant_email||'', a.scholarship_title||'', country, a.status||'', date, score]);
                 });
                 const csv = rows.map(r=>r.map(v=>{
                     const s = String(v ?? '');
@@ -1988,7 +1984,8 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `applications_with_match_${new Date().toISOString().slice(0,10)}.csv`;
+                const suffix = threshold > 0 ? `_gte_${threshold}` : '';
+                a.download = `applications_with_match${suffix}_${new Date().toISOString().slice(0,10)}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1996,10 +1993,17 @@
             } catch (e) {
                 showNotification('Failed to export: ' + (e.message||'Unknown error'), 'error');
             }
-        }
+        } */
 
-        function showModal() { applicationModal.classList.add('show'); }
-        function hideModal() { applicationModal.classList.remove('show'); }
+        function showModal() { if (applicationModal) { applicationModal.classList.add('show'); applicationModal.style.display = 'flex'; } }
+        function hideModal() {
+            if (!applicationModal) return;
+            applicationModal.classList.remove('show');
+            // Hard-hide to avoid stuck state
+            applicationModal.style.opacity = '0';
+            applicationModal.style.visibility = 'hidden';
+            applicationModal.style.display = 'none';
+        }
 
 
 
@@ -2022,7 +2026,16 @@
                 console.error('createApplicationModal element not found!');
             }
         }
-        function hideCreateModal() { createApplicationModal.classList.remove('show'); }
+        function hideCreateModal() {
+            if (!createApplicationModal) return;
+            createApplicationModal.classList.remove('show');
+            // Fully clear inline styles to avoid lingering blur/visibility
+            createApplicationModal.style.opacity = '0';
+            createApplicationModal.style.visibility = 'hidden';
+            createApplicationModal.style.display = 'none';
+            // Also reset any document/body classes if used elsewhere
+            document.body.classList.remove('modal-open');
+        }
 
         async function handleApplicationSubmit(e) {
             e.preventDefault();
@@ -2523,12 +2536,6 @@
         }
 
         let sortMode = '';
-
-        function setupEventListeners() {
-            // ... existing code ...
-            const sortSelect = document.getElementById('sortSelect');
-            if (sortSelect) sortSelect.addEventListener('change', (e)=>{ sortMode = e.target.value; filterApplications(); });
-        }
 
     </script>
 </body>

@@ -123,23 +123,23 @@ class AdminServicesManager {
             return;
         }
         this.listEl.innerHTML = this.filtered.map(s => `
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
+            <div class="p-4 service-card rounded-md shadow-sm hover:shadow-lg transition-shadow" style="background-color:#ffffff !important;">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div class="flex items-center gap-4">
-                    <img src="${s.image_url}" alt="${s.name}" class="w-16 h-16 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0" />
+                    <img src="${s.image_url}" alt="${s.name}" class="w-16 h-16 object-cover rounded flex-shrink-0" />
                     <div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100">${s.name}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-300">${s.description || ''}</div>
+                        <div class="font-semibold text-gray-900">${s.name}</div>
+                        <div class="text-sm text-gray-600">${s.description || ''}</div>
                         <div class="mt-1 text-sm">
-                            <span class="mr-3 text-white"><i class="fas fa-coins mr-1 text-white"></i>${s.monetization?.pricing_type || 'free'}${s.monetization?.pricing_type !== 'free' ? ` - $${Number(s.monetization?.price||0).toFixed(2)}` : ''}</span>
-                            <span class="text-white"><i class="fas fa-robot mr-1 text-white"></i>${s.monetization?.is_automated ? 'Automated' : 'Manual'}</span>
+                            <span class="mr-3 text-gray-700"><i class="fas fa-coins mr-1 text-gray-700"></i>${s.monetization?.pricing_type || 'free'}${s.monetization?.pricing_type !== 'free' ? ` - $${Number(s.monetization?.price||0).toFixed(2)}` : ''}</span>
+                            <span class="text-gray-700"><i class="fas fa-robot mr-1 text-gray-700"></i>${s.monetization?.is_automated ? 'Automated' : 'Manual'}</span>
                         </div>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 self-start md:self-auto">
-                      <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-200" onclick="adminServices.edit(${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
-                      <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-blue-600 dark:text-blue-400" onclick="adminServices.openChart(${s.id}, '${s.name.replace(/'/g, "\'")}')" title="Usage chart"><i class="fas fa-chart-line"></i></button>
-                      <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-red-600 dark:text-red-400" onclick="adminServices.remove(${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                      <button class="px-3 py-2 rounded-md bg-gray-700 text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm" onclick="adminServices.edit(${s.id})" title="Edit" aria-label="Edit service"><i class="fas fa-edit text-base"></i></button>
+                      <button class="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm" onclick="adminServices.openChart(${s.id}, '${s.name.replace(/'/g, "\'")}')" title="Usage chart" aria-label="Open usage chart"><i class="fas fa-chart-line text-base"></i></button>
+                      <button class="px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 shadow-sm" onclick="adminServices.remove(${s.id})" title="Delete" aria-label="Delete service"><i class="fas fa-trash text-base"></i></button>
                   </div>
                 </div>
                 

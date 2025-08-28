@@ -1,3 +1,8 @@
+<style>
+@media (max-width: 500px){
+  #admin-page-title{ display:none; }
+}
+</style>
 <nav class="admin-header bg-white shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -6,7 +11,7 @@
                 <div id="mobileMenuContainer"></div>
                 <h1 id="admin-page-title" class="text-xl font-bold text-gray-800 dark:text-white ml-2 lg:ml-0">Admin</h1>
             </div>
-            <div class="flex items-center space-x-2 sm:space-x-4">
+            <div id="admin-right-actions" class="flex items-center space-x-2 sm:space-x-4">
                 <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" aria-label="Toggle theme">
                     <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
                 </button>

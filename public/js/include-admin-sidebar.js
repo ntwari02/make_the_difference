@@ -2,8 +2,19 @@
 
 async function includeAdminSidebar() {
     try {
-        const container = document.getElementById('admin-sidebar-container');
-        if (!container) return;
+        let container = document.getElementById('admin-sidebar-container');
+        // If page forgot to add the container, create and mount it so the sidebar works everywhere
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'admin-sidebar-container';
+            // Try to insert before main content if present, otherwise prepend to body
+            const main = document.querySelector('.admin-main-content') || document.body.firstElementChild;
+            if (main && main.parentElement) {
+                main.parentElement.insertBefore(container, main);
+            } else {
+                document.body.insertBefore(container, document.body.firstChild);
+            }
+        }
         
         const response = await fetch('components/admin-sidebar.html');
         if (!response.ok) throw new Error('Failed to load admin sidebar');
@@ -17,10 +28,40 @@ async function includeAdminSidebar() {
         const sidebarContent = tempDiv.querySelector('#admin-sidebar');
         
         if (sidebarContent) {
-            container.appendChild(sidebarContent);
+            // Avoid duplicate mounts
+            if (!container.querySelector('#admin-sidebar')) {
+                container.appendChild(sidebarContent);
+            }
             
             // Initialize sidebar functionality
             initializeSidebar();
+
+            // Hard ensure visibility on small widths
+            try {
+                const sb = document.getElementById('admin-sidebar');
+                const enforce = () => {
+                    if (!sb) return;
+                    if (window.innerWidth <= 1024) {
+                        sb.style.display = 'block';
+                        sb.style.left = '0';
+                        sb.style.transform = 'none';
+                        sb.style.visibility = 'visible';
+                        sb.style.opacity = '1';
+                    } else {
+                        // clear inline styles on large screens
+                        sb.style.display = '';
+                        sb.style.left = '';
+                        sb.style.transform = '';
+                        sb.style.visibility = '';
+                        sb.style.opacity = '';
+                    }
+                };
+                enforce();
+                window.addEventListener('resize', enforce);
+            } catch {}
+
+            // Provide a universal mobile menu (FAB) so admins on phones can always open nav
+            try { ensureMobileFabMenu(); } catch {}
 
             // Mark active link
             try { markActiveSidebarLink(); } catch {}
@@ -300,4 +341,65 @@ function markActiveSidebarLink() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', includeAdminSidebar);
+document.addEventListener('DOMContentLoaded', () => {
+    includeAdminSidebar();
+    // Ensure FAB exists even if sidebar fetch fails
+    try { ensureMobileFabMenu(); } catch {}
+});
+
+// Floating action button that opens a compact sidebar modal for phones
+function ensureMobileFabMenu() {
+    if (document.getElementById('admin-fab-menu')) return;
+    const fab = document.createElement('button');
+    fab.id = 'admin-fab-menu';
+    fab.className = 'fixed bottom-4 right-4 z-[1001] w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center';
+    fab.setAttribute('aria-label', 'Open admin menu');
+    fab.innerHTML = '<i class="fas fa-bars"></i>';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'admin-fab-overlay';
+    overlay.className = 'fixed inset-0 bg-black/40 hidden z-[1000]';
+
+    const modal = document.createElement('div');
+    modal.id = 'admin-fab-modal';
+    modal.className = 'fixed bottom-20 left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl hidden z-[1002] max-h-[70vh] overflow-y-auto';
+
+    // Build a compact list from existing sidebar links
+    const sb = document.getElementById('admin-sidebar');
+    let links = [];
+    if (sb) links = Array.from(sb.querySelectorAll('a[href$=".html"]')).map(a => ({ href: a.getAttribute('href'), text: (a.textContent||'').trim(), icon: a.querySelector('i')?.className || 'fas fa-angle-right' }));
+    if (!links.length) {
+        links = [
+            { href: 'admin_dashboard.html', text: 'Dashboard', icon: 'fas fa-tachometer-alt' },
+            { href: 'admin_users.html', text: 'Users', icon: 'fas fa-users' },
+            { href: 'admin_rolesPermissions.html', text: 'Roles', icon: 'fas fa-user-shield' },
+            { href: 'admin_scholarship.html', text: 'Scholarships', icon: 'fas fa-graduation-cap' },
+            { href: 'admin_applications.html', text: 'Applications', icon: 'fas fa-file-alt' },
+            { href: 'admin_partners.html', text: 'Partners', icon: 'fas fa-handshake' },
+            { href: 'admin_services.html', text: 'Services', icon: 'fas fa-briefcase' },
+            { href: 'admin_email_template.html', text: 'Email Templates', icon: 'fas fa-envelope' },
+            { href: 'admin_help.html', text: 'Help', icon: 'fas fa-question' }
+        ];
+    }
+    modal.innerHTML = `
+      <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <span class="font-semibold">Admin Menu</span>
+        <button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-2">
+        ${links.map(l => `<a href="${l.href}" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <i class="${l.icon} w-5 text-center"></i>
+            <span>${l.text}</span>
+        </a>`).join('')}
+      </div>`;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+
+    const open = () => { overlay.classList.remove('hidden'); modal.classList.remove('hidden'); };
+    const close = () => { overlay.classList.add('hidden'); modal.classList.add('hidden'); };
+    fab.addEventListener('click', open);
+    overlay.addEventListener('click', close);
+    modal.addEventListener('click', (e)=>{ if(e.target && e.target.id==='admin-fab-close') close(); });
+}

@@ -11,12 +11,95 @@
   <link rel="stylesheet" href="css/admin-layout.css">
   <script src="js/include-admin-sidebar.js" defer></script>
   <script src="js/include-admin-header.js" defer></script>
+  <script>
+    (function(){
+      try{
+        var theme = localStorage.getItem('color-theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }catch(e){}
+    })();
+  </script>
+  <style>
+    :root{
+      --bg-primary:#ffffff;
+      --bg-secondary:#f3f4f6;
+      --text-primary:#111827;
+      --divider:#e5e7eb;
+      --panel-bg:#ffffff;
+      --card-bg:#ffffff;
+      --shadow-lg:0 10px 25px rgba(0,0,0,0.08);
+    }
+    .dark{
+      --bg-primary:#0f172a;
+      --bg-secondary:#111827;
+      --text-primary:#e5e7eb;
+      --divider:#374151;
+      --panel-bg:#111827;
+      --card-bg:#1f2937;
+      --shadow-lg:0 0 0 1px rgba(255,255,255,0.08);
+    }
+    body{ background-color:var(--bg-primary); color:var(--text-primary); }
+    .admin-main-content{ background-color:var(--bg-primary); }
+    .services-container{ background-color:var(--panel-bg);}
+    #servicesList>div{ background:var(--card-bg); color:var(--text-primary); box-shadow:var(--shadow-lg); padding:16px;}
+    #servicesList>div+div{ margin-top:12px; }
+    /* Light text normalization */
+    body[data-page="services"] .text-gray-900{ color:#111827 !important; }
+    body[data-page="services"] .text-gray-700{ color:#374151 !important; }
+    body[data-page="services"] .text-gray-600{ color:#4b5563 !important; }
+    body[data-page="services"] .text-gray-500{ color:#6b7280 !important; }
+    body[data-page="services"] .text-gray-400{ color:#9ca3af !important; }
+    /* Dark text normalization */
+    .dark body[data-page="services"]{ color:var(--text-primary); }
+    .dark body[data-page="services"] .text-gray-900{ color:var(--text-primary) !important; }
+    .dark body[data-page="services"] .text-gray-700{ color:var(--text-primary) !important; }
+    .dark body[data-page="services"] .text-gray-600{ color:#d1d5db !important; }
+    .dark body[data-page="services"] .text-gray-500{ color:#9ca3af !important; }
+    .dark body[data-page="services"] .text-gray-400{ color:#9ca3af !important; }
+    /* Modal theming */
+    #svcModal .modal-card, #svcChartModal .modal-card{ background:var(--card-bg); color:var(--text-primary); }
+    #svcModal .modal-card .border-b, #svcChartModal .modal-card .border-b{ border-color:var(--divider); }
+    #svcModal input[type="text"], #svcModal input[type="email"], #svcModal input[type="url"], #svcModal input[type="number"],
+    #svcModal select, #svcModal textarea{
+      background-color:var(--card-bg); color:var(--text-primary); border-color:var(--divider);
+    }
+    #svcImageDrop{ background:var(--card-bg); border-color:var(--divider); color:var(--text-primary); }
+    #svcImagePreview{ border-color:var(--divider); }
+
+    /* Service action buttons (no framework) */
+    .svc-actions{ display:flex; align-items:center; gap:8px; }
+    .svc-actions .btn{ display:inline-flex; align-items:center; justify-content:center; padding:8px 10px; border-radius:8px; font-size:14px; line-height:1; cursor:pointer; border:none; outline:none; transition:background-color .2s ease, box-shadow .2s ease; box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+    .svc-actions .btn i{ font-size:16px; }
+    .svc-actions .btn:focus{ box-shadow:0 0 0 3px rgba(59,130,246,.35); }
+    .btn-edit{ background:#374151; color:#fff; }
+    .btn-edit:hover{ background:#1f2937; }
+    .btn-chart{ background:#2563eb; color:#fff; }
+    .btn-chart:hover{ background:#1e40af; }
+    .btn-delete{ background:#dc2626; color:#fff; }
+    .btn-delete:hover{ background:#b91c1c; }
+    .dark .btn-edit{ background:#475569; }
+    .dark .btn-edit:hover{ background:#334155; }
+    .dark .btn-chart{ background:#1d4ed8; }
+    .dark .btn-chart:hover{ background:#1e40af; }
+    .dark .btn-delete{ background:#ef4444; }
+    .dark .btn-delete:hover{ background:#dc2626; }
+
+    /* Chart timeframe select */
+    .svc-select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; padding:6px 28px 6px 10px; border:1px solid var(--divider); border-radius:8px; background-color:var(--card-bg); color:var(--text-primary); font-size:12px; line-height:1; position:relative; }
+    .svc-select:focus{ outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.35); }
+    .svc-select-wrap{ position:relative; display:inline-block; }
+    .svc-select-wrap:after{ content:"\25BE"; position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--text-primary); font-size:10px; }
+  </style>
 </head>
 <body class="admin-layout bg-white text-gray-900" data-page="services">
   <div id="admin-sidebar-container"></div>
   <div id="admin-header-container" data-page-title="Service Management"></div>
 
-  <main class="admin-main-content w-full bg-white">
+  <main class="admin-main-content w-full bg-transparent">
     <div class="admin-content-container p-6">
       <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
         <div class="flex items-center gap-6">
@@ -41,68 +124,86 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-blue-500 dark:border-blue-400 divide-y divide-gray-200 dark:divide-gray-700">
+      <div class="services-container">
         <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div class="flex items-center gap-3 w-full sm:w-auto">
-            <input id="svcSearch" placeholder="Search services..." class="w-full sm:w-64 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-800 text-white placeholder-gray-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400" />
+            <input id="svcSearch" placeholder="Search services..." class="w-full sm:w-64 px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 placeholder-gray-500" />
           </div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">Manage services, pricing, and automation</div>
+          <div class="text-sm text-gray-600">Manage services, pricing, and automation</div>
         </div>
         <div id="servicesList" class="space-y-3"></div>
       </div>
     </div>
   </main>
 
+  <!-- Guaranteed Mobile FAB + Modal -->
+  <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
+  <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
+  <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
+    <div class="p-3 border-b border-gray-200 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button></div>
+    <div class="p-2">
+      <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
+      <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
+      <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
+      <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
+      <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
+      <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
+      <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
+      <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
+      <a href="admin_help.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-question w-5 text-center"></i><span>Help</span></a>
+    </div>
+  </div>
+
   <!-- Modal -->
   <div id="svcModal" class="fixed inset-0 bg-black/50 hidden z-50">
     <div class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-        <div class="p-4 border-b border-gray-200">
-          <h3 id="svcModalTitle" class="text-lg font-semibold text-gray-900">Add Service</h3>
+      <div class="bg-white dark:bg-gray-800 modal-card rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 id="svcModalTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Add Service</h3>
         </div>
         <form id="svcForm" class="p-4 space-y-4">
           <input type="hidden" id="svcId" />
           <div>
-            <label class="block text-sm mb-1 text-gray-700">Name</label>
-            <input id="svcName" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" required />
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Name</label>
+            <input id="svcName" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" required />
           </div>
           <div>
-            <label class="block text-sm mb-1 text-gray-700">Description</label>
-            <textarea id="svcDesc" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" required></textarea>
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Description</label>
+            <textarea id="svcDesc" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" required></textarea>
           </div>
           <div>
-            <label class="block text-sm mb-1 text-gray-700">Image URL</label>
-            <input id="svcImageUrl" type="url" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
-            <div id="svcImageDrop" class="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-3 text-center text-sm text-gray-600 cursor-pointer hover:bg-gray-50">
+            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Image URL</label>
+            <input id="svcImageUrl" type="url" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" />
+            <div id="svcImageDrop" class="mt-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3 text-center text-sm text-gray-600 dark:text-gray-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
               <i class="fas fa-cloud-upload-alt mr-2"></i>
               Drag & drop an image or click to upload
               <input type="file" id="svcImageFile" accept="image/*" class="hidden" />
             </div>
             <div class="mt-2">
-              <img id="svcImagePreview" class="hidden w-28 h-16 object-cover rounded border border-gray-200" alt="preview" />
+              <img id="svcImagePreview" class="hidden w-28 h-16 object-cover rounded border border-gray-200 dark:border-gray-600" alt="preview" />
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm mb-1 text-gray-700">Monetization</label>
-              <select id="svcPricingType" class="w-full px-3 py-2 rounded border border-gray-300 bg-white">
+              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Monetization</label>
+              <select id="svcPricingType" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white">
                 <option value="free">Free</option>
                 <option value="one_time">One-time</option>
                 <option value="subscription">Subscription</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm mb-1 text-gray-700">Price (USD)</label>
-              <input id="svcPrice" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded border border-gray-300 bg-white" />
+              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Price (USD)</label>
+              <input id="svcPrice" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" />
             </div>
             <div class="flex items-end">
-              <label class="inline-flex items-center gap-2">
+              <label class="inline-flex items-center gap-2 text-gray-800 dark:text-gray-200">
                 <input id="svcAutomate" type="checkbox" class="h-4 w-4"> <span>Enable automation</span>
               </label>
             </div>
           </div>
           <div class="flex justify-end gap-3 pt-2">
-            <button type="button" id="svcCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Cancel</button>
+            <button type="button" id="svcCancel" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50">Cancel</button>
             <button type="submit" id="svcSaveBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2">
               <i id="svcSaveIcon" class="fas fa-save"></i>
               <span id="svcSaveText">Save</span>
@@ -116,19 +217,21 @@
   <!-- Chart Modal -->
   <div id="svcChartModal" class="fixed inset-0 bg-black/50 hidden z-50">
     <div class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl">
-        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 id="svcChartTitle" class="text-lg font-semibold text-gray-900">Service Usage</h3>
-          <button id="svcChartClose" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button>
+      <div class="bg-white dark:bg-gray-800 modal-card rounded-lg shadow-xl w-full max-w-3xl">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 id="svcChartTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Service Usage</h3>
+          <button id="svcChartClose" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50"><i class="fas fa-times"></i></button>
         </div>
         <div class="p-4">
           <div class="flex items-center justify-between mb-3">
-            <div class="text-sm text-gray-600">Timeframe</div>
-            <select id="svcChartTf" class="text-xs px-2 py-1 rounded border border-gray-300 bg-white text-gray-700">
+            <div class="text-sm text-gray-600 dark:text-gray-300">Timeframe</div>
+            <div class="svc-select-wrap">
+              <select id="svcChartTf" class="svc-select">
               <option value="daily">Daily</option>
               <option value="monthly">Monthly</option>
               <option value="annual">Annual</option>
             </select>
+            </div>
           </div>
           <canvas id="svcChartCanvas" height="220"></canvas>
         </div>
@@ -141,6 +244,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof includeAdminSidebar === 'function') includeAdminSidebar();
       if (typeof includeAdminHeader === 'function') includeAdminHeader();
+      // Wire FAB
+      const fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
+      if(fab&&ov&&md){ const o=()=>{ov.classList.remove('hidden'); md.classList.remove('hidden');}; const c=()=>{ov.classList.add('hidden'); md.classList.add('hidden');}; fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
     });
   </script>
 </body>

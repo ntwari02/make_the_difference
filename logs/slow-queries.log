@@ -294,3 +294,318 @@
        AND status = 'active'
 2025-08-27T14:40:41.102Z [438ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
 2025-08-27T14:40:41.137Z [451ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-27T15:18:59.560Z [476ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T15:49:02.554Z [471ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-27T15:49:02.577Z [358ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-08-27T16:03:35.278Z [1835ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T16:03:57.641Z [1400ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T16:05:49.262Z [1209ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-27T16:17:22.564Z [355ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-27T16:17:22.591Z [338ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-28T03:06:08.380Z [8025ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T03:07:03.209Z [465ms] SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?
+2025-08-28T03:13:27.806Z [339ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-28T03:13:32.232Z [307ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-28T03:13:32.353Z [327ms] 
+            SELECT u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login
+            FROM users u
+            WHERE 1=1
+            ORDER BY u.created_at DESC
+            LIMIT ? O
+2025-08-28T03:13:32.425Z [406ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-28T03:14:52.900Z [399ms] 
+      SELECT id, title, description, file_name, file_size, category, download_count, created_at
+      FROM scholarship_documents 
+      WHERE is_active = 1 
+      ORDER BY category, created_at DESC
+ 
+2025-08-28T03:15:02.641Z [544ms] SELECT * FROM services
+2025-08-28T03:15:03.464Z [345ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T03:25:19.428Z [1903ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T04:10:14.220Z [317ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-28T04:17:14.240Z [501ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-08-28T04:17:14.640Z [673ms] SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?
+2025-08-28T04:17:14.937Z [300ms] SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC
+2025-08-28T04:17:15.206Z [1171ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-28T04:34:29.571Z [308ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-28T04:34:29.706Z [453ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-28T04:34:29.879Z [466ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-28T04:46:05.058Z [461ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T05:05:31.799Z [406ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T05:20:31.442Z [354ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T06:21:46.175Z [467ms] SELECT COUNT(*) as total FROM reports
+2025-08-28T06:54:06.700Z [590ms] SELECT COUNT(*) as total FROM users
+2025-08-28T06:54:07.896Z [1096ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-28T06:54:41.468Z [316ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-28T06:54:41.529Z [355ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-28T06:54:41.749Z [603ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-28T08:23:58.641Z [1031ms] INSERT INTO scholarship_applications (full_name, email_address, scholarship_id, date_of_birth, status, application_id, gender, phone_number, address, academic_level, preferred_university, country, int
+2025-08-28T08:36:01.481Z [1777ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T08:51:26.214Z [804ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-28T08:51:26.261Z [848ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-28T08:51:26.397Z [983ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-28T08:51:26.425Z [996ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-28T08:52:21.599Z [3945ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T10:23:03.554Z [3441ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T10:23:41.231Z [1562ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-28T10:23:41.904Z [2209ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-08-28T10:23:42.593Z [688ms] SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC
+2025-08-28T10:23:53.438Z [923ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-28T10:23:54.257Z [797ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-08-28T10:23:55.800Z [582ms] 
+            SELECT 
+                'application_submitted' as type,
+                CONCAT('New application submitted by ', full_name) as description,
+                application_date as created_at
+
+2025-08-28T10:24:26.242Z [570ms] SELECT category, COUNT(*) as cnt
+       FROM reports
+       GROUP BY category
+       ORDER BY cnt DESC
+       LIMIT 1
+2025-08-28T10:24:26.273Z [654ms] SELECT COUNT(*) as total FROM reports
+2025-08-28T10:24:39.656Z [831ms] UPDATE scholarships 
+       SET status = 'expired' 
+       WHERE application_deadline < ? 
+       AND status = 'active'
+2025-08-28T10:24:40.123Z [1296ms] UPDATE scholarships 
+       SET status = 'expired' 
+       WHERE application_deadline < ? 
+       AND status = 'active'
+2025-08-28T10:24:40.536Z [407ms] SELECT 
+            s.id,
+            s.name,
+            s.description,
+            s.eligibility_criteria,
+            s.application_deadline,
+            s.award_amount,
+            s.is_recurring,
+2025-08-28T10:24:40.539Z [406ms] SELECT 
+          s.id,
+          s.name,
+          s.description,
+          s.eligibility_criteria,
+          s.application_deadline,
+          s.award_amount,
+          s.is_recurring,
+          s.n
+2025-08-28T10:24:40.555Z [1723ms] 
+      SELECT id, title, description, file_name, file_size, category, download_count, created_at
+      FROM scholarship_documents 
+      WHERE is_active = 1 
+      ORDER BY category, created_at DESC
+ 
+2025-08-28T10:24:46.553Z [645ms] SELECT * FROM partners
+2025-08-28T10:45:04.479Z [313ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login,
+                   au.admin_level, au.permissions, au.is_active as admin_active
+            FROM users u
+            LEF
+2025-08-28T10:45:04.851Z [675ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login,
+                   au.admin_level, au.permissions, au.is_active as admin_active
+            FROM users u
+            LEF
+2025-08-28T10:45:04.894Z [471ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-28T10:45:04.906Z [428ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-28T10:50:20.553Z [427ms] UPDATE reports SET status = ?, updated_at = NOW() WHERE id = ?
+2025-08-28T11:06:18.557Z [370ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:08:24.918Z [7397ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T11:08:37.420Z [12513ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-08-28T11:10:33.476Z [371ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-28T11:10:36.708Z [399ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:10:38.623Z [1934ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-28T11:10:58.606Z [659ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:12:36.334Z [793ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:23:48.469Z [403ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:33:13.179Z [755ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:36:07.504Z [2437ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:40:49.498Z [1261ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:48:53.236Z [329ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:49:09.039Z [413ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+
+2025-08-28T11:50:54.587Z [317ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        
+2025-08-28T11:51:19.052Z [1582ms] CREATE TABLE IF NOT EXISTS services_monetization (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
+

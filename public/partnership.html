@@ -95,7 +95,16 @@
             </div>
         <div class="mt-14">
           <h4 class="text-2xl font-semibold text-gray-900 dark:text-white text-center mb-6">Our Partners</h4>
-          <div id="partners-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+          <div class="relative">
+            <button id="partnersPrev" type="button" class="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
+              <i class="bi bi-chevron-left text-xl"></i>
+            </button>
+            <div id="partnersCarousel" class="flex gap-4 overflow-hidden snap-x snap-mandatory scroll-smooth pb-2">
+            </div>
+            <button id="partnersNext" type="button" class="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
+              <i class="bi bi-chevron-right text-xl"></i>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -401,8 +410,8 @@
           </div>`;
         }).join('');
 
-        // Render individual partner cards
-        const listEl = document.getElementById('partners-list');
+        // Render individual partner cards into horizontal carousel
+        const listEl = document.getElementById('partnersCarousel');
         if (listEl && partners.length){
           const norm = p => { if(!p) return ''; let s=String(p).replace(/\\\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
           const guessImageFor = partner => {
@@ -427,7 +436,7 @@
             const status = (p.status || 'approved').toString();
             const msg = (p.message || '').trim();
             return `
-              <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-100 dark:border-gray-700">
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-100 dark:border-gray-700 min-w-[320px] snap-start">
                 <div class="flex items-start gap-4">
                   ${img ? `<img src="${img}" class="w-16 h-16 rounded object-cover border" alt="${p.organization || p.name}" onerror="this.style.display='none'">` : `<div class="w-16 h-16 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="bi bi-person-circle text-3xl"></i></div>`}
                   <div class="flex-1">
@@ -446,6 +455,42 @@
                 </div>
               </div>`;
           }).join('');
+
+          // Carousel controls
+          const el = listEl;
+          // Auto sliding every 3 seconds, wrap to start at end
+          let autoTimer;
+          const step = () => {
+            const firstCard = el.querySelector('.snap-start');
+            const cardW = (firstCard ? firstCard.clientWidth : 320) + 16; // include gap
+            const atEnd = el.scrollLeft + el.clientWidth + 5 >= el.scrollWidth;
+            if (atEnd) {
+              el.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+              el.scrollBy({ left: cardW, behavior: 'smooth' });
+            }
+          };
+          const startAuto = () => { clearInterval(autoTimer); autoTimer = setInterval(step, 1300); };
+          const stopAuto = () => { clearInterval(autoTimer); };
+          startAuto();
+          // Pause on hover to improve UX
+          el.addEventListener('mouseenter', stopAuto);
+          el.addEventListener('mouseleave', startAuto);
+
+          // Wire Prev/Next buttons for manual control
+          const prevBtn = document.getElementById('partnersPrev');
+          const nextBtn = document.getElementById('partnersNext');
+          const scrollByAmount = (dir) => {
+            const firstCard = el.querySelector('.snap-start');
+            const cardW = (firstCard ? firstCard.clientWidth : 320) + 16;
+            el.scrollBy({ left: dir * cardW, behavior: 'smooth' });
+          };
+          if (prevBtn && nextBtn) {
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            prevBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(-1); startAuto(); });
+            nextBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(1); startAuto(); });
+          }
         }
       }catch(e){
         const container = document.getElementById('partner-types');
