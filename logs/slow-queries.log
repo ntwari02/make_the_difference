@@ -609,3 +609,28 @@
     service_id INT NOT NULL,
     pricing_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'free',
 
+2025-08-28T12:07:31.200Z [300ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-08-28T13:31:23.669Z [310ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-29T03:26:46.805Z [830ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-08-29T03:28:53.670Z [300ms] 
+      SELECT id, title, description, file_name, file_size, category, download_count, created_at
+      FROM scholarship_documents 
+      WHERE is_active = 1 
+      ORDER BY category, created_at DESC
+ 
+2025-08-29T03:28:53.797Z [372ms] UPDATE scholarships 
+       SET status = 'expired' 
+       WHERE application_deadline < ? 
+       AND status = 'active'
+2025-08-29T04:09:02.945Z [458ms] 
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'notifications'
+        

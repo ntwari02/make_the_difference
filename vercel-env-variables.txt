@@ -1,0 +1,57 @@
+# 🔧 Vercel Environment Variables - Copy These to Your Dashboard
+
+## 📍 **Where to Add:**
+1. Go to: https://vercel.com/thierry-ntwaris-projects/mbappe-global
+2. Click "Settings" tab
+3. Click "Environment Variables" in left sidebar
+4. Click "Add New" for each variable below
+
+## 🌍 **Production Environment Variables:**
+
+NODE_ENV = production
+SESSION_SECRET = mbappe-global-scholarship-2024-secure-key
+PORT = 3000
+JWT_SECRET = mbappe-jwt-secret-key-2024-production
+JWT_EXPIRES_IN = 24h
+
+## 🗄️ **Database Variables (Update after PlanetScale setup):**
+
+DB_HOST = aws.connect.psdb.cloud
+DB_USER = [YOUR_PLANETSCALE_USERNAME]
+DB_PASSWORD = [YOUR_PLANETSCALE_PASSWORD]
+DB_NAME = mbappe_scholarship_db
+DB_SSL = true
+
+## ☁️ **File Storage Variables (Update after Cloudinary setup):**
+
+CLOUDINARY_CLOUD_NAME = [YOUR_CLOUDINARY_CLOUD_NAME]
+CLOUDINARY_API_KEY = [YOUR_CLOUDINARY_API_KEY]
+CLOUDINARY_API_SECRET = [YOUR_CLOUDINARY_API_SECRET]
+
+## 🎯 **Steps to Add:**
+
+1. Click "Add New" for each variable
+2. Copy the Name and Value from above
+3. Select "Production" environment ONLY
+4. Click "Save"
+5. Repeat for all variables
+
+## 🚨 **Important Notes:**
+
+- ONLY add to Production environment
+- Don't add to Preview/Development
+- Keep these values secure
+- Redeploy after adding variables
+
+## 🔄 **After Adding Variables:**
+
+Run: vercel --prod
+
+## 📚 **Next Steps:**
+
+1. ✅ Set up PlanetScale database
+2. ✅ Configure Cloudinary storage  
+3. ✅ Update database variables with real values
+4. ✅ Update Cloudinary variables with real values
+5. ✅ Test all functionality
+6. ✅ Deploy final version
