@@ -499,7 +499,7 @@
         async function loadUsers(page = 1, search = '') {
             try {
                 const token = localStorage.getItem('token');
-                let url = `/api/admin/users?page=${page}&limit=${usersPerPage}&status=active`;
+                let url = `/api/admin/users?page=${page}&limit=${usersPerPage}`;
                 if (search) url += `&search=${encodeURIComponent(search)}`;
                 const response = await fetch(url, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -767,7 +767,7 @@
                                 ${user.email || ''}
                             </div>
                             <div class="mt-1 sm:hidden text-xs text-gray-500 dark:text-gray-400">
-                                ${(user.admin_level === 'super_admin') ? 'super_admin' : (user.role || 'user')}
+                                ${(user.admin_level === 'super_admin' && user.admin_active === 1) ? 'super_admin' : (user.role || 'user')}
                             </div>
                             <div class="mt-1 sm:hidden">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -783,7 +783,7 @@
                         ${user.email || ''}
                     </td>
                     <td class="hidden md:table-cell px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${(user.admin_level === 'super_admin') ? 'super_admin' : (user.role || 'user')}
+                        ${(user.admin_level === 'super_admin' && user.admin_active === 1) ? 'super_admin' : (user.role || 'user')}
                     </td>
                     <td class="hidden sm:table-cell px-4 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

@@ -4,112 +4,88 @@ import { auth, bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Initialize notifications and conversations tables
+// Initialize notifications and related tables without INFORMATION_SCHEMA checks
 async function initializeTables() {
     try {
-        // Initialize notifications table
-        const [notificationTables] = await db.query(`
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'notifications'
+        // Notifications table
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                title VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                INDEX idx_email (email),
+                INDEX idx_user_id (user_id)
+            )
         `);
-        
-        if (notificationTables.length === 0) {
-            await db.query(`
-                CREATE TABLE notifications (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT NULL,
-                    email VARCHAR(255) NULL,
-                    title VARCHAR(255) NOT NULL,
-                    message TEXT NOT NULL,
-                    is_read BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    INDEX idx_email (email),
-                    INDEX idx_user_id (user_id)
-                )
-            `);
-            console.log('Notifications table created successfully');
-        } else {
-            // Check if email column exists, if not add it
-            const [columns] = await db.query(`
-                SELECT COLUMN_NAME 
-                FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'notifications' 
-                AND COLUMN_NAME = 'email'
-            `);
-            
-            if (columns.length === 0) {
-                await db.query(`
-                    ALTER TABLE notifications 
-                    ADD COLUMN email VARCHAR(255) NULL,
-                    ADD INDEX idx_email (email)
-                `);
-                console.log('Added email column to notifications table');
+
+        // Backfill column/indexes safely (ignore duplicates)
+        try {
+            await db.query('ALTER TABLE notifications ADD COLUMN email VARCHAR(255) NULL');
+        } catch (e) {
+            if (!(e && (e.errno === 1060 || e.code === 'ER_DUP_FIELDNAME'))) {
+                // Rethrow unexpected errors
+                throw e;
+            }
+        }
+        try {
+            await db.query('ALTER TABLE notifications ADD INDEX idx_email (email)');
+        } catch (e) {
+            if (!(e && (e.errno === 1061 || e.code === 'ER_DUP_KEYNAME'))) {
+                throw e;
+            }
+        }
+        try {
+            await db.query('ALTER TABLE notifications ADD INDEX idx_user_id (user_id)');
+        } catch (e) {
+            if (!(e && (e.errno === 1061 || e.code === 'ER_DUP_KEYNAME'))) {
+                throw e;
             }
         }
 
-        // Initialize conversations table
-        const [conversationTables] = await db.query(`
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'conversations'
+        // Conversations table
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                notification_id INT NOT NULL,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                admin_id INT NULL,
+                subject VARCHAR(255) NOT NULL,
+                status ENUM('active', 'closed') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_notification_id (notification_id),
+                INDEX idx_user_id (user_id),
+                INDEX idx_email (email),
+                INDEX idx_status (status)
+            )
         `);
-        
-        if (conversationTables.length === 0) {
-            await db.query(`
-                CREATE TABLE conversations (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    notification_id INT NOT NULL,
-                    user_id INT NULL,
-                    email VARCHAR(255) NULL,
-                    admin_id INT NULL,
-                    subject VARCHAR(255) NOT NULL,
-                    status ENUM('active', 'closed') DEFAULT 'active',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
-                    INDEX idx_notification_id (notification_id),
-                    INDEX idx_user_id (user_id),
-                    INDEX idx_email (email),
-                    INDEX idx_status (status)
-                )
-            `);
-            console.log('Conversations table created successfully');
-        }
 
-        // Initialize replies table
-        const [replyTables] = await db.query(`
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'replies'
+        // Replies table
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS replies (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                conversation_id INT NOT NULL,
+                sender_type ENUM('user', 'admin') NOT NULL,
+                sender_id INT NULL,
+                sender_email VARCHAR(255) NULL,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+                INDEX idx_conversation_id (conversation_id),
+                INDEX idx_sender_type (sender_type),
+                INDEX idx_created_at (created_at)
+            )
         `);
-        
-        if (replyTables.length === 0) {
-            await db.query(`
-                CREATE TABLE replies (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    conversation_id INT NOT NULL,
-                    sender_type ENUM('user', 'admin') NOT NULL,
-                    sender_id INT NULL,
-                    sender_email VARCHAR(255) NULL,
-                    message TEXT NOT NULL,
-                    is_read BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-                    INDEX idx_conversation_id (conversation_id),
-                    INDEX idx_sender_type (sender_type),
-                    INDEX idx_created_at (created_at)
-                )
-            `);
-            console.log('Replies table created successfully');
-        }
     } catch (error) {
         console.error('Error initializing tables:', error);
     }

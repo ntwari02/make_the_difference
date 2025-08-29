@@ -17,8 +17,46 @@
 
 --
 -- Table structure for table `admin_account_settings`
---
-
+--CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('user','admin') DEFAULT 'user',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `security_questions_setup` tinyint(1) DEFAULT '0',
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expiry` datetime DEFAULT NULL,
+  `reset_otp` varchar(6) DEFAULT NULL,
+  `reset_otp_expiry` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_login` timestamp NULL DEFAULT NULL,
+  `login_attempts` int DEFAULT '0',
+  `locked_until` datetime DEFAULT NULL,
+  `help_token` varchar(255) DEFAULT NULL,
+  `help_token_expiry` datetime DEFAULT NULL,
+  `help_requested_at` datetime DEFAULT NULL,
+  `password_reset_by_admin` tinyint(1) DEFAULT '0',
+  `admin_notes` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `general_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `site_title` varchar(255) DEFAULT NULL,
+  `contact_email` varchar(255) DEFAULT NULL,
+  `site_description` text,
+  `homepage_content` text,
+  `homepage_banner` text,
+  `maintenance_mode` enum('on','off') DEFAULT NULL,
+  `facebook_link` varchar(255) DEFAULT NULL,
+  `twitter_link` varchar(255) DEFAULT NULL,
+  `instagram_link` varchar(255) DEFAULT NULL,
+  `services` text,
+  `logo_url` varchar(255) DEFAULT NULL,
+  `favicon_url` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 DROP TABLE IF EXISTS `admin_account_settings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

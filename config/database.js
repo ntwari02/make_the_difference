@@ -6,14 +6,18 @@ dotenv.config();
 
 const SLOW_MS = parseInt(process.env.DB_SLOW_MS || '300', 10);
 
+const shouldUseSsl = String(process.env.DB_SSL || '').toLowerCase() === 'true';
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'Loading99.99%',
     database: process.env.DB_NAME || 'mbappe',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: shouldUseSsl ? { rejectUnauthorized: true } : undefined
 });
 
 // Test the connection
