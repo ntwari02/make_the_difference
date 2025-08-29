@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "build": "echo 'Skipping build: handled by heroku-postbuild'",
     "heroku-postbuild": "npm run build:css",
+    "migrate": "node scripts/migrate.js",
+    "migrate:prune": "node scripts/prune-migrations.js",
     "build:css": "node scripts/build-css.js",
     "build:css:watch": "node scripts/build-css.js && echo 'CSS built - use nodemon for watch mode'",
     "build:check": "node -e \"console.log('Build check passed')\"",

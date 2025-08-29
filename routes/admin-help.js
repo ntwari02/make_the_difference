@@ -8,24 +8,27 @@ function generateToken() {
     return crypto.randomBytes(24).toString('hex');
 }
 
-// Issue a reset token if an admin previously approved help (idempotent, silent if user not found)
+// Return an existing active reset/help token if present; do not generate new tokens here
 router.get('/auto-reset-token', async (req, res) => {
     try {
         const email = String(req.query.email || '').trim();
         if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
 
-        // If user exists, ensure a token exists and is valid soon; otherwise reply success: false silently
-        const [rows] = await db.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) LIMIT 1', [email]);
-        if (!rows || rows.length === 0) {
-            return res.json({ success: false });
-        }
-        const userId = rows[0].id;
-
-        // Create fresh token (valid for 30 minutes)
-        const token = generateToken();
-        await db.query('UPDATE users SET reset_token = ?, reset_token_expiry = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE id = ?', [token, userId]);
-
-        return res.json({ success: true, reset_token: token });
+        const [rows] = await db.query(
+            `SELECT reset_token, reset_token_expiry, help_token, help_token_expiry
+             FROM users 
+             WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+             LIMIT 1`,
+            [email]
+        );
+        if (!rows || rows.length === 0) return res.json({ success: false });
+        const u = rows[0];
+        const now = Date.now();
+        const resetValid = u.reset_token && u.reset_token_expiry && new Date(u.reset_token_expiry).getTime() > now;
+        const helpValid = u.help_token && u.help_token_expiry && new Date(u.help_token_expiry).getTime() > now;
+        if (resetValid) return res.json({ success: true, reset_token: u.reset_token });
+        if (helpValid) return res.json({ success: true, reset_token: u.help_token });
+        return res.json({ success: false });
     } catch (error) {
         console.error('auto-reset-token error:', error);
         res.status(500).json({ success: false, message: 'Server error' });

@@ -430,30 +430,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-check for admin-issued reset when email is entered
     const forgotEmailInput = document.getElementById('forgotEmail');
     const autoResetNotice = document.getElementById('autoResetNotice');
+    // Disable automatic reset token shortcut for users: always show questions first
+    // Admin-specific auto token flow is handled after Get Questions response for admins
     if (forgotEmailInput) {
         let debounceTimer = null;
         forgotEmailInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(async () => {
-                const email = forgotEmailInput.value.trim();
-                if (!email) return;
-                try {
-                    const res = await fetch('/api/admin-help/auto-reset-token?email=' + encodeURIComponent(email));
-                    const data = await res.json();
-                    if (res.ok && data && data.success && data.reset_token) {
-                        // Jump straight to reset step
-                        if (autoResetNotice) autoResetNotice.classList.remove('hidden');
-                        currentStep = 3;
-                        showStep(3);
-                        // Stash token for reset submission
-                        resetToken = data.reset_token;
-                        // Pre-fill read-only email field in step 3 if present
-                        const emailField = document.getElementById('email');
-                        if (emailField) emailField.value = email;
-                    }
-                } catch (e) {
-                    // ignore
-                }
+            debounceTimer = setTimeout(() => {
+                // Intentionally do nothing to avoid skipping security questions for users
             }, 500);
         });
     }

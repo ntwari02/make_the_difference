@@ -349,7 +349,14 @@
                     <select id="bulkScholarshipSelect" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
                         <option value="">-- Select scholarship to apply all rows --</option>
                     </select>
-                    <input type="file" id="bulkCsvFile" accept=".csv,text/csv" required class="block w-full text-sm" />
+                    <div id="bulkDropzone" class="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md p-6 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-400">
+                        <input type="file" id="bulkCsvFile" name="file" accept=".csv,text/csv" class="hidden" />
+                        <div class="text-sm text-gray-600 dark:text-gray-300">
+                            <div class="font-medium mb-1">Drag & drop CSV here</div>
+                            <div>or click to choose a file</div>
+                            <div id="bulkSelectedFile" class="mt-2 text-primary-600 dark:text-primary-400 hidden"></div>
+                        </div>
+                    </div>
                     <div class="flex justify-end gap-2">
                         <button type="button" id="cancelBulkUpload" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Upload</button>
@@ -366,7 +373,7 @@
     </div>
 
     <!-- Fix Problems Drawer -->
-    <div id="fixProblemsDrawer" class="fixed top-0 right-0 w-full max-w-3xl h-full bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform z-[1100]">
+    <div id="fixProblemsDrawer" class="fixed top-0 right-0 w-full max-w-3xl h-full bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform z-[30000]">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div class="text-lg font-bold">Fix Problem Rows</div>
             <button id="closeFixPanel" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"><i class="fas fa-times"></i></button>
@@ -464,10 +471,10 @@
                         Showing <span id="startRange">1</span> to <span id="endRange">10</span> of <span id="totalApplications">0</span> applications
                     </div>
                     <div class="flex space-x-2">
-                        <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <button id="prevPage" type="button" onclick="changePage(-1)" class="px-3 py-1 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed">
                             Previous
                         </button>
-                        <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <button id="nextPage" type="button" onclick="changePage(1)" class="px-3 py-1 rounded-md bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-400 disabled:bg-primary-300 disabled:opacity-60 disabled:cursor-not-allowed">
                             Next
                         </button>
                     </div>
@@ -879,7 +886,10 @@
         // State management
         let applications = [];
         let currentPage = 1;
-        const applicationsPerPage = 10;
+        const applicationsPerPage = 5;
+        let totalApplicationsCount = 0;
+        let lastPageCount = 0; // number of items on the latest page fetch
+        let hasMore = false;   // true if server likely has a next page
         // sortMode is declared earlier
         let minScoreFilter = '';
         let currentApplicationId = null;
@@ -1140,6 +1150,8 @@
             const cancelBulkUpload = document.getElementById('cancelBulkUpload');
             const bulkUploadForm = document.getElementById('bulkUploadForm');
             const bulkUploadResult = document.getElementById('bulkUploadResult');
+            const bulkDropzone = document.getElementById('bulkDropzone');
+            let droppedCsvFile = null; // fallback store for drag-dropped file
 
             const showBulkModal = () => bulkUploadModal && bulkUploadModal.classList.add('show');
             const hideBulkModal = () => { if (bulkUploadModal) bulkUploadModal.classList.remove('show'); if (bulkUploadResult) { bulkUploadResult.classList.add('hidden'); bulkUploadResult.innerHTML=''; } };
@@ -1147,6 +1159,50 @@
             if (closeBulkUploadModal) closeBulkUploadModal.addEventListener('click', hideBulkModal);
             if (cancelBulkUpload) cancelBulkUpload.addEventListener('click', hideBulkModal);
             if (bulkUploadModal) bulkUploadModal.addEventListener('click', (e)=>{ if(e.target===bulkUploadModal) hideBulkModal(); });
+
+            // Drag & drop for CSV
+            (function setupBulkDrop(){
+                const fileInput = document.getElementById('bulkCsvFile');
+                const fileLabel = document.getElementById('bulkSelectedFile');
+                if (!bulkDropzone || !fileInput) return;
+                // Global prevent default so the browser doesn't open the file
+                ['dragover','drop'].forEach(ev=>document.addEventListener(ev, e=>{ e.preventDefault(); }, false));
+
+                const over = ['dragenter','dragover'];
+                const leave = ['dragleave','drop'];
+
+                function setHover(on){
+                    bulkDropzone.classList.toggle('ring-2', on);
+                    bulkDropzone.classList.toggle('ring-primary-500', on);
+                    bulkDropzone.classList.toggle('border-primary-500', on);
+                }
+                function setSelected(){
+                    // Persist a green border to indicate a file is selected
+                    bulkDropzone.classList.remove('ring-2','ring-primary-500','border-primary-500');
+                    bulkDropzone.classList.add('border-green-500','bg-green-50','dark:bg-green-900/20');
+                }
+
+                over.forEach(ev=>bulkDropzone.addEventListener(ev, e=>{ e.preventDefault(); setHover(true); }));
+                leave.forEach(ev=>bulkDropzone.addEventListener(ev, e=>{ e.preventDefault(); setHover(false); }));
+
+                bulkDropzone.addEventListener('drop', e=>{
+                    const f = (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) || null;
+                    if (!f) return;
+                    if (!/\.csv$/i.test(f.name)) { alert('Please drop a .csv file'); return; }
+                    droppedCsvFile = f;
+                    try { const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files; } catch {}
+                    if (fileLabel) { fileLabel.textContent = f.name; fileLabel.classList.remove('hidden'); }
+                    setSelected();
+                });
+                // Click to choose
+                bulkDropzone.addEventListener('click', ()=>fileInput.click());
+                fileInput.addEventListener('change', ()=>{
+                    const f = fileInput.files && fileInput.files[0];
+                    droppedCsvFile = f || null;
+                    if (f && fileLabel) { fileLabel.textContent = f.name; fileLabel.classList.remove('hidden'); }
+                    if (f) setSelected();
+                });
+            })();
 
             // Populate scholarship list for bulk select
             const bulkScholarshipSelect = document.getElementById('bulkScholarshipSelect');
@@ -1194,11 +1250,11 @@
             if (bulkUploadForm) bulkUploadForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const fileInput = document.getElementById('bulkCsvFile');
-                const file = fileInput && fileInput.files && fileInput.files[0];
-                if (!file) return;
+                const file = droppedCsvFile || (fileInput && fileInput.files && fileInput.files[0]);
+                if (!file) { alert('Please select or drop a CSV file.'); return; }
                 try {
                     const fd = new FormData();
-                    fd.append('file', file);
+                    fd.append('file', file, file.name || 'bulk.csv');
                     const selectedScholarshipId = (bulkScholarshipSelect && bulkScholarshipSelect.value) ? bulkScholarshipSelect.value : '';
                     if (selectedScholarshipId) fd.append('scholarship_id', selectedScholarshipId);
                     const resp = await fetch('/api/admin-dashboard/applications/bulk-upload', {
@@ -1206,7 +1262,17 @@
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                         body: fd
                     });
-                    const result = await handleApiResponse(resp);
+                    if (!resp.ok) {
+                        // Try to extract server message; fallback to status text
+                        let msg = resp.statusText || 'Request failed';
+                        try {
+                            const body = await resp.json();
+                            msg = body && (body.message || body.error) ? (body.message || body.error) : msg;
+                        } catch {}
+                        showNotification(`Upload failed (${resp.status}): ${msg}`, 'error');
+                        return;
+                    }
+                    const result = await resp.json();
                     if (!result) return;
                     const s = result.summary || {};
                     if (bulkUploadResult) { renderBulkSummary(s); }
@@ -1216,7 +1282,8 @@
                     showNotification('Bulk upload complete', 'success');
                     await loadApplications();
                 } catch (err) {
-                    showNotification('Bulk upload failed: ' + (err.message || 'Unknown error'), 'error');
+                    const msg = (err && err.message) ? err.message : 'Network error. Please check that the server is running.';
+                    showNotification('Bulk upload failed: ' + msg, 'error');
                 }
             });
 
@@ -1735,19 +1802,23 @@
             try {
                 showLoading(true);
                 hideFetchError();
-                // Use admin-dashboard endpoint that returns JSON consistently
-                const response = await fetch('/api/admin-dashboard/applications/recent', {
+                // Use paginated endpoint
+                const url = `/api/admin-dashboard/applications?page=${currentPage}&limit=${applicationsPerPage}`;
+                const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const payload = await handleApiResponse(response);
-                const result = payload && payload.data ? payload.data : payload;
-                if (!Array.isArray(result)) {
-                    console.warn('Applications API did not return an array:', result);
-                    applications = [];
-                } else {
-                    applications = mapApplicationsToCamelCase(result);
-                }
-                filterApplications();
+                const data = payload && payload.data ? payload.data : payload;
+                const items = Array.isArray(data) ? data : (data.items || data.applications || []);
+                applications = mapApplicationsToCamelCase(items);
+                // total count from pagination if provided, otherwise fallback
+                const pag = data.pagination || data.meta || {};
+                lastPageCount = items.length;
+                hasMore = lastPageCount >= applicationsPerPage && (Number(pag.total ?? pag.totalItems ?? pag.count) ? (currentPage * applicationsPerPage) < Number(pag.total ?? pag.totalItems ?? pag.count) : true);
+                totalApplicationsCount = Number(pag.total ?? pag.totalItems ?? pag.count ?? 0);
+                filteredApplications = [...applications];
+                updateApplicationsTable();
+                updatePagination();
             } catch (error) {
                 console.error('Error loading applications:', error);
                 showFetchError('Unable to load applications. Please try again later.', loadApplications);
@@ -1779,8 +1850,7 @@
         }
 
         function updateApplicationsTable() {
-            const startIndex = (currentPage - 1) * applicationsPerPage;
-            const applicationsToDisplay = filteredApplications.slice(startIndex, startIndex + applicationsPerPage);
+            const applicationsToDisplay = filteredApplications;
             
             noApplications.classList.toggle('hidden', filteredApplications.length > 0);
 
@@ -1844,29 +1914,37 @@
         }
 
         function updatePagination() {
-            const total = filteredApplications.length;
-            const totalPages = Math.ceil(total / applicationsPerPage);
-            const startItem = total === 0 ? 0 : (currentPage - 1) * applicationsPerPage + 1;
-            const endItem = Math.min(currentPage * applicationsPerPage, total);
+            const total = totalApplicationsCount || 0;
+            const startItem = (currentPage - 1) * applicationsPerPage + (lastPageCount ? 1 : 0);
+            const endItem = (currentPage - 1) * applicationsPerPage + lastPageCount;
 
             startRange.textContent = startItem;
             endRange.textContent = endItem;
-            totalApplications.textContent = total;
+            totalApplications.textContent = total || (hasMore ? `${endItem}+` : `${endItem}`);
 
             prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            // If total unknown, enable Next when server returned a full page (likely more)
+            const totalPages = total ? Math.ceil(total / applicationsPerPage) : 0;
+            nextPageBtn.disabled = total ? (currentPage >= totalPages) : !hasMore;
             prevPageBtn.classList.toggle('opacity-50', prevPageBtn.disabled);
             nextPageBtn.classList.toggle('opacity-50', nextPageBtn.disabled);
         }
 
-        function changePage(delta) {
-            const newPage = currentPage + delta;
-            const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
-            if (newPage >= 1 && newPage <= totalPages) {
-                currentPage = newPage;
-                updateApplicationsTable();
-                updatePagination();
+        window.changePage = function(delta) {
+            if (!delta) return;
+            // Block going before first page
+            if (delta < 0 && currentPage <= 1) return;
+            // If we know total pages, block going past last page
+            const total = Number(totalApplicationsCount || 0);
+            if (total > 0) {
+                const totalPages = Math.max(1, Math.ceil(total / applicationsPerPage));
+                if (delta > 0 && currentPage >= totalPages) return; // already at last
+            } else {
+                // Unknown total: rely on hasMore flag from last fetch
+                if (delta > 0 && !hasMore) return;
             }
+            currentPage = currentPage + delta;
+            loadApplications();
         }
 
         async function viewApplication(applicationId) {
@@ -2021,6 +2099,8 @@
                 setTimeout(() => {
             currentStepIndex = 0;
             showStep(0);
+            // Re-bind Prev/Next in case DOM changed or modal was re-rendered
+            try { setupMultiStepNavigation && setupMultiStepNavigation(); } catch {}
                 }, 100);
             } else {
                 console.error('createApplicationModal element not found!');

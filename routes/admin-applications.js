@@ -408,10 +408,16 @@ router.post('/applications/bulk-upload', adminAuth, upload.single('file'), async
             }
         }
 
+        if (!res.headersSent) {
         return res.json({ success: true, summary: results });
+        } else {
+            return; // response already sent by an upstream guard; avoid double-send
+        }
     } catch (error) {
         console.error('Bulk upload error:', error);
+        if (!res.headersSent) {
         res.status(500).json({ success: false, message: 'Error processing bulk upload' });
+        }
     }
 });
 

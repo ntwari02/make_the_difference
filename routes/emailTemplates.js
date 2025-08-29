@@ -1,8 +1,22 @@
 import express from 'express';
 import pool from '../config/database.js';
 import { bypassAuth } from '../middleware/auth.js';
+import nodemailer from 'nodemailer';
 
 const router = express.Router();
+
+// Create SMTP transporter if env is configured
+function getMailer() {
+    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
+    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) return null;
+    const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: Number(SMTP_PORT),
+        secure: String(SMTP_SECURE || '').toLowerCase() === 'true',
+        auth: { user: SMTP_USER, pass: SMTP_PASS }
+    });
+    return transporter;
+}
 
 // GET all email templates
 router.get('/', bypassAuth, async (req, res) => {
@@ -93,7 +107,7 @@ router.delete('/:id', bypassAuth, async (req, res) => {
 // POST send test email
 router.post('/test-send', bypassAuth, async (req, res) => {
     try {
-        const { recipient_email, template_type, custom_content } = req.body;
+        const { recipient_email, template_type, custom_content, custom_subject } = req.body;
 
         if (!recipient_email) {
             return res.status(400).json({ error: 'Recipient email is required' });
@@ -101,7 +115,7 @@ router.post('/test-send', bypassAuth, async (req, res) => {
 
         // Get template content based on type
         let emailContent = '';
-        let emailSubject = 'Test Email';
+        let emailSubject = custom_subject || 'Test Email';
 
         if (template_type === 'custom' && custom_content) {
             emailContent = custom_content;
@@ -165,23 +179,21 @@ router.post('/test-send', bypassAuth, async (req, res) => {
             processedContent = processedContent.replace(regex, sampleData[key]);
         });
 
-        // In a real application, you would integrate with an email service here
-        // For now, we'll simulate the email sending
-        const emailData = {
-            to: recipient_email,
-            subject: emailSubject,
-            content: processedContent,
-            sent_at: new Date(),
-            status: 'sent'
-        };
-
-        // Log the email (in production, you'd send it via email service)
-        console.log('Test Email Sent:', emailData);
-
-        res.json({
-            message: 'Test email sent successfully',
-            email_data: emailData
-        });
+        // Send email if SMTP configured
+        const transporter = getMailer();
+        if (transporter) {
+            await transporter.sendMail({
+                from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                to: recipient_email,
+                subject: emailSubject,
+                html: /<([a-z][\s\S]*?)>/i.test(processedContent) ? processedContent : undefined,
+                text: /<([a-z][\s\S]*?)>/i.test(processedContent) ? undefined : processedContent
+            });
+            return res.json({ message: 'Test email sent successfully' });
+        } else {
+            console.warn('SMTP not configured; test email not actually sent.');
+            return res.json({ message: 'Email service not configured. Simulated send only.', email_disabled: true });
+        }
 
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -284,6 +296,8 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
         const sentEmails = [];
         const failedEmails = [];
 
+        const transporter = getMailer();
+
         // Process each user
         for (const user of users) {
             try {
@@ -306,19 +320,16 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
                     processedSubject = processedSubject.replace(regex, userData[key]);
                 });
 
-                // In a real application, you would send the email here
-                // For now, we'll simulate the email sending
-                const emailData = {
-                    to: user.email,
-                    subject: processedSubject,
-                    content: processedContent,
-                    user_id: user.id,
-                    sent_at: new Date(),
-                    status: 'sent'
-                };
-
-                // Log the email (in production, you'd send it via email service)
-                console.log('Bulk Email Sent:', emailData);
+                // Send email if SMTP configured; otherwise skip
+                if (transporter) {
+                    await transporter.sendMail({
+                        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                        to: user.email,
+                        subject: processedSubject,
+                        html: /<([a-z][\s\S]*?)>/i.test(processedContent) ? processedContent : undefined,
+                        text: /<([a-z][\s\S]*?)>/i.test(processedContent) ? undefined : processedContent
+                    });
+                }
 
                 // Create notification for the user
                 try {
@@ -336,12 +347,7 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
                     console.error(`Error creating notification for user ${user.id}:`, notificationError);
                 }
 
-                sentEmails.push({
-                    user_id: user.id,
-                    email: user.email,
-                    name: user.full_name,
-                    status: 'sent'
-                });
+                sentEmails.push({ user_id: user.id, email: user.email, name: user.full_name, status: 'sent' });
 
             } catch (error) {
                 console.error(`Error sending email to ${user.email}:`, error);
@@ -356,10 +362,11 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
         }
 
         res.json({
-            message: `Bulk email sending completed. ${sentEmails.length} sent, ${failedEmails.length} failed.`,
+            message: `Bulk email completed. ${sentEmails.length} processed, ${failedEmails.length} failed.` + (transporter ? '' : ' Email service not configured; emails not sent but notifications created.'),
             sent_emails: sentEmails,
             failed_emails: failedEmails,
-            total_processed: users.length
+            total_processed: users.length,
+            email_disabled: !transporter
         });
 
     } catch (err) {

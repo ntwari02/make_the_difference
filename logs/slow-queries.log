@@ -697,3 +697,45 @@
 2025-08-29T06:33:26.064Z [1032ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
 2025-08-29T06:33:26.812Z [1698ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
 2025-08-29T06:33:28.043Z [331ms] SELECT COUNT(*) as total FROM users
+2025-08-29T07:21:33.753Z [313ms] 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                ti
+2025-08-29T07:24:52.194Z [418ms] 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                ti
+2025-08-29T07:31:57.451Z [375ms] 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                ti
+2025-08-29T09:49:39.432Z [417ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-29T11:48:52.970Z [21038ms] INSERT INTO scholarship_applications (
+                        profile_picture_url, full_name, email_address, date_of_birth, gender, phone_number, address,
+                        preferred_university
+2025-08-29T11:53:46.779Z [440ms] 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                email VARCHAR(255) NULL,
+                ti
+2025-08-29T11:59:00.660Z [333ms] CREATE TABLE IF NOT EXISTS schema_migrations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL UNIQUE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+2025-08-29T12:19:58.495Z [311ms] CREATE TABLE IF NOT EXISTS schema_migrations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL UNIQUE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )

@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { auth, adminAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -253,6 +254,55 @@ router.get('/user/:email', async (req, res) => {
             success: false, 
             message: 'Error fetching security questions' 
         });
+    }
+});
+
+// POST set or update security questions for the authenticated admin (mirrors regular users)
+router.post('/admin/setup', adminAuth, async (req, res) => {
+    try {
+        const { security_questions } = req.body || {};
+        // Expect: [{ question_id, answer }, ...] at least 2
+        if (!Array.isArray(security_questions) || security_questions.length < 2) {
+            return res.status(400).json({ success: false, message: 'At least 2 security questions are required' });
+        }
+        // req.user.id is the admin's user_id from adminAuth
+        const userId = req.user.id;
+        // Mark setup flag
+        await db.query('UPDATE users SET security_questions_setup = 1 WHERE id = ?', [userId]);
+        // Clear existing answers
+        await db.query('DELETE FROM user_security_answers WHERE user_id = ?', [userId]);
+        // Insert new answers
+        for (const q of security_questions) {
+            const qid = Number(q && q.question_id);
+            const ans = (q && q.answer) ? String(q.answer).trim() : '';
+            if (!qid || !ans) continue;
+            await db.query(
+                'INSERT INTO user_security_answers (user_id, question_id, answer) VALUES (?, ?, ?)',
+                [userId, qid, ans]
+            );
+        }
+        return res.json({ success: true, message: 'Admin security questions saved' });
+    } catch (error) {
+        console.error('admin setup security questions error:', error);
+        res.status(500).json({ success: false, message: 'Error saving security questions' });
+    }
+});
+
+// GET current admin security questions (for edit form)
+router.get('/admin/mine', adminAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [rows] = await db.query(`
+            SELECT sq.id, sq.question
+            FROM security_questions sq
+            INNER JOIN user_security_answers usa ON sq.id = usa.question_id
+            WHERE usa.user_id = ?
+            ORDER BY sq.question
+        `, [userId]);
+        res.json({ success: true, questions: rows });
+    } catch (error) {
+        console.error('admin get mine security questions error:', error);
+        res.status(500).json({ success: false, message: 'Error fetching admin security questions' });
     }
 });
 

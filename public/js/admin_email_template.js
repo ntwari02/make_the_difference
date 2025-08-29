@@ -331,7 +331,7 @@ function updateSelectedCount() {
 
 async function selectAllUsers() {
     try {
-        const activeUsers = await window.api.get('/users/all?status=active');
+        const activeUsers = await window.api.get('/users/all');
         selectedUsers.clear();
         activeUsers.forEach(user => selectedUsers.add(user.id));
         updateSelectedCount();

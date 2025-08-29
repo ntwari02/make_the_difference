@@ -1,98 +1,24 @@
 import express from 'express';
 import db from '../config/database.js';
 import { auth, bypassAuth } from '../middleware/auth.js';
+import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
-// Initialize notifications and related tables without INFORMATION_SCHEMA checks
-async function initializeTables() {
-    try {
-        // Notifications table
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS notifications (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NULL,
-                email VARCHAR(255) NULL,
-                title VARCHAR(255) NOT NULL,
-                message TEXT NOT NULL,
-                is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_email (email),
-                INDEX idx_user_id (user_id)
-            )
-        `);
 
-        // Backfill column/indexes safely (ignore duplicates)
-        try {
-            await db.query('ALTER TABLE notifications ADD COLUMN email VARCHAR(255) NULL');
-        } catch (e) {
-            if (!(e && (e.errno === 1060 || e.code === 'ER_DUP_FIELDNAME'))) {
-                // Rethrow unexpected errors
-                throw e;
-            }
-        }
-        try {
-            await db.query('ALTER TABLE notifications ADD INDEX idx_email (email)');
-        } catch (e) {
-            if (!(e && (e.errno === 1061 || e.code === 'ER_DUP_KEYNAME'))) {
-                throw e;
-            }
-        }
-        try {
-            await db.query('ALTER TABLE notifications ADD INDEX idx_user_id (user_id)');
-        } catch (e) {
-            if (!(e && (e.errno === 1061 || e.code === 'ER_DUP_KEYNAME'))) {
-                throw e;
-            }
-        }
-
-        // Conversations table
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS conversations (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                notification_id INT NOT NULL,
-                user_id INT NULL,
-                email VARCHAR(255) NULL,
-                admin_id INT NULL,
-                subject VARCHAR(255) NOT NULL,
-                status ENUM('active', 'closed') DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
-                INDEX idx_notification_id (notification_id),
-                INDEX idx_user_id (user_id),
-                INDEX idx_email (email),
-                INDEX idx_status (status)
-            )
-        `);
-
-        // Replies table
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS replies (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                conversation_id INT NOT NULL,
-                sender_type ENUM('user', 'admin') NOT NULL,
-                sender_id INT NULL,
-                sender_email VARCHAR(255) NULL,
-                message TEXT NOT NULL,
-                is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-                INDEX idx_conversation_id (conversation_id),
-                INDEX idx_sender_type (sender_type),
-                INDEX idx_created_at (created_at)
-            )
-        `);
-    } catch (error) {
-        console.error('Error initializing tables:', error);
-    }
+function getMailer() {
+    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
+    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) return null;
+    const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: Number(SMTP_PORT),
+        secure: String(SMTP_SECURE || '').toLowerCase() === 'true',
+        auth: { user: SMTP_USER, pass: SMTP_PASS }
+    });
+    return transporter;
 }
 
-// Initialize tables on startup
-initializeTables();
+// DDL moved to migrations; no table creation at request time
 
 // User: create a new notification and conversation to contact admin
 router.post('/create-from-user', auth, async (req, res) => {
@@ -156,10 +82,29 @@ router.post('/', bypassAuth, async (req, res) => {
       [result.insertId, userId, email, req.user.id, title]
     );
     
-    res.status(201).json({ 
-      id: result.insertId, 
+    // Attempt email send if SMTP configured
+    try {
+      const transporter = getMailer();
+      if (!transporter) {
+        console.warn('Email not sent: SMTP not configured');
+      } else {
+        const isHtml = /<([a-z][\s\S]*?)>/i.test(message);
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: email,
+          subject: title,
+          html: isHtml ? message : undefined,
+          text: isHtml ? undefined : message
+        });
+      }
+    } catch (mailErr) {
+      console.warn('Failed to send message email:', mailErr?.message || mailErr);
+    }
+
+    res.status(201).json({
+      id: result.insertId,
       conversationId: conversationResult.insertId,
-      message: 'Notification sent successfully!',
+      message: 'Notification created and email attempted.',
       userFound: !!userId
     });
   } catch (error) {
