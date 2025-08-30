@@ -38,6 +38,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/admin-layout.css">
+
     <script src="js/include-admin-sidebar.js" defer></script>
     <script src="js/include-admin-header.js" defer></script>
     <style>
@@ -487,10 +488,7 @@
             if (mobileToggle) mobileToggle.addEventListener('click', toggleMobileSidebar);
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
-                    if (!confirm('Are you sure you want to log out?')) return;
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'login.html';
+                    window.location.href = 'logout.html';
                 });
             }
         }

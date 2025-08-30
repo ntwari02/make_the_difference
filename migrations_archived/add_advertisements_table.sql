@@ -1,4 +1,6 @@
 
+
+
 -- Add advertisements table to existing database
 USE mbappe;
 

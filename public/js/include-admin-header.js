@@ -40,10 +40,7 @@ async function includeAdminHeader() {
 
         // Logout with confirmation
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            if (!confirm('Are you sure you want to log out?')) return;
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
+            window.location.href = 'logout.html';
         });
 
         // Mobile admin menu

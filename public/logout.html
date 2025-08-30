@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logging Out - Make The Difference</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .logout-container {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            animation: bounce 1.4s ease-in-out infinite both;
+        }
+        .dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        .dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        .dot:nth-child(3) {
+            animation-delay: 0s;
+        }
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-container">
+        <div class="spinner">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <script>
+        // Handle logout process
+        function performLogout() {
+            try {
+                // Clear authentication data
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                
+                // Clear session storage
+                sessionStorage.clear();
+                
+                // Clear any cached data
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                console.log('Logout completed successfully');
+                
+                // Redirect to login page after a short delay
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error during logout:', error);
+                // Fallback redirect
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+            }
+        }
+
+        // Start logout process when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Small delay to show the logout message
+            setTimeout(performLogout, 1000);
+        });
+
+        // Also handle if user navigates away
+        window.addEventListener('beforeunload', function() {
+            // Ensure logout happens even if user navigates away
+            performLogout();
+        });
+    </script>
+</body>
+</html>

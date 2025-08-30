@@ -163,38 +163,102 @@ class AdvertisementManager {
                             
                             <!-- Custom Video Controls Overlay -->
                             <div class="video-controls-overlay absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                                <!-- Progress Bar -->
+                                <div class="mb-3">
+                                    <div class="relative">
+                                        <div class="w-full bg-gray-600 rounded-full h-2 cursor-pointer" id="progress-container">
+                                            <div class="bg-red-500 h-2 rounded-full transition-all duration-150" id="progress-bar" style="width: 0%"></div>
+                                            <div class="absolute top-0 h-2 w-2 bg-red-500 rounded-full transform -translate-y-1 cursor-pointer hover:scale-125 transition-transform duration-150" id="progress-handle" style="left: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between text-white text-xs mt-1">
+                                        <span id="current-time">0:00</span>
+                                        <span id="total-time">0:00</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Main Controls -->
                                 <div class="flex items-center justify-between text-white">
-                                    <!-- Volume Control -->
-                                    <div class="flex items-center space-x-2">
-                                        <button id="volume-btn" class="text-white hover:text-gray-300 transition-colors" title="Toggle Mute">
-                                            <i class="fas fa-volume-up text-lg"></i>
+                                    <!-- Left Controls -->
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Play/Pause Button -->
+                                        <button id="play-pause-btn" class="text-white hover:text-gray-300 transition-colors" title="Play/Pause (Space)">
+                                            <i class="fas fa-pause text-lg"></i>
                                         </button>
+                                        
+                                        <!-- Previous/Next Buttons -->
+                                        <button id="prev-10-btn" class="text-white hover:text-gray-300 transition-colors" title="Rewind 10s (←)">
+                                            <i class="fas fa-backward text-sm"></i>
+                                        </button>
+                                        <button id="next-10-btn" class="text-white hover:text-gray-300 transition-colors" title="Forward 10s (→)">
+                                            <i class="fas fa-forward text-sm"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Center Controls -->
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Playback Speed -->
                                         <div class="relative">
-                                            <input type="range" id="volume-slider" min="0" max="100" value="100" 
-                                                   class="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-                                                   title="Volume Control">
+                                            <button id="speed-btn" class="text-white hover:text-gray-300 transition-colors text-sm" title="Playback Speed">
+                                                1x
+                                            </button>
+                                            <div id="speed-menu" class="absolute bottom-full mb-2 bg-black bg-opacity-90 rounded-lg p-2 hidden">
+                                                <div class="text-white text-sm space-y-1">
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="0.5">0.5x</div>
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="0.75">0.75x</div>
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="1">1x</div>
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="1.25">1.25x</div>
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="1.5">1.5x</div>
+                                                    <div class="speed-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-speed="2">2x</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Quality Selector (if multiple sources) -->
+                                        <div class="relative">
+                                            <button id="quality-btn" class="text-white hover:text-gray-300 transition-colors text-sm" title="Video Quality">
+                                                <i class="fas fa-cog text-sm"></i>
+                                            </button>
+                                            <div id="quality-menu" class="absolute bottom-full mb-2 bg-black bg-opacity-90 rounded-lg p-2 hidden">
+                                                <div class="text-white text-sm space-y-1">
+                                                    <div class="quality-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-quality="auto">Auto</div>
+                                                    <div class="quality-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-quality="1080p">1080p</div>
+                                                    <div class="quality-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-quality="720p">720p</div>
+                                                    <div class="quality-option cursor-pointer hover:bg-gray-700 px-2 py-1 rounded" data-quality="480p">480p</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Play/Pause Button -->
-                                    <button id="play-pause-btn" class="text-white hover:text-gray-300 transition-colors" title="Play/Pause">
-                                        <i class="fas fa-pause text-lg"></i>
-                                    </button>
-                                    
-                                    <!-- Fullscreen Button -->
-                                    <button id="fullscreen-btn" class="text-white hover:text-gray-300 transition-colors" title="Fullscreen">
-                                        <i class="fas fa-expand text-lg"></i>
-                                    </button>
+                                    <!-- Right Controls -->
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Volume Control -->
+                                        <div class="flex items-center space-x-2">
+                                            <button id="volume-btn" class="text-white hover:text-gray-300 transition-colors" title="Toggle Mute (M)">
+                                                <i class="fas fa-volume-up text-lg"></i>
+                                            </button>
+                                            <div class="relative">
+                                                <input type="range" id="volume-slider" min="0" max="100" value="100" 
+                                                       class="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                                                       title="Volume Control">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Fullscreen Button -->
+                                        <button id="fullscreen-btn" class="text-white hover:text-gray-300 transition-colors" title="Fullscreen (F)">
+                                            <i class="fas fa-expand text-lg"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                            <div class="absolute top-2 left-2 video-badge text-white px-2 py-1 rounded text-xs">
                                 <i class="fas fa-play mr-1"></i>Video Advertisement
                             </div>
                         </div>
                     ` : `
                         <img src="${this.advertisement.image_url}" alt="${this.advertisement.title}" class="w-full h-64 object-cover">
-                        <div class="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                        <div class="absolute top-2 left-2 video-badge text-white px-2 py-1 rounded text-xs">
                             <i class="fas fa-image mr-1"></i>Image Advertisement
                         </div>
                     `}
@@ -328,6 +392,12 @@ class AdvertisementManager {
                 clearInterval(this.countdownInterval);
             }
             this.updatePlayPauseButton(false);
+            
+            // Show controls when paused
+            const controlsOverlay = document.querySelector('.video-controls-overlay');
+            if (controlsOverlay) {
+                controlsOverlay.style.opacity = '1';
+            }
         });
 
         // Resume countdown when video is played
@@ -343,10 +413,28 @@ class AdvertisementManager {
             this.closeAdvertisement();
         });
 
-        // Track video progress
+        // Track video progress and update UI
         video.addEventListener('timeupdate', () => {
             const progress = (video.currentTime / video.duration) * 100;
-            if (progress >= 50 && !this.canSkip) { // Enable skip after 50% of video
+            
+            // Update progress bar
+            const progressBar = document.getElementById('progress-bar');
+            const progressHandle = document.getElementById('progress-handle');
+            if (progressBar && progressHandle) {
+                progressBar.style.width = `${progress}%`;
+                progressHandle.style.left = `${progress}%`;
+            }
+            
+            // Update time display
+            const currentTimeEl = document.getElementById('current-time');
+            const totalTimeEl = document.getElementById('total-time');
+            if (currentTimeEl && totalTimeEl) {
+                currentTimeEl.textContent = this.formatTime(video.currentTime);
+                totalTimeEl.textContent = this.formatTime(video.duration);
+            }
+            
+            // Enable skip after 50% of video
+            if (progress >= 50 && !this.canSkip) {
                 this.canSkip = true;
                 const skipBtn = document.getElementById('skip-ad-btn');
                 const closeBtn = document.getElementById('close-ad-btn');
@@ -359,6 +447,31 @@ class AdvertisementManager {
                     closeBtn.classList.remove('opacity-0');
                 }
             }
+        });
+
+        // Handle video metadata loaded
+        video.addEventListener('loadedmetadata', () => {
+            const totalTimeEl = document.getElementById('total-time');
+            if (totalTimeEl) {
+                totalTimeEl.textContent = this.formatTime(video.duration);
+            }
+        });
+
+        // Show controls when video is loading
+        video.addEventListener('loadstart', () => {
+            const controlsOverlay = document.querySelector('.video-controls-overlay');
+            if (controlsOverlay) {
+                controlsOverlay.style.opacity = '1';
+            }
+        });
+
+        // Handle video errors
+        video.addEventListener('error', () => {
+            const controlsOverlay = document.querySelector('.video-controls-overlay');
+            if (controlsOverlay) {
+                controlsOverlay.style.opacity = '1';
+            }
+            console.error('Video error:', video.error);
         });
 
         // Add custom control event listeners
@@ -398,6 +511,90 @@ class AdvertisementManager {
             });
         }
 
+        // Previous/Next 10 seconds buttons
+        const prev10Btn = document.getElementById('prev-10-btn');
+        const next10Btn = document.getElementById('next-10-btn');
+        
+        if (prev10Btn) {
+            prev10Btn.addEventListener('click', () => {
+                video.currentTime = Math.max(0, video.currentTime - 10);
+            });
+        }
+        
+        if (next10Btn) {
+            next10Btn.addEventListener('click', () => {
+                video.currentTime = Math.min(video.duration, video.currentTime + 10);
+            });
+        }
+
+        // Progress bar seek functionality
+        const progressContainer = document.getElementById('progress-container');
+        if (progressContainer) {
+            progressContainer.addEventListener('click', (e) => {
+                const rect = progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const percentage = clickX / rect.width;
+                video.currentTime = percentage * video.duration;
+            });
+        }
+
+        // Playback speed control
+        const speedBtn = document.getElementById('speed-btn');
+        const speedMenu = document.getElementById('speed-menu');
+        
+        if (speedBtn && speedMenu) {
+            speedBtn.addEventListener('click', () => {
+                speedMenu.classList.toggle('hidden');
+            });
+            
+            // Close speed menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!speedBtn.contains(e.target) && !speedMenu.contains(e.target)) {
+                    speedMenu.classList.add('hidden');
+                }
+            });
+            
+            // Speed options
+            const speedOptions = speedMenu.querySelectorAll('.speed-option');
+            speedOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const speed = parseFloat(option.dataset.speed);
+                    video.playbackRate = speed;
+                    speedBtn.textContent = `${speed}x`;
+                    speedMenu.classList.add('hidden');
+                });
+            });
+        }
+
+        // Quality selector
+        const qualityBtn = document.getElementById('quality-btn');
+        const qualityMenu = document.getElementById('quality-menu');
+        
+        if (qualityBtn && qualityMenu) {
+            qualityBtn.addEventListener('click', () => {
+                qualityMenu.classList.toggle('hidden');
+            });
+            
+            // Close quality menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!qualityBtn.contains(e.target) && !qualityMenu.contains(e.target)) {
+                    qualityMenu.classList.add('hidden');
+                }
+            });
+            
+            // Quality options
+            const qualityOptions = qualityMenu.querySelectorAll('.quality-option');
+            qualityOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const quality = option.dataset.quality;
+                    // For now, just update the button text
+                    // In a real implementation, you'd switch video sources
+                    qualityBtn.innerHTML = `<i class="fas fa-cog text-sm"></i> ${quality}`;
+                    qualityMenu.classList.add('hidden');
+                });
+            });
+        }
+
         // Fullscreen button
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         if (fullscreenBtn) {
@@ -410,7 +607,7 @@ class AdvertisementManager {
             });
         }
 
-        // Keyboard shortcuts
+        // Enhanced keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.target === video || e.target.closest('#advertisement-overlay')) {
                 switch (e.key) {
@@ -430,6 +627,16 @@ class AdvertisementManager {
                         e.preventDefault();
                         video.currentTime -= 10;
                         break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        video.volume = Math.min(1, video.volume + 0.1);
+                        if (volumeSlider) volumeSlider.value = video.volume * 100;
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        video.volume = Math.max(0, video.volume - 0.1);
+                        if (volumeSlider) volumeSlider.value = video.volume * 100;
+                        break;
                     case 'm':
                     case 'M':
                         e.preventDefault();
@@ -444,6 +651,23 @@ class AdvertisementManager {
                         } else {
                             video.requestFullscreen();
                         }
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        video.currentTime = 0;
+                        break;
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                        e.preventDefault();
+                        const percentage = parseInt(e.key) * 10;
+                        video.currentTime = (percentage / 100) * video.duration;
                         break;
                 }
             }
@@ -466,6 +690,14 @@ class AdvertisementManager {
                 '<i class="fas fa-pause text-lg"></i>' : 
                 '<i class="fas fa-play text-lg"></i>';
         }
+    }
+
+    formatTime(seconds) {
+        if (isNaN(seconds) || seconds === Infinity) return '0:00';
+        
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     closeAdvertisement() {

@@ -115,8 +115,7 @@ async function includeNavbar() {
                     `;
 
                     document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
-                        if (!confirm('Are you sure you want to log out?')) return;
-                        window.location.href = '/logout.html';
+                        window.location.href = 'logout.html';
                     });
                 } else {
                     mobileAuthButtons.innerHTML = `
@@ -274,8 +273,7 @@ async function includeNavbar() {
             // Handle logout (redirect to logout page)
             logoutButton?.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (!confirm('Are you sure you want to log out?')) return;
-                window.location.href = '/logout.html';
+                window.location.href = 'logout.html';
             });
 
             // Handle profile link

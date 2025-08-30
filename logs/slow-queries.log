@@ -739,3 +739,44 @@
     filename VARCHAR(255) NOT NULL UNIQUE,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
+2025-08-30T03:27:19.941Z [787ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T03:27:33.954Z [861ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-08-30T03:27:35.110Z [1154ms] SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC
+2025-08-30T04:03:37.786Z [367ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T04:03:37.872Z [375ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T04:11:56.171Z [755ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T04:11:56.324Z [715ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T04:12:11.172Z [501ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T04:12:14.683Z [496ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-30T04:12:14.723Z [509ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T04:12:14.818Z [673ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T04:12:14.890Z [777ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T04:36:49.943Z [318ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-30T04:36:54.228Z [335ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T04:42:48.345Z [348ms] SELECT COUNT(*) as total FROM users

@@ -164,6 +164,9 @@
 }
 </style>
 
+<!-- Include Logout Utility -->
+<script src="js/logout-utility.js"></script>
+
 <script>
   // Theme toggle functionality
   const themeToggleBtn = document.getElementById('theme-toggle');
@@ -259,9 +262,7 @@
   // Handle logout
   logoutButton?.addEventListener('click', (e) => {
     e.preventDefault();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
+    window.location.href = 'logout.html';
   });
 
   // Mobile menu functionality
@@ -336,9 +337,7 @@
 
       // Add mobile logout handler
       document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = 'login.html';
+        window.location.href = 'logout.html';
       });
     } else {
       mobileAuthButtons.innerHTML = `

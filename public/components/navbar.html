@@ -60,6 +60,9 @@
 </nav>
 
 <!-- Navigation Scripts -->
+<!-- Include Logout Utility -->
+<script src="../js/logout-utility.js"></script>
+
 <script>
     /**
      * Navigation Bar JavaScript
@@ -149,9 +152,7 @@
 
     // Handles user logout
     function logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = 'home.html';
+        window.location.href = 'logout.html';
     }
 
     // Update auth buttons on page load

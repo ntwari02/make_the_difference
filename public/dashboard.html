@@ -190,6 +190,7 @@
     
     <!-- Include the API service -->
     <script src="js/api.js"></script>
+    <script src="js/logout-utility.js"></script>
     
     <script>
         // Check if user is logged in
@@ -220,9 +221,7 @@
 
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
+            window.location.href = 'logout.html';
         });
 
         // Fetch and display applications
