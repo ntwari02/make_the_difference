@@ -780,3 +780,349 @@
             WHERE u.id = ? AND u.status = 'active'
         
 2025-08-30T04:42:48.345Z [348ms] SELECT COUNT(*) as total FROM users
+2025-08-30T04:59:20.986Z [316ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T05:08:54.720Z [315ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T06:03:31.493Z [476ms] INSERT INTO help_requests (user_id, email, subject, message, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())
+2025-08-30T06:04:07.023Z [517ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T06:04:07.426Z [415ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T06:04:07.492Z [501ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T06:24:57.662Z [566ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T06:24:58.010Z [906ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T06:24:58.487Z [994ms] SELECT id, email, full_name, role FROM users WHERE id = ?
+2025-08-30T06:42:59.865Z [358ms] 
+            ALTER TABLE help_requests 
+            ADD COLUMN pain_point VARCHAR(50) DEFAULT 'general_inquiry' 
+            AFTER email
+        
+2025-08-30T07:09:31.364Z [301ms] SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?
+2025-08-30T07:09:31.574Z [510ms] SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC
+2025-08-30T07:17:26.211Z [333ms] SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?
+2025-08-30T07:17:48.463Z [332ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T07:17:48.500Z [320ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:17:48.533Z [322ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:20:30.270Z [324ms] UPDATE users SET reset_token = ?, reset_token_expiry = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE id = ?
+2025-08-30T07:38:23.686Z [570ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T07:38:23.829Z [469ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T07:38:23.863Z [492ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:38:24.191Z [739ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:38:24.218Z [614ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:38:24.284Z [613ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-30T07:38:24.366Z [412ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T07:39:02.409Z [449ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T07:39:02.459Z [300ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T07:39:02.899Z [312ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T08:13:03.530Z [393ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T08:13:03.572Z [354ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T08:13:59.231Z [482ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:42:07.519Z [335ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T10:42:07.607Z [471ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:45:23.999Z [346ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T10:45:24.227Z [544ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T10:45:26.746Z [316ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T10:45:26.841Z [332ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T10:45:26.852Z [449ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:45:26.902Z [504ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:54:46.811Z [412ms] 
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date
+2025-08-30T10:54:47.550Z [749ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-08-30T10:54:48.167Z [1083ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:54:48.533Z [1420ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T10:54:48.651Z [1519ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:54:48.908Z [407ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T10:54:49.367Z [784ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-30T10:54:49.568Z [679ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T10:54:49.781Z [638ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-30T10:54:49.981Z [757ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:54:50.417Z [1116ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:54:50.948Z [1064ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-08-30T10:54:51.157Z [1377ms] 
+            SELECT u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login
+            FROM users u
+            WHERE 1=1
+            ORDER BY u.created_at DESC
+            LIMIT ? O
+2025-08-30T10:54:51.274Z [327ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-08-30T10:54:51.433Z [318ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-08-30T10:54:52.148Z [717ms] 
+            SELECT 
+                'application_submitted' as type,
+                CONCAT('New application submitted by ', full_name) as description,
+                application_date as created_at
+
+2025-08-30T10:54:52.683Z [982ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(application_date) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(application_date) = DATE_SUB(CURDATE(), INTERVAL 1 DA
+2025-08-30T10:54:54.100Z [336ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T10:55:34.385Z [898ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T10:55:35.128Z [744ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-30T10:55:35.556Z [580ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T10:55:35.743Z [333ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-08-30T10:55:38.516Z [2284ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:55:39.135Z [2044ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-08-30T10:55:39.199Z [1948ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:55:39.254Z [1660ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:55:39.301Z [923ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T10:55:39.877Z [683ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-30T10:55:40.669Z [1534ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T10:55:40.876Z [1623ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T11:04:07.345Z [321ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T11:04:07.428Z [306ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T11:04:07.594Z [311ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T11:06:07.253Z [556ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T11:06:07.484Z [366ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T11:06:07.914Z [700ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T11:06:08.063Z [844ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T11:06:08.250Z [880ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-30T11:06:08.761Z [1393ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-08-30T11:06:09.529Z [1616ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T11:06:09.597Z [957ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T11:06:11.468Z [637ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-08-30T11:06:12.100Z [1214ms] SELECT COUNT(*) as total FROM users
+2025-08-30T11:06:25.556Z [364ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T11:06:28.548Z [348ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login,
+                   au.admin_level, au.permissions, au.is_active as admin_active
+            FROM users u
+            LEF
+2025-08-30T11:06:29.027Z [804ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login,
+                   au.admin_level, au.permissions, au.is_active as admin_active
+            FROM users u
+            LEF
+2025-08-30T11:06:29.131Z [865ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login,
+                   au.admin_level, au.permissions, au.is_active as admin_active
+            FROM users u
+            LEF
+2025-08-30T11:06:29.250Z [983ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T11:06:29.513Z [979ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-30T11:06:29.617Z [590ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-30T11:06:29.679Z [549ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-30T11:06:29.850Z [601ms] 
+            SELECT 
+                u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login,
+                au.admin_level, au.is_active AS admin_active
+            FROM users u
+   
+2025-08-30T11:06:29.966Z [1668ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-08-30T11:06:29.981Z [415ms] SELECT COUNT(*) as total FROM users WHERE 1=1
+2025-08-30T11:06:30.012Z [334ms] SELECT COUNT(*) as total FROM users WHERE 1=1
+2025-08-30T11:20:54.875Z [374ms] INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)
+2025-08-30T11:21:05.426Z [383ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T11:29:34.812Z [333ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-08-30T11:29:34.916Z [434ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-08-30T11:29:35.079Z [651ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-08-30T11:29:35.093Z [512ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-08-30T11:39:05.247Z [1330ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-08-30T11:39:08.441Z [379ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN

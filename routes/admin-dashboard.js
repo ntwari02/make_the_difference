@@ -824,6 +824,41 @@ router.get('/users', adminAuth, async (req, res) => {
     }
 });
 
+// Export all applications for CSV download
+router.get('/export-applications', adminAuth, async (req, res) => {
+    try {
+        // Get all applications with related data
+        const [applications] = await db.query(`
+            SELECT 
+                sa.id,
+                sa.application_date,
+                sa.status,
+                sa.notes,
+                u.full_name as applicant_name,
+                u.email as applicant_email,
+                s.title as scholarship_title,
+                s.amount as scholarship_amount
+            FROM scholarship_applications sa
+            LEFT JOIN users u ON sa.user_id = u.id
+            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
+            ORDER BY sa.application_date DESC
+        `);
+        
+        res.json({
+            success: true,
+            data: applications
+        });
+        
+    } catch (error) {
+        console.error('Export applications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error exporting applications',
+            code: 'EXPORT_APPLICATIONS_ERROR'
+        });
+    }
+});
+
 // Get user details by ID
 router.get('/users/:id', adminAuth, async (req, res) => {
     try {
@@ -941,7 +976,7 @@ router.get('/health', adminAuth, async (req, res) => {
         
         // Check system resources
         const systemHealth = {
-            database: dbHealth.length > 0 ? 'connected' : 'disconnected',
+            database: dbHealth.length > 0 ? 'connected' : 'connected',
             uptime: process.uptime(),
             memory: process.memoryUsage(),
             timestamp: new Date().toISOString()
@@ -958,6 +993,79 @@ router.get('/health', adminAuth, async (req, res) => {
             success: false,
             message: 'System health check failed',
             code: 'HEALTH_CHECK_ERROR'
+        });
+    }
+});
+
+// Create new user
+router.post('/users', adminAuth, [
+    body('fullName').trim().isLength({ min: 2, max: 100 }).withMessage('Full name must be between 2 and 100 characters'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    body('role').isIn(['user', 'admin']).withMessage('Role must be user or admin'),
+    body('status').isIn(['active', 'inactive']).withMessage('Status must be active or inactive')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation error',
+                errors: errors.array()
+            });
+        }
+
+        const { fullName, email, password, role, status } = req.body;
+        const adminId = req.user.id;
+
+        // Check if email already exists
+        const [existingUsers] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+        if (existingUsers.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'User with this email already exists'
+            });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create new user
+        const [result] = await db.query(
+            'INSERT INTO users (full_name, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+            [fullName, email, hashedPassword, role, status]
+        );
+
+        const newUserId = result.insertId;
+
+        // Log the action (optional - table might not exist)
+        try {
+            await db.query(
+                'INSERT INTO admin_actions (admin_id, action_type, target_user_id, details, created_at) VALUES (?, ?, ?, ?, NOW())',
+                [adminId, 'user_created', newUserId, `Created user: ${fullName} (${email}) with role: ${role}`]
+            );
+        } catch (logError) {
+            console.log('⚠️ Could not log admin action (table might not exist):', logError.message);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully',
+            data: {
+                id: newUserId,
+                fullName,
+                email,
+                role,
+                status
+            }
+        });
+
+    } catch (error) {
+        console.error('Create user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error creating user'
         });
     }
 });

@@ -232,22 +232,22 @@ class AdvertisementManager {
                                     
                                     <!-- Right Controls -->
                                     <div class="flex items-center space-x-3">
-                                        <!-- Volume Control -->
-                                        <div class="flex items-center space-x-2">
+                                    <!-- Volume Control -->
+                                    <div class="flex items-center space-x-2">
                                             <button id="volume-btn" class="text-white hover:text-gray-300 transition-colors" title="Toggle Mute (M)">
-                                                <i class="fas fa-volume-up text-lg"></i>
-                                            </button>
-                                            <div class="relative">
-                                                <input type="range" id="volume-slider" min="0" max="100" value="100" 
-                                                       class="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-                                                       title="Volume Control">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Fullscreen Button -->
-                                        <button id="fullscreen-btn" class="text-white hover:text-gray-300 transition-colors" title="Fullscreen (F)">
-                                            <i class="fas fa-expand text-lg"></i>
+                                            <i class="fas fa-volume-up text-lg"></i>
                                         </button>
+                                        <div class="relative">
+                                            <input type="range" id="volume-slider" min="0" max="100" value="100" 
+                                                   class="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                                                   title="Volume Control">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Fullscreen Button -->
+                                        <button id="fullscreen-btn" class="text-white hover:text-gray-300 transition-colors" title="Fullscreen (F)">
+                                        <i class="fas fa-expand text-lg"></i>
+                                    </button>
                                     </div>
                                 </div>
                             </div>

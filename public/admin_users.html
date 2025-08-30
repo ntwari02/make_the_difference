@@ -369,6 +369,9 @@
                     <input type="text" id="userName" name="fullName" required
                         class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
                         dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Letters and spaces only
+                    </p>
                 </div>
                 <div>
                     <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
@@ -378,9 +381,45 @@
                 </div>
                 <div>
                     <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                    <input type="password" id="userPassword" name="password"
-                        class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
-                        dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <div class="relative">
+                        <input type="password" id="userPassword" name="password"
+                            class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+                            dark:bg-gray-800 dark:border-gray-600 dark:text-white pr-12"
+                            oninput="checkPasswordRequirements(this.value)">
+                        <button type="button" id="togglePassword" 
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            onclick="togglePasswordVisibility()">
+                            <i class="fas fa-eye" id="passwordIcon"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Password Requirements Checklist -->
+                    <div class="mt-2 space-y-1">
+                        <div class="flex items-center text-xs">
+                            <span id="lengthCheck" class="w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                <i class="fas fa-times text-gray-400 text-xs"></i>
+                            </span>
+                            <span class="text-gray-600 dark:text-gray-400">At least 8 characters</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="lowercaseCheck" class="w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                <i class="fas fa-times text-gray-400 text-xs"></i>
+                            </span>
+                            <span class="text-gray-600 dark:text-gray-400">One lowercase letter</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="uppercaseCheck" class="w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                <i class="fas fa-times text-gray-400 text-xs"></i>
+                            </span>
+                            <span class="text-gray-600 dark:text-gray-400">One uppercase letter</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="numberCheck" class="w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                <i class="fas fa-times text-gray-400 text-xs"></i>
+                            </span>
+                            <span class="text-gray-600 dark:text-gray-400">One number</span>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
@@ -845,6 +884,10 @@
             document.getElementById('modalTitle').textContent = 'Add New User';
             document.getElementById('userForm').reset();
             document.getElementById('userPassword').required = true;
+            
+            // Reset password requirements checklist
+            checkPasswordRequirements('');
+            
             ensurePermissionsLoaded().then(() => {
                 togglePermissionsSection((document.getElementById('userRole') || {}).value === 'admin');
                 renderPermissionsCheckboxes(availablePermissions);
@@ -904,17 +947,49 @@
                 role: formData.get('role'),
                 status: formData.get('status')
             };
+            
+            // Frontend validation to match backend requirements
             if (!currentUserId) {
                 const password = formData.get('password');
                 if (!password) {
                     showNotification('Password is required for new users', 'error');
                     return;
                 }
+                
+                // Password validation
+                if (password.length < 8) {
+                    showNotification('Password must be at least 8 characters long', 'error');
+                    return;
+                }
+                
+                if (!/(?=.*[a-z])/.test(password)) {
+                    showNotification('Password must contain at least one lowercase letter', 'error');
+                    return;
+                }
+                
+                if (!/(?=.*[A-Z])/.test(password)) {
+                    showNotification('Password must contain at least one uppercase letter', 'error');
+                    return;
+                }
+                
+                if (!/(?=.*\d)/.test(password)) {
+                    showNotification('Password must contain at least one number', 'error');
+                    return;
+                }
+                
                 userData.password = password;
             }
+            
+            // Full name validation
+            if (!/^[a-zA-Z\s]+$/.test(userData.fullName)) {
+                showNotification('Full name can only contain letters and spaces', 'error');
+                return;
+            }
+            
             // Attach permissions if admin role
             const perms = collectSelectedPermissions();
             if (perms) userData.permissions = perms;
+            
             let success = false;
             if (currentUserId) {
                 success = await updateUser(currentUserId, userData);
@@ -925,6 +1000,66 @@
                 hideModal();
                 await loadUsers(currentPage, currentSearch);
                 showNotification(currentUserId ? 'User updated successfully' : 'User created successfully', 'success');
+            }
+        }
+
+        // Password visibility toggle
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('userPassword');
+            const passwordIcon = document.getElementById('passwordIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.className = 'fas fa-eye-slash';
+                passwordIcon.title = 'Hide password';
+            } else {
+                passwordInput.type = 'password';
+                passwordIcon.className = 'fas fa-eye';
+                passwordIcon.title = 'Show password';
+            }
+        }
+
+        // Check password requirements in real-time
+        function checkPasswordRequirements(password) {
+            const lengthCheck = document.getElementById('lengthCheck');
+            const lowercaseCheck = document.getElementById('lowercaseCheck');
+            const uppercaseCheck = document.getElementById('uppercaseCheck');
+            const numberCheck = document.getElementById('numberCheck');
+
+            // Check length (8+ characters)
+            if (password.length >= 8) {
+                lengthCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center';
+                lengthCheck.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+            } else {
+                lengthCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center';
+                lengthCheck.innerHTML = '<i class="fas fa-times text-gray-400 text-xs"></i>';
+            }
+
+            // Check lowercase letter
+            if (/(?=.*[a-z])/.test(password)) {
+                lowercaseCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center';
+                lowercaseCheck.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+            } else {
+                lowercaseCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center';
+                lowercaseCheck.innerHTML = '<i class="fas fa-times text-gray-400 text-xs"></i>';
+            }
+
+            // Check uppercase letter
+            if (/(?=.*[A-Z])/.test(password)) {
+                uppercaseCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center';
+                uppercaseCheck.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+            } else {
+                uppercaseCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center';
+                uppercaseCheck.innerHTML = '<i class="fas fa-times text-gray-400 text-xs"></i>';
+            }
+
+            // Check number
+            if (/(?=.*\d)/.test(password)) {
+                numberCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-gray-500 bg-green-500 flex items-center justify-center';
+                numberCheck.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+            } else {
+                numberCheck.className = 'w-4 h-4 mr-2 rounded-full border-2 border-gray-300 flex items-center justify-center';
+                numberCheck.innerHTML = '<i class="fas fa-times text-gray-400 text-xs"></i>';
             }
         }
 

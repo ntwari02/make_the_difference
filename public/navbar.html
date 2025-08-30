@@ -44,6 +44,7 @@
           <li><a href="scholarship.html" class="nav-link">Scholarship</a></li>
           <li><a href="partnership.html" class="nav-link">Partnership</a></li>
           <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li><a href="help-center.html" class="nav-link">Help</a></li>
         </ul>
       </nav>
 
@@ -63,6 +64,7 @@
         <div id="userMenuDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
           <a id="dashboardLink" href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
           <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" id="profileLink">Profile</a>
+          <a href="help-center.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Help Center</a>
           <hr class="my-1 border-gray-200 dark:border-gray-700">
           <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" id="logoutButton">Logout</a>
         </div>
@@ -93,6 +95,7 @@
             <li><a href="scholarship.html" class="mobile-nav-link">Scholarship</a></li>
             <li><a href="partnership.html" class="mobile-nav-link">Partnership</a></li>
             <li><a href="contact.html" class="mobile-nav-link">Contact</a></li>
+            <li><a href="help-center.html" class="mobile-nav-link">Help</a></li>
           </ul>
         </nav>
 
@@ -327,6 +330,10 @@
           <a href="${user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html'}" 
             class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
             Dashboard
+          </a>
+          <a href="help-center.html" 
+            class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+            Help Center
           </a>
           <button id="mobileLogoutButton" 
             class="w-full text-center text-red-600 hover:text-red-700 py-2 transition-colors">

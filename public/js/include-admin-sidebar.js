@@ -190,13 +190,32 @@ function initializeSidebar() {
 
     // Update help badge count
     updateHelpBadge();
-    // Poll periodically to keep badge fresh
-    setInterval(updateHelpBadge, 30000);
+    // Poll periodically to keep badge fresh (only if user is authenticated)
+    setInterval(() => {
+        const authToken = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        if (authToken) {
+            updateHelpBadge();
+        }
+    }, 30000);
 
     // Function to update help badge count
     async function updateHelpBadge() {
         try {
-            const response = await fetch('/api/admin-help/stats');
+            // Get auth token from localStorage
+            const authToken = localStorage.getItem('adminToken') || localStorage.getItem('token');
+            
+            if (!authToken) {
+                console.log('No auth token found, skipping help badge update');
+                return;
+            }
+
+            const response = await fetch('/api/admin-help/stats', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
             if (response.ok) {
                 const data = await response.json();
                 const badge = document.getElementById('help-badge');
@@ -209,6 +228,15 @@ function initializeSidebar() {
                         badge.classList.add('hidden');
                     }
                 }
+            } else if (response.status === 401) {
+                console.log('Unauthorized access to help stats, skipping badge update');
+                // Hide the badge if unauthorized
+                const badge = document.getElementById('help-badge');
+                if (badge) {
+                    badge.classList.add('hidden');
+                }
+            } else {
+                console.log(`Help stats request failed with status: ${response.status}`);
             }
         } catch (error) {
             console.error('Error updating help badge:', error);

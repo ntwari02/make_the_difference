@@ -86,7 +86,19 @@ export const adminAuth = async (req, res, next) => {
             email: adminUser.email,
             full_name: adminUser.full_name,
             admin_level: adminUser.admin_level,
-            permissions: adminUser.permissions ? JSON.parse(adminUser.permissions) : null
+            permissions: (() => {
+                try {
+                    if (adminUser.permissions && typeof adminUser.permissions === 'string') {
+                        return JSON.parse(adminUser.permissions);
+                    } else if (adminUser.permissions && typeof adminUser.permissions === 'object') {
+                        return adminUser.permissions;
+                    }
+                    return null;
+                } catch (e) {
+                    console.log('🔍 AdminAuth - Failed to parse permissions:', e.message);
+                    return null;
+                }
+            })()
         };
         
         next();
@@ -96,8 +108,9 @@ export const adminAuth = async (req, res, next) => {
     }
 };
 
-// Alias for authenticateToken - uses adminAuth for admin routes
-export const authenticateToken = adminAuth;
+// authenticateToken for user routes, adminAuth for admin routes
+export const authenticateToken = auth;
+export const requireAdmin = adminAuth;
 
 // Permission checking middleware
 export const checkPermission = (resource, action) => {
