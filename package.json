@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "npm run build:css",
-    "heroku-postbuild": "npm run build",
+    "build": "npm run prebuild:clean && npm run build:css",
     "migrate": "node scripts/migrate.js",
     "migrate:prune": "node scripts/prune-migrations.js",
     "build:css": "node scripts/build-css.js",
@@ -20,9 +19,10 @@
     "migrate:pain-point": "node scripts/add-pain-point-column.js",
     "test": "echo 'No tests specified' && exit 0",
     "lint": "echo 'No linting configured' && exit 0",
-    "clean": "rimraf public/css/styles.css",
-    "prebuild": "npm run clean",
-    "postbuild": "echo '🎉 Build completed successfully!'"
+    "clean": "node -e \"try{require('fs').rmSync('public/css/styles.css',{force:true})}catch(e){}\"",
+    "prebuild": "npm run prebuild:clean",
+    "prebuild:clean": "node -e \"try{require('fs').rmSync('public/css/styles.css',{force:true})}catch(e){}\"",
+    "postbuild": "node -e \"console.log('Build completed successfully!')\""
   },
   "keywords": [],
   "author": "",
