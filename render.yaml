@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: mbappe-backend
+    env: node
+    plan: free
+    region: oregon
+    autoDeploy: true
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    healthCheckPath: /
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL
+        value: "false"
+      - key: DB_CONNECT_TIMEOUT
+        value: "20000"
+      - key: DB_SLOW_MS
+        value: "300"
