@@ -1,53 +1,156 @@
 // js/include-navbar.js
 
 /**
- * Fetches the navbar.html content and injects it into the #navbar-container.
- * Initializes all navbar-related JavaScript functionality after injection.
+ * Robust navbar inclusion system with proper error handling and timing management
+ * This ensures the dashboard link and all navbar functionality works correctly
  */
+
+// Global state management
+let navbarState = {
+    isLoaded: false,
+    isInitialized: false,
+    elements: {},
+    retryCount: 0,
+    maxRetries: 3
+};
+
+// Main navbar inclusion function
 async function includeNavbar() {
     try {
+        console.log('🚀 Starting navbar inclusion...');
+        
+        // Fetch navbar HTML
         const response = await fetch('navbar.html');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const html = await response.text();
         const navbarContainer = document.getElementById('navbar-container');
-        if (navbarContainer) {
+        
+        if (!navbarContainer) {
+            throw new Error('Navbar container not found!');
+        }
+        
+        // Inject HTML
             navbarContainer.innerHTML = html;
+        navbarState.isLoaded = true;
+        console.log('✅ Navbar HTML injected successfully');
+        
+        // Wait for DOM to be ready, then initialize
+        await waitForDOMReady();
+        await initializeNavbar();
+        
+    } catch (error) {
+        console.error('❌ Error loading navbar:', error);
+        handleNavbarError(error);
+    }
+}
 
-            // --- Initialize Navbar Functionality after content is loaded ---
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-            const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-            const userMenu = document.getElementById('userMenu');
-            const userMenuButton = document.getElementById('userMenuButton');
-            const userMenuDropdown = document.getElementById('userMenuDropdown');
-            const authButtons = document.getElementById('authButtons');
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            const dashboardLink = document.getElementById('dashboardLink');
-            const logoutButton = document.getElementById('logoutButton');
-            const profileLink = document.getElementById('profileLink');
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const mobileMenuClose = document.getElementById('mobile-menu-close');
-            const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
-            const mobileAuthButtons = document.getElementById('mobileAuthButtons');
+// Wait for DOM elements to be available
+async function waitForDOMReady() {
+    return new Promise((resolve) => {
+        const checkElements = () => {
+            const requiredElements = [
+                'theme-toggle', 'userMenu', 'userMenuButton', 'userMenuDropdown',
+                'authButtons', 'userNameDisplay', 'adminDashboardBtn', 'logoutButton'
+            ];
+            
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+            
+            if (missingElements.length === 0) {
+                console.log('✅ All required DOM elements found');
+                resolve();
+            } else {
+                console.log('⏳ Waiting for elements:', missingElements);
+                setTimeout(checkElements, 100);
+            }
+        };
+        
+        checkElements();
+    });
+}
 
-            // Initialize theme
-            function initializeTheme() {
-                if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+// Initialize all navbar functionality
+async function initializeNavbar() {
+    try {
+        console.log('🔧 Initializing navbar functionality...');
+        
+        // Get all required elements
+        const elements = {
+            themeToggleBtn: document.getElementById('theme-toggle'),
+            themeToggleDarkIcon: document.getElementById('theme-toggle-dark-icon'),
+            themeToggleLightIcon: document.getElementById('theme-toggle-light-icon'),
+            userMenu: document.getElementById('userMenu'),
+            userMenuButton: document.getElementById('userMenuButton'),
+            userMenuDropdown: document.getElementById('userMenuDropdown'),
+            authButtons: document.getElementById('authButtons'),
+            userNameDisplay: document.getElementById('userNameDisplay'),
+            adminDashboardBtn: document.getElementById('adminDashboardBtn'),
+            logoutButton: document.getElementById('logoutButton'),
+            mobileMenuButton: document.getElementById('mobile-menu-button'),
+            mobileMenu: document.getElementById('mobile-menu'),
+            mobileMenuClose: document.getElementById('mobile-menu-close'),
+            mobileMenuBackdrop: document.getElementById('mobile-menu-backdrop'),
+            mobileAuthButtons: document.getElementById('mobileAuthButtons')
+        };
+        
+        // Store elements globally
+        navbarState.elements = elements;
+        
+        // Validate critical elements
+        if (!elements.adminDashboardBtn) {
+            console.log('⚠️ Admin dashboard button not found - this is normal for non-admin users');
+        } else {
+            console.log('🔍 Admin dashboard button found:', elements.adminDashboardBtn);
+            console.log('🔍 Button classes:', elements.adminDashboardBtn.className);
+            console.log('🔍 Button hidden:', elements.adminDashboardBtn.classList.contains('hidden'));
+        }
+        
+        // Initialize all systems
+        initializeTheme(elements);
+        initializeUserMenu(elements);
+        initializeMobileMenu(elements);
+        initializeAuthSystem(elements);
+        
+        // Set up event listeners
+        setupEventListeners(elements);
+        
+        // Initial auth state update
+        await updateAuthState(elements);
+        
+        navbarState.isInitialized = true;
+        console.log('✅ Navbar initialization complete!');
+        
+        // Add debugging functions to window
+        addDebugFunctions(elements);
+        
+    } catch (error) {
+        console.error('❌ Error initializing navbar:', error);
+        throw error;
+    }
+}
+
+// Initialize theme system
+function initializeTheme(elements) {
+    const { themeToggleBtn, themeToggleDarkIcon, themeToggleLightIcon } = elements;
+    
+    if (!themeToggleBtn) return;
+    
+    // Set initial theme
+    if (localStorage.getItem('color-theme') === 'dark' || 
+        (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
                     if (themeToggleLightIcon) themeToggleLightIcon.classList.remove('hidden');
-                    if (themeToggleDarkIcon) themeToggleDarkIcon.classList.add('hidden'); // Ensure dark icon is hidden
+        if (themeToggleDarkIcon) themeToggleDarkIcon.classList.add('hidden');
                 } else {
                     document.documentElement.classList.remove('dark');
                     if (themeToggleDarkIcon) themeToggleDarkIcon.classList.remove('hidden');
-                    if (themeToggleLightIcon) themeToggleLightIcon.classList.add('hidden'); // Ensure light icon is hidden
-                }
+        if (themeToggleLightIcon) themeToggleLightIcon.classList.add('hidden');
             }
 
-            // Toggle theme
-            themeToggleBtn?.addEventListener('click', function() {
+    // Theme toggle handler
+    themeToggleBtn.addEventListener('click', () => {
                 themeToggleDarkIcon?.classList.toggle('hidden');
                 themeToggleLightIcon?.classList.toggle('hidden');
 
@@ -69,55 +172,151 @@ async function includeNavbar() {
                     }
                 }
             });
+}
 
-            // Mobile menu functionality
+// Initialize user menu system
+function initializeUserMenu(elements) {
+    const { userMenuButton, userMenuDropdown, userMenu } = elements;
+    
+    if (!userMenuButton || !userMenuDropdown) return;
+    
+    // Toggle dropdown
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userMenuDropdown.classList.toggle('hidden');
+        console.log('🔄 User menu toggled, hidden:', userMenuDropdown.classList.contains('hidden'));
+    });
+    
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+        if (userMenu && !userMenu.contains(e.target)) {
+            userMenuDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Initialize mobile menu system
+function initializeMobileMenu(elements) {
+    const { mobileMenuButton, mobileMenu, mobileMenuClose, mobileMenuBackdrop } = elements;
+    
+    if (!mobileMenuButton || !mobileMenu) return;
+    
             function toggleMobileMenu() {
                 mobileMenu.classList.toggle('show');
-                document.body.classList.toggle('overflow-hidden'); // Prevent scrolling body when menu is open
+        document.body.classList.toggle('overflow-hidden');
 
-                // Toggle between hamburger and close icon
+        // Toggle icons
                 const menuIcon = mobileMenuButton.querySelector('.mobile-menu-icon');
                 const closeIcon = mobileMenuButton.querySelector('.mobile-menu-close');
-                menuIcon?.classList.toggle('hidden');
-                closeIcon?.classList.toggle('hidden');
-            }
-
-            mobileMenuButton?.addEventListener('click', toggleMobileMenu);
+        if (menuIcon && closeIcon) {
+            menuIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        }
+    }
+    
+    mobileMenuButton.addEventListener('click', toggleMobileMenu);
             mobileMenuClose?.addEventListener('click', toggleMobileMenu);
             mobileMenuBackdrop?.addEventListener('click', toggleMobileMenu);
 
-            // Close mobile menu when clicking a link
-            document.querySelectorAll('#mobileNav a').forEach(link => {
-                link.addEventListener('click', () => {
-                    toggleMobileMenu();
-                });
-            });
+    // Close mobile menu when clicking links
+    const mobileNav = document.querySelector('#mobileNav');
+    if (mobileNav) {
+        mobileNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', toggleMobileMenu);
+        });
+    }
+}
 
-            // Update mobile auth buttons
-            function updateMobileAuthButtons() {
+// Initialize authentication system
+function initializeAuthSystem(elements) {
+    const { logoutButton } = elements;
+    
+    // Logout handler
+    if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'logout.html';
+        });
+    }
+}
+
+// Set up all event listeners
+function setupEventListeners(elements) {
+    // Listen for storage changes (login/logout)
+    window.addEventListener('storage', () => {
+        console.log('🔄 Storage change detected, updating auth state...');
+        updateAuthState(elements);
+    });
+    
+    // Listen for custom events
+    window.addEventListener('userLogin', () => {
+        console.log('🔄 User login event detected, updating auth state...');
+        updateAuthState(elements);
+    });
+    
+    window.addEventListener('userLogout', () => {
+        console.log('🔄 User logout event detected, updating auth state...');
+        updateAuthState(elements);
+    });
+}
+
+// Update authentication state and dashboard visibility
+async function updateAuthState(elements) {
+    try {
+        const { authButtons, userMenu, userNameDisplay, adminDashboardBtn, mobileAuthButtons } = elements;
+        
                 const token = localStorage.getItem('token');
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-                    if (token && user && user.full_name) { // Ensure user.full_name exists
-                    mobileAuthButtons.innerHTML = `
-                        <div class="flex flex-col space-y-2">
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
-                            <span class="font-medium text-gray-800 dark:text-white">${user.full_name}</span>
-                            <a href="${user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html'}" 
-                                class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
-                                Dashboard
-                            </a>
-                            <button id="mobileLogoutButton" 
-                                class="w-full text-center text-red-600 hover:text-red-700 py-2 transition-colors">
-                                Logout
-                            </button>
-                        </div>
-                    `;
-
-                    document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
-                        window.location.href = 'logout.html';
-                    });
-                } else {
+        console.log('🔍 Auth State Update:', { 
+            token: !!token, 
+            user: user.full_name || 'Unknown', 
+            isAdmin: user.isAdmin,
+            adminType: typeof user.isAdmin
+        });
+        
+        if (token && user && user.full_name) {
+            // User is logged in
+            console.log('✅ User is logged in:', user.full_name);
+            
+            // Show user menu, hide auth buttons
+            if (authButtons) authButtons.classList.add('hidden');
+            if (userMenu) userMenu.classList.remove('hidden');
+            if (userNameDisplay) userNameDisplay.textContent = user.full_name;
+            
+            // Handle admin dashboard button visibility
+            await handleAdminDashboardVisibility(adminDashboardBtn, user);
+            
+            // Log final admin dashboard button visibility state
+            const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
+            console.log(`🎯 FINAL RESULT: Admin dashboard button is ${isAdmin ? 'VISIBLE' : 'HIDDEN'} for user ${user.full_name}`);
+            
+            // Update mobile auth buttons
+            updateMobileAuthButtons(mobileAuthButtons, user);
+            
+        } else {
+            // User is not logged in
+            console.log('❌ No user logged in');
+            
+            if (userMenu) userMenu.classList.add('hidden');
+            if (authButtons) {
+                authButtons.classList.remove('hidden');
+                authButtons.innerHTML = `
+                    <a href="login.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
+                    <a href="signup.html" class="bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
+                `;
+            }
+            
+            // Hide admin dashboard button for logged out users
+            if (adminDashboardBtn) {
+                adminDashboardBtn.classList.add('hidden');
+                adminDashboardBtn.style.opacity = '0';
+                adminDashboardBtn.style.pointerEvents = 'none';
+                console.log('🚫 Admin dashboard button hidden for logged out user');
+            }
+            
+            // Update mobile auth buttons
+            if (mobileAuthButtons) {
                     mobileAuthButtons.innerHTML = `
                         <div class="flex flex-col space-y-2">
                             <a href="login.html" class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
@@ -131,460 +330,283 @@ async function includeNavbar() {
                 }
             }
 
-                         // Update auth state for desktop
-             function updateAuthState() {
-                 const token = localStorage.getItem('token');
-                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-                     if (token && user && user.full_name) { // Ensure user.full_name exists
-                     authButtons.classList.add('hidden');
-                     userMenu.classList.remove('hidden');
-                     userNameDisplay.textContent = user.full_name;
-
-                     dashboardLink.href = user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html';
-
-                     // Update profile picture in navbar
-                     updateNavbarProfilePicture(user);
-
-                     // Highlight active page in desktop nav
-                     const currentPage = window.location.pathname.split('/').pop();
-                     document.querySelectorAll('#mainNav .nav-link').forEach(link => {
-                         if (link.getAttribute('href') === currentPage) {
-                             link.classList.add('active');
-                         } else {
-                             link.classList.remove('active');
-                         }
-                     });
-                 } else {
-                     userMenu.classList.add('hidden');
-                     authButtons.classList.remove('hidden');
-                     authButtons.innerHTML = `
-                         <a href="login.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
-                         <a href="signup.html" class="bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
-                     `;
-                 }
-             }
-
-             // Function to update profile picture in navbar
-             function updateNavbarProfilePicture(user) {
-                 const profilePicture = user.profile_picture || user.profile_picture_path;
-                 const userAvatar = document.querySelector('#userMenuButton img[alt="User avatar"]');
-                 const userAvatarIcon = document.querySelector('#userMenuButton i.fa-user');
-                 
-                 if (profilePicture) {
-                     // Show profile picture
-                     if (userAvatar) {
-                         userAvatar.src = profilePicture.startsWith('http') ? profilePicture : `/${profilePicture}`;
-                         userAvatar.classList.remove('hidden');
-                     }
-                     if (userAvatarIcon) {
-                         userAvatarIcon.classList.add('hidden');
-                     }
-                 } else {
-                     // Show default icon
-                     if (userAvatar) {
-                         userAvatar.classList.add('hidden');
-                     }
-                     if (userAvatarIcon) {
-                         userAvatarIcon.classList.remove('hidden');
-                     }
-                 }
-             }
-
-            // Update both desktop and mobile auth states
-            function updateAllAuthStates() {
-                updateAuthState();
-                updateMobileAuthButtons();
-                // Attempt to refresh user profile from server after login to ensure avatar path is present
-                refreshUserProfileIfPossible();
-            }
-
-            // Initialize on load and listen for storage changes
-            initializeTheme();
-            updateAllAuthStates();
-            window.addEventListener('storage', updateAllAuthStates);
-
-                         async function refreshUserProfileIfPossible() {
-                 try {
-                     const token = localStorage.getItem('token');
-                     if (!token) return;
-                     
-                     const user = JSON.parse(localStorage.getItem('user') || '{}');
-                     
-                     console.log('🔄 Refreshing user profile...');
-                     console.log('🔍 Current user data:', user);
-                     
-                     let profile;
-                     
-                     if (user.isAdmin) {
-                         // Admin users - fetch from admin account endpoint
-                         const res = await fetch('/api/admin/account', { headers: { 'Authorization': `Bearer ${token}` } });
-                         if (!res.ok) {
-                             console.log('❌ Failed to fetch admin profile:', res.status);
-                             return;
-                         }
-                         profile = await res.json();
-                     } else {
-                         // Regular users - fetch from user profile endpoint
-                         const res = await fetch('/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
-                         if (!res.ok) {
-                             console.log('❌ Failed to fetch user profile:', res.status);
-                             return;
-                         }
-                         profile = await res.json();
-                     }
-                     
-                     console.log('🔍 Profile data from server:', profile);
-                     
-                     const normalized = { ...profile };
-                     if (profile.profile_picture_path && !profile.profile_picture) normalized.profile_picture = profile.profile_picture_path;
-                     
-                     // Merge with existing user data instead of replacing
-                     const updatedUser = { ...user, ...normalized };
-                     console.log('🔍 Updated user data:', updatedUser);
-                     localStorage.setItem('user', JSON.stringify(updatedUser));
-                     
-                     // Update visible name
-                     const userNameDisplay = document.getElementById('userNameDisplay');
-                     if (userNameDisplay) userNameDisplay.textContent = (updatedUser.full_name || updatedUser.fullName || 'User');
-                     
-                     // Update profile picture in navbar
-                     updateNavbarProfilePicture(updatedUser);
-                     
-                     console.log('✅ Profile refresh completed');
-                 } catch (error) {
-                     console.error('❌ Profile refresh error:', error);
-                 }
-             }
-
-            // Toggle user menu
-            userMenuButton?.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent document click from closing immediately
-                userMenuDropdown.classList.toggle('hidden');
-            });
-
-            // Close user menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (userMenu && !userMenu.contains(e.target)) {
-                    userMenuDropdown.classList.add('hidden');
-                }
-            });
-
-            // Handle logout (redirect to logout page)
-            logoutButton?.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.href = 'logout.html';
-            });
-
-            // Handle profile link
-            profileLink?.addEventListener('click', (e) => {
-                e.preventDefault();
-                openProfileModal();
-            });
-
-            // Inject profile modal once
-            ensureProfileModal();
-
-            function ensureProfileModal() {
-                if (document.getElementById('profileModal')) return;
-                const modal = document.createElement('div');
-                modal.id = 'profileModal';
-                modal.className = 'fixed inset-0 bg-black/50 hidden z-[2000]';
-                modal.innerHTML = `
-                <div class="min-h-screen flex items-center justify-center p-4">
-                  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">My Profile</h3>
-                      <button id="profileModalClose" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="p-6">
-                      <div id="pmToast" class="hidden mb-4 px-3 py-2 rounded text-white text-sm"></div>
-                      <div class="flex items-center gap-6">
-                        <div class="relative">
-                          <div id="pmAvatarHolder" class="h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <i id="pmDefaultIcon" class="fa-solid fa-user text-3xl text-gray-400"></i>
-                            <img id="pmAvatarImg" alt="avatar" class="hidden h-full w-full object-cover">
-                          </div>
-                        </div>
-                        <div class="flex-1">
-                          <div class="text-sm text-gray-600 dark:text-gray-300 mb-3">Supported: JPG, PNG, GIF (max 10MB)</div>
-                          <div class="flex flex-wrap gap-3">
-                            <label for="pmFile" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"><i class="fa-solid fa-upload"></i><span>Upload</span></label>
-                            <input id="pmFile" type="file" accept="image/*" class="hidden">
-                            <button id="pmDelete" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"><i class="fa-solid fa-trash"></i><span>Delete</span></button>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="mt-6 grid grid-cols-1 gap-4">
-                        <div>
-                          <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Full name</label>
-                          <input id="pmFullNameInput" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                        </div>
-                        <div>
-                          <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Email</label>
-                          <input id="pmEmailInput" type="email" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                        </div>
-                        <div class="flex justify-end">
-                          <button id="pmSaveProfile" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"><i class="fa-solid fa-floppy-disk"></i><span>Save profile</span></button>
-                        </div>
-                      </div>
-
-                      <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-                        <h4 class="font-semibold mb-3 text-gray-900 dark:text-white">Change Password</h4>
-                        <div class="grid grid-cols-1 gap-4">
-                          <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Current password</label>
-                            <input id="pmCurrentPwd" type="password" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                          </div>
-                          <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">New password</label>
-                            <div class="relative">
-                              <input id="pmNewPwd" type="password" class="w-full px-3 py-2 pr-10 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                              <button type="button" id="pmTogglePwd" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300"><i class="fa-regular fa-eye"></i></button>
-                            </div>
-                          </div>
-                          <div class="flex justify-end">
-                            <button id="pmChangePwd" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"><i class="fa-solid fa-key"></i><span>Change password</span></button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
-                      <button id="pmOk" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">OK</button>
-                    </div>
-                  </div>
-                </div>`;
-                document.body.appendChild(modal);
-
-                // Wire close handlers
-                modal.addEventListener('click', (e) => { if (e.target.id === 'profileModal') modal.classList.add('hidden'); });
-                modal.querySelector('#profileModalClose')?.addEventListener('click', () => modal.classList.add('hidden'));
-                modal.querySelector('#pmOk')?.addEventListener('click', () => modal.classList.add('hidden'));
-            }
-
-            function applyAvatarToModal(url) {
-                const img = document.getElementById('pmAvatarImg');
-                const icon = document.getElementById('pmDefaultIcon');
-                if (url) {
-                    const src = (url.startsWith('http') || url.startsWith('/')) ? url : `/${url}`;
-                    img.src = src; img.classList.remove('hidden'); icon.classList.add('hidden');
-                } else {
-                    img.classList.add('hidden'); img.removeAttribute('src'); icon.classList.remove('hidden');
-                }
-            }
-
-            function openProfileModal() {
-                const modal = document.getElementById('profileModal');
-                if (!modal) return;
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                const nameInput = modal.querySelector('#pmFullNameInput');
-                const emailInput = modal.querySelector('#pmEmailInput');
-                if (nameInput) nameInput.value = user.full_name || user.fullName || '';
-                if (emailInput) emailInput.value = user.email || '';
-                applyAvatarToModal(user.profile_picture || user.profile_picture_path || '');
-                modal.classList.remove('hidden');
-            }
-
-            // Dynamic Site Name and Logo (for navbar)
-            async function updateSiteNameAndLogo() {
-                try {
-                    const res = await fetch('/api/settings/general');
-                    if (!res.ok) throw new Error('Failed to fetch site info');
-                    const { siteName, siteLogoUrl } = await res.json();
-                    // Navbar
-                    const nameEl = document.getElementById('navbarSiteName');
-                    const logoEl = document.getElementById('navbarSiteLogo');
-                    if (nameEl && siteName) nameEl.textContent = siteName;
-                    if (logoEl && siteLogoUrl) logoEl.src = siteLogoUrl;
-                    // Titles
-                    if (siteName) {
-                        document.querySelectorAll('title').forEach(t => {
-                            t.textContent = t.textContent.replace(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi, siteName);
-                        });
-                        // Headings and footers
-                        document.querySelectorAll('h1, h2, h3, h4, h5, h6, strong, a, span, p').forEach(el => {
-                            if (el.textContent.match(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi)) {
-                                el.textContent = el.textContent.replace(/MBAPE GLOBAL|Mbappe Global|ScholarshipHub/gi, siteName);
-                            }
-                        });
-                    }
-                } catch (err) {
-                    // Optionally handle error
-                }
-            }
-            // Call after navbar is loaded
-            updateSiteNameAndLogo();
-
-            // --- Notification Bell Logic ---
-            const notificationBell = document.getElementById('notification-bell');
-            const notificationBadge = document.getElementById('notification-badge');
-            const notificationDropdown = document.getElementById('notification-dropdown');
-            const notificationList = document.getElementById('notification-list');
-            const noNotifications = document.getElementById('no-notifications');
-            ensureNotificationModal();
-
-            async function fetchNotifications() {
-              const token = localStorage.getItem('token');
-              if (!token) return [];
-              try {
-                const res = await fetch('/api/user-notifications', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) return [];
-                const data = await res.json();
-                // Expecting { success, notifications }
-                if (Array.isArray(data)) return data; // backward fallback
-                if (data && data.success && Array.isArray(data.notifications)) return data.notifications;
-                return [];
-              } catch (e) {
-                return [];
-              }
-            }
-
-            function renderNotifications(notifications) {
-              notificationList.innerHTML = '';
-              let unreadCount = 0;
-              notifications.forEach(n => {
-                const item = document.createElement('div');
-                item.className = `px-4 py-2 border-b border-gray-100 dark:border-gray-700 cursor-pointer ${n.is_read ? '' : 'bg-blue-50 dark:bg-gray-700'}`;
-                const preview = (n.message || '').slice(0, 120) + ((n.message || '').length > 120 ? '…' : '');
-                item.innerHTML = `
-                  <div class='flex items-start justify-between gap-3'>
-                    <div class='flex-1'>
-                      <div class='font-semibold'>${n.title || 'Notification'}</div>
-                      <div class='text-sm text-gray-500 dark:text-gray-300 mt-0.5'>${preview}</div>
-                      <div class='text-xs text-gray-400 mt-1'>${new Date(n.created_at).toLocaleString()}</div>
-                    </div>
-                    <button class='open-notif px-2 py-1 text-blue-600 hover:underline text-sm'>Open</button>
-                  </div>`;
-                if (!n.is_read) unreadCount++;
-                const openHandler = async () => {
-                  try { await openNotificationModal(n); } catch (e) { showNotificationModal(n); }
-                  if (!n.is_read) {
-                    await markNotificationRead(n.id);
-                    n.is_read = true;
-                    renderNotifications(notifications);
-                  }
-                };
-                item.querySelector('.open-notif').onclick = async (e) => {
-                  e.stopPropagation();
-                  await openHandler();
-                };
-                item.addEventListener('click', openHandler);
-                notificationList.appendChild(item);
-              });
-              notificationBadge.textContent = unreadCount;
-              notificationBadge.classList.toggle('hidden', unreadCount === 0);
-              noNotifications.style.display = notifications.length ? 'none' : 'block';
-            }
-
-            async function markNotificationRead(id){
-              try{
-                await fetch(`/api/user-notifications/${id}/read`, {
-                  method: 'PUT',
-                  headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-              }catch{}
-            }
-
-            function ensureNotificationModal(){
-              if (document.getElementById('notifModal')) return;
-              const modal = document.createElement('div');
-              modal.id = 'notifModal';
-              modal.className = 'fixed inset-0 bg-black/50 hidden z-[2100]';
-              modal.innerHTML = `
-                <div class="min-h-screen flex items-center justify-center p-4">
-                  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                      <h3 id="nmTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Notification</h3>
-                      <button id="nmClose" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="p-5 space-y-4">
-                      <div id="nmTime" class="text-xs text-gray-500"></div>
-                      <div id="nmMessage" class="text-gray-700 dark:text-gray-200 whitespace-pre-line"></div>
-                      <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">Reply to admin</label>
-                        <textarea id="nmReply" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Write your message..."></textarea>
-                        <div class="flex justify-end mt-2">
-                          <button id="nmSend" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"><i class="fa-solid fa-paper-plane"></i><span>Send</span></button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>`;
-              document.body.appendChild(modal);
-              modal.addEventListener('click', (e)=>{ if(e.target.id==='notifModal') modal.classList.add('hidden'); });
-              modal.querySelector('#nmClose')?.addEventListener('click', ()=> modal.classList.add('hidden'));
-            }
-
-            async function openNotificationModal(n){
-              const modal = document.getElementById('notifModal');
-              if (!modal) return;
-              modal.classList.remove('hidden');
-              const title = modal.querySelector('#nmTitle');
-              const time = modal.querySelector('#nmTime');
-              const message = modal.querySelector('#nmMessage');
-              const sendBtn = modal.querySelector('#nmSend');
-              const replyInput = modal.querySelector('#nmReply');
-              if (title) title.textContent = n.title || 'Notification';
-              if (time) time.textContent = new Date(n.created_at).toLocaleString();
-              if (message) message.textContent = n.message || '';
-              if (replyInput) replyInput.value = '';
-              sendBtn.onclick = async () => {
-                const text = (replyInput.value || '').trim();
-                if (!text) { toast('Enter your message'); return; }
-                try {
-                  const token = localStorage.getItem('token');
-                  const res = await fetch('/api/notifications/create-from-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ title: `Re: ${n.title || 'Notification'}`, message: text })
-                  });
-                  const data = await res.json().catch(()=>({}));
-                  if (!res.ok) throw new Error(data.message || 'Failed to send');
-                  toast('Message sent to admin', 'success');
-                  modal.classList.add('hidden');
-                } catch (e) {
-                  toast(e.message || 'Failed to send');
-                }
-              };
-            }
-
-            function toast(msg, type){
-              const t = document.createElement('div');
-              t.className = `fixed top-4 right-4 z-[2200] px-3 py-2 rounded text-white ${type==='success'?'bg-green-600':'bg-red-600'}`;
-              t.textContent = msg; document.body.appendChild(t);
-              setTimeout(()=> t.remove(), 2000);
-            }
-
-            let notificationsCache = [];
-            async function updateNotifications() {
-              notificationsCache = await fetchNotifications();
-              renderNotifications(notificationsCache);
-            }
-
-            if (notificationBell) {
-              notificationBell.addEventListener('click', (e) => {
-                e.stopPropagation();
-                notificationDropdown.classList.toggle('hidden');
-                if (!notificationDropdown.classList.contains('hidden')) {
-                  updateNotifications();
-                }
-              });
-              document.addEventListener('click', (e) => {
-                if (!notificationDropdown.contains(e.target) && e.target !== notificationBell) {
-                  notificationDropdown.classList.add('hidden');
-                }
-              });
-              // Optionally, poll for new notifications every minute
-              setInterval(updateNotifications, 60000);
-              updateNotifications();
-            }
-
-        } else {
-            console.error('Navbar container not found!');
-        }
     } catch (error) {
-        console.error('Error loading navbar:', error);
+        console.error('❌ Error updating auth state:', error);
     }
 }
+
+// Handle admin dashboard button visibility
+async function handleAdminDashboardVisibility(adminDashboardBtn, user) {
+    if (!adminDashboardBtn) {
+        console.log('❌ Admin dashboard button element not found');
+        return;
+    }
+    
+    console.log('🔍 Processing admin dashboard button visibility for user:', user);
+    console.log('🔍 User isAdmin value:', user.isAdmin);
+    console.log('🔍 User isAdmin type:', typeof user.isAdmin);
+    console.log('🔍 Admin dashboard button current state:', {
+        hidden: adminDashboardBtn.classList.contains('hidden'),
+        display: adminDashboardBtn.style.display,
+        visibility: adminDashboardBtn.style.visibility
+    });
+    
+    // Check if user is admin (multiple ways to check)
+    const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
+    
+    console.log('🔍 Final admin determination:', isAdmin);
+    
+    if (isAdmin) {
+        console.log('✅ Admin user detected - showing admin dashboard button');
+        
+        // Remove hidden class
+        adminDashboardBtn.classList.remove('hidden');
+        
+        // Force remove any remaining hidden styles
+        adminDashboardBtn.style.opacity = '1';
+        adminDashboardBtn.style.pointerEvents = 'auto';
+        
+        console.log('✅ Admin dashboard button should now be visible');
+        console.log('🔍 Admin dashboard button final state:', {
+            hidden: adminDashboardBtn.classList.contains('hidden'),
+            opacity: adminDashboardBtn.style.opacity
+        });
+        
+    } else {
+        console.log('❌ Regular user - hiding admin dashboard button');
+        console.log('🚫 Admin dashboard button will NOT be visible for this user');
+        
+        if (adminDashboardBtn) {
+            adminDashboardBtn.classList.add('hidden');
+            adminDashboardBtn.style.opacity = '0';
+            adminDashboardBtn.style.pointerEvents = 'none';
+            console.log('✅ Admin dashboard button hidden successfully');
+        }
+    }
+}
+
+// Update mobile auth buttons
+function updateMobileAuthButtons(mobileAuthButtons, user) {
+    if (!mobileAuthButtons) return;
+    
+    console.log('📱 Mobile auth buttons updated for user:', user.full_name);
+    
+    mobileAuthButtons.innerHTML = `
+        <div class="flex flex-col space-y-2">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
+            <span class="font-medium text-gray-800 dark:text-white">${user.full_name || 'User'}</span>
+            <a href="help-center.html" 
+                class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                Help Center
+            </a>
+            <button id="mobileLogoutButton" 
+                class="block w-full text-center text-red-600 hover:text-red-700 py-2 transition-colors">
+                Logout
+            </button>
+        </div>
+    `;
+    
+    // Add mobile logout handler
+    document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
+        window.location.href = 'logout.html';
+    });
+}
+
+// Add debugging functions to window
+function addDebugFunctions(elements) {
+    // Force show admin dashboard button for testing
+    window.forceShowDashboard = function() {
+        const { adminDashboardBtn } = elements;
+        if (adminDashboardBtn) {
+            adminDashboardBtn.classList.remove('hidden');
+            adminDashboardBtn.style.opacity = '1';
+            adminDashboardBtn.style.pointerEvents = 'auto';
+            console.log('🚨 Admin dashboard button FORCED visible!');
+        } else {
+            console.log('❌ Admin dashboard button element not found!');
+        }
+    };
+    
+        // Check and show admin dashboard button based on admin status
+    window.checkAndShowDashboard = function() {
+        const { adminDashboardBtn } = elements;
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        console.log('🔍 Current user data:', user);
+        console.log('🔍 Is admin?', user.isAdmin);
+        console.log('🔍 Admin dashboard button element:', adminDashboardBtn);
+        
+        if (user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true') {
+            console.log('✅ User is admin - showing admin dashboard button');
+            if (adminDashboardBtn) {
+                adminDashboardBtn.classList.remove('hidden');
+                adminDashboardBtn.style.opacity = '1';
+                adminDashboardBtn.style.pointerEvents = 'auto';
+                console.log('✅ Admin dashboard button should now be visible');
+            }
+        } else {
+            console.log('❌ User is NOT admin - hiding admin dashboard button');
+            if (adminDashboardBtn) {
+                adminDashboardBtn.classList.add('hidden');
+                adminDashboardBtn.style.opacity = '0';
+                adminDashboardBtn.style.pointerEvents = 'none';
+            }
+        }
+    };
+    
+    // Test admin dashboard button visibility
+    window.testDashboardVisibility = function() {
+        const { adminDashboardBtn } = elements;
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        console.log('🧪 Testing Admin Dashboard Button Visibility');
+        console.log('Current user:', user);
+        console.log('User isAdmin:', user.isAdmin);
+        console.log('User isAdmin type:', typeof user.isAdmin);
+        
+        console.log('📊 Admin Dashboard Button Status:');
+        if (adminDashboardBtn) {
+            console.log('  - Element exists: ✅');
+            console.log('  - Classes:', adminDashboardBtn.className);
+            console.log('  - Hidden class:', adminDashboardBtn.classList.contains('hidden'));
+            console.log('  - Opacity style:', adminDashboardBtn.style.opacity);
+            console.log('  - Pointer events:', adminDashboardBtn.style.pointerEvents);
+        } else {
+            console.log('  - Element exists: ❌');
+        }
+        
+        // Test force visibility
+        if (adminDashboardBtn) {
+            adminDashboardBtn.classList.remove('hidden');
+            adminDashboardBtn.style.opacity = '1';
+            adminDashboardBtn.style.pointerEvents = 'auto';
+            console.log('✅ Admin dashboard button forced visible for testing');
+        }
+    };
+    
+    // Test admin status function
+    window.testAdminStatus = function() {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const adminDashboardBtn = document.getElementById('adminDashboardBtn');
+        
+        console.log('🧪 TESTING ADMIN STATUS');
+        console.log('Current user:', user);
+        console.log('User isAdmin:', user.isAdmin);
+        console.log('User isAdmin type:', typeof user.isAdmin);
+        console.log('Admin dashboard button:', adminDashboardBtn);
+        
+        if (adminDashboardBtn) {
+            console.log('Button classes:', adminDashboardBtn.className);
+            console.log('Button hidden:', adminDashboardBtn.classList.contains('hidden'));
+            console.log('Button display:', adminDashboardBtn.style.display);
+            console.log('Button opacity:', adminDashboardBtn.style.opacity);
+        }
+        
+        // Test the admin detection logic
+        const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
+        console.log('Final admin determination:', isAdmin);
+        
+        if (isAdmin) {
+            alert('✅ You are ADMIN! Dashboard button should be visible.');
+            // Force show the button
+            if (adminDashboardBtn) {
+                adminDashboardBtn.classList.remove('hidden');
+                adminDashboardBtn.style.opacity = '1';
+                adminDashboardBtn.style.pointerEvents = 'auto';
+                console.log('✅ Dashboard button force shown!');
+            }
+        } else {
+            alert('❌ You are NOT admin. Dashboard button will be hidden.');
+            // Force hide the button
+            if (adminDashboardBtn) {
+                adminDashboardBtn.classList.add('hidden');
+                adminDashboardBtn.style.opacity = '0';
+                adminDashboardBtn.style.pointerEvents = 'none';
+                console.log('✅ Dashboard button force hidden!');
+            }
+        }
+    };
+    
+    // Get navbar state
+    window.getNavbarState = function() {
+        return navbarState;
+    };
+
+    // Simple debug function to check current state
+    window.debugDashboardButton = function() {
+        const adminDashboardBtn = document.getElementById('adminDashboardBtn');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        console.log('🔍 DEBUG: Dashboard Button State');
+        console.log('Button element:', adminDashboardBtn);
+        console.log('Button exists:', !!adminDashboardBtn);
+        if (adminDashboardBtn) {
+            console.log('Button classes:', adminDashboardBtn.className);
+            console.log('Button hidden:', adminDashboardBtn.classList.contains('hidden'));
+            console.log('Button style.display:', adminDashboardBtn.style.display);
+            console.log('Button style.opacity:', adminDashboardBtn.style.opacity);
+        }
+        console.log('Current user:', user);
+        console.log('User isAdmin:', user.isAdmin);
+        console.log('User isAdmin type:', typeof user.isAdmin);
+    };
+    
+    console.log('🔧 Debug functions added to window object');
+}
+
+// Handle navbar loading errors
+function handleNavbarError(error) {
+    console.error('❌ Navbar loading failed:', error);
+    
+    if (navbarState.retryCount < navbarState.maxRetries) {
+        navbarState.retryCount++;
+        console.log(`🔄 Retrying navbar load (${navbarState.retryCount}/${navbarState.maxRetries})...`);
+        
+        setTimeout(() => {
+            includeNavbar();
+        }, 1000 * navbarState.retryCount);
+    } else {
+        console.error('❌ Max retries reached, navbar failed to load');
+        
+        // Show fallback navbar
+        const navbarContainer = document.getElementById('navbar-container');
+        if (navbarContainer) {
+            navbarContainer.innerHTML = `
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <strong>Error:</strong> Failed to load navigation bar. Please refresh the page.
+                </div>
+            `;
+        }
+    }
+}
+
+// Force hide admin dashboard button immediately
+function forceHideAdminDashboardButton() {
+    console.log('🚫 FORCE HIDING ADMIN DASHBOARD BUTTON IMMEDIATELY');
+    
+    // Hide admin dashboard button
+    const adminDashboardBtn = document.getElementById('adminDashboardBtn');
+    
+    if (adminDashboardBtn) {
+        adminDashboardBtn.classList.add('hidden');
+        adminDashboardBtn.style.opacity = '0';
+        adminDashboardBtn.style.pointerEvents = 'none';
+        console.log('✅ Admin dashboard button force hidden');
+    } else {
+        console.log('❌ Admin dashboard button element not found');
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        forceHideAdminDashboardButton();
+        includeNavbar();
+    });
+} else {
+    forceHideAdminDashboardButton();
+    includeNavbar();
+}
+
+// Export for potential external use
+window.includeNavbar = includeNavbar;

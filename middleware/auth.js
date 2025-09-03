@@ -51,30 +51,35 @@ export const auth = async (req, res, next) => {
 };
 
 export const adminAuth = async (req, res, next) => {
+    console.log('=== REQUIRE ADMIN MIDDLEWARE ENTERED ===');
+    console.log('req.user from previous middleware:', req.user);
+    
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
         if (!token) {
+            console.log('ADMIN AUTH FAILED: No authentication token');
             return res.status(401).json({ message: 'No authentication token, access denied' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        console.log('🔍 AdminAuth - Decoded token:', { id: decoded.id, email: decoded.email });
+        console.log('Admin token decoded:', { id: decoded.id, email: decoded.email });
         
         // Get user from database
         const [users] = await db.query('SELECT id, email, full_name, role FROM users WHERE id = ?', [decoded.id]);
-        console.log('🔍 AdminAuth - User from database:', users[0]);
+        console.log('Admin user from DB:', users[0]);
         
         if (users.length === 0) {
+            console.log('ADMIN AUTH FAILED: User not found');
             return res.status(401).json({ message: 'User not found' });
         }
 
         // Get admin user details from admin_users table
         const [adminUsers] = await db.query('SELECT * FROM admin_users WHERE user_id = ? AND is_active = TRUE', [decoded.id]);
-        console.log('🔍 AdminAuth - Admin users found:', adminUsers.length);
+        console.log('Admin users found:', adminUsers.length);
         
         if (adminUsers.length === 0) {
-            console.log('🔍 AdminAuth - No admin user found for user_id:', decoded.id);
+            console.log('ADMIN AUTH FAILED: No admin user found or inactive for user_id:', decoded.id);
             return res.status(403).json({ message: 'Admin account not found or inactive' });
         }
 
@@ -95,15 +100,16 @@ export const adminAuth = async (req, res, next) => {
                     }
                     return null;
                 } catch (e) {
-                    console.log('🔍 AdminAuth - Failed to parse permissions:', e.message);
+                    console.log('ADMIN AUTH: Failed to parse permissions:', e.message);
                     return null;
                 }
             })()
         };
         
+        console.log('ADMIN AUTH SUCCESS: Admin user authorized:', req.user);
         next();
     } catch (error) {
-        console.error('Admin auth error:', error);
+        console.error('ADMIN AUTH ERROR:', error.message);
         res.status(401).json({ message: 'Token verification failed, authorization denied' });
     }
 };

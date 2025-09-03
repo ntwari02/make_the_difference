@@ -272,12 +272,56 @@ router.get('/test/setup', bypassAuth, async (req, res) => {
     }
 });
 
+// Fix database schema endpoint
+router.post('/fix-schema', bypassAuth, async (req, res) => {
+    try {
+        console.log('Fixing database schema...');
+        
+        // Fix reports table category column
+        try {
+            await pool.query("ALTER TABLE reports MODIFY COLUMN category VARCHAR(255) DEFAULT 'general'");
+            console.log('Reports table category column updated');
+        } catch (alterError) {
+            console.log('Category column already correct or table does not exist:', alterError.message);
+        }
+        
+        // Ensure reports table exists with correct schema
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                category VARCHAR(255) DEFAULT 'general',
+                description TEXT,
+                status ENUM('pending', 'in_progress', 'completed', 'reviewed', 'exported', 'archived') DEFAULT 'pending',
+                data JSON,
+                created_by INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                exported_at TIMESTAMP NULL,
+                FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+            )
+        `);
+        
+        res.json({
+            success: true,
+            message: 'Database schema fixed successfully'
+        });
+        
+    } catch (error) {
+        console.error('Error fixing database schema:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fix database schema: ' + error.message
+        });
+    }
+});
+
 // Get all reports
 router.get('/', bypassAuth, async (req, res) => {
     try {
         const where = [];
         const params = [];
-        const { status, category, date } = req.query || {};
+        const { status, category, date, startDate, endDate } = req.query || {};
         if (status && ['pending','in_progress','completed','reviewed','exported','archived'].includes(status)) {
             where.push('status = ?');
             params.push(status);
@@ -287,12 +331,17 @@ router.get('/', bypassAuth, async (req, res) => {
             params.push(category);
         }
         if (date && date !== 'all') {
-            switch (date) {
-                case 'today': where.push('DATE(created_at) = CURDATE()'); break;
-                case 'last7': where.push('created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)'); break;
-                case 'thisMonth': where.push('YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())'); break;
-                case 'lastMonth': where.push('YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))'); break;
-                case 'thisYear': where.push('YEAR(created_at) = YEAR(CURDATE())'); break;
+            if (date === 'custom' && startDate && endDate) {
+                where.push('created_at BETWEEN ? AND ?');
+                params.push(startDate, endDate);
+            } else {
+                switch (date) {
+                    case 'today': where.push('DATE(created_at) = CURDATE()'); break;
+                    case 'last7': where.push('created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)'); break;
+                    case 'thisMonth': where.push('YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())'); break;
+                    case 'lastMonth': where.push('YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))'); break;
+                    case 'thisYear': where.push('YEAR(created_at) = YEAR(CURDATE())'); break;
+                }
             }
         }
         const whereClause = where.length ? ('WHERE ' + where.join(' AND ')) : '';
@@ -403,7 +452,8 @@ router.post('/generate', bypassAuth, async (req, res) => {
             includeRecommendations = false,
             autoSchedule = false,
             startDate,
-            endDate
+            endDate,
+            grouping = 'daily' // New parameter
     } = req.body;
 
         // Validate required fields
@@ -423,7 +473,8 @@ router.post('/generate', bypassAuth, async (req, res) => {
             analyticsFields,
             dateRange,
             startDate,
-            endDate
+            endDate,
+            grouping: grouping // Pass grouping to generateReportData
         });
 
         // Create report record
@@ -733,7 +784,8 @@ async function generateReportData(options) {
         analyticsFields,
         dateRange,
         startDate,
-        endDate
+        endDate,
+        grouping = 'daily' // New parameter
     } = options;
 
     const reportData = {
@@ -742,13 +794,14 @@ async function generateReportData(options) {
             elements: elements,
             dateRange: dateRange,
             startDate: startDate,
-            endDate: endDate
+            endDate: endDate,
+            grouping: grouping // Add to metadata
         },
         data: {}
     };
 
     // Generate date filter
-    const dateFilter = buildDateFilter(dateRange, startDate, endDate);
+    const dateFilter = buildDateFilter(dateRange, startDate, endDate, grouping);
 
     // Include users data
     if (elements.includes('users')) {
@@ -774,9 +827,18 @@ async function generateReportData(options) {
 }
 
 // Helper function to build date filter
-function buildDateFilter(dateRange, startDate, endDate) {
+function buildDateFilter(dateRange, startDate, endDate, grouping = 'daily') {
     let whereClause = '';
     let params = [];
+    let groupByClause = '';
+
+    switch (grouping) {
+        case 'daily': groupByClause = 'DATE(created_at)'; break;
+        case 'weekly': groupByClause = 'YEARWEEK(created_at, 1)'; break; // 1 for weeks starting on Monday
+        case 'monthly': groupByClause = 'DATE_FORMAT(created_at, \'%Y-%m\')'; break;
+        case 'yearly': groupByClause = 'YEAR(created_at)'; break;
+        default: groupByClause = 'DATE(created_at)'; break;
+    }
 
     switch (dateRange) {
         case 'today':
@@ -813,44 +875,67 @@ function buildDateFilter(dateRange, startDate, endDate) {
             whereClause = '1=1';
     }
 
-    return { whereClause, params };
+    return { whereClause, params, groupByClause };
 }
 
 // Helper function to generate users data
 async function generateUsersData(userFields, dateFilter) {
     try {
-        const allowedMap = {
-            id: 'id',
-            full_name: 'full_name',
-            email: 'email',
-            status: 'status',
-            role: 'role',
-            registration_date: 'created_at'
-        };
-        const requested = Array.isArray(userFields) && userFields.length > 0
-            ? userFields.filter(f => allowedMap[f])
-            : ['full_name','email','status','role','registration_date'];
-        const selectParts = ['id'];
-        requested.forEach(f => {
-            if (f === 'registration_date') selectParts.push(`${allowedMap[f]} as registration_date`);
-            else selectParts.push(allowedMap[f]);
-        });
-        const selectFields = Array.from(new Set(selectParts)).join(', ');
+        // Always fetch all user data for complete records
+        let query = `SELECT * FROM users WHERE ${dateFilter.whereClause}`;
+        
+        if (dateFilter.groupByClause) {
+            query = `SELECT ${dateFilter.groupByClause} as period, COUNT(*) as count FROM users WHERE ${dateFilter.whereClause} GROUP BY period ORDER BY period`;
+        }
 
         const [rows] = await pool.query(
-            `SELECT ${selectFields} FROM users WHERE ${dateFilter.whereClause}`,
+            query,
             dateFilter.params
         );
 
-        // Ensure order and only requested keys in output
-        const fields = ['id', ...requested];
-        const users = rows.map(r => {
-            const obj = {};
-            fields.forEach(k => { obj[k] = r[k] ?? null; });
-            return obj;
+        // If it's grouped data, return as is
+        if (dateFilter.groupByClause) {
+            return { 
+                total: rows.length, 
+                users: rows, 
+                fields: ['period', 'count'],
+                isGrouped: true 
+            };
+        }
+
+        // For regular data, process the complete user records
+        const allowedFields = [
+            'id', 'full_name', 'email', 'status', 'role', 'created_at', 'last_login'
+        ];
+
+        // Filter fields based on user selection, but always include essential fields
+        const requestedFields = Array.isArray(userFields) && userFields.length > 0
+            ? userFields.filter(f => allowedFields.includes(f))
+            : allowedFields;
+
+        // Always include essential fields
+        const essentialFields = ['id', 'full_name', 'email', 'status'];
+        const displayFields = [...new Set([...essentialFields, ...requestedFields])];
+
+        // Process each user record
+        const users = rows.map(user => {
+            const processedUser = {
+                // Include all original data
+                ...user,
+                // Add computed fields
+                registration_date: user.created_at, // Alias for compatibility
+                display_fields: displayFields // Track which fields to display
+            };
+            return processedUser;
         });
 
-        return { total: users.length, users, fields };
+        return { 
+            total: users.length, 
+            users: users, 
+            fields: displayFields,
+            all_fields: allowedFields,
+            isGrouped: false
+        };
     } catch (error) {
         console.error('Error generating users data:', error);
         return { total: 0, users: [], fields: [], error: error.message };
@@ -860,39 +945,69 @@ async function generateUsersData(userFields, dateFilter) {
 // Helper function to generate applications data
 async function generateApplicationsData(applicationFields, dateFilter) {
     try {
-        const allowedMap = {
-            id: 'sa.application_id as id',
-            full_name: 'sa.full_name',
-            email_address: 'sa.email_address',
-            application_date: 'sa.application_date',
-            status: 'sa.status',
-            academic_level: 'sa.academic_level',
-            country: 'sa.country',
-            scholarship_title: 's.name as scholarship_title',
-            award_amount: 's.award_amount'
-        };
-        const requested = Array.isArray(applicationFields) && applicationFields.length > 0
-            ? applicationFields.filter(f => allowedMap[f])
-            : ['full_name','email_address','application_date','status','scholarship_title','award_amount'];
-        const selectParts = ['sa.application_id as id'];
-        requested.forEach(f => selectParts.push(allowedMap[f]));
-        const selectFields = Array.from(new Set(selectParts)).join(', ');
+        // Always fetch all application data for complete records
+        let query = `SELECT sa.*, s.name as scholarship_title, s.award_amount, s.description as scholarship_description 
+                     FROM scholarship_applications sa 
+                     LEFT JOIN scholarships s ON sa.scholarship_id = s.id 
+                     WHERE ${dateFilter.whereClause.replace('created_at', 'sa.application_date')}`;
+
+        if (dateFilter.groupByClause) {
+            const groupByField = dateFilter.groupByClause.replace('created_at', 'sa.application_date');
+            query = `SELECT ${groupByField} as period, COUNT(*) as count FROM scholarship_applications sa 
+                     LEFT JOIN scholarships s ON sa.scholarship_id = s.id 
+                     WHERE ${dateFilter.whereClause.replace('created_at', 'sa.application_date')} 
+                     GROUP BY period ORDER BY period`;
+        }
 
         const [rows] = await pool.query(
-            `SELECT ${selectFields} FROM scholarship_applications sa 
-             LEFT JOIN scholarships s ON sa.scholarship_id = s.id 
-             WHERE ${dateFilter.whereClause.replace('created_at', 'sa.application_date')}`,
+            query,
             dateFilter.params
         );
 
-        const fields = ['id', ...requested];
-        const applications = rows.map(r => {
-            const obj = {};
-            fields.forEach(k => { obj[k] = r[k] ?? null; });
-            return obj;
+        // If it's grouped data, return as is
+        if (dateFilter.groupByClause) {
+            return { 
+                total: rows.length, 
+                applications: rows, 
+                fields: ['period', 'count'],
+                isGrouped: true 
+            };
+        }
+
+        // For regular data, process the complete application records
+        const allowedFields = [
+            'application_id', 'full_name', 'email_address', 'application_date', 
+            'status', 'academic_level', 'country', 'scholarship_id',
+            'scholarship_title', 'award_amount', 'scholarship_description'
+        ];
+
+        // Filter fields based on user selection, but always include essential fields
+        const requestedFields = Array.isArray(applicationFields) && applicationFields.length > 0
+            ? applicationFields.filter(f => allowedFields.includes(f))
+            : allowedFields;
+
+        // Always include essential fields
+        const essentialFields = ['application_id', 'full_name', 'status', 'scholarship_title'];
+        const displayFields = [...new Set([...essentialFields, ...requestedFields])];
+
+        // Process each application record
+        const applications = rows.map(application => {
+            const processedApplication = {
+                // Include all original data
+                ...application,
+                // Add computed fields
+                display_fields: displayFields // Track which fields to display
+            };
+            return processedApplication;
         });
 
-        return { total: applications.length, applications, fields };
+        return { 
+            total: applications.length, 
+            applications: applications, 
+            fields: displayFields,
+            all_fields: allowedFields,
+            isGrouped: false
+        };
     } catch (error) {
         console.error('Error generating applications data:', error);
         return { total: 0, applications: [], fields: [], error: error.message };
@@ -902,41 +1017,87 @@ async function generateApplicationsData(applicationFields, dateFilter) {
 // Helper function to generate scholarships data
 async function generateScholarshipsData(scholarshipFields, dateFilter) {
     try {
-        const allowedMap = {
-            id: 'id',
-            name: 'name',
-            description: 'description',
-            eligibility_criteria: 'eligibility_criteria',
-            application_deadline: 'application_deadline',
-            award_amount: 'award_amount',
-            number_of_awards: 'number_of_awards',
-            academic_level: 'academic_level',
-            status: 'status',
-            min_gpa: 'min_gpa',
-            scholarship_type: 'scholarship_type',
-            created_at: 'created_at',
-            application_count: '(SELECT COUNT(*) FROM scholarship_applications WHERE scholarship_id = scholarships.id) as application_count'
-        };
-        const requested = Array.isArray(scholarshipFields) && scholarshipFields.length > 0
-            ? scholarshipFields.filter(f => allowedMap[f])
-            : ['name','description','eligibility_criteria','application_deadline','award_amount','status'];
-        const selectParts = ['id'];
-        requested.forEach(f => selectParts.push(allowedMap[f]));
-        const selectFields = Array.from(new Set(selectParts)).join(', ');
+        // Always fetch all scholarship data for complete records
+        let query = `SELECT * FROM scholarships WHERE ${dateFilter.whereClause}`;
+
+        if (dateFilter.groupByClause) {
+            // For grouped data, use the grouping query
+            const groupByField = dateFilter.groupByClause;
+            query = `SELECT ${groupByField} as period, COUNT(*) as count FROM scholarships WHERE ${dateFilter.whereClause} GROUP BY period ORDER BY period`;
+        }
 
         const [rows] = await pool.query(
-            `SELECT ${selectFields} FROM scholarships WHERE ${dateFilter.whereClause}`,
+            query,
             dateFilter.params
         );
 
-        const fields = ['id', ...requested];
-        const scholarships = rows.map(r => {
-            const obj = {};
-            fields.forEach(k => { obj[k] = r[k] ?? null; });
-            return obj;
+        // If it's grouped data, return as is
+        if (dateFilter.groupByClause) {
+            return { 
+                total: rows.length, 
+                scholarships: rows, 
+                fields: ['period', 'count'],
+                isGrouped: true 
+            };
+        }
+
+        // For regular data, process the complete scholarship records
+        const allowedFields = [
+            'id', 'name', 'description', 'eligibility_criteria', 
+            'application_deadline', 'award_amount', 'number_of_awards', 
+            'academic_level', 'status', 'min_gpa', 'scholarship_type', 'created_at'
+        ];
+
+        // Filter fields based on user selection, but always include essential fields
+        const requestedFields = Array.isArray(scholarshipFields) && scholarshipFields.length > 0
+            ? scholarshipFields.filter(f => allowedFields.includes(f))
+            : allowedFields;
+
+        // Always include essential fields
+        const essentialFields = ['id', 'name', 'status'];
+        const displayFields = [...new Set([...essentialFields, ...requestedFields])];
+
+        // Process each scholarship record
+        const scholarships = rows.map(scholarship => {
+            const processedScholarship = {
+                // Include all original data
+                ...scholarship,
+                // Add computed fields
+                application_count: 0, // Will be updated below
+                display_fields: displayFields // Track which fields to display
+            };
+            return processedScholarship;
         });
 
-        return { total: scholarships.length, scholarships, fields };
+        // Get application counts for each scholarship
+        if (scholarships.length > 0) {
+            const scholarshipIds = scholarships.map(s => s.id);
+            const [applicationCounts] = await pool.query(
+                `SELECT scholarship_id, COUNT(*) as count 
+                 FROM scholarship_applications 
+                 WHERE scholarship_id IN (${scholarshipIds.map(() => '?').join(',')})
+                 GROUP BY scholarship_id`,
+                scholarshipIds
+            );
+
+            // Update application counts
+            const countMap = {};
+            applicationCounts.forEach(row => {
+                countMap[row.scholarship_id] = row.count;
+            });
+
+            scholarships.forEach(scholarship => {
+                scholarship.application_count = countMap[scholarship.id] || 0;
+            });
+        }
+
+        return { 
+            total: scholarships.length, 
+            scholarships: scholarships, 
+            fields: displayFields,
+            all_fields: allowedFields,
+            isGrouped: false
+        };
     } catch (error) {
         console.error('Error generating scholarships data:', error);
         return { total: 0, scholarships: [], fields: [], error: error.message };
@@ -950,10 +1111,9 @@ async function generateAnalyticsData(analyticsFields, dateFilter) {
 
         if (analyticsFields.includes('user_growth')) {
             const [userGrowth] = await pool.query(
-                `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as new_users 
+                `SELECT ${dateFilter.groupByClause} as period, COUNT(*) as new_users 
                  FROM users WHERE ${dateFilter.whereClause} 
-                 GROUP BY DATE_FORMAT(created_at, '%Y-%m') 
-                 ORDER BY month`,
+                 GROUP BY period ORDER BY period`,
                 dateFilter.params
             );
             analytics.userGrowth = userGrowth;
@@ -961,10 +1121,9 @@ async function generateAnalyticsData(analyticsFields, dateFilter) {
 
         if (analyticsFields.includes('application_trends')) {
             const [applicationTrends] = await pool.query(
-                `SELECT DATE_FORMAT(application_date, '%Y-%m') as month, COUNT(*) as applications 
+                `SELECT ${dateFilter.groupByClause.replace('created_at', 'application_date')} as period, COUNT(*) as applications 
                  FROM scholarship_applications WHERE ${dateFilter.whereClause.replace('created_at', 'application_date')} 
-                 GROUP BY DATE_FORMAT(application_date, '%Y-%m') 
-                 ORDER BY month`,
+                 GROUP BY period ORDER BY period`,
                 dateFilter.params
             );
             analytics.applicationTrends = applicationTrends;
@@ -1104,6 +1263,238 @@ function convertToExcel(data) {
     // This would require a library like 'xlsx' or 'exceljs'
     // For now, return a simple representation
     return JSON.stringify(data);
+}
+
+// Bulk export endpoint for quick export buttons
+router.post('/bulk-export', bypassAuth, async (req, res) => {
+    try {
+        const { format = 'csv', filters = {} } = req.body;
+        console.log(`Bulk export requested in format: ${format}`);
+
+        // Build query based on filters
+        const where = [];
+        const params = [];
+        const { status, category, date, startDate, endDate } = filters;
+
+        if (status && ['pending','in_progress','completed','reviewed','exported','archived'].includes(status)) {
+            where.push('status = ?');
+            params.push(status);
+        }
+        if (category && category !== 'all') {
+            where.push('category = ?');
+            params.push(category);
+        }
+        if (date && date !== 'all') {
+            if (date === 'custom' && startDate && endDate) {
+                where.push('created_at BETWEEN ? AND ?');
+                params.push(startDate, endDate);
+            } else {
+                switch (date) {
+                    case 'today': where.push('DATE(created_at) = CURDATE()'); break;
+                    case 'last7': where.push('created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)'); break;
+                    case 'thisMonth': where.push('YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())'); break;
+                    case 'lastMonth': where.push('YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))'); break;
+                    case 'thisYear': where.push('YEAR(created_at) = YEAR(CURDATE())'); break;
+                }
+            }
+        }
+
+        const whereClause = where.length ? ('WHERE ' + where.join(' AND ')) : '';
+        const [reports] = await pool.query(
+            `SELECT * FROM reports ${whereClause} ORDER BY created_at DESC`,
+            params
+        );
+
+        console.log(`Found ${reports.length} reports for bulk export`);
+
+        if (reports.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No reports found matching the specified filters'
+            });
+        }
+
+        // Combine all report data
+        const combinedData = {
+            metadata: {
+                exportedAt: new Date().toISOString(),
+                totalReports: reports.length,
+                format: format,
+                filters: filters
+            },
+            reports: reports.map(report => ({
+                id: report.id,
+                name: report.name,
+                category: report.category,
+                status: report.status,
+                created_at: report.created_at,
+                data: safeParseReportData(report.data)
+            }))
+        };
+
+        // Handle different export formats
+        switch (format.toLowerCase()) {
+            case 'csv':
+                console.log('Generating bulk CSV export');
+                try {
+                    const csvData = convertBulkDataToCSV(combinedData);
+                    res.setHeader('Content-Type', 'text/csv');
+                    res.setHeader('Content-Disposition', `attachment; filename="bulk_reports_export_${new Date().toISOString().split('T')[0]}.csv"`);
+                    res.send(csvData);
+                } catch (csvError) {
+                    console.error('Error generating bulk CSV:', csvError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to generate bulk CSV: ' + csvError.message
+                    });
+                }
+                break;
+
+            case 'excel':
+                console.log('Generating bulk Excel export');
+                try {
+                    const excelData = convertBulkDataToExcel(combinedData);
+                    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    res.setHeader('Content-Disposition', `attachment; filename="bulk_reports_export_${new Date().toISOString().split('T')[0]}.xlsx"`);
+                    res.send(excelData);
+                } catch (excelError) {
+                    console.error('Error generating bulk Excel:', excelError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to generate bulk Excel: ' + excelError.message
+                    });
+                }
+                break;
+
+            case 'pdf':
+                console.log('Bulk PDF export requested');
+                res.json({
+                    success: true,
+                    message: 'Bulk PDF export initiated',
+                    totalReports: reports.length,
+                    note: 'PDF generation would require additional libraries'
+                });
+                break;
+
+            default: // json
+                console.log('Generating bulk JSON export');
+                res.json({
+                    success: true,
+                    data: combinedData
+                });
+        }
+
+        console.log(`Bulk export completed successfully for ${reports.length} reports`);
+
+    } catch (error) {
+        console.error('Error in bulk export:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to perform bulk export: ' + error.message
+        });
+    }
+});
+
+// Helper function to convert bulk data to CSV
+function convertBulkDataToCSV(data) {
+    try {
+        console.log('Converting bulk data to CSV');
+        
+        let csv = 'Bulk Reports Export\n';
+        csv += `Generated: ${data.metadata.exportedAt}\n`;
+        csv += `Total Reports: ${data.metadata.totalReports}\n`;
+        csv += `Format: ${data.metadata.format}\n\n`;
+        
+        // Add filters info
+        if (data.metadata.filters && Object.keys(data.metadata.filters).length > 0) {
+            csv += 'Applied Filters:\n';
+            Object.entries(data.metadata.filters).forEach(([key, value]) => {
+                csv += `${key}: ${value}\n`;
+            });
+            csv += '\n';
+        }
+
+        // Add reports summary
+        csv += '=== REPORTS SUMMARY ===\n';
+        csv += 'ID,Name,Category,Status,Created At\n';
+        data.reports.forEach(report => {
+            csv += `${report.id},"${report.name || ''}","${report.category || ''}","${report.status || ''}","${report.created_at || ''}"\n`;
+        });
+        csv += '\n';
+
+        // Add detailed data for each report
+        data.reports.forEach((report, index) => {
+            csv += `=== REPORT ${index + 1}: ${report.name} ===\n`;
+            csv += `ID: ${report.id}\n`;
+            csv += `Category: ${report.category}\n`;
+            csv += `Status: ${report.status}\n`;
+            csv += `Created: ${report.created_at}\n\n`;
+
+            if (report.data && typeof report.data === 'object') {
+                if (report.data.data && typeof report.data.data === 'object') {
+                    Object.keys(report.data.data).forEach(key => {
+                        const section = report.data.data[key];
+                        csv += `--- ${key.toUpperCase()} ---\n`;
+                        
+                        if (section && typeof section === 'object') {
+                            if (Array.isArray(section)) {
+                                if (section.length > 0) {
+                                    const headers = Object.keys(section[0]);
+                                    csv += headers.join(',') + '\n';
+                                    section.forEach(row => {
+                                        const values = headers.map(header => {
+                                            const value = row[header];
+                                            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                                                return `"${value.replace(/"/g, '""')}"`;
+                                            }
+                                            return value || '';
+                                        });
+                                        csv += values.join(',') + '\n';
+                                    });
+                                } else {
+                                    csv += 'No data available\n';
+                                }
+                            } else if (section.total !== undefined) {
+                                csv += `Total: ${section.total}\n`;
+                                const dataArray = section[key] && Array.isArray(section[key]) ? section[key] : [];
+                                const headers = Array.isArray(section.fields) && section.fields.length > 0
+                                    ? section.fields
+                                    : (dataArray[0] ? Object.keys(dataArray[0]) : []);
+                                if (headers.length > 0) {
+                                    csv += headers.join(',') + '\n';
+                                    dataArray.forEach(row => {
+                                        const values = headers.map(header => {
+                                            const value = row[header];
+                                            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                                                return `"${value.replace(/"/g, '""')}"`;
+                                            }
+                                            return value ?? '';
+                                        });
+                                        csv += values.join(',') + '\n';
+                                    });
+                                }
+                            }
+                        }
+                        csv += '\n';
+                    });
+                }
+            }
+            csv += '\n';
+        });
+        
+        console.log('Bulk CSV conversion completed successfully');
+        return csv;
+    } catch (error) {
+        console.error('Error converting bulk data to CSV:', error);
+        return 'Error: Could not convert bulk data to CSV format. ' + error.message;
+    }
+}
+
+// Helper function to convert bulk data to Excel
+function convertBulkDataToExcel(data) {
+    // This would require a library like 'xlsx' or 'exceljs'
+    // For now, return a JSON representation that can be saved as .xlsx
+    return JSON.stringify(data, null, 2);
 }
 
 export default router; 

@@ -1,4 +1,4 @@
-// Vercel API entry point for Scholarship Management System
+// API entry point for Scholarship Management System
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -35,7 +35,7 @@ app.use('/api/', limiter);
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://mbappe-global-cnov79vjn-thierry-ntwaris-projects.vercel.app'] 
+    ? ['https://your-heroku-app.herokuapp.com'] 
     : ['http://localhost:3000'],
   credentials: true
 }));
@@ -67,7 +67,7 @@ app.get('/api/health', async (req, res) => {
     
     res.json({ 
       status: 'OK', 
-      message: 'Scholarship Management System API is running on Vercel',
+      message: 'Scholarship Management System API is running successfully',
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
       services: {
@@ -220,11 +220,11 @@ app.get('/', (req, res) => {
       <div class="container mx-auto p-8">
         <h1 class="text-4xl font-bold text-center mb-8">🎓 Scholarship Management System</h1>
         <div class="text-center">
-          <p class="text-xl mb-4">Successfully deployed on Vercel! 🚀</p>
+          <p class="text-xl mb-4">Successfully deployed on Heroku! 🚀</p>
           <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
             <p><strong>Status:</strong> Running</p>
             <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
-            <p><strong>Platform:</strong> Vercel Serverless</p>
+            <p><strong>Platform:</strong> Heroku</p>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

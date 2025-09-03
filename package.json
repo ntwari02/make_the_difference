@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'Skipping build: handled by heroku-postbuild'",
-    "heroku-postbuild": "npm run build:css",
+    "build": "npm run build:css",
+    "heroku-postbuild": "npm run build",
     "migrate": "node scripts/migrate.js",
     "migrate:prune": "node scripts/prune-migrations.js",
     "build:css": "node scripts/build-css.js",
@@ -16,8 +16,8 @@
     "setup:database": "node setup_database.js",
     "setup:env": "node scripts/setup-env.js",
     "generate:secrets": "node scripts/generate-secrets.js",
-            "seed:help": "node scripts/seed-help-data.js",
-            "migrate:pain-point": "node scripts/add-pain-point-column.js",
+    "seed:help": "node scripts/seed-help-data.js",
+    "migrate:pain-point": "node scripts/add-pain-point-column.js",
     "test": "echo 'No tests specified' && exit 0",
     "lint": "echo 'No linting configured' && exit 0",
     "clean": "rimraf public/css/styles.css",
@@ -50,9 +50,9 @@
     "isotope-layout": "^3.0.6",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.14.2",
+    "mysql2": "^3.6.5",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^6.9.13",
     "swiper": "^11.2.10"
   },
   "devDependencies": {
@@ -63,6 +63,7 @@
     "tailwindcss": "^4.1.8"
   },
   "engines": {
-    "node": "22.x"
+    "node": "22.x",
+    "npm": "10.x"
   }
 }

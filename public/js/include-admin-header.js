@@ -31,20 +31,19 @@ async function includeAdminHeader() {
                     }
                 }
                 const nameTarget = document.getElementById('adminName');
-                if (nameTarget) nameTarget.textContent = user.full_name || 'Admin';
+                if (nameTarget) nameTarget.textContent = user.full_name || user.fullName || 'Admin';
             } catch {}
         })();
 
-        // Initialize profile avatar
+        // Initialize profile/avatar basic controls (avatar preview and upload form support)
         initializeProfileControls();
 
-        // Logout with confirmation
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            window.location.href = 'logout.html';
-        });
+        // Wire profile modal and password section behaviors so they work when injected via innerHTML
+        wireProfileModal();
 
-        // Mobile admin menu
-        initializeMobileAdminMenu();
+        // Logout with confirmation
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', () => { window.location.href = 'logout.html'; });
 
         // Enhanced Theme Management
         initializeThemeSystem();
@@ -63,11 +62,9 @@ function initializeProfileControls() {
     const modalFallback = document.getElementById('profileModalFallback');
     const nameEl = document.getElementById('profileModalName');
     const emailEl = document.getElementById('profileModalEmail');
-    const form = document.getElementById('profileAvatarForm');
-    const input = document.getElementById('profileAvatarInput');
 
     const stored = JSON.parse(localStorage.getItem('user') || '{}');
-    const fullName = stored.full_name || 'User';
+    const fullName = stored.full_name || stored.fullName || 'User';
     const email = stored.email || '';
     const photo = stored.profile_picture || stored.profile_picture_path || '';
 
@@ -96,29 +93,127 @@ function initializeProfileControls() {
     if (profileBtn) profileBtn.addEventListener('click', () => {
         modal && modal.classList.remove('hidden');
     });
+}
 
-    if (form) form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!input || !input.files || !input.files[0]) return;
-        try {
+function wireProfileModal(){
+    const modal = document.getElementById('profileModal');
+    const profileBtn = document.getElementById('profileBtn');
+    const openPasswordSection = document.getElementById('openPasswordSection');
+    const passwordSection = document.getElementById('passwordSection');
+    const cancelPassword = document.getElementById('cancelPassword');
+
+    const setText = (id, val) => { const el=document.getElementById(id); if(el) el.textContent = val; };
+    const setValue = (id,val) => { const el=document.getElementById(id); if(el) el.value = val||''; };
+    const getUser = () => { try { return JSON.parse(localStorage.getItem('user')||'{}'); } catch { return {}; } };
+
+    async function authFetch(url, opts){
             const token = localStorage.getItem('token');
-            const fd = new FormData();
-            fd.append('profilePicture', input.files[0]);
-            // Use dedicated profile-picture endpoint
-            const res = await fetch('/api/admin/account/profile-picture', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+        const headers = (opts && opts.headers) || {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return fetch(url, { ...(opts||{}), headers });
+    }
+
+    async function loadAccount(){
+        try{
+            const res = await authFetch('/api/admin/account');
+            if(!res.ok) return;
             const data = await res.json();
-            const newPhoto = data.profile_picture || data.profile_picture_path;
-            if (newPhoto) {
-                const u = JSON.parse(localStorage.getItem('user') || '{}');
-                u.profile_picture = newPhoto;
-                localStorage.setItem('user', JSON.stringify(u));
-                setAvatar(newPhoto);
+            const name = data.full_name || getUser().fullName || 'User';
+            const email = data.email || getUser().email || 'email@example.com';
+            setText('profileModalName', name);
+            setText('profileModalEmail', email);
+            setValue('pfFullName', name);
+            setValue('pfEmail', email);
+            setValue('pfPhone', data.phone || '');
+            setValue('pfPosition', data.position || '');
+            setValue('pfBio', data.bio || '');
+            setValue('pfTimezone', data.timezone || 'UTC');
+            setValue('pfLanguage', data.language || 'en');
+        }catch(e){ /* ignore */ }
+    }
+
+    profileBtn && profileBtn.addEventListener('click', async ()=>{ await loadAccount(); });
+
+    // Toggle inline password section
+    if (openPasswordSection && passwordSection){
+        openPasswordSection.addEventListener('click', (e)=>{
+            e.preventDefault();
+            const c = document.getElementById('pwCurrent');
+            const n = document.getElementById('pwNew');
+            const r = document.getElementById('pwConfirm');
+            passwordSection.classList.remove('hidden');
+            if (c) { c.value=''; n.value=''; r.value=''; c.focus(); }
+        });
+    }
+    if (cancelPassword && passwordSection){
+        cancelPassword.addEventListener('click', (e)=>{ e.preventDefault(); passwordSection.classList.add('hidden'); });
+    }
+
+    // Avatar upload (from injected DOM)
+    const avatarInput = document.getElementById('profileAvatarInput');
+    const avatarName = document.getElementById('profileAvatarName');
+    const modalAvatar = document.getElementById('profileModalAvatar');
+    const modalFallback = document.getElementById('profileModalFallback');
+    const showAvatar = (src)=>{
+        if (src){ modalAvatar.src = src; modalAvatar.classList.remove('hidden'); modalFallback.classList.add('hidden'); }
+        else { modalAvatar.classList.add('hidden'); modalFallback.classList.remove('hidden'); }
+    };
+    if (avatarInput){
+        avatarInput.addEventListener('change', async ()=>{
+            const f = avatarInput.files && avatarInput.files[0];
+            if (avatarName) avatarName.textContent = f ? f.name : '';
+            if (f){
+                try{
+                    const fd = new FormData();
+                    fd.append('profilePicture', f);
+                    const res = await authFetch('/api/admin/account/profile-picture', { method:'POST', body: fd });
+                    if(res.ok){ const data = await res.json(); const src = data.profile_picture ? ('/' + String(data.profile_picture).replace(/^\/+/, '')) : ''; showAvatar(src); }
+                }catch(e){}
             }
-            modal && modal.classList.add('hidden');
-        } catch (err) {
-            console.error('Profile upload failed', err);
-        }
-    });
+        });
+    }
+
+    // Save profile
+    const saveBtn = document.getElementById('profileSaveBtn');
+    if (saveBtn){
+        saveBtn.addEventListener('click', async ()=>{
+            try{
+                const payload = {
+                    fullName: document.getElementById('pfFullName').value || '',
+                    email: document.getElementById('pfEmail').value || '',
+                    phone: document.getElementById('pfPhone')?.value || '',
+                    position: document.getElementById('pfPosition')?.value || '',
+                    bio: document.getElementById('pfBio')?.value || '',
+                    timezone: document.getElementById('pfTimezone')?.value || 'UTC',
+                    language: document.getElementById('pfLanguage')?.value || 'en'
+                };
+                const res = await authFetch('/api/admin/account', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+                if(!res.ok) throw new Error('Failed to save');
+                const data = await res.json();
+                const user = getUser();
+                const cached = { ...(user||{}), fullName: data.full_name || payload.fullName, email: data.email || payload.email };
+                localStorage.setItem('user', JSON.stringify(cached));
+                alert('Profile saved');
+            }catch(e){ alert(e.message || 'Failed to save'); }
+        });
+    }
+
+    // Change password submit
+    const pwdBtn = document.getElementById('passwordSaveBtn');
+    if (pwdBtn){
+        pwdBtn.addEventListener('click', async ()=>{
+            try{
+                const current = document.getElementById('pwCurrent').value || '';
+                const next = document.getElementById('pwNew').value || '';
+                const confirm = document.getElementById('pwConfirm').value || '';
+                if(!current || !next || next!==confirm) throw new Error('Check passwords');
+                const res = await authFetch('/api/auth/change-password', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ currentPassword: current, newPassword: next }) });
+                if(!res.ok) throw new Error('Failed to change password');
+                alert('Password updated');
+                passwordSection && passwordSection.classList.add('hidden');
+            }catch(e){ alert(e.message || 'Failed to change password'); }
+        });
+    }
 }
 
 function initializeThemeSystem() {
@@ -227,129 +322,5 @@ function initializeThemeSystem() {
 
 document.addEventListener('DOMContentLoaded', () => {
     includeAdminHeader();
-    // Global fallback to ensure a FAB menu exists on all admin pages
-    setTimeout(() => {
-        if (typeof ensureMobileFabMenu === 'function') {
-            try { ensureMobileFabMenu(); } catch {}
-        } else {
-            // Minimal non-duplicating fallback
-            if (!document.getElementById('admin-fab-menu')) {
-                const fab = document.createElement('button');
-                fab.id = 'admin-fab-menu';
-                fab.className = 'fixed bottom-4 right-4 z-[1001] w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center';
-                fab.setAttribute('aria-label','Open admin menu');
-                fab.innerHTML = '<i class="fas fa-bars"></i>';
-                const overlay = document.createElement('div');
-                overlay.id = 'admin-fab-overlay';
-                overlay.className = 'fixed inset-0 bg-black/40 hidden z-[1000]';
-                const modal = document.createElement('div');
-                modal.id = 'admin-fab-modal';
-                modal.className = 'fixed bottom-20 left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl hidden z-[1002] max-h-[70vh] overflow-y-auto';
-                const links = [
-                    ['admin_dashboard.html','Dashboard','fas fa-tachometer-alt'],
-                    ['admin_users.html','Users','fas fa-users'],
-                    ['admin_rolesPermissions.html','Roles','fas fa-user-shield'],
-                    ['admin_scholarship.html','Scholarships','fas fa-graduation-cap'],
-                    ['admin_applications.html','Applications','fas fa-file-alt'],
-                    ['admin_partners.html','Partners','fas fa-handshake'],
-                    ['admin_services.html','Services','fas fa-briefcase'],
-                    ['admin_email_template.html','Email Templates','fas fa-envelope'],
-                    ['admin_help.html','Help','fas fa-question']
-                ];
-                modal.innerHTML = `
-                  <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <span class="font-semibold">Admin Menu</span>
-                    <button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times"></i></button>
-                  </div>
-                  <div class="p-2">
-                    ${links.map(l => `<a href="${l[0]}" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="${l[2]} w-5 text-center"></i><span>${l[1]}</span></a>`).join('')}
-                  </div>`;
-                document.body.appendChild(fab);
-                document.body.appendChild(overlay);
-                document.body.appendChild(modal);
-                const open = () => { overlay.classList.remove('hidden'); modal.classList.remove('hidden'); };
-                const close = () => { overlay.classList.add('hidden'); modal.classList.add('hidden'); };
-                fab.addEventListener('click', open); overlay.addEventListener('click', close);
-                modal.addEventListener('click', (e)=>{ if(e.target && e.target.id==='admin-fab-close') close(); });
-            }
-        }
-    }, 0);
 });
 
-// --- Mobile Admin Menu (hamburger opens modal with all sidebar navs) ---
-function initializeMobileAdminMenu() {
-    let container = document.getElementById('mobileMenuContainer');
-    if (!container) {
-        // Preferred spot: right actions row before theme/profile/logout on small screens
-        const rightActions = document.getElementById('admin-right-actions');
-        if (rightActions) {
-            container = document.createElement('div');
-            rightActions.insertBefore(container, rightActions.firstChild);
-        } else {
-            // Fallback: before title
-            const title = document.getElementById('admin-page-title');
-            if (title && title.parentElement) {
-                container = document.createElement('div');
-                title.parentElement.insertBefore(container, title);
-            }
-        }
-    }
-    if (!container) return;
-
-    // Create hamburger button
-    const btn = document.createElement('button');
-    btn.id = 'adminMobileMenuBtn';
-    btn.className = 'inline-flex lg:hidden items-center justify-center p-2 mr-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none';
-    btn.setAttribute('aria-label', 'Open menu');
-    btn.innerHTML = '<i class="fas fa-bars text-xl text-gray-700 dark:text-gray-200"></i>';
-    container.appendChild(btn);
-
-    // Build modal
-    const overlay = document.createElement('div');
-    overlay.id = 'adminMenuOverlay';
-    overlay.className = 'fixed inset-0 bg-black/40 hidden z-40';
-
-    const modalWrap = document.createElement('div');
-    modalWrap.id = 'adminMenuModal';
-    modalWrap.className = 'fixed inset-0 hidden z-50 flex items-center justify-center p-4';
-    const modal = document.createElement('div');
-    modal.className = 'w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700';
-
-    const links = [
-        { href: 'admin_dashboard.html', label: 'Dashboard', icon: 'fa-gauge' },
-        { href: 'admin_applications.html', label: 'Applications', icon: 'fa-file-lines' },
-        { href: 'admin_scholarship.html', label: 'Scholarships', icon: 'fa-graduation-cap' },
-        { href: 'admin_users.html', label: 'Users', icon: 'fa-users' },
-        { href: 'admin_partners.html', label: 'Partners', icon: 'fa-handshake' },
-        { href: 'admin_rolesPermissions.html', label: 'Roles & Team', icon: 'fa-user-shield' },
-        { href: 'admin_services.html', label: 'Services', icon: 'fa-briefcase' }
-    ];
-
-    modal.innerHTML = `
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <span class="font-semibold text-gray-800 dark:text-white">Admin Navigation</span>
-            <button id="adminMenuClose" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="p-2 max-h-[70vh] overflow-y-auto">
-            ${links.map(l => `
-                <a href="${l.href}" class="flex items-center gap-3 px-3 py-3 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="fas ${l.icon} w-5 text-gray-500 dark:text-gray-300"></i>
-                    <span>${l.label}</span>
-                </a>
-            `).join('')}
-        </div>
-    `;
-
-    modalWrap.appendChild(modal);
-    document.body.appendChild(overlay);
-    document.body.appendChild(modalWrap);
-
-    const open = () => { overlay.classList.remove('hidden'); modalWrap.classList.remove('hidden'); };
-    const close = () => { overlay.classList.add('hidden'); modalWrap.classList.add('hidden'); };
-
-    btn.addEventListener('click', open);
-    overlay.addEventListener('click', close);
-    const closeBind = () => { const el = document.getElementById('adminMenuClose'); if (el) el.addEventListener('click', close); };
-    closeBind();
-    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') close(); });
-}

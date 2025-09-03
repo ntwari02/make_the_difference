@@ -285,13 +285,59 @@ CREATE INDEX idx_scholarships_status ON scholarships(status);
 - Virus scanning for uploads
 - Access control for sensitive files
 
-## Contributing
+## Deployment
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### Heroku Deployment (Recommended)
+
+This application is configured for Heroku deployment. See [HEROKU_DEPLOYMENT.md](./HEROKU_DEPLOYMENT.md) for detailed instructions.
+
+#### Quick Deploy to Heroku
+
+1. **Install Heroku CLI**
+   ```bash
+   npm install -g heroku
+   ```
+
+2. **Login and Create App**
+   ```bash
+   heroku login
+   heroku create your-app-name
+   ```
+
+3. **Set Environment Variables**
+   ```bash
+   heroku config:set DB_HOST=your-database-host
+   heroku config:set DB_USER=your-database-user
+   heroku config:set DB_PASSWORD=your-database-password
+   heroku config:set NODE_ENV=production
+   ```
+
+4. **Deploy**
+   ```bash
+   git add .
+   git commit -m "Deploy to Heroku"
+   git push heroku main
+   ```
+
+5. **Run Migrations**
+   ```bash
+   heroku run npm run migrate
+   ```
+
+#### Build Process
+
+The application uses an automated build process:
+- **Pre-build**: Cleans previous build artifacts
+- **Build**: Compiles Tailwind CSS and processes assets
+- **Post-build**: Runs validation and shows completion status
+
+### Other Deployment Options
+
+- **Docker**: Containerized deployment
+- **AWS**: Cloud deployment
+- **DigitalOcean**: VPS deployment
+
+## Contributing
 
 ## License
 

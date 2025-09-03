@@ -18,6 +18,19 @@ function getMailer() {
     return transporter;
 }
 
+// Convert HTML to plain text fallback
+function stripHtmlToText(html) {
+    try {
+        // Remove tags and collapse whitespace
+        const text = String(html || '')
+            .replace(/<\/(p|div|br)\s*>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        return text;
+    } catch { return String(html || ''); }
+}
+
 // GET all email templates
 router.get('/', bypassAuth, async (req, res) => {
     try {
@@ -165,19 +178,29 @@ router.post('/test-send', bypassAuth, async (req, res) => {
             }
         }
 
-        // Replace template variables with sample data
+        // Replace template variables with sample data + optional custom vars
         const sampleData = {
             name: 'Test User',
             scholarship: 'Sample Scholarship',
             date: new Date().toLocaleDateString(),
-            status: 'Under Review'
+            status: 'Under Review',
+            user_id: '0000',
+            amount: ''
         };
 
+        const customVars = typeof req.body.vars === 'object' && req.body.vars ? req.body.vars : {};
+        const mergeVars = { ...sampleData, ...customVars };
+
+        let processedSubject = emailSubject;
         let processedContent = emailContent;
-        Object.keys(sampleData).forEach(key => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            processedContent = processedContent.replace(regex, sampleData[key]);
+        Object.keys(mergeVars).forEach(key => {
+            const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+            processedContent = processedContent.replace(regex, String(mergeVars[key] ?? ''));
+            processedSubject = processedSubject.replace(regex, String(mergeVars[key] ?? ''));
         });
+        // Remove any leftover {{variable}} tags
+        processedContent = processedContent.replace(/{{\s*[^}]+\s*}}/g, '');
+        processedSubject = processedSubject.replace(/{{\s*[^}]+\s*}}/g, '');
 
         // Send email if SMTP configured
         const transporter = getMailer();
@@ -185,9 +208,9 @@ router.post('/test-send', bypassAuth, async (req, res) => {
             await transporter.sendMail({
                 from: process.env.SMTP_FROM || process.env.SMTP_USER,
                 to: recipient_email,
-                subject: emailSubject,
-                html: /<([a-z][\s\S]*?)>/i.test(processedContent) ? processedContent : undefined,
-                text: /<([a-z][\s\S]*?)>/i.test(processedContent) ? undefined : processedContent
+                subject: processedSubject,
+                html: processedContent,
+                text: stripHtmlToText(processedContent)
             });
             return res.json({ message: 'Test email sent successfully' });
         } else {
@@ -255,7 +278,7 @@ router.post('/bulk-update', bypassAuth, async (req, res) => {
 // POST send bulk emails
 router.post('/send-bulk', bypassAuth, async (req, res) => {
     try {
-        const { template_id, user_ids, custom_subject, custom_content } = req.body;
+        const { template_id, user_ids, custom_subject, custom_content, vars_common } = req.body;
 
         if (!template_id && !custom_content) {
             return res.status(400).json({ error: 'Template ID or custom content is required' });
@@ -305,20 +328,61 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
                 let processedContent = emailContent;
                 let processedSubject = emailSubject;
 
-                const userData = {
+                // Build per-user variables, merged with common vars
+                const commonVars = typeof vars_common === 'object' && vars_common ? vars_common : {};
+                const userVars = {
                     name: user.full_name,
                     email: user.email,
                     user_id: user.id,
                     date: new Date().toLocaleDateString(),
-                    scholarship: 'Scholarship Program'
+                    scholarship: commonVars.scholarship || 'Scholarship Program',
+                    amount: commonVars.amount || '',
+                    deadline: commonVars.deadline || '',
+                    url: commonVars.url || '',
+                    support_email: commonVars.support_email || '',
+                    location: commonVars.location || '',
+                    custom1: commonVars.custom1 || '',
+                    custom2: commonVars.custom2 || ''
                 };
+                // Names mapping override (comma-separated list maps in order)
+                if (Array.isArray(commonVars.names_list) && commonVars.names_list.length){
+                    const idx = users.findIndex(u=> u.id === user.id);
+                    if (idx >= 0 && commonVars.names_list[idx]) {
+                        userVars.name = commonVars.names_list[idx];
+                    }
+                }
+                const merged = { ...commonVars, ...userVars };
 
-                // Replace variables in content and subject
-                Object.keys(userData).forEach(key => {
-                    const regex = new RegExp(`{{${key}}}`, 'g');
-                    processedContent = processedContent.replace(regex, userData[key]);
-                    processedSubject = processedSubject.replace(regex, userData[key]);
+                // Replace {{ var }} occurrences (trimmed inside braces)
+                Object.keys(merged).forEach(key => {
+                    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                    processedContent = processedContent.replace(regex, String(merged[key] ?? ''));
+                    processedSubject = processedSubject.replace(regex, String(merged[key] ?? ''));
                 });
+
+                // Also support bracket placeholders like [Name], [Scholarship Name], [User ID], [Date]
+                const bracketMap = new Map([
+                    ['name', ['name','Name']],
+                    ['scholarship', ['scholarship name','Scholarship Name','scholarship','Scholarship']],
+                    ['user_id', ['user id','User ID','id','ID']],
+                    ['date', ['date','Date']],
+                    ['amount', ['amount','Amount']]
+                ]);
+                bracketMap.forEach((labels, varKey) => {
+                    labels.forEach(label => {
+                        const re = new RegExp(`\\[\\s*${label.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')}\\s*\\]`, 'g');
+                        processedContent = processedContent.replace(re, String(merged[varKey] ?? ''));
+                        processedSubject = processedSubject.replace(re, String(merged[varKey] ?? ''));
+                    });
+                });
+
+                // Remove any leftover tags
+                processedContent = processedContent
+                    .replace(/{{\s*[^}]+\s*}}/g, '')
+                    .replace(/\[[^\]]+\]/g, '');
+                processedSubject = processedSubject
+                    .replace(/{{\s*[^}]+\s*}}/g, '')
+                    .replace(/\[[^\]]+\]/g, '');
 
                 // Send email if SMTP configured; otherwise skip
                 if (transporter) {
@@ -326,8 +390,8 @@ router.post('/send-bulk', bypassAuth, async (req, res) => {
                         from: process.env.SMTP_FROM || process.env.SMTP_USER,
                         to: user.email,
                         subject: processedSubject,
-                        html: /<([a-z][\s\S]*?)>/i.test(processedContent) ? processedContent : undefined,
-                        text: /<([a-z][\s\S]*?)>/i.test(processedContent) ? undefined : processedContent
+                        html: processedContent,
+                        text: stripHtmlToText(processedContent)
                     });
                 }
 

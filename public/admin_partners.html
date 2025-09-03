@@ -1,355 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Partner Management</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/sidebar.css">
-  <link rel="stylesheet" href="css/admin-layout.css">
-  <script src="js/include-admin-sidebar.js" defer></script>
-  <script src="js/include-admin-header.js" defer></script>
-  <script>
-    (function(){
-      try{
-        var theme = localStorage.getItem('color-theme');
-        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }catch(e){}
-    })();
-  </script>
-  <style>
-    :root{
-      --bg-primary:#ffffff;
-      --bg-secondary:#f3f4f6;
-      --text-primary:#111827;
-      --divider:#e5e7eb;
-      --panel-bg:#ffffff;
-      --card-bg:#ffffff;
-      --shadow-lg:0 10px 25px rgba(0,0,0,0.08);
-    }
-    .dark{
-      --bg-primary:#0f172a;
-      --bg-secondary:#111827;
-      --text-primary:#e5e7eb;
-      --divider:#374151;
-      --panel-bg:#111827;
-      --card-bg:#1f2937;
-      --shadow-lg:0 0 0 1px rgba(255,255,255,0.08);
-    }
-    body{background-color:var(--bg-primary);color:var(--text-primary);}    
-    .admin-main-content{background-color:var(--bg-primary);}   
-    .partners-container{background-color:var(--panel-bg);box-shadow:0 4px 12px rgba(0,0,0,.04);}  
-    #partnersList>div{background:var(--card-bg); color:var(--text-primary); box-shadow:var(--shadow-lg);padding:16px;}
-    #partnersList>div+div{margin-top:12px;}
-    /* Dark mode text normalization (scoped to partners page) */
-    .dark body[data-page="partners"]{ color:var(--text-primary); }
-    .dark body[data-page="partners"] .text-gray-900{ color:var(--text-primary) !important; }
-    .dark body[data-page="partners"] .text-gray-700{ color:var(--text-primary) !important; }
-    .dark body[data-page="partners"] .text-gray-600{ color:#d1d5db !important; }
-    .dark body[data-page="partners"] .text-gray-500{ color:#9ca3af !important; }
-    .dark body[data-page="partners"] .text-gray-400{ color:#9ca3af !important; }
-    /* Edit modal theming */
-    #ptModal .modal-card{ background:var(--card-bg); color:var(--text-primary); }
-    #ptModal .modal-card .border-b{ border-color:var(--divider); }
-    #ptModal input[type="text"],
-    #ptModal input[type="email"],
-    #ptModal input[type="tel"],
-    #ptModal select,
-    #ptModal textarea{
-      background-color:var(--card-bg);
-      color:var(--text-primary);
-      border-color:var(--divider);
-    }
-    #ptModal label{ color:var(--text-primary); }
-    #ptModal #ptImageDrop{ background-color:var(--card-bg); border-color:var(--divider); color:var(--text-primary); }
-    #ptModal #ptImagePreview{ border-color:var(--divider); }
-  </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Partners Management - Admin Dashboard</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		tailwind.config = {
+			darkMode: 'class',
+			theme: { extend: { colors: { primary: { 500: '#3b82f6', 600: '#2563eb' } } } }
+		}
+	</script>
+	<script>(function(){try{var t=localStorage.getItem('color-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();</script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="css/admin-layout.css">
+	<link rel="stylesheet" href="css/admin-sidebar-fix.css">
+	<script src="js/include-admin-header.js" defer></script>
+	<script src="js/include-admin-sidebar.js" defer></script>
+	<script src="js/api.js" defer></script>
+	<style>
+		:root { --bg-primary:#ffffff; --bg-secondary:#f3f4f6; --text-primary:#111827; --text-secondary:#4b5563; --border-color:#e5e7eb; --input-bg:#ffffff; --input-border:#d1d5db; --table-header:#f9fafb; --table-border:#e5e7eb; }
+		.dark { --bg-primary:#111827; --bg-secondary:#1f2937; --text-primary:#ffffff; --text-secondary:#9ca3af; --border-color:#374151; --input-bg:#1f2937; --input-border:#374151; --table-header:#1f2937; --table-border:#374151; }
+		body { background-color:var(--bg-primary); color:var(--text-primary); transition: background-color .3s ease, color .3s ease; }
+		.glass{ background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);} .dark .glass{ background:rgba(31,41,55,.8); border:1px solid rgba(75,85,99,.3);} .hover-lift{ transition: transform .2s ease, box-shadow .2s ease;} .hover-lift:hover{ transform: translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.1);} .animate-slide-in-left{ animation: slideInLeft .6s ease-out forwards;} @keyframes slideInLeft{ from{opacity:0; transform:translateX(-30px);} to{opacity:1; transform:translateX(0);} }
+		.stats-grid{ display:grid; gap:1.5rem;} @media(min-width:768px){ .stats-grid{ grid-template-columns:repeat(2,1fr);} } @media(min-width:1024px){ .stats-grid{ grid-template-columns:repeat(4,1fr);} }
+		.status-badge{ display:inline-flex; align-items:center; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:500; text-transform:capitalize; }
+		.status-new{ background:#dbeafe; color:#1e40af;} .status-reviewed{ background:#fef3c7; color:#d97706;} .status-approved{ background:#d1fae5; color:#065f46;} .status-rejected{ background:#fee2e2; color:#dc2626;}
+		.dark .status-new{ background:#1e3a8a; color:#93c5fd;} .dark .status-reviewed{ background:#92400e; color:#fbbf24;} .dark .status-approved{ background:#064e3b; color:#6ee7b7;} .dark .status-rejected{ background:#991b1b; color:#fca5a5;}
+	</style>
 </head>
-<body class="admin-layout bg-white text-gray-900" data-page="partners">
-  <div id="admin-sidebar-container"></div>
-  <div id="admin-header-container" data-page-title="Partner Management"></div>
-
-  <main class="admin-main-content w-full">
-    <div class="admin-content-container p-6">
-      <div class="mb-6 flex flex-wrap gap-4 items-center justify-between">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full sm:w-auto">
-          <div class="bg-white dark:bg-transparent rounded-xl shadow-lg dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-4 text-center">
-            <div class="text-sm text-gray-500">Total Partners</div>
-            <div id="ptTotal" class="text-3xl font-bold">0</div>
-          </div>
-          <div class="bg-white dark:bg-transparent rounded-xl shadow-lg dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-4 text-center">
-            <div class="text-sm text-gray-500">Pending</div>
-            <div id="ptPending" class="text-3xl font-bold text-yellow-600">0</div>
-          </div>
-          <div class="bg-white dark:bg-transparent rounded-xl shadow-lg dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] p-4 text-center">
-            <div class="text-sm text-gray-500">Approved</div>
-            <div id="ptApproved" class="text-3xl font-bold text-green-600">0</div>
-          </div>
-        </div>
-        <div class="flex gap-3 w-full sm:w-auto">
-          <input id="ptSearch" placeholder="Search partners..." class="w-full sm:w-64 px-3 py-2 rounded border border-gray-300 bg-gray-900 text-white placeholder-white focus:bg-gray-900 focus:text-white focus:placeholder-white" />
-          <button id="ptAddBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow flex items-center gap-2 whitespace-nowrap">
-            <i class="fas fa-user-plus"></i>
-            <span>Add Partner</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="partners-container">
-        <div id="partnersList" class="space-y-3"></div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Guaranteed Mobile FAB + Modal -->
-  <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
-  <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
-  <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
-    <div class="p-3 border-b border-gray-200 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button></div>
-    <div class="p-2">
-      <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
-      <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
-      <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
-      <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
-      <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
-      <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
-      <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
-      <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
-      <a href="admin_analytics.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-chart-line w-5 text-center"></i><span>Analytics</span></a>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div id="ptModal" class="fixed inset-0 bg-black/50 hidden z-50">
-    <div class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-gray-800 modal-card rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 id="ptModalTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Add Partner</h3>
-        </div>
-        <form id="ptForm" class="p-4 space-y-4 overflow-y-auto max-h-[70vh]">
-          <input type="hidden" id="ptId" />
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Name</label>
-              <input id="ptName" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <div>
-              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Email</label>
-              <input id="ptEmail" type="email" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Organization</label>
-              <input id="ptOrg" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Phone</label>
-              <input id="ptPhone" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Partner Type</label>
-              <select id="ptType" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white">
-                <option value="corporate">Corporate</option>
-                <option value="academic">Academic</option>
-                <option value="government">Government</option>
-                <option value="nonprofit">Non-Profit</option>
-                <option value="individual">Individual</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Message</label>
-            <textarea id="ptMessage" rows="3" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white"></textarea>
-          </div>
-          <div class="flex items-center gap-3">
-            <label class="text-sm text-gray-700 dark:text-gray-200">Status</label>
-            <select id="ptStatus" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white">
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-          
-          <!-- Partner Profile Image Upload -->
-          <div class="border-t pt-4">
-            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-              <i class="fas fa-image mr-2 text-blue-500"></i>Partner Profile Image
-            </h4>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm mb-1 text-gray-700 dark:text-gray-200">Image File</label>
-                <input type="file" id="ptImageFile" accept="image/*" class="sr-only" />
-                <div id="ptImageDrop" class="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition">
-                  <div class="text-sm">Drag & drop image here or <span class="underline">click to select</span></div>
-                  <div class="mt-2 text-xs text-gray-400">JPG, PNG, GIF up to 8MB</div>
-                </div>
-                <div class="mt-3">
-                  <img id="ptImagePreview" alt="preview" class="hidden w-32 h-32 object-cover rounded border border-gray-300 dark:border-gray-600" />
-                </div>
-              </div>
-              <div class="flex justify-end">
-                <button type="button" id="ptAddImageBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2">
-                  <i class="fas fa-upload"></i>
-                  Upload Profile Image
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="flex justify-end gap-3 pt-2">
-            <button type="button" id="ptCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Cancel</button>
-            <button type="submit" id="ptSaveBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow flex items-center gap-2">
-              <i id="ptSaveIcon" class="fas fa-save"></i>
-              <span id="ptSaveText">Save</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/admin-partners.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof includeAdminSidebar === 'function') includeAdminSidebar();
-      if (typeof includeAdminHeader === 'function') includeAdminHeader();
-      const addImageBtn = document.getElementById('ptAddImageBtn');
-      if (addImageBtn) addImageBtn.addEventListener('click', handleAddPartnerImage);
-      const fileInput = document.getElementById('ptImageFile');
-      const previewEl = document.getElementById('ptImagePreview');
-      const dropEl = document.getElementById('ptImageDrop');
-      const setPreview = (f) => {
-        if (!f || !f.type || !f.type.startsWith('image/')) { previewEl.classList.add('hidden'); previewEl.removeAttribute('src'); return; }
-        const url = URL.createObjectURL(f); previewEl.src = url; previewEl.classList.remove('hidden');
-      };
-      if (fileInput && previewEl) {
-        fileInput.addEventListener('change', () => setPreview(fileInput.files && fileInput.files[0]));
-      }
-      if (dropEl) {
-        dropEl.addEventListener('click', () => fileInput && fileInput.click());
-        dropEl.addEventListener('dragover', (e) => { e.preventDefault(); dropEl.classList.add('ring','ring-blue-400'); });
-        dropEl.addEventListener('dragleave', () => dropEl.classList.remove('ring','ring-blue-400'));
-        dropEl.addEventListener('drop', (e) => {
-          e.preventDefault(); dropEl.classList.remove('ring','ring-blue-400');
-          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-          if (!f) return;
-          if (!f.type.startsWith('image/')) { alert('Please drop an image file'); return; }
-          try {
-            const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
-          } catch {}
-          setPreview(f);
-        });
-      }
-      refreshPartnerImagesList();
-    });
-
-    async function handleAddPartnerImage() {
-      const partnerId = document.getElementById('ptId').value;
-      const file = document.getElementById('ptImageFile').files[0];
-      if (!partnerId) return alert('Save the partner first, then upload the profile image.');
-      if (!file) return alert('Please select an image file.');
-      if (!file.type || !file.type.startsWith('image/')) return alert('Please select an image file.');
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return alert('You must be logged in as admin to upload images.');
-        const fd = new FormData();
-        fd.append('image', file);
-        const resp = await fetch(`/api/partners/${partnerId}/profile-picture`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd });
-        const result = await resp.json().catch(()=>({}));
-        if (!resp.ok || result.success === false) throw new Error(result.message || 'Failed to upload image');
-        alert('Profile image uploaded successfully');
-      } catch (e) {
-        console.error('Upload image error:', e);
-        alert(e.message || 'Failed to upload image');
-      }
-    }
-
-    function clearPartnerImageForm(){ document.getElementById('ptImageFile').value = ''; }
-
-    async function refreshPartnerImagesList(){
-      const list = document.getElementById('ptImagesList');
-      if (!list) return;
-      list.innerHTML = '<div class="text-sm text-gray-500">Loading images...</div>';
-      try{
-        const token = localStorage.getItem('token');
-        let res = await fetch('/api/partnership-images/all', { headers: token? { 'Authorization': `Bearer ${token}` } : {} });
-        if (res.status === 401 || res.status === 403) {
-          // Fallback to public endpoint
-          res = await fetch('/api/partnership-images');
-        }
-        const data = await res.json().catch(()=>({}));
-        const images = Array.isArray(data) ? data : (data.images || data.data || []);
-        if (!images || images.length === 0){
-          list.innerHTML = '<div class="text-sm text-gray-500">No images uploaded yet.</div>';
-          return;
-        }
-        const norm = p => {
-          if (!p) return '';
-          let s = String(p).replace(/\\\\/g, '/');
-          if (!s.startsWith('/')) s = '/' + s;
-          return s;
-        };
-        list.innerHTML = images.map(img => `
-          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div class="flex items-center gap-3">
-              <img src="${norm(img.image_path)}" class="w-12 h-12 object-cover rounded border" onerror="this.style.display='none'"/>
-              <div>
-                <div class="font-medium">${img.title || 'Image'}</div>
-                <div class="text-xs text-gray-500">${img.partner_type || ''}</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <a href="${norm(img.image_path)}" target="_blank" class="text-blue-600 hover:underline">Open</a>
-              <button class="text-red-600 hover:underline" onclick="deletePartnerImage(${img.id})">Delete</button>
-            </div>
-          </div>
-        `).join('');
-      }catch(e){
-        list.innerHTML = '<div class="text-sm text-red-600">Failed to load images</div>';
-      }
-    }
-
-    async function deletePartnerImage(id){
-      if (!confirm('Delete this image?')) return;
-      try{
-        const token = localStorage.getItem('token');
-        if (!token) return alert('Not authorized');
-        const res = await fetch(`/api/partnership-images/${id}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` }});
-        const j = await res.json().catch(()=>({}));
-        if (!res.ok || j.success === false) throw new Error(j.error || 'Delete failed');
-        await refreshPartnerImagesList();
-      }catch(e){ alert(e.message || 'Delete failed'); }
-    }
-
-    // Upload partner profile picture to partner record
-    async function uploadPartnerProfilePicture(partnerId){
-      try{
-        const file = document.getElementById('ptImageFile').files[0];
-        if (!file) return alert('Select an image first.');
-        if (!file.type.startsWith('image/')) return alert('Please select an image file.');
-        const token = localStorage.getItem('token');
-        if (!token) return alert('Not authorized');
-        const fd = new FormData();
-        fd.append('image', file);
-        const res = await fetch(`/api/partners/${partnerId}/profile-picture`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd });
-        const data = await res.json().catch(()=>({}));
-        if (!res.ok || data.success === false) throw new Error(data.message || 'Upload failed');
-        alert('Profile picture updated');
-      }catch(e){ alert(e.message || 'Failed to update profile picture'); }
-    }
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function(){
-      const fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
-      if(fab&&ov&&md){ const o=()=>{ov.classList.remove('hidden'); md.classList.remove('hidden');}; const c=()=>{ov.classList.add('hidden'); md.classList.add('hidden');}; fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
-    });
-  </script>
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200" data-page="partners">
+	<div id="admin-sidebar-container"></div>
+	<div id="admin-header-container" data-page-title="Partners Management"></div>
+	<main class="admin-main-content w-full bg-transparent dark:bg-transparent">
+		<div class="admin-content-container p-6">
+			<div class="mb-8">
+				<div class="flex items-center justify-between">
+					<div>
+						<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Partners Management</h1>
+						<p class="text-gray-600 dark:text-gray-400">Manage partnership requests and collaborations</p>
+					</div>
+					<button id="addPartnerBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+						<i class="fas fa-plus"></i>
+						Add Partner
+					</button>
+				</div>
+			</div>
+			<div class="stats-grid mb-8">
+				<div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay:.1s;">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Partners</p>
+							<p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalPartners">-</p>
+							<p class="text-sm text-green-600 dark:text-green-400" id="partnersGrowth"><i class="fas fa-arrow-up mr-1"></i>0%</p>
+						</div>
+						<div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30"><i class="fas fa-handshake text-2xl text-blue-600 dark:text-blue-400"></i></div>
+					</div>
+				</div>
+				<div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay:.2s;">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-sm font-medium text-gray-600 dark:text-gray-400">New Requests</p>
+							<p class="text-3xl font-bold text-gray-900 dark:text-white" id="newRequests">-</p>
+							<p class="text-sm text-orange-600 dark:text-orange-400">Pending Review</p>
+						</div>
+						<div class="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30"><i class="fas fa-clock text-2xl text-orange-600 dark:text-orange-400"></i></div>
+					</div>
+				</div>
+				<div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay:.3s;">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Approved</p>
+							<p class="text-3xl font-bold text-gray-900 dark:text-white" id="approvedPartners">-</p>
+							<p class="text-sm text-green-600 dark:text-green-400">Active</p>
+						</div>
+						<div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30"><i class="fas fa-check-circle text-2xl text-green-600 dark:text-green-400"></i></div>
+					</div>
+				</div>
+				<div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay:.4s;">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
+							<p class="text-3xl font-bold text-gray-900 dark:text-white" id="monthlyPartners">-</p>
+							<p class="text-sm text-purple-600 dark:text-purple-400">New Partners</p>
+						</div>
+						<div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30"><i class="fas fa-calendar-alt text-2xl text-purple-600 dark:text-purple-400"></i></div>
+					</div>
+				</div>
+			</div>
+			<div class="glass rounded-xl shadow-lg p-6 mb-6">
+				<div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+					<div class="flex flex-col sm:flex-row gap-4 flex-1">
+						<div class="relative">
+							<i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+							<input type="text" id="searchPartners" placeholder="Search partners..." class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+						</div>
+						<select id="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+							<option value="">All Statuses</option>
+							<option value="new">New</option>
+							<option value="reviewed">Reviewed</option>
+							<option value="approved">Approved</option>
+							<option value="rejected">Rejected</option>
+						</select>
+						<select id="organizationFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+							<option value="">All Organizations</option>
+						</select>
+					</div>
+					<div class="flex gap-2">
+						<button id="exportBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"><i class="fas fa-download"></i>Export</button>
+						<button id="refreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"><i class="fas fa-sync-alt"></i>Refresh</button>
+					</div>
+				</div>
+			</div>
+			<div class="glass rounded-xl shadow-lg overflow-hidden">
+				<div class="overflow-x-auto">
+					<table class="w-full">
+						<thead class="bg-gray-50 dark:bg-gray-800">
+							<tr>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Partner</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Organization</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+							</tr>
+						</thead>
+						<tbody id="partnersTableBody" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+					</table>
+				</div>
+				<div id="loadingState" class="p-8 text-center"><div class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin"></i>Loading partners...</div></div>
+				<div id="emptyState" class="p-8 text-center hidden"><div class="text-gray-500 dark:text-gray-400"><i class="fas fa-handshake text-4xl mb-4"></i><p class="text-lg font-medium mb-2">No partners found</p><p class="text-sm">Get started by adding your first partner or check your filters.</p></div></div>
+			</div>
+			<div id="pagination" class="mt-6 flex items-center justify-between">
+				<div class="text-sm text-gray-700 dark:text-gray-300">Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of <span id="totalResults">0</span> results</div>
+				<div class="flex gap-2">
+					<button id="prevPage" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+					<button id="nextPage" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+				</div>
+			</div>
+		</div>
+	</main>
+	<div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+		<div class="flex items-center justify-center min-h-screen p-4">
+			<div class="modal-card bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+				<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modalTitle">Add New Partner</h3>
+					<button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+				</div>
+				<form id="partnerForm" class="p-6 space-y-4">
+					<input type="hidden" id="partnerId" name="id">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div><label for="partnerName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name *</label><input type="text" id="partnerName" name="name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div>
+						<div><label for="partnerEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label><input type="email" id="partnerEmail" name="email" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div>
+					</div>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div><label for="partnerOrganization" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Organization</label><input type="text" id="partnerOrganization" name="organization" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div>
+						<div><label for="partnerPhone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label><input type="tel" id="partnerPhone" name="phone" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div>
+					</div>
+					<div><label for="partnerMessage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label><textarea id="partnerMessage" name="message" rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea></div>
+					<div><label for="partnerStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label><select id="partnerStatus" name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"><option value="new">New</option><option value="reviewed">Reviewed</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
+					<!-- Logo Upload -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Partner Logo (optional)</label>
+						<div id="partnerLogoDrop" class="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 transition-colors">
+							<input type="file" id="partnerLogoFile" accept="image/*" class="hidden">
+							<input type="hidden" id="partnerLogoUrl" name="logo_url">
+							<div id="partnerLogoEmpty" class="text-gray-500 dark:text-gray-400">
+								<i class="fas fa-cloud-upload-alt text-2xl mb-2"></i>
+								<p>Drag & drop an image here, or click to select</p>
+								<p class="text-xs mt-1">PNG, JPG up to 5MB</p>
+							</div>
+							<div id="partnerLogoPreviewWrap" class="hidden flex items-center justify-center">
+								<img id="partnerLogoPreview" alt="Logo preview" class="max-h-28 rounded" />
+							</div>
+						</div>
+					</div>
+					<div class="flex justify-end gap-3 pt-4">
+						<button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</button>
+						<button type="submit" id="savePartnerBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200">Save Partner</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+		<div class="flex items-center justify-center min-h-screen p-4">
+			<div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+				<div class="text-center">
+					<i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Partner</h3>
+					<p class="text-gray-600 dark:text-gray-400 mb-6">Are you sure you want to delete this partner? This action cannot be undone.</p>
+					<div class="flex justify-center gap-3">
+						<button id="cancelDelete" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</button>
+						<button id="confirmDelete" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200">Delete</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="js/admin-partners.js?v=5mb"></script>
 </body>
 </html>
-
-

@@ -58,7 +58,7 @@ async function updateExpiredScholarships() {
 }
 
 // Get scholarships (supports optional pagination, search, and includes application counts)
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     await updateExpiredScholarships();
 
@@ -190,6 +190,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching scholarships:', error);
+    if (res.headersSent) return next(error);
     res.status(500).json({ message: 'Error fetching scholarships' });
   }
 });

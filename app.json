@@ -1,0 +1,56 @@
+{
+  "name": "make-the-difference",
+  "description": "Backend for Make The Difference project",
+  "repository": "https://github.com/yourusername/make_the_difference",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["node", "express", "mysql", "heroku"],
+  "image": "heroku/nodejs",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment setting",
+      "value": "production"
+    },
+    "SESSION_SECRET": {
+      "description": "A secret key for session management",
+      "generator": "secret"
+    },
+    "DB_HOST": {
+      "description": "Database host URL",
+      "required": true
+    },
+    "DB_USER": {
+      "description": "Database username",
+      "required": true
+    },
+    "DB_PASSWORD": {
+      "description": "Database password",
+      "required": true
+    },
+    "DB_PORT": {
+      "description": "Database port",
+      "value": "3306"
+    },
+    "DB_NAME": {
+      "description": "Database name",
+      "value": "mbappe"
+    },
+    "DB_SSL": {
+      "description": "Database SSL setting",
+      "value": "true"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "scripts": {
+    "postdeploy": "npm run migrate"
+  }
+}

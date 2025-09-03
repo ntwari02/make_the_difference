@@ -1,298 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Templates Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/sidebar.css">
-    <link rel="stylesheet" href="css/admin-layout.css">
-    <script src="js/include-admin-sidebar.js" defer></script>
-    <script src="js/include-admin-header.js" defer></script>
-    <!-- Include CKEditor for rich text editing -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
-	<style>
-		.dark .ck.ck-editor__main .ck-editor__editable {
-			color: #ffffff !important;
-			background-color: #111827 !important; /* Tailwind gray-900 */
-		}
-		.dark .ck.ck-editor__editable_inline {
-			color: #ffffff !important;
-		}
-		/* Email Templates page container theming */
-		.email-container { background-color: #ffffff; color: #000000; }
-		.dark .email-container { background-color: transparent; color: #ffffff; }
-		.dark .email-container * { color: #ffffff; }
-
-		/* Ensure the templates layout can fill the viewport height */
-		.email-grid { min-height: calc(100vh - 8rem); margin-left: -8vh; }
-
-		/* Dark mode: force select + options to black text on white background */
-		.dark .email-container select,
-		.dark .email-container option {
-			color: #000000 !important;
-			background-color: #ffffff !important;
-		}
-
-		/* Dark mode: CKEditor toolbar with light background and black text/icons */
-		.dark .ck.ck-toolbar {
-			background-color: #ffffff !important;
-			color: #000000 !important;
-		}
-		.dark .ck.ck-toolbar .ck-button,
-		.dark .ck.ck-toolbar .ck-dropdown__button,
-		.dark .ck.ck-toolbar .ck-icon {
-			color: #000000 !important;
-			fill: #000000 !important;
-		}
-
-		/* Email content topbar styling in dark: light background with black text */
-		.dark .email-topbar { background-color: #ffffff; color: #000000; }
-
-		/* Variable chips styling */
-		.variable-btn {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.25rem;
-			border-width: 1px;
-			border-radius: 0.5rem;
-			padding: 0.25rem 0.5rem;
-			transition: transform 0.15s ease, box-shadow 0.15s ease;
-		}
-		/* Force white text for variable chips in light mode */
-		.variable-btn { color: #ffffff !important; }
-		/* Keep good contrast in dark mode */
-		.dark .variable-btn { color: #ffffff !important; }
-		.variable-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.08); }
-
-		/* Force page background via CSS (not framework) */
-		body.admin-layout { background-color: #f9fafb !important; }
-		html.dark body.admin-layout { background-color: #111827 !important; }
-	</style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Email Templates - Admin</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		tailwind.config = { darkMode: 'class' }
+	</script>
+	<script>(function(){try{var t=localStorage.getItem('color-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();</script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="css/admin-layout.css">
+	<link rel="stylesheet" href="css/admin-sidebar-fix.css">
+	<script src="js/include-admin-header.js" defer></script>
+	<script src="js/include-admin-sidebar.js" defer></script>
+	<script src="js/api.js" defer></script>
 </head>
-<body class="admin-layout bg-white dark:bg-gray-900 transition-colors duration-200">
-    <div id="admin-sidebar-container"></div>
-    <div id="admin-header-container" data-page-title="Email Templates Management"></div>
-    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
-        <div class="admin-content-container">
-            <!-- Loading State -->
-            <div id="loadingState" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
-                    <div class="flex items-center space-x-3">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span class="text-lg font-semibold text-gray-800 dark:text-white">Loading...</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Error State -->
-            <div id="errorState" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md">
-                    <div class="text-center">
-                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Authentication Error</h3>
-                        <p class="text-gray-600 dark:text-gray-300 mb-4">You need to be logged in as admin to access this page.</p>
-                        <div class="space-y-2">
-                            <button onclick="window.location.href='/login.html'" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
-                                <i class="fas fa-sign-in-alt mr-2"></i>Go to Login
-                            </button>
-                            <button onclick="window.location.href='/admin_dashboard.html'" class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
-                                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 email-grid items-stretch">
-                <!-- Template List -->
-                <div class="lg:col-span-1 email-container rounded-2xl shadow-xl p-6 h-full border-2 border-blue-500 dark:border-blue-400">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-black dark:text-white">Email Templates</h3>
-                        <div class="flex gap-2">
-                            <button id="refreshTemplatesBtn" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-colors">
-                                <i class="fas fa-sync-alt mr-1"></i> Refresh
-                            </button>
-                            <button id="newTemplateBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
-                            <i class="fas fa-plus mr-1"></i> New
-                        </button>
-                        </div>
-                    </div>
-                    <div class="space-y-2 max-h-96 overflow-y-auto" id="templateList">
-                        <!-- Templates will be loaded here -->
-                    </div>
-                </div>
-                <!-- Template Editor -->
-                <div class="lg:col-span-3 email-container rounded-2xl shadow-xl p-6 h-full border-2 border-blue-500 dark:border-blue-400">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-black dark:text-white">Edit Template</h3>
-                        <div class="flex gap-2">
-                            <button id="previewBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                <i class="fas fa-eye mr-1"></i> Preview
-                            </button>
-                            <button id="saveBtn" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors">
-                                <i class="fas fa-save mr-1"></i> Save
-                            </button>
-                        </div>
-                    </div>
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-black dark:text-white mb-1">Template Name</label>
-                                <input type="text" id="templateName" class="w-full rounded-xl border-2 border-blue-500 dark:border-blue-400 bg-transparent dark:bg-transparent text-black dark:text-white shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition transition-shadow px-4 py-3 text-base">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-black dark:text-white mb-1">Category</label>
-                                <select id="templateCategory" class="w-full rounded-xl border-2 border-blue-500 dark:border-blue-400 bg-transparent dark:bg-transparent text-black dark:text-white shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition transition-shadow px-4 py-3 text-base">
-                                    <option>System</option>
-                                    <option>Marketing</option>
-                                    <option>Notification</option>
-                                    <option>Custom</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-black dark:text-white mb-1">Email Subject</label>
-                            <input type="text" id="emailSubject" class="w-full rounded-xl border-2 border-blue-500 dark:border-blue-400 bg-transparent dark:bg-transparent text-black dark:text-white shadow-md focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition transition-shadow px-4 py-3 text-base">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-black dark:text-white mb-1">Available Variables</label>
-                            <div class="flex flex-wrap gap-2 mb-4" id="variableList">
-                                <span class="variable-btn text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-variable="${user.name}">${user.name}</span>
-                                <span class="variable-btn text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700 cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 transition-colors" data-variable="${user.email}">${user.email}</span>
-                                <span class="variable-btn text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-700 cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors" data-variable="${application.id}">${application.id}</span>
-                                <span class="variable-btn text-xs bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-700 cursor-pointer hover:bg-pink-200 dark:hover:bg-pink-800 transition-colors" data-variable="${scholarship.name}">${scholarship.name}</span>
-                                <span class="variable-btn text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700 cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors" data-variable="${date}">${date}</span>
-                                <span class="variable-btn text-xs bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 border-cyan-300 dark:border-cyan-700 cursor-pointer hover:bg-cyan-200 dark:hover:bg-cyan-800 transition-colors" data-variable="${organization.name}">${organization.name}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Content</label>
-                            <div id="editor" class="min-h-[300px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Send Email Modal -->
-            <div id="sendEmailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-black">Send Email to Users</h3>
-                        <button id="closeSendModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- User Selection -->
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Select Recipients</h4>
-                            <div class="mb-4 space-y-2">
-                                <button id="selectAllUsers" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-users mr-2"></i> Select All Users
-                                </button>
-                                <button id="selectApplicants" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-user-graduate mr-2"></i> Select All Applicants
-                                </button>
-                                <button id="selectAdmins" class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-user-shield mr-2"></i> Select All Admins
-                                </button>
-                                <button id="clearSelection" class="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-times mr-2"></i> Clear Selection
-                                </button>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-semibold text-black mb-2">Search Users</label>
-                                <input type="text" id="userSearch" placeholder="Search by name or email..." class="w-full rounded-xl border border-gray-300 bg-gray-50 text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition px-4 py-3 text-base">
-                            </div>
-                            <div class="max-h-64 overflow-y-auto rounded-lg shadow">
-                                <div id="userList" class="space-y-1 p-2">
-                                    <!-- Users will be populated here -->
-                                </div>
-                            </div>
-                            <div class="mt-4 text-sm text-gray-600 dark:text-gray-300">
-                                <span id="selectedCount">0</span> users selected
-                            </div>
-                        </div>
-                        <!-- Email Preview -->
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Email Preview</h4>
-                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 shadow">
-                                <div class="mb-2">
-                                    <strong class="text-gray-800 dark:text-white">Subject:</strong>
-                                    <span id="previewSubject" class="ml-2 text-gray-600 dark:text-gray-300"></span>
-                                </div>
-                                <div class="mb-4">
-                                    <strong class="text-gray-800 dark:text-white">Content:</strong>
-                                </div>
-                                <div id="previewContent" class="text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded shadow max-h-48 overflow-y-auto"></div>
-                            </div>
-                            <div class="mt-4 space-y-2">
-                                <button id="sendTestEmail" class="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-paper-plane mr-2"></i> Send Test Email
-                                </button>
-                                <button id="sendBulkEmail" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-                                    <i class="fas fa-paper-plane mr-2"></i> Send to Selected Users
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Test Email Modal -->
-            <div id="testEmailModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Send Test Email</h3>
-                    <form id="testEmailForm" class="space-y-4">
-                        <div>
-                            <label for="testEmail" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
-                            <input type="email" id="testEmail" required class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="recipient@example.com">
-                        </div>
-                        <div class="flex justify-end gap-2 mt-4">
-                            <button type="button" id="cancelTestEmail" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">Send Test</button>
-                        </div>
-                    </form>
-                    <div id="testEmailSuccess" class="hidden mt-4 p-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded-lg font-semibold text-center">
-                        <i class="fas fa-check-circle mr-2"></i> Test email sent successfully!
-                    </div>
-                </div>
-            </div>
-            <!-- Success/Error Messages -->
-            <div id="messageContainer" class="fixed top-4 right-4 z-50 hidden">
-                <div id="successMessage" class="hidden bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 p-4 rounded-lg shadow-lg border border-green-200 dark:border-green-800">
-                    <i class="fas fa-check-circle mr-2"></i> <span id="successText"></span>
-                </div>
-                <div id="errorMessage" class="hidden bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg shadow-lg border border-red-200 dark:border-red-800">
-                    <i class="fas fa-exclamation-circle mr-2"></i> <span id="errorText"></span>
-                </div>
-            </div>
-        </div>
-    </main>
-    <!-- Guaranteed Mobile FAB + Modal -->
-    <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
-    <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
-    <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
-      <div class="p-3 border-b border-gray-200 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button></div>
-      <div class="p-2">
-        <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
-        <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
-        <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
-        <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
-        <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
-        <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
-        <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
-        <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
-        <a href="admin_help.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-question w-5 text-center"></i><span>Help</span></a>
-      </div>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function(){
-        const fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
-        if(fab&&ov&&md){ const o=()=>{ov.classList.remove('hidden'); md.classList.remove('hidden');}; const c=()=>{ov.classList.add('hidden'); md.classList.add('hidden');}; fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
-      });
-    </script>
-    <script src="js/api.js"></script>
-    <script src="js/admin_email_template.js"></script>
+<body class="admin-layout bg-gray-50 dark:bg-gray-900" data-page="email-templates">
+	<div id="admin-sidebar-container"></div>
+	<div id="admin-header-container" data-page-title="Email Templates"></div>
+	<main class="admin-main-content w-full bg-transparent dark:bg-transparent">
+		<div class="admin-content-container p-6">
+			<div class="mb-6 flex items-center justify-between">
+				<h1 class="text-2xl font-bold">Email Templates</h1>
+				<button id="addTemplateBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i>Add Template</button>
+			</div>
+
+			<div class="glass rounded-xl shadow p-4 mb-6">
+				<div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+					<div class="relative w-full md:w-1/2">
+						<i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+						<input id="tmplSearch" type="text" placeholder="Search by name or subject..." class="w-full pl-10 pr-4 py-2 border rounded-lg bg-white dark:bg-gray-700" />
+					</div>
+					<div class="flex gap-2">
+						<select id="tmplCategory" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700">
+							<option value="">All Categories</option>
+						</select>
+						<button id="tmplRefreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-sync-alt"></i>Refresh</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="glass rounded-xl shadow-lg overflow-hidden">
+				<div class="overflow-x-auto">
+					<table class="w-full">
+						<thead class="bg-gray-50 dark:bg-gray-800">
+							<tr>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subject</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active</th>
+								<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+							</tr>
+						</thead>
+						<tbody id="tmplTableBody" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+					</table>
+				</div>
+				<div id="tmplLoading" class="p-8 text-center"><div class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin"></i>Loading templates...</div></div>
+				<div id="tmplEmpty" class="p-8 text-center hidden"><div class="text-gray-500 dark:text-gray-400"><i class="fas fa-envelope text-4xl mb-4"></i><p class="text-lg font-medium mb-2">No templates found</p><p class="text-sm">Create your first template.</p></div></div>
+			</div>
+
+			<div id="tmplPagination" class="mt-6 flex items-center justify-between">
+				<div class="text-sm text-gray-700 dark:text-gray-300">Showing <span id="tmplShowingStart">0</span> to <span id="tmplShowingEnd">0</span> of <span id="tmplTotal">0</span> results</div>
+				<div class="flex gap-2">
+					<button id="tmplPrev" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 disabled:opacity-50">Previous</button>
+					<button id="tmplNext" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 disabled:opacity-50">Next</button>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<!-- Create/Edit Modal -->
+	<div id="tmplModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+		<div class="flex items-center justify-center min-h-screen p-4">
+			<div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+				<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+					<h3 class="text-lg font-semibold" id="tmplModalTitle">Add Template</h3>
+					<button id="tmplClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+				</div>
+				<form id="tmplForm" class="p-6 space-y-4">
+					<input type="hidden" id="tmplId" name="id">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div><label class="block text-sm font-medium mb-1">Name *</label><input id="tmplName" name="name" required class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+						<div><label class="block text-sm font-medium mb-1">Category</label><input id="tmplCategoryInput" name="category" placeholder="custom/application-received/..." class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+					</div>
+					<div><label class="block text-sm font-medium mb-1">Subject *</label><input id="tmplSubject" name="subject" required class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+					<div>
+						<label class="block text-sm font-medium mb-1">Content *</label>
+						<textarea id="tmplContent" name="content" rows="10" required class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Use variables like {{name}}, {{scholarship}}, {{date}}"></textarea>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" id="tmplActive" name="is_active" class="h-4 w-4"><label for="tmplActive" class="text-sm">Active</label>
+					</div>
+					<div class="flex justify-end gap-3 pt-2">
+						<button type="button" id="tmplCancel" class="px-4 py-2 border rounded-lg">Cancel</button>
+						<button type="submit" id="tmplSave" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Save</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Test Send Modal -->
+	<div id="testModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+		<div class="flex items-center justify-center min-h-screen p-4">
+			<div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+				<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+					<h3 class="text-lg font-semibold">Send  Email</h3>
+					<button id="testClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+				</div>
+				<form id="testForm" class="p-6 space-y-4">
+					<div class="flex items-center gap-2">
+						<input type="checkbox" id="sendAllUsers" class="h-4 w-4"><label for="sendAllUsers" class="text-sm">Send to all users (or filter & select)</label>
+					</div>
+					<div id="singleRecipientWrap"><label class="block text-sm font-medium mb-1">Recipient Email *</label><input id="testRecipient" type="email" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+					<div id="userSelectWrap" class="hidden space-y-3">
+						<div class="flex gap-3 items-end">
+							<div class="flex-1"><label class="block text-sm font-medium mb-1">Search users</label><input id="userSearch" placeholder="Search by name or email" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+							<button type="button" id="userSearchBtn" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Search</button>
+						</div>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<p class="text-sm font-medium mb-1">Results</p>
+								<div id="userResults" class="max-h-56 overflow-auto border rounded-lg divide-y bg-white dark:bg-gray-700"></div>
+							</div>
+							<div>
+								<p class="text-sm font-medium mb-1">Selected</p>
+								<div id="userSelected" class="min-h-[48px] max-h-56 overflow-auto flex flex-wrap gap-2 p-2 border rounded-lg bg-white dark:bg-gray-700"></div>
+							</div>
+						</div>
+					</div>
+					<div><label class="block text-sm font-medium mb-1">Template Type (optional)</label><input id="testType" placeholder="custom/application-received/..." class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+					<div><label class="block text-sm font-medium mb-1">Custom Subject (optional)</label><input id="testSubject" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></div>
+					<div><label class="block text-sm font-medium mb-1">Custom Content (optional)</label><textarea id="testContent" rows="6" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea></div>
+					<div id="commonVarsWrap" class="space-y-2">
+						<p class="text-sm font-medium">Common variables (applied per user)</p>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+							<div><label class="block text-xs mb-1">Scholarship</label><input id="varScholarship" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., STEM Excellence"></div>
+							<div><label class="block text-xs mb-1">Amount</label><input id="varAmount" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., 1500"></div>
+							<div><label class="block text-xs mb-1">Deadline</label><input id="varDeadline" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., 2025-10-31"></div>
+							<div><label class="block text-xs mb-1">URL</label><input id="varUrl" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., https://example.com"></div>
+							<div><label class="block text-xs mb-1">Support Email</label><input id="varSupportEmail" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., support@example.com"></div>
+							<div><label class="block text-xs mb-1">Location</label><input id="varLocation" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., Kigali"></div>
+							<div><label class="block text-xs mb-1">Custom 1</label><input id="varCustom1" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="any custom value"></div>
+							<div><label class="block text-xs mb-1">Custom 2</label><input id="varCustom2" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="any custom value"></div>
+						</div>
+						<div>
+							<label class="block text-xs mb-1">Names (comma-separated, overrides per user order)</label>
+							<input id="varNames" class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="e.g., Alice Johnson,Bob Smith,Carla Doe">
+						</div>
+						<p class="text-xs text-gray-500">These fill placeholders like {{scholarship}} / [Scholarship Name], {{amount}}, {{deadline}}, {{url}}, {{support_email}}, {{location}}, {{custom1}}, {{custom2}}. Names list maps to selected users in order.</p>
+					</div>
+					<div class="flex justify-end gap-3 pt-2">
+						<button type="button" id="testCancel" class="px-4 py-2 border rounded-lg">Cancel</button>
+						<button type="submit" id="testSend" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Send Email</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="js/admin-email-templates.js?v=1"></script>
 </body>
 </html>

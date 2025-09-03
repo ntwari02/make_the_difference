@@ -245,7 +245,7 @@ router.patch('/:id/toggle', async (req, res) => {
 });
 
 // Weighted random active advertisement
-router.get('/random', async (req, res) => {
+router.get('/random', async (req, res, next) => {
     try {
         await ensureWeightColumn();
         const [rows] = await pool.execute(
@@ -273,6 +273,7 @@ router.get('/random', async (req, res) => {
         return res.json({ success: true, advertisement: selected });
     } catch (error) {
         console.error('Error fetching random advertisement:', error);
+        if (res.headersSent) return next(error);
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });

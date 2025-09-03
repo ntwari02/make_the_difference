@@ -48,6 +48,16 @@
         </ul>
       </nav>
 
+      <!-- Admin Dashboard Button - Only visible for admin users -->
+      <a href="admin_dashboard.html" id="adminDashboardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg">
+        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        Dashboard
+      </a>
+
+
+
       <!-- Auth Buttons -->
       <div id="authButtons" class="hidden md:flex items-center space-x-4">
         <!-- Will be populated by JavaScript -->
@@ -61,13 +71,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
           </svg>
         </button>
-        <div id="userMenuDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
-          <a id="dashboardLink" href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
-          <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" id="profileLink">Profile</a>
-          <a href="help-center.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Help Center</a>
-          <hr class="my-1 border-gray-200 dark:border-gray-700">
-          <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" id="logoutButton">Logout</a>
-        </div>
+                 <div id="userMenuDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
+
+           <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" id="profileLink">Profile</a>
+           <a href="help-center.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Help Center</a>
+           <hr class="my-1 border-gray-200 dark:border-gray-700">
+           <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" id="logoutButton">Logout</a>
+
+         </div>
       </div>
     </div>
   </div>
@@ -165,6 +176,40 @@
 #mobile-menu.show .transform {
   transform: translateX(0) !important;
 }
+
+/* Admin Dashboard Button Styling */
+#adminDashboardBtn {
+  transition: all 0.3s ease;
+  /* VISIBLE BY DEFAULT - JavaScript will hide if not admin */
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+#adminDashboardBtn.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Admin Dashboard Button Hover Effects */
+#adminDashboardBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+/* Dark mode adjustments for admin button */
+.dark #adminDashboardBtn {
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+  border: 1px solid #1E40AF;
+}
+
+.dark #adminDashboardBtn:hover {
+  background: linear-gradient(135deg, #2563EB, #1E40AF);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+}
 </style>
 
 <!-- Include Logout Utility -->
@@ -218,36 +263,11 @@
     }
   });
 
-  // Handle authentication state
+  // Handle authentication state - REMOVED DUPLICATE CODE
+  // This is now handled by include-navbar.js
   function updateAuthState() {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    if (token && user) {
-      // User is logged in
-      authButtons.classList.add('hidden');
-      userMenu.classList.remove('hidden');
-      userNameDisplay.textContent = user.full_name || 'User';
-
-      // Set dashboard link based on admin flag
-      dashboardLink.href = user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html';
-
-      // Highlight active page
-      const currentPage = window.location.pathname.split('/').pop();
-      document.querySelectorAll('.nav-link').forEach(link => {
-        if (link.getAttribute('href') === currentPage) {
-          link.classList.add('active');
-        }
-      });
-    } else {
-      // User is not logged in
-      userMenu.classList.add('hidden');
-      authButtons.classList.remove('hidden');
-      authButtons.innerHTML = `
-        <a href="login.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
-        <a href="signup.html" class="bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
-      `;
-    }
+    // This function is intentionally empty to prevent conflicts
+    // Dashboard visibility is handled by include-navbar.js
   }
 
   // Toggle user menu
@@ -322,15 +342,23 @@
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+    console.log('🔍 Mobile Auth Update:', { token: !!token, user, isAdmin: user.isAdmin });
+
     if (token && user) {
+      const dashboardLink = user.isAdmin ? `
+          <a href="admin_dashboard.html" 
+            class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
+            Dashboard
+          </a>
+        ` : '';
+      
+      console.log('📱 Mobile dashboard link:', user.isAdmin ? 'shown' : 'hidden');
+      
       mobileAuthButtons.innerHTML = `
         <div class="flex flex-col space-y-2">
           <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
           <span class="font-medium text-gray-800 dark:text-white">${user.full_name || 'User'}</span>
-          <a href="${user.isAdmin ? 'admin_dashboard.html' : 'dashboard.html'}" 
-            class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
-            Dashboard
-          </a>
+          ${dashboardLink}
           <a href="help-center.html" 
             class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
             Help Center
@@ -368,10 +396,149 @@
 
   // Initialize
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM Content Loaded - Initializing navbar');
+    console.log('🔍 Dashboard link element:', dashboardLink);
+    console.log('🔍 User menu element:', userMenu);
+    
     initializeTheme();
     updateAllAuthStates();
+    
+    // Debug: Check localStorage
+    console.log('🔍 LocalStorage check:', {
+      token: localStorage.getItem('token'),
+      user: localStorage.getItem('user'),
+      parsedUser: JSON.parse(localStorage.getItem('user') || '{}')
+    });
   });
 
   // Update auth state when storage changes
   window.addEventListener('storage', updateAllAuthStates);
+  
+  // Debug function - call this from console to test dashboard visibility
+  window.testDashboardVisibility = function() {
+    console.log('🧪 Testing Dashboard Visibility');
+    console.log('Dashboard element:', dashboardLink);
+    console.log('Dashboard classes:', dashboardLink?.classList.toString());
+    console.log('Dashboard hidden:', dashboardLink?.classList.contains('hidden'));
+    console.log('Current user:', JSON.parse(localStorage.getItem('user') || '{}'));
+    console.log('Is admin:', JSON.parse(localStorage.getItem('user') || '{}').isAdmin);
+    
+    // Force show dashboard for testing
+    if (dashboardLink) {
+      dashboardLink.classList.remove('hidden');
+      console.log('✅ Dashboard link forced visible for testing');
+    }
+  };
+  
+  // Force show dashboard link for testing - REMOVE THIS AFTER TESTING
+  window.forceShowDashboard = function() {
+    if (dashboardLink) {
+      dashboardLink.classList.remove('hidden');
+      dashboardLink.style.display = 'block';
+      dashboardLink.style.visibility = 'visible';
+      console.log('🚨 Dashboard link FORCED visible!');
+    } else {
+      console.log('❌ Dashboard link element not found!');
+    }
+  };
+  
+  // Check if user is admin and force show dashboard
+  window.checkAndShowDashboard = function() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('🔍 Current user data:', user);
+    console.log('🔍 Is admin?', user.isAdmin);
+    console.log('🔍 Dashboard element:', dashboardLink);
+    
+    if (user.isAdmin === true) {
+      console.log('✅ User is admin - showing dashboard');
+      if (dashboardLink) {
+        dashboardLink.classList.remove('hidden');
+        dashboardLink.style.display = 'block';
+        dashboardLink.style.visibility = 'visible';
+        dashboardLink.href = 'admin_dashboard.html';
+        console.log('✅ Dashboard link should now be visible');
+      } else {
+        console.log('❌ Dashboard link element not found!');
+      }
+    } else {
+      console.log('❌ User is NOT admin - hiding dashboard');
+      if (dashboardLink) {
+        dashboardLink.classList.add('hidden');
+        dashboardLink.style.display = 'none';
+      }
+    }
+  };
+  
+  // Simple function to force show dashboard for testing
+  window.showDashboard = function() {
+    if (dashboardLink) {
+      dashboardLink.classList.remove('hidden');
+      dashboardLink.style.display = 'block';
+      dashboardLink.style.visibility = 'visible';
+      console.log('🚨 Dashboard link FORCED visible!');
+    } else {
+      console.log('❌ Dashboard link element not found!');
+    }
+  };
+
+  // Test admin status function - Available immediately
+  function testAdminStatus() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const adminDashboardBtn = document.getElementById('adminDashboardBtn');
+    
+    console.log('🧪 TESTING ADMIN STATUS');
+    console.log('Current user:', user);
+    console.log('User isAdmin:', user.isAdmin);
+    console.log('User isAdmin type:', typeof user.isAdmin);
+    console.log('Admin dashboard button:', adminDashboardBtn);
+    
+    if (adminDashboardBtn) {
+      console.log('Button classes:', adminDashboardBtn.className);
+      console.log('Button hidden:', adminDashboardBtn.classList.contains('hidden'));
+      console.log('Button display:', adminDashboardBtn.style.display);
+      console.log('Button opacity:', adminDashboardBtn.style.opacity);
+    }
+    
+    // Test the admin detection logic
+    const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
+    console.log('Final admin determination:', isAdmin);
+    
+    if (isAdmin) {
+      alert('✅ You are ADMIN! Dashboard button should be visible.');
+      // Force show the button
+      if (adminDashboardBtn) {
+        adminDashboardBtn.classList.remove('hidden');
+        adminDashboardBtn.style.opacity = '1';
+        adminDashboardBtn.style.pointerEvents = 'auto';
+        console.log('✅ Dashboard button force shown!');
+      }
+    } else {
+      alert('❌ You are NOT admin. Dashboard button will be hidden.');
+      // Force hide the button
+      if (adminDashboardBtn) {
+        adminDashboardBtn.classList.add('hidden');
+        adminDashboardBtn.style.opacity = '0';
+        adminDashboardBtn.style.pointerEvents = 'none';
+        console.log('✅ Dashboard button force hidden!');
+      }
+    }
+  }
+
+  // Console test function - run this from browser console
+  window.checkAdminFromConsole = function() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('🔍 ADMIN STATUS CHECK FROM CONSOLE:');
+    console.log('User:', user);
+    console.log('isAdmin value:', user.isAdmin);
+    console.log('isAdmin type:', typeof user.isAdmin);
+    console.log('isAdmin === true:', user.isAdmin === true);
+    console.log('isAdmin === 1:', user.isAdmin === 1);
+    console.log('isAdmin === "1":', user.isAdmin === '1');
+    console.log('isAdmin === "true":', user.isAdmin === 'true');
+    
+    const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
+    console.log('Final admin determination:', isAdmin);
+    
+    return isAdmin;
+  };
 </script>

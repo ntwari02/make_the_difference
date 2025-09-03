@@ -3,105 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Reports</title>
-    <link rel="stylesheet" href="css/sidebar.css">
-    <link rel="stylesheet" href="css/admin-layout.css">
-    <script src="js/include-admin-sidebar.js" defer></script>
-    <script src="js/include-admin-header.js" defer></script>
+    <title>Admin Reports - Make The Difference</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .sidebar { width: 280px; transition: all 0.3s ease; }
-        .sidebar.collapsed { width: 80px; }
-        .sidebar-item-text { transition: opacity 0.3s ease; }
-        .sidebar.collapsed .sidebar-item-text { opacity: 0; display: none; }
-        .main-content { transition: margin-left 0.3s ease; }
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -280px; z-index: 40; }
-            .sidebar.mobile-open { left: 0; }
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
         }
-        /* Dark mode typography for reports page */
-        .dark .report-card { background-color: #1f2937; border-color: #374151; }
-        .dark .report-title { color: #f9fafb; }
-        .dark .report-subtle { color: #d1d5db; }
-        .dark .report-muted { color: #9ca3af; }
-        .dark .report-chip { background-color: #111827; color: #e5e7eb; }
-        .dark .report-table th { color: #e5e7eb; }
-        .dark .report-table td { color: #f3f4f6; }
-        .dark .report-table tr { border-color: rgba(229,231,235,0.1); }
-        .dark .report-section { background-color: rgba(31,41,55,0.7); backdrop-filter: blur(6px); }
-        .dark .report-input { background-color: #111827; color: #e5e7eb; border-color: #374151; }
-        .dark .report-input::placeholder { color: #9ca3af; }
-        .dark .report-header { color: #f9fafb; }
-        /* Detailed Reports table - light mode readability */
-        .report-table thead tr { background-color: #f3f4f6; }
-        .report-table thead th { color: #111827 !important; }
-        .report-table tbody td { color: #111827 !important; }
-        .report-table tbody tr:nth-child(odd) { background-color: #fafafa; }
-        .report-table tbody tr:hover { background-color: #f3f4f6; }
-        .report-table tbody tr { border-bottom: 1px solid rgba(229,231,235,0.6); }
-        /* Detailed Reports table - dark overrides */
-        .dark .report-table thead tr { background-color: rgba(31,41,55,0.85); }
-        .dark .report-table thead th { color: #e5e7eb !important; }
-        .dark .report-table tbody td { color: #f3f4f6 !important; }
-        .dark .report-table tbody tr:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
-        .dark .report-table tbody tr:hover { background-color: rgba(255,255,255,0.06); }
-        .dark .report-table tbody tr { border-bottom: 1px solid rgba(229,231,235,0.1); }
-        /* Category & Status chips - mode aware */
-        .category-chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:12px; font-weight:600; background:#eef2ff; color:#1e3a8a; border:1px solid #c7d2fe; }
-        .dark .category-chip { background: rgba(59,130,246,0.15); color:#dbeafe; border-color: rgba(59,130,246,0.35); }
-        .status-chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:12px; font-weight:600; border:1px solid transparent; }
-        /* light */
-        .status-pending { background:#fef3c7; color:#92400e; border-color:#fde68a; }
-        .status-in_progress { background:#dbeafe; color:#1e3a8a; border-color:#bfdbfe; }
-        .status-completed { background:#d1fae5; color:#065f46; border-color:#a7f3d0; }
-        .status-reviewed { background:#e9d5ff; color:#6b21a8; border-color:#d8b4fe; }
-        .status-exported { background:#e0e7ff; color:#3730a3; border-color:#c7d2fe; }
-        .status-archived { background:#e5e7eb; color:#374151; border-color:#d1d5db; }
-        /* dark */
-        .dark .status-pending { background: rgba(251,191,36,0.2); color:#fde68a; border-color:rgba(251,191,36,0.35); }
-        .dark .status-in_progress { background: rgba(59,130,246,0.2); color:#bfdbfe; border-color: rgba(59,130,246,0.35); }
-        .dark .status-completed { background: rgba(16,185,129,0.2); color:#a7f3d0; border-color: rgba(16,185,129,0.35); }
-        .dark .status-reviewed { background: rgba(139,92,246,0.2); color:#d8b4fe; border-color: rgba(139,92,246,0.35); }
-        .dark .status-exported { background: rgba(99,102,241,0.2); color:#c7d2fe; border-color: rgba(99,102,241,0.35); }
-        .dark .status-archived { background: rgba(107,114,128,0.2); color:#e5e7eb; border-color: rgba(107,114,128,0.35); }
-        /* Filtered results styling */
-        /* Default (light) mode */
-        .results-header { background-color: #f3f4f6; color: #111827; }
-        .results-row { border-bottom: 1px solid rgba(229,231,235,0.6); }
-        .results-row:hover { background-color: #f9fafb; }
-        .results-container { border-radius: 0.5rem; overflow: hidden; background-color: #ffffff; border: 1px solid #e5e7eb; }
-        /* Dark overrides */
-        .dark .results-header { background-color: rgba(31,41,55,0.85); color: #e5e7eb; }
-        .dark .results-row { border-bottom: 1px solid rgba(229,231,235,0.08); }
-        .dark .results-row:hover { background-color: rgba(255,255,255,0.04); }
-        .dark .results-container { background-color: #111827; border-color: #374151; }
-        /* Zebra striping for readability */
-        .results-body .results-row:nth-child(odd) { background-color: #fafafa; }
-        .dark .results-body .results-row:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
-        /* Custom thin scrollbar */
-        #filterResults::-webkit-scrollbar { width: 8px; }
-        #filterResults::-webkit-scrollbar-thumb { background: rgba(156,163,175,0.5); border-radius: 8px; }
-        #filterResults::-webkit-scrollbar-track { background: transparent; }
-        /* Ensure readable text in light mode for filtered results */
-        html:not(.dark) .results-row *,
-        html:not(.dark) .results-header { color: #111827 !important; }
-        html:not(.dark) .results-row .text-gray-500,
-        html:not(.dark) .results-row .text-gray-600 { color: #374151 !important; }
-        html:not(.dark) .results-row .report-chip { background-color: #eef2ff; color: #1e3a8a; }
-        /* Page background via CSS (no framework) */
-        body.admin-layout { background-color: #f9fafb !important; }
-        html.dark body.admin-layout { background-color: #111827 !important; }
-        /* Chart theming via CSS variables (no framework) */
-        :root {
-            --chart-text: #111827; /* light text color for axes/labels */
-            --chart-grid: rgba(17,24,39,0.2); /* light grid color */
-        }
-        html.dark {
-            --chart-text: #ffffff; /* white text in dark mode */
-            --chart-grid: rgba(255,255,255,0.2); /* subtle grid in dark */
-        }
-    </style>
+    </script>
     <script>
         (function() {
             try {
@@ -117,245 +37,267 @@
             } catch (e) {}
         })();
     </script>
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/admin-sidebar-fix.css">
+
+    <!-- JavaScript Files -->
+    <script src="js/include-admin-header.js" defer></script>
+    <script src="js/include-admin-sidebar.js" defer></script>
 </head>
-<body class="admin-layout bg-white dark:bg-gray-900 transition-colors duration-200">
-    <div id="admin-sidebar-container"></div>    
+<body class="admin-layout bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div id="admin-sidebar-container"></div>
     <div id="admin-header-container" data-page-title="Admin Reports"></div>
-    <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
-        <div class="admin-content-container">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-                <h2 class="text-2xl font-bold text-black dark:text-white mb-6 report-header">Reports Overview</h2>
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                        <h3 class="text-lg font-semibold text-black dark:text-white report-title">Total Reports</h3>
-                        <p class="text-2xl font-bold text-blue-500">120</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                        <h3 class="text-lg font-semibold text-black dark:text-white report-title">Pending Reports</h3>
-                        <p class="text-2xl font-bold text-yellow-500">30</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                        <h3 class="text-lg font-semibold text-black dark:text-white report-title">Reviewed Reports</h3>
-                        <p class="text-2xl font-bold text-green-500">80</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                        <h3 class="text-lg font-semibold text-black dark:text-white report-title">Exported Reports</h3>
-                        <p class="text-2xl font-bold text-purple-500">10</p>
-                    </div>
+    <main class="admin-main-content flex-1 p-6 bg-gray-100 dark:bg-gray-900 transition-all duration-300">
+        <div class="admin-content-container max-w-7xl mx-auto py-6">
+            <!-- Header with Title and Action Buttons -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Reports Overview</h1>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                    <button id="generateReportBtn" class="w-full sm:w-auto px-4 sm:px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200 flex items-center justify-center">
+                        <i class="fas fa-plus-circle mr-2"></i>Generate Report
+                    </button>
+                    <button id="exportReportBtn" class="w-full sm:w-auto px-4 sm:px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200 flex items-center justify-center">
+                        <i class="fas fa-file-export mr-2"></i>Export Reports
+                    </button>
                 </div>
-                <!-- Interactive Reports Section -->
-                <div class="flex flex-col gap-2 mb-6">
-                    <div class="text-sm text-gray-600 dark:text-gray-300 report-subtle">Report Filters · Apply filters to customize report data.</div>
-                    <div class="flex flex-wrap gap-3 items-center">
-                        <select id="reportTypeFilter" class="px-4 py-2 border rounded-md report-input">
-                            <option value="all">All Reports</option>
-                            <option value="pending">Pending</option>
-                            <option value="reviewed">Reviewed</option>
-                            <option value="exported">Exported</option>
-                        </select>
-                        <select id="reportDateFilter" class="px-4 py-2 border rounded-md report-input">
-                            <option value="all">All Dates</option>
-                            <option value="today">Today</option>
-                            <option value="last7">Last 7 Days</option>
-                            <option value="thisMonth">This Month</option>
-                            <option value="lastMonth">Last Month</option>
-                            <option value="thisYear">This Year</option>
-                        </select>
-                        <select id="reportCategoryFilter" class="px-4 py-2 border rounded-md report-input">
-                            <option value="all">All Categories</option>
-                            <option value="applications">Applications</option>
-                            <option value="scholarships">Scholarships</option>
-                            <option value="users">Users</option>
-                            <option value="financial">Financial</option>
-                            <option value="analytics">Analytics</option>
-                            <option value="general">General</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                        <button id="generateReportBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Generate Report</button>
-                        <button id="exportReportBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export Report</button>
-                    </div>
-                    <!-- Inline results container -->
-                    <div id="filterResultsCard" class="mt-4 bg-white rounded-lg shadow-md p-4 report-card">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-md font-semibold text-black dark:text-white report-title">Filtered Results</h4>
-                            <div id="filterResultsMeta" class="text-sm text-gray-600 dark:text-gray-400"></div>
-                        </div>
-                        <div id="filterResults" class="overflow-auto max-h-80">
-                            <div class="text-gray-500 dark:text-gray-400">Select filters to view matching reports here.</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card lg:col-span-2">
-                        <h3 class="text-lg font-semibold text-black dark:text-white mb-4 report-title">Recent Reports</h3>
-                        <ul id="recentReportsList" class="space-y-2"></ul>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 report-card lg:col-span-2">
-                        <h3 class="text-lg font-semibold text-black dark:text-white mb-4 report-title">Report Insights</h3>
-                        <ul id="reportInsightsList" class="space-y-2">
-                            <li class="flex justify-between text-black dark:text-white">
-                                <span>Insight 1</span>
-                                <span>Details</span>
-                            </li>
-                            <li class="flex justify-between text-black dark:text-white">
-                                <span>Insight 2</span>
-                                <span>Details</span>
-                            </li>
-                            <li class="flex justify-between text-black dark:text-white">
-                                <span>Insight 3</span>
-                                <span>Details</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <!-- Advanced Report Features -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Advanced Report Features</h3>
-                    <div class="grid grid-cols-1 lg:grid-cols-1 gap-6">
-                        <div class="bg-white rounded-lg shadow-md p-6 report-card report-section">
-                            <h4 class="text-md font-semibold text-black dark:text-white report-title">Report Visualization</h4>
-                            <p class="text-sm text-black dark:text-gray-300">Visualize report data with charts.</p>
-                            <!-- Simplified Chart Section -->
-                            <div class="mt-8">
-                                <h3 class="text-lg font-semibold text-black dark:text-white mb-4 report-title">Simplified Report Chart</h3>
-                                <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                                    <canvas id="simpleReportChart" class="w-full h-96"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
+            </div>
 
-                <!-- Comparative Chart Section -->
-                <div class="bg-white rounded-lg shadow-md p-6 mt-8 report-card report-section">
-                    <h4 class="text-md font-semibold text-black dark:text-white report-title">Comparative Analysis</h4>
-                    <p class="text-sm text-black dark:text-gray-300">Compare report data across categories.</p>
-                    <div class="mt-8">
-                        <h3 class="text-lg font-semibold text-black dark:text-white mb-4 report-title">Bar Chart</h3>
-                        <div class="bg-white rounded-lg shadow-md p-6 report-card">
-                            <canvas id="comparativeChart" class="w-full h-64"></canvas>
-                        </div>
-                    </div>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 sm:p-3 lg:p-5 text-center transform hover:scale-105 transition-transform duration-200">
+                    <h3 class="text-[11px] sm:text-sm lg:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Total Reports</h3>
+                    <p id="totalReportsCount" class="text-lg sm:text-2xl lg:text-4xl font-bold text-blue-600 dark:text-blue-400 leading-tight">0</p>
                 </div>
-
-                <!-- Export Options Section -->
-                <div class="bg-white rounded-lg shadow-md p-6 mt-8 report-card">
-                    <h4 class="text-md font-semibold text-black dark:text-white report-title">Export Options</h4>
-                    <p class="text-sm text-black dark:text-gray-300">Export reports in various formats.</p>
-                    <div class="flex space-x-4 mt-4">
-                        <button id="exportExcelBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export as Excel</button>
-                        <button id="exportCSVBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Export as CSV</button>
-                    </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 sm:p-3 lg:p-5 text-center transform hover:scale-105 transition-transform duration-200">
+                    <h3 class="text-[11px] sm:text-sm lg:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Pending Reports</h3>
+                    <p id="pendingReportsCount" class="text-lg sm:text-2xl lg:text-4xl font-bold text-yellow-600 dark:text-yellow-400 leading-tight">0</p>
                 </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 sm:p-3 lg:p-5 text-center transform hover:scale-105 transition-transform duration-200">
+                    <h3 class="text-[11px] sm:text-sm lg:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Reviewed Reports</h3>
+                    <p id="reviewedReportsCount" class="text-lg sm:text-2xl lg:text-4xl font-bold text-purple-600 dark:text-purple-400 leading-tight">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 sm:p-3 lg:p-5 text-center transform hover:scale-105 transition-transform duration-200">
+                    <h3 class="text-[11px] sm:text-sm lg:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Exported Reports</h3>
+                    <p id="exportedReportsCount" class="text-lg sm:text-2xl lg:text-4xl font-bold text-green-600 dark:text-green-400 leading-tight">0</p>
+                </div>
+            </div>
 
-                <!-- Detailed Report Table Section -->
-                <div class="bg-white rounded-lg shadow-md p-6 mt-8 report-card">
-                    <div class="flex justify-between items-center mb-6">
+            <!-- Report Filters and Quick Stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4">Filter Reports</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
                         <div>
-                            <h4 class="text-xl font-semibold text-gray-800 dark:text-white report-title">Detailed Reports</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">View and manage detailed report data</p>
+                            <label for="reportTypeFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <select id="reportTypeFilter" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="all">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="reviewed">Reviewed</option>
+                                <option value="exported">Exported</option>
+                                <option value="archived">Archived</option>
+                            </select>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="relative">
-                                <input type="text" id="reportSearch" placeholder="Search reports..." 
-                                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <div>
+                            <label for="reportCategoryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                            <select id="reportCategoryFilter" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="all">All Categories</option>
+                                <option value="general">General</option>
+                                <option value="applications">Applications</option>
+                                <option value="scholarships">Scholarships</option>
+                                <option value="users">Users</option>
+                                <option value="financial">Financial</option>
+                                <option value="analytics">Analytics</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reportDateFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                            <select id="reportDateFilter" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="all">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="last7">Last 7 Days</option>
+                                <option value="thisMonth">This Month</option>
+                                <option value="lastMonth">Last Month</option>
+                                <option value="thisYear">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                            <div id="customDateRangeInputs" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 hidden">
+                                <input type="date" id="reportStartDateFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <input type="date" id="reportEndDateFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
                             </div>
-                            <button id="refreshReportsBtn" class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
+                        </div>
+                        <div>
+                            <label for="reportGroupingFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Group By</label>
+                            <select id="reportGroupingFilter" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table id="reportTable" class="w-full report-table">
-                            <thead>
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <th class="text-left py-4 px-6 font-semibold">Report Name</th>
-                                    <th class="text-left py-4 px-6 font-semibold">Category</th>
-                                    <th class="text-left py-4 px-6 font-semibold">Status</th>
-                                    <th class="text-left py-4 px-6 font-semibold">Date</th>
-                                    <th class="text-center py-4 px-6 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reportTableBody">
-                                <!-- Dynamic content will be inserted here -->
-                            </tbody>
-                        </table>
+                    <div id="filterResultsMeta" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-4"></div>
+                    <div id="filterResults" class="mt-4 border border-gray-200 dark:border-gray-700 rounded-md p-3 sm:p-4 max-h-60 overflow-y-auto bg-gray-50 dark:bg-gray-700">
+                        <!-- Filtered results will be displayed here -->
+                        <div class="text-gray-500 dark:text-gray-400 text-center py-4">Apply filters to see results.</div>
                     </div>
-                    
-                    <div id="noReportsMessage" class="hidden text-center py-12">
-                        <i class="fas fa-file-alt text-4xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">No reports found</p>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Reports</h3>
+                    <ul id="recentReportsList" class="space-y-3 text-gray-700 dark:text-gray-300 text-sm">
+                        <!-- Recent reports will be loaded here -->
+                        <li>No recent reports to display.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Advanced Report Features -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6">Advanced Features</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- Report Visualization -->
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-gray-700">
+                        <h4 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-3"><i class="fas fa-chart-bar mr-2"></i>Report Visualization</h4>
+                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">Visual representation of report data.</p>
+                        <div class="h-48 sm:h-64">
+                            <canvas id="simpleReportChart"></canvas>
+                        </div>
                     </div>
+                    <!-- Comparative Analysis -->
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-gray-700">
+                        <h4 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-3"><i class="fas fa-balance-scale mr-2"></i>Comparative Analysis</h4>
+                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">Compare different aspects of report data.</p>
+                        <div class="h-48 sm:h-64">
+                            <canvas id="comparativeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Export Options Section -->
+                <div class="mt-4 sm:mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+                    <h4 class="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 dark:text-white mb-2 sm:mb-3"><i class="fas fa-file-export mr-2"></i>Quick Export</h4>
+                    <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">Export currently filtered reports in desired format.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button id="exportExcelBtn" class="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-sm font-medium rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-file-excel mr-2"></i>Excel
+                        </button>
+                        <button id="exportCSVBtn" class="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] sm:text-sm font-medium rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-file-csv mr-2"></i>CSV
+                        </button>
+                        <button id="exportPDFBtn" class="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white text-[11px] sm:text-sm font-medium rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-file-pdf mr-2"></i>PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Report Table Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
+                    <div>
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">All Reports</h4>
+                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Manage and review all system reports.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-48">
+                            <input type="text" id="reportSearch" placeholder="Search reports..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <button id="refreshReportsBtn" class="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto sm:overflow-x-visible rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table id="reportTable" class="w-full table-fixed sm:table-auto divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Report Name</th>
+                                <th class="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                                <th class="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                <th class="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-right text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Dynamic content will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noReportsMessage" class="hidden text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-file-alt text-4xl mb-3"></i>
+                    <p>No reports found.</p>
+                </div>
+                <!-- Pagination -->
+                <div id="paginationControls" class="flex flex-col sm:flex-row justify-between items-center mt-4 sm:mt-6 gap-4">
+                    <button type="button" id="prevPageBtn" class="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md shadow-sm transition-colors duration-200 opacity-50 cursor-not-allowed" disabled>Previous</button>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span></span>
+                    <button type="button" id="nextPageBtn" class="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md shadow-sm transition-colors duration-200">Next</button>
                 </div>
             </div>
         </div>
     </main>
-        <!-- Guaranteed Mobile FAB + Modal -->
-        <button id="admin-fab-menu" aria-label="Open admin menu" class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center z-[20001]"><i class="fas fa-bars"></i></button>
-        <div id="admin-fab-overlay" class="fixed inset-0 bg-black/40 hidden z-[19990]"></div>
-        <div id="admin-fab-modal" class="fixed bottom-20 left-4 right-4 bg-white text-black dark:bg-white dark:text-black rounded-2xl shadow-2xl hidden z-[20000] max-h-[70vh] overflow-y-auto">
-          <div class="p-3 border-b border-gray-200 flex items-center justify-between"><span class="font-semibold">Admin Menu</span><button id="admin-fab-close" class="p-2 rounded hover:bg-gray-100"><i class="fas fa-times"></i></button></div>
-          <div class="p-2">
-            <a href="admin_dashboard.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-tachometer-alt w-5 text-center"></i><span>Dashboard</span></a>
-            <a href="admin_users.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-users w-5 text-center"></i><span>Users</span></a>
-            <a href="admin_rolesPermissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-user-shield w-5 text-center"></i><span>Roles</span></a>
-            <a href="admin_scholarship.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-graduation-cap w-5 text-center"></i><span>Scholarships</span></a>
-            <a href="admin_applications.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-file-alt w-5 text-center"></i><span>Applications</span></a>
-            <a href="admin_partners.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-handshake w-5 text-center"></i><span>Partners</span></a>
-            <a href="admin_services.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-briefcase w-5 text-center"></i><span>Services</span></a>
-            <a href="admin_email_template.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-envelope w-5 text-center"></i><span>Email Templates</span></a>
-            <a href="admin_help.html" class="flex items-center gap-3 p-3 rounded hover:bg-gray-100 text-black"><i class="fas fa-question w-5 text-center"></i><span>Help</span></a>
-          </div>
-        </div>
-    <!-- Interactive Modals -->
-    <div id="editReportModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-md p-6 w-96">
-            <h3 class="text-lg font-semibold text-black mb-4">Edit Report</h3>
-            <input type="text" id="editReportName" class="px-4 py-2 border rounded-md w-full mb-4" placeholder="Report Name">
-            <button id="saveEditReportBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
-            <button id="cancelEditReportBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
-        </div>
-    </div>
 
-    <div id="deleteReportModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-md p-6 w-96">
-            <h3 class="text-lg font-semibold text-black mb-4">Delete Report</h3>
-            <p class="text-sm text-black mb-4">Are you sure you want to delete this report?</p>
-            <button id="confirmDeleteReportBtn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>
-            <button id="cancelDeleteReportBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
-        </div>
-    </div>
+    <!-- Interactive Modals -->
+    <!-- This section will be populated by JavaScript using existing functions: showGenerateReportModal, showExportReportModal, showReportDetails, showEditReportModal, showDeleteReportModal -->
 
     <!-- Real-Time Notifications -->
-    <div id="notification" class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-md">
-        <p id="notificationMessage">Action successful!</p>
+    <div id="toast-notification-container" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Notifications will be appended here by showNotification function -->
     </div>
 
+    <!-- JavaScript Files -->
+    <script src="js/include-admin-header.js"></script>
+    <script src="js/include-admin-sidebar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/api.js"></script>
     <script>
+        // Notification function
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toast-notification-container');
+            if (!container) return;
+
+            const notification = document.createElement('div');
+            notification.className = `p-4 rounded-md shadow-md text-white flex items-center space-x-2 ` + 
+                                     (type === 'success' ? 'bg-green-500' :
+                                      type === 'error' ? 'bg-red-500' :
+                                      type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500');
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            container.prepend(notification); // Add new notifications at the top
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
         // State management
         let reports = [];
         let currentPage = 1;
         const reportsPerPage = 10;
         let filteredReports = [];
-
         // Load reports on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadReports();
             loadReportSummary();
-            loadReportInsights();
+            // insights are handled by the charts and filter results
+            refreshChartColors(); // Ensure chart colors are set based on current theme
         });
-
         // Sidebar interactivity
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('mainContent');
         const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-        
         if (sidebarCollapseBtn) {
         function toggleSidebar() {
                 if (sidebar) {
@@ -367,52 +309,30 @@
             } else {
                 mainContent.style.marginLeft = '280px';
                     }
-            }
+                }
         }
         sidebarCollapseBtn.addEventListener('click', toggleSidebar);
         }
-
         // Theme toggle
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        
-        if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                    if (themeIcon) {
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-                    }
-            } else {
-                document.documentElement.classList.add('dark');
-                    if (themeIcon) {
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-                    }
-            }
-            // After toggling theme, refresh chart colors from CSS variables
-            try { refreshChartColors(); } catch (e) {}
-        });
-        }
-
+        // This theme toggle logic is already handled by the theme script in the head and admin-header.html
+        // However, we need to ensure charts also react to theme changes, which is done via refreshChartColors
         // Interactive functionality
         const generateReportBtn = document.getElementById('generateReportBtn');
         const exportReportBtn = document.getElementById('exportReportBtn');
         const statusFilter = document.getElementById('reportTypeFilter');
         const dateFilter = document.getElementById('reportDateFilter');
         const categoryFilter = document.getElementById('reportCategoryFilter');
-        
+        const groupingFilter = document.getElementById('reportGroupingFilter'); // New grouping filter
         if (generateReportBtn) {
         generateReportBtn.addEventListener('click', () => {
             showGenerateReportModal();
         });
         }
-        
         if (exportReportBtn) {
         exportReportBtn.addEventListener('click', () => {
             showExportReportModal();
         });
         }
-
         // Auto-load on filter change
         if (statusFilter) {
             statusFilter.addEventListener('change', () => {
@@ -422,6 +342,12 @@
         }
         if (dateFilter) {
             dateFilter.addEventListener('change', () => {
+                const customDateRangeInputs = document.getElementById('customDateRangeInputs');
+                if (dateFilter.value === 'custom') {
+                    customDateRangeInputs?.classList.remove('hidden');
+                } else {
+                    customDateRangeInputs?.classList.add('hidden');
+                }
                 loadReports();
                 updateChartWithLocalFilters();
             });
@@ -432,22 +358,28 @@
                 updateChartWithLocalFilters();
             });
         }
-
+        if (groupingFilter) { // New: Grouping filter change
+            groupingFilter.addEventListener('change', () => {
+                updateSimpleReportChartFromReports(filteredReports); // Only update chart, not reload all reports
+            });
+        }
         // Search functionality
         const reportSearch = document.getElementById('reportSearch');
         if (reportSearch) {
             reportSearch.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                const filtered = reports.filter(report => 
+                const filtered = reports.filter(report =>
                     (report.name && report.name.toLowerCase().includes(searchTerm)) ||
+                    (report.description && report.description.toLowerCase().includes(searchTerm)) || // Added description search
                     (report.category && report.category.toLowerCase().includes(searchTerm)) ||
                     (report.status && report.status.toLowerCase().includes(searchTerm))
                 );
                 filteredReports = filtered;
+                currentPage = 1; // Reset to first page on search
                 updateReportsTable();
+                updatePaginationControls();
             });
         }
-
         // Refresh button
         const refreshReportsBtn = document.getElementById('refreshReportsBtn');
         if (refreshReportsBtn) {
@@ -458,7 +390,6 @@
                 });
             });
         }
-
         function updateChartWithLocalFilters() {
             const status = (document.getElementById('reportTypeFilter')||{}).value || 'all';
             const date = (document.getElementById('reportDateFilter')||{}).value || 'all';
@@ -468,7 +399,6 @@
             updateComparativeChartFromReports(locallyFiltered);
             renderFilterResults(locallyFiltered, { status, date, category });
         }
-
         // Load reports from backend
         async function loadReports() {
             try {
@@ -478,21 +408,29 @@
                 const category = (document.getElementById('reportCategoryFilter')||{}).value || 'all';
                 if (status && status !== 'all') params.set('status', status);
                 if (category && category !== 'all') params.set('category', category);
-                if (date && date !== 'all') params.set('date', date);
+                if (date && date !== 'all') {
+                    if (date === 'custom') {
+                        const startDate = document.getElementById('reportStartDateFilter').value;
+                        const endDate = document.getElementById('reportEndDateFilter').value;
+                        if (startDate) params.set('startDate', startDate);
+                        if (endDate) params.set('endDate', endDate);
+                    } else {
+                        params.set('date', date);
+                    }
+                }
                 const url = '/api/reports' + (params.toString() ? ('?' + params.toString()) : '');
                 const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-                
                 if (!response.ok) {
                     throw new Error('Failed to load reports');
                 }
-                
                 const data = await response.json();
                 reports = data.reports;
                 filteredReports = reports;
+                currentPage = 1; // Reset to first page after loading new data
                 updateReportsTable();
-                updateSummaryCards(data.pagination);
+                updatePaginationControls();
                 updateRecentReportsList(data.reports || []);
                 renderFilterResults(filteredReports, { status, date, category });
                 updateSimpleReportChartFromReports(filteredReports);
@@ -502,51 +440,29 @@
                 showNotification('Failed to load reports', 'error');
             }
         }
-
         // Load report summary
         async function loadReportSummary() {
             try {
                 const response = await fetch('/api/reports/summary', {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-                
                 if (!response.ok) {
                     throw new Error('Failed to load report summary');
                 }
-                
                 const summary = await response.json();
                 updateSummaryCards(summary);
             } catch (error) {
                 console.error('Error loading report summary:', error);
             }
         }
-
-        // Load report insights
-        async function loadReportInsights() {
-            try {
-                const response = await fetch('/api/reports/insights/summary', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load report insights');
-                }
-                
-                const insights = await response.json();
-                updateInsightsList(insights.insights);
-            } catch (error) {
-                console.error('Error loading report insights:', error);
-            }
-        }
-
+        // Load report insights - consolidated into updateChartWithLocalFilters/renderFilterResults
         // Update summary cards
         function updateSummaryCards(summary) {
-            document.querySelector('.bg-white:nth-child(1) p').textContent = summary.totalReports || 0;
-            document.querySelector('.bg-white:nth-child(2) p').textContent = summary.pendingReports || 0;
-            document.querySelector('.bg-white:nth-child(3) p').textContent = summary.reviewedReports || 0;
-            document.querySelector('.bg-white:nth-child(4) p').textContent = summary.exportedReports || 0;
+            document.getElementById('totalReportsCount').textContent = summary.totalReports || 0;
+            document.getElementById('pendingReportsCount').textContent = summary.pendingReports || 0;
+            document.getElementById('reviewedReportsCount').textContent = summary.reviewedReports || 0;
+            document.getElementById('exportedReportsCount').textContent = summary.exportedReports || 0;
         }
-
         // Update recent reports list from live data
         function updateRecentReportsList(reports) {
             const list = document.getElementById('recentReportsList');
@@ -554,75 +470,66 @@
             const items = (reports || []).slice(0, 5).map(r => {
                 const name = r.name || `Report #${r.id}`;
                 const status = (r.status || '').replace(/_/g,' ').replace(/\b\w/g, m => m.toUpperCase()) || 'Pending';
-                return `<li class="flex justify-between text-black dark:text-white"><span>${name}</span><span>${status}</span></li>`;
+                const statusClass = getStatusColor(r.status, true); // Get text color for recent list
+                return `<li class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0">\
+                            <span class="text-gray-900 dark:text-white font-medium">${name}</span>\
+                            <span class="text-sm ${statusClass}">${status}</span>\
+                        </li>`;
             });
-            list.innerHTML = items.join('') || '<li class="text-gray-500 dark:text-gray-400">No recent reports</li>';
+            list.innerHTML = items.join('') || '<li class="text-gray-500 dark:text-gray-400">No recent reports to display.</li>';
         }
-
-        // Update insights list
-        function updateInsightsList(insights) {
-            const insightsList = document.getElementById('reportInsightsList');
-            insightsList.innerHTML = insights.map(insight => `
-                <li class="flex justify-between text-gray-600 dark:text-gray-300">
-                    <span>${insight.description || insight.type}</span>
-                    <span>${insight.value || insight.count}</span>
-                </li>
-            `).join('');
-        }
-
+        // Update insights list (now integrated into other charts/filters)
         // Update reports table
         function updateReportsTable() {
             const tableBody = document.getElementById('reportTableBody');
             const noReportsMessage = document.getElementById('noReportsMessage');
-            
             if (!filteredReports || filteredReports.length === 0) {
                 tableBody.innerHTML = '';
                 noReportsMessage.classList.remove('hidden');
                 return;
             }
-            
             noReportsMessage.classList.add('hidden');
-            
-            tableBody.innerHTML = filteredReports.map(report => {
-                const statusColor = getStatusColor(report.status);
+
+            const startIndex = (currentPage - 1) * reportsPerPage;
+            const endIndex = startIndex + reportsPerPage;
+            const reportsToDisplay = filteredReports.slice(startIndex, endIndex);
+
+            tableBody.innerHTML = reportsToDisplay.map(report => {
+                const statusColorClass = getStatusColor(report.status); // Tailwind class for background and text
                 const statusText = formatStatus(report.status);
-                
                 return `
-                    <tr class="transition-colors">
-                        <td class="py-4 px-6">
+                    <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-100">
+                        <td class="px-2 sm:px-3 lg:px-5 py-1.5 sm:py-2 whitespace-normal sm:whitespace-nowrap break-words align-middle">
                             <div class="flex items-center">
-                                <i class="fas fa-file-alt text-blue-500 mr-3"></i>
-                                <div>
-                                    <div class="font-medium">${report.name || 'Untitled Report'}</div>
-                                    <div class="text-sm">ID: ${report.id}</div>
+                                <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300">
+                                    <i class="fas fa-file-alt text-xs sm:text-sm"></i>
+                                </div>
+                                <div class="ml-2 sm:ml-4 min-w-0 flex-1">
+                                    <div class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">${report.name || 'Untitled Report'}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">ID: ${report.id}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="py-4 px-6">
-                            <span class="category-chip">${report.category || 'General'}</span>
+                        <td class="px-2 sm:px-3 lg:px-5 py-1.5 sm:py-2 whitespace-normal sm:whitespace-nowrap break-words align-middle">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                ${report.category || 'General'}
+                            </span>
                         </td>
-                        <td class="py-4 px-6">
-                            <span class="status-chip status-${(report.status || 'pending').toLowerCase()}">${statusText}</span>
+                        <td class="px-2 sm:px-3 lg:px-5 py-1.5 sm:py-2 whitespace-normal sm:whitespace-nowrap break-words align-middle">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold ${statusColorClass}">
+                                ${statusText}
+                            </span>
                         </td>
-                        <td class="py-4 px-6 text-sm">
+                        <td class="px-2 sm:px-3 lg:px-5 py-1.5 sm:py-2 whitespace-normal sm:whitespace-nowrap break-words text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 align-middle">
                             ${new Date(report.created_at).toLocaleDateString()}
                         </td>
-                        <td class="py-4 px-6">
-                            <div class="flex justify-center space-x-2">
-                                <button onclick="viewReport(${report.id})" 
-                                        class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" 
-                                        title="View Report">
-                                    <i class="fas fa-eye"></i>
+                        <td class="px-2 sm:px-3 lg:px-5 py-1.5 sm:py-2 whitespace-normal sm:whitespace-nowrap break-words text-right text-[11px] sm:text-sm font-medium align-middle">
+                            <div class="flex items-center justify-end space-x-1.5 sm:space-x-2">
+                                <button onclick="viewReport(${report.id})" title="View Report" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                                    <i class="fas fa-eye text-[11px] sm:text-sm"></i>
                                 </button>
-                                <button onclick="editReport(${report.id})" 
-                                        class="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-colors" 
-                                        title="Edit Report">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteReport(${report.id})" 
-                                        class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" 
-                                        title="Delete Report">
-                                    <i class="fas fa-trash"></i>
+                                <button onclick="deleteReport(${report.id})" title="Delete Report" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                                    <i class="fas fa-trash text-[11px] sm:text-sm"></i>
                                 </button>
                             </div>
                         </td>
@@ -630,24 +537,62 @@
                 `;
             }).join('');
         }
+        // Pagination controls
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const currentPageDisplay = document.getElementById('currentPageDisplay');
+        const totalPagesDisplay = document.getElementById('totalPagesDisplay');
 
-        // Helper functions for status styling
-        function getStatusColor(status) {
-            const statusMap = {
-                'pending': 'bg-yellow-100 text-yellow-800',
-                'in_progress': 'bg-blue-100 text-blue-800',
-                'completed': 'bg-green-100 text-green-800',
-                'reviewed': 'bg-purple-100 text-purple-800',
-                'exported': 'bg-indigo-100 text-indigo-800',
-                'archived': 'bg-gray-100 text-gray-800'
-            };
-            return statusMap[status] || 'bg-gray-100 text-gray-800';
+        if (prevPageBtn) prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateReportsTable();
+                updatePaginationControls();
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+            }
+        });
+        if (nextPageBtn) nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateReportsTable();
+                updatePaginationControls();
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+            }
+        });
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
+            if (currentPageDisplay) currentPageDisplay.textContent = currentPage;
+            if (totalPagesDisplay) totalPagesDisplay.textContent = totalPages;
+
+            if (prevPageBtn) {
+                prevPageBtn.disabled = currentPage === 1;
+                prevPageBtn.classList.toggle('opacity-50', prevPageBtn.disabled);
+                prevPageBtn.classList.toggle('cursor-not-allowed', prevPageBtn.disabled);
+            }
+            if (nextPageBtn) {
+                nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+                nextPageBtn.classList.toggle('opacity-50', nextPageBtn.disabled);
+                nextPageBtn.classList.toggle('cursor-not-allowed', nextPageBtn.disabled);
+            }
         }
 
+        // Helper functions for status styling
+        function getStatusColor(status, isTextOnly = false) {
+            const statusMap = {
+                'pending': isTextOnly ? 'text-yellow-800 dark:text-yellow-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100',
+                'in_progress': isTextOnly ? 'text-blue-800 dark:text-blue-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100',
+                'completed': isTextOnly ? 'text-green-800 dark:text-green-300' : 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100',
+                'reviewed': isTextOnly ? 'text-purple-800 dark:text-purple-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100',
+                'exported': isTextOnly ? 'text-indigo-800 dark:text-indigo-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-100',
+                'archived': isTextOnly ? 'text-gray-800 dark:text-gray-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+            };
+            return statusMap[status] || (isTextOnly ? 'text-gray-800 dark:text-gray-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100');
+        }
         function formatStatus(status) {
             return (status || 'pending').replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
         }
-
         // Local filter utility for immediate chart/list response
         function filterReportsLocal(items, { status, date, category }) {
             let result = [...(items || [])];
@@ -659,7 +604,8 @@
             }
             if (date && date !== 'all') {
                 const now = new Date();
-                const start = new Date(0);
+                const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+                const start = new Date(0); // Default to epoch
                 if (date === 'today') {
                     start.setTime(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime());
                 } else if (date === 'last7') {
@@ -670,12 +616,12 @@
                     const d = new Date(now.getFullYear(), now.getMonth(), 1);
                     d.setMonth(d.getMonth() - 1);
                     start.setTime(d.getTime());
-                    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const end = new Date(now.getFullYear(), now.getMonth(), 1); // Start of current month
                     result = result.filter(r => {
                         const t = new Date(r.created_at);
                         return t >= start && t < end;
                     });
-                    return result;
+                    return result; // Return early for lastMonth as it has a different end condition
                 } else if (date === 'thisYear') {
                     start.setTime(new Date(now.getFullYear(), 0, 1).getTime());
                 }
@@ -683,7 +629,6 @@
             }
             return result;
         }
-
         // Render compact results within the filter card
         function renderFilterResults(items, filters) {
             const container = document.getElementById('filterResults');
@@ -692,211 +637,273 @@
             const count = (items || []).length;
             if (meta) {
                 const f = [];
-                if (filters.status && filters.status !== 'all') f.push(`Status: ${filters.status}`);
-                if (filters.date && filters.date !== 'all') f.push(`Date: ${filters.date}`);
-                if (filters.category && filters.category !== 'all') f.push(`Category: ${filters.category}`);
+                if (filters.status && filters.status !== 'all') f.push(`Status: ${formatStatus(filters.status)}`);
+                if (filters.date && filters.date !== 'all') f.push(`Date: ${filters.date.charAt(0).toUpperCase() + filters.date.slice(1).replace(/([A-Z])/g, ' $1')}`);
+                if (filters.category && filters.category !== 'all') f.push(`Category: ${filters.category.charAt(0).toUpperCase() + filters.category.slice(1)}`);
                 meta.textContent = `${count} result${count === 1 ? '' : 's'}${f.length ? ' · ' + f.join(' · ') : ''}`;
             }
-
             if (!items || items.length === 0) {
-                container.innerHTML = '<div class="text-gray-700 dark:text-gray-400">No reports match the current filters.</div>';
+                container.innerHTML = '<div class="text-gray-500 dark:text-gray-400 text-center py-4">No reports match the current filters.</div>';
                 return;
             }
-
             const rows = items.slice(0, 15).map(r => `
-                <div class="grid grid-cols-12 gap-2 py-3 px-2 results-row text-sm">
-                    <div class="col-span-6 text-black dark:text-white truncate">${r.name || 'Untitled'}</div>
-                    <div class="col-span-3 text-gray-600 dark:text-gray-300 truncate">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 report-chip">${(r.category || '').toString()}</span>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">${r.name || 'Untitled'}</div>
+                    <div class="text-sm text-gray-700 dark:text-gray-300">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                            ${(r.category || '').toString().charAt(0).toUpperCase() + (r.category || '').toString().slice(1)}
+                        </span>
                     </div>
-                    <div class="col-span-3 text-gray-500 dark:text-gray-400">${new Date(r.created_at).toLocaleDateString()}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">${new Date(r.created_at).toLocaleDateString()}</div>
                 </div>
             `).join('');
-
             container.innerHTML = `
-                <div class="results-container">
-                    <div class="grid grid-cols-12 gap-2 pb-2 px-2 results-header text-xs font-semibold">
-                    <div class="col-span-6">Report</div>
-                    <div class="col-span-3">Category</div>
-                    <div class="col-span-3">Date</div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-300 dark:border-gray-600 pb-2 mb-2">
+                    <div>Report</div>
+                    <div>Category</div>
+                    <div>Date</div>
                 </div>
-                    <div class="divide-y divide-gray-200/10 results-body">
-                ${rows}
-                    </div>
+                <div>
+                    ${rows}
                 </div>
             `;
         }
-
         // Show generate report modal
         function showGenerateReportModal() {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
             modal.innerHTML = `
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6 w-[600px] max-h-[80vh] overflow-y-auto">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Generate Custom Report</h3>
-                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 text-xl">×</button>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 relative">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Generate Custom Report</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
                     </div>
+                    <div class="overflow-y-auto max-h-[80vh] pr-4">
                     <form id="generateReportForm" class="space-y-6">
                         <!-- Basic Report Info -->
-                        <div class="grid grid-cols-2 gap-4">
-                        <div>
-                                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Report Name *</label>
-                                <input type="text" name="name" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required placeholder="Enter report name">
-                        </div>
-                        <div>
-                                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Report Category</label>
-                                <select name="category" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="general">General</option>
-                                    <option value="applications">Applications</option>
-                                    <option value="scholarships">Scholarships</option>
-                                    <option value="users">Users</option>
-                                    <option value="financial">Financial</option>
-                                    <option value="analytics">Analytics</option>
-                                    <option value="custom">Custom</option>
-                                </select>
-                        </div>
-                        </div>
+                        <fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
+                            <legend class="text-lg font-semibold text-gray-800 dark:text-white px-2">Basic Information</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="report-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="report-name" name="name" required placeholder="Enter report name" 
+                                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                </div>
+                                <div>
+                                    <label for="report-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Category</label>
+                                    <select id="report-category" name="category" 
+                                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="general">General</option>
+                                        <option value="applications">Applications</option>
+                                        <option value="scholarships">Scholarships</option>
+                                        <option value="users">Users</option>
+                                        <option value="financial">Financial</option>
+                                        <option value="analytics">Analytics</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="report-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                                <textarea id="report-description" name="description" rows="2" placeholder="Brief description of the report" 
+                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                            </div>
+                        </fieldset>
                         
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Description</label>
-                            <textarea name="description" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="2" placeholder="Brief description of the report"></textarea>
-                        </div>
-
-                        <!-- Date Range Selection -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Date Range</label>
-                                <select name="dateRange" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="all">All Time</option>
-                                    <option value="today">Today</option>
-                                    <option value="yesterday">Yesterday</option>
-                                    <option value="last7days">Last 7 Days</option>
-                                    <option value="last30days">Last 30 Days</option>
-                                    <option value="last90days">Last 90 Days</option>
-                                    <option value="thisMonth">This Month</option>
-                                    <option value="lastMonth">Last Month</option>
-                                    <option value="thisYear">This Year</option>
-                                    <option value="custom">Custom Range</option>
-                                </select>
+                        <!-- Date Range & Format Selection -->
+                        <fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
+                            <legend class="text-lg font-semibold text-gray-800 dark:text-white px-2">Options</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="date-range" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                                    <select id="date-range" name="dateRange"
+                                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="all">All Time</option>
+                                        <option value="today">Today</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="last7days">Last 7 Days</option>
+                                        <option value="last30days">Last 30 Days</option>
+                                        <option value="last90days">Last 90 Days</option>
+                                        <option value="thisMonth">This Month</option>
+                                        <option value="lastMonth">Last Month</option>
+                                        <option value="thisYear">This Year</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                    <div id="custom-date-inputs" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 hidden">
+                                        <input type="date" name="startDate" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <input type="date" name="endDate" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="report-format" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Format</label>
+                                    <select id="report-format" name="format" 
+                                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="json">JSON</option>
+                                        <option value="csv">CSV</option>
+                                        <option value="pdf">PDF</option>
+                                        <option value="excel">Excel</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Report Format</label>
-                                <select name="format" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="json">JSON</option>
-                                    <option value="csv">CSV</option>
-                                    <option value="pdf">PDF</option>
-                                    <option value="excel">Excel</option>
-                                </select>
-                            </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Data Elements Selection -->
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-3">Select Data Elements to Include *</label>
-                            <div class="grid grid-cols-2 gap-4">
+                        <fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
+                            <legend class="text-lg font-semibold text-gray-800 dark:text-white px-2">Data Elements <span class="text-red-500">*</span></legend>
+                            <div class="space-y-4">
                                 <!-- Users Section -->
-                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                                    <div class="flex items-center mb-3">
-                                        <input type="checkbox" id="includeUsers" name="elements[]" value="users" class="mr-2">
-                                        <label for="includeUsers" class="font-semibold text-gray-800 dark:text-white">Users</label>
-                                    </div>
-                                    <div id="userFieldsContainer" class="ml-6 grid grid-cols-2 gap-2">
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="first_name" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">First Name</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="last_name" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Last Name</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="email" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Email</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="status" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Status</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="role" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Role</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="userFields[]" value="registration_date" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Registration Date</span></label>
+                                <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+                                    <label class="flex items-center space-x-2 text-gray-900 dark:text-white font-medium">
+                                        <input type="checkbox" id="includeUsers" name="elements[]" value="users" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <span>Users</span>
+                                    </label>
+                                    <div id="userFieldsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3 ml-6 text-sm text-gray-700 dark:text-gray-300">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="first_name" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>First Name</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="last_name" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Last Name</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="email" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Email</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="status" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Status</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="role" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Role</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="userFields[]" value="registration_date" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Registration Date</span>
+                                        </label>
                                     </div>
                                 </div>
 
                                 <!-- Applications Section -->
-                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                                    <div class="flex items-center mb-3">
-                                        <input type="checkbox" id="includeApplications" name="elements[]" value="applications" class="mr-2">
-                                        <label for="includeApplications" class="font-semibold text-gray-800 dark:text-white">Applications</label>
-                                    </div>
-                                    <div id="applicationFieldsContainer" class="ml-6 grid grid-cols-2 gap-2">
-                                        <label class="flex items-center"><input type="checkbox" name="applicationFields[]" value="basic_info" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Basic Info</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="applicationFields[]" value="scholarship_details" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Scholarship Title & Award</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="applicationFields[]" value="status" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Status</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="applicationFields[]" value="dates" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Application Dates</span></label>
+                                <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+                                    <label class="flex items-center space-x-2 text-gray-900 dark:text-white font-medium">
+                                        <input type="checkbox" id="includeApplications" name="elements[]" value="applications" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <span>Applications</span>
+                                    </label>
+                                    <div id="applicationFieldsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3 ml-6 text-sm text-gray-700 dark:text-gray-300">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="applicationFields[]" value="basic_info" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Basic Info</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="applicationFields[]" value="scholarship_details" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Scholarship Title & Award</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="applicationFields[]" value="status" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Status</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="applicationFields[]" value="dates" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Application Dates</span>
+                                        </label>
                                     </div>
                                 </div>
 
                                 <!-- Scholarships Section -->
-                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                                    <div class="flex items-center mb-3">
-                                        <input type="checkbox" id="includeScholarships" name="elements[]" value="scholarships" class="mr-2">
-                                        <label for="includeScholarships" class="font-semibold text-gray-800 dark:text-white">Scholarships</label>
-                                    </div>
-                                    <div id="scholarshipFieldsContainer" class="ml-6 grid grid-cols-2 gap-2">
-                                        <label class="flex items-center"><input type="checkbox" name="scholarshipFields[]" value="basic_info" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Basic Info</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="scholarshipFields[]" value="awards" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Award Amount</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="scholarshipFields[]" value="requirements" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Description & Eligibility</span></label>
-                                        <label class="flex items-center"><input type="checkbox" name="scholarshipFields[]" value="statistics" class="mr-2"><span class="text-sm text-gray-600 dark:text-gray-300">Application Count</span></label>
+                                <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+                                    <label class="flex items-center space-x-2 text-gray-900 dark:text-white font-medium">
+                                        <input type="checkbox" id="includeScholarships" name="elements[]" value="scholarships" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <span>Scholarships</span>
+                                    </label>
+                                    <div id="scholarshipFieldsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3 ml-6 text-sm text-gray-700 dark:text-gray-300">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="scholarshipFields[]" value="basic_info" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Basic Info</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="scholarshipFields[]" value="awards" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Award Amount</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="scholarshipFields[]" value="requirements" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Description & Eligibility</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="scholarshipFields[]" value="statistics" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Application Count</span>
+                                        </label>
                                     </div>
                                 </div>
 
                                 <!-- Analytics Section -->
-                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                                    <div class="flex items-center mb-3">
-                                        <input type="checkbox" id="includeAnalytics" name="elements[]" value="analytics" class="mr-2">
-                                        <label for="includeAnalytics" class="font-semibold text-gray-800 dark:text-white">Analytics</label>
-                                    </div>
-                                    <div class="ml-6 space-y-2">
-                                        <label class="flex items-center">
-                                            <input type="checkbox" name="analyticsFields[]" value="user_growth" class="mr-2">
-                                            <span class="text-sm text-gray-600 dark:text-gray-300">User Growth</span>
+                                <div>
+                                    <label class="flex items-center space-x-2 text-gray-900 dark:text-white font-medium">
+                                        <input type="checkbox" id="includeAnalytics" name="elements[]" value="analytics" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <span>Analytics</span>
+                                    </label>
+                                    <div id="analyticsFieldsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3 ml-6 text-sm text-gray-700 dark:text-gray-300">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="analyticsFields[]" value="user_growth" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>User Growth</span>
                                         </label>
-                                        <label class="flex items-center">
-                                            <input type="checkbox" name="analyticsFields[]" value="application_trends" class="mr-2">
-                                            <span class="text-sm text-gray-600 dark:text-gray-300">Application Trends</span>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="analyticsFields[]" value="application_trends" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Application Trends</span>
                                         </label>
-                                        <label class="flex items-center">
-                                            <input type="checkbox" name="analyticsFields[]" value="scholarship_performance" class="mr-2">
-                                            <span class="text-sm text-gray-600 dark:text-gray-300">Scholarship Performance</span>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="analyticsFields[]" value="scholarship_performance" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Scholarship Performance</span>
                                         </label>
-                                        <label class="flex items-center">
-                                            <input type="checkbox" name="analyticsFields[]" value="financial_summary" class="mr-2">
-                                            <span class="text-sm text-gray-600 dark:text-gray-300">Financial Summary</span>
+                                        <label class="flex items-center space-x-2">
+                                            <input type="checkbox" name="analyticsFields[]" value="financial_summary" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                                            <span>Financial Summary</span>
                                         </label>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Additional Options -->
-                        <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                            <h4 class="font-semibold text-gray-800 dark:text-white mb-3">Additional Options</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="includeCharts" value="true" class="mr-2">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Include Charts/Graphs</span>
+                        <fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
+                            <legend class="text-lg font-semibold text-gray-800 dark:text-white px-2">Additional Options</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="includeCharts" value="true" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                    <span>Include Charts/Graphs</span>
                                 </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="includeSummary" value="true" class="mr-2">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Include Executive Summary</span>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="includeSummary" value="true" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                    <span>Include Executive Summary</span>
                                 </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="includeRecommendations" value="true" class="mr-2">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Include Recommendations</span>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="includeRecommendations" value="true" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                    <span>Include Recommendations</span>
                                 </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="autoSchedule" value="true" class="mr-2">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Schedule Regular Reports</span>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="autoSchedule" value="true" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                    <span>Schedule Regular Reports</span>
                                 </label>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Action Buttons -->
-                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-300 dark:border-gray-600">
-                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">Cancel</button>
-                            <button type="button" onclick="previewReport()" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors">Preview</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">Generate Report</button>
+                        <div class="flex justify-end space-x-4 pt-4">
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="button" onclick="previewReport()" class="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Preview
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Generate Report
+                            </button>
                         </div>
                     </form>
+                    </div>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -912,20 +919,20 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData.entries());
-                
+
                 // Convert checkbox arrays to proper format
                 data.elements = formData.getAll('elements[]');
                 data.userFields = formData.getAll('userFields[]');
                 data.applicationFields = formData.getAll('applicationFields[]');
                 data.scholarshipFields = formData.getAll('scholarshipFields[]');
                 data.analyticsFields = formData.getAll('analyticsFields[]');
-                
+
                 // Validate that at least one element is selected
                 if (data.elements.length === 0) {
                     showNotification('Please select at least one data element to include in the report', 'error');
                     return;
                 }
-                
+
                 try {
                     showNotification('Generating report...', 'info');
                     const response = await fetch('/api/reports/generate', {
@@ -936,11 +943,11 @@
                         },
                         body: JSON.stringify(data)
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error('Failed to generate report');
                     }
-                    
+
                     const result = await response.json();
                     const generatedName = (result && result.report && result.report.name) ? result.report.name : (data.name || 'Report');
                     const generatedId = (result && result.reportId) ? ` (ID #${result.reportId})` : '';
@@ -948,7 +955,7 @@
                     modal.remove();
                     await loadReports();
                     await loadReportSummary();
-                    
+
                     // Auto-export if format is specified
                     if (data.format && data.format !== 'json') {
                         showNotification(`Preparing ${data.format.toUpperCase()} export for ${generatedName}...`, 'info');
@@ -956,6 +963,7 @@
                             exportGeneratedReport(result.reportId, data.format);
                         }, 600);
                     }
+
                 } catch (error) {
                     console.error('Error generating report:', error);
                     showNotification('Failed to generate report: ' + error.message, 'error');
@@ -967,12 +975,11 @@
         function setupReportFormInteractions() {
             // Main element checkboxes control sub-fields
             const mainCheckboxes = ['includeUsers', 'includeApplications', 'includeScholarships', 'includeAnalytics'];
-            
             mainCheckboxes.forEach(id => {
                 const checkbox = document.getElementById(id);
                 if (checkbox) {
                     checkbox.addEventListener('change', function() {
-                        const container = this.closest('.border');
+                        const container = this.closest('.border-b'); // Adjusted to find the correct parent
                         const subFields = container.querySelectorAll('input[type="checkbox"]:not([id="' + id + '"])');
                         subFields.forEach(field => {
                             field.disabled = !this.checked;
@@ -985,11 +992,14 @@
             });
 
             // Date range custom option
-            const dateRangeSelect = document.querySelector('select[name="dateRange"]');
-            if (dateRangeSelect) {
+            const dateRangeSelect = document.getElementById('date-range');
+            const customDateInputs = document.getElementById('custom-date-inputs');
+            if (dateRangeSelect && customDateInputs) {
                 dateRangeSelect.addEventListener('change', function() {
                     if (this.value === 'custom') {
-                        showCustomDateRangeInputs();
+                        customDateInputs.classList.remove('hidden');
+                    } else {
+                        customDateInputs.classList.add('hidden');
                     }
                 });
             }
@@ -1009,9 +1019,9 @@
                     const container = document.querySelector(containerSelector);
                     if (!container || !fields) return;
                     const html = fields.map(f => `
-                        <label class="flex items-center">
-                            <input type="checkbox" name="${inputName}[]" value="${f.key}" class="mr-2">
-                            <span class="text-sm text-gray-600 dark:text-gray-300">${f.label}</span>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="${inputName}[]" value="${f.key}" class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500" disabled>
+                            <span>${f.label}</span>
                         </label>
                     `).join('');
                     container.innerHTML = html;
@@ -1023,25 +1033,10 @@
                 renderFields('#applicationFieldsContainer', schema.applications, 'applicationFields');
                 // Scholarships
                 renderFields('#scholarshipFieldsContainer', schema.scholarships, 'scholarshipFields');
-
+                // Analytics
+                renderFields('#analyticsFieldsContainer', schema.analytics, 'analyticsFields');
             } catch (e) {
                 console.warn('Failed to populate dynamic schema', e);
-            }
-        }
-
-        // Show custom date range inputs
-        function showCustomDateRangeInputs() {
-            const dateRangeContainer = document.querySelector('select[name="dateRange"]').parentElement;
-            const existingInputs = dateRangeContainer.querySelector('.custom-date-inputs');
-            
-            if (!existingInputs) {
-                const customInputs = document.createElement('div');
-                customInputs.className = 'custom-date-inputs mt-2 grid grid-cols-2 gap-2';
-                customInputs.innerHTML = `
-                    <input type="date" name="startDate" class="px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Start Date">
-                    <input type="date" name="endDate" class="px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="End Date">
-                `;
-                dateRangeContainer.appendChild(customInputs);
             }
         }
 
@@ -1050,14 +1045,25 @@
             const form = document.getElementById('generateReportForm');
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            
+
+            // Convert checkbox arrays to proper format for preview display
+            data.elements = formData.getAll('elements[]');
+            data.userFields = formData.getAll('userFields[]');
+            data.applicationFields = formData.getAll('applicationFields[]');
+            data.scholarshipFields = formData.getAll('scholarshipFields[]');
+            data.analyticsFields = formData.getAll('analyticsFields[]');
+            data.includeCharts = formData.get('includeCharts') === 'true';
+            data.includeSummary = formData.get('includeSummary') === 'true';
+            data.includeRecommendations = formData.get('includeRecommendations') === 'true';
+            data.autoSchedule = formData.get('autoSchedule') === 'true';
+
             // Validate selections
-            const selectedElements = formData.getAll('elements[]');
+            const selectedElements = data.elements;
             if (selectedElements.length === 0) {
                 showNotification('Please select at least one data element to preview', 'error');
                 return;
             }
-            
+
             // Show preview modal
             showReportPreview(data);
         }
@@ -1067,47 +1073,120 @@
             const previewModal = document.createElement('div');
             previewModal.className = 'fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
             previewModal.innerHTML = `
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6 w-3/4 max-h-3/4 overflow-y-auto">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Report Preview</h3>
-                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 text-xl">×</button>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 relative">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Report Preview</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
                     </div>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="space-y-6 text-gray-700 dark:text-gray-300">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <strong class="text-gray-800 dark:text-white">Report Name:</strong> ${data.name || 'N/A'}
+                                <strong class="block text-sm font-medium text-gray-900 dark:text-white">Report Name:</strong>
+                                <span>${data.name || 'N/A'}</span>
                             </div>
                             <div>
-                                <strong class="text-gray-800 dark:text-white">Category:</strong> ${data.category || 'N/A'}
+                                <strong class="block text-sm font-medium text-gray-900 dark:text-white">Category:</strong>
+                                <span>${data.category || 'N/A'}</span>
                             </div>
                             <div>
-                                <strong class="text-gray-800 dark:text-white">Date Range:</strong> ${data.dateRange || 'N/A'}
+                                <strong class="block text-sm font-medium text-gray-900 dark:text-white">Date Range:</strong>
+                                <span>${data.dateRange || 'N/A'}${data.dateRange === 'custom' && data.startDate && data.endDate ? `: ${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}` : ''}</span>
                             </div>
                             <div>
-                                <strong class="text-gray-800 dark:text-white">Format:</strong> ${data.format || 'N/A'}
+                                <strong class="block text-sm font-medium text-gray-900 dark:text-white">Format:</strong>
+                                <span>${data.format || 'N/A'}</span>
                             </div>
                         </div>
-                        
+
                         <div>
-                            <strong class="text-gray-800 dark:text-white">Selected Elements:</strong>
-                            <ul class="mt-2 space-y-1">
-                                ${formData.getAll('elements[]').map(element => `<li class="text-sm text-gray-600 dark:text-gray-300">• ${element.charAt(0).toUpperCase() + element.slice(1)}</li>`).join('')}
+                            <strong class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Selected Elements:</strong>
+                            <ul class="list-disc list-inside space-y-1">
+                                ${data.elements.map(element => `<li>• ${element.charAt(0).toUpperCase() + element.slice(1)} (${(
+                                    element === 'users' ? data.userFields :
+                                    element === 'applications' ? data.applicationFields :
+                                    element === 'scholarships' ? data.scholarshipFields :
+                                    element === 'analytics' ? data.analyticsFields :
+                                    []
+                                ).map(field => field.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase())).join(', ') || 'All'})</li>`).join('')}
                             </ul>
+                            ${data.includeCharts ? '<p class="mt-2"><strong class="text-gray-900 dark:text-white">Includes:</strong> Charts/Graphs</p>' : ''}
+                            ${data.includeSummary ? '<p><strong class="text-gray-900 dark:text-white">Includes:</strong> Executive Summary</p>' : ''}
+                            ${data.includeRecommendations ? '<p><strong class="text-gray-900 dark:text-white">Includes:</strong> Recommendations</p>' : ''}
+                            ${data.autoSchedule ? '<p><strong class="text-gray-900 dark:text-white">Includes:</strong> Schedule Regular Reports</p>' : ''}
                         </div>
-                        
+
                         <div>
-                            <strong class="text-gray-800 dark:text-white">Description:</strong>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">${data.description || 'No description provided'}</p>
+                            <strong class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Description:</strong>
+                            <p>${data.description || 'No description provided'}</p>
                         </div>
                     </div>
-                    
-                    <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-300 dark:border-gray-600">
-                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Close</button>
-                        <button onclick="generateReportFromPreview()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Generate Report</button>
+
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200">
+                            Close
+                        </button>
+                        <button type="button" onclick="generateReportFromPreview()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200">
+                            Generate Report
+                        </button>
                     </div>
                 </div>
             `;
             document.body.appendChild(previewModal);
+
+            // Re-use the existing form data for generateReportFromPreview
+            window.currentReportFormData = data;
+        }
+
+        // Generate report from preview (re-uses data stored by showReportPreview)
+        async function generateReportFromPreview() {
+            const data = window.currentReportFormData;
+            if (!data) {
+                showNotification('Error: Report data not found for generation.', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Generating report...', 'info');
+                // Close the preview modal before generating
+                const previewModal = document.querySelector('.fixed.inset-0.bg-gray-800');
+                if (previewModal) previewModal.remove();
+
+                const response = await fetch('/api/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate report');
+                }
+
+                const result = await response.json();
+                const generatedName = (result && result.report && result.report.name) ? result.report.name : (data.name || 'Report');
+                const generatedId = (result && result.reportId) ? ` (ID #${result.reportId})` : '';
+                showNotification(`${generatedName}${generatedId} generated successfully!`, 'success');
+                await loadReports();
+                await loadReportSummary();
+
+                // Auto-export if format is specified
+                if (data.format && data.format !== 'json') {
+                    showNotification(`Preparing ${data.format.toUpperCase()} export for ${generatedName}...`, 'info');
+                    setTimeout(() => {
+                        exportGeneratedReport(result.reportId, data.format);
+                    }, 600);
+                }
+
+            } catch (error) {
+                console.error('Error generating report from preview:', error);
+                showNotification('Failed to generate report: ' + error.message, 'error');
+            } finally {
+                window.currentReportFormData = null; // Clear stored data
+            }
         }
 
         // Export generated report
@@ -1121,11 +1200,11 @@
                     },
                     body: JSON.stringify({ format })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to export report');
                 }
-                
+
                 if (format === 'pdf') {
                     showNotification('PDF export initiated. Check your downloads.', 'success');
                 } else {
@@ -1142,6 +1221,7 @@
                     document.body.removeChild(a);
                     showNotification(`Report exported as ${format.toUpperCase()} successfully!`, 'success');
                 }
+
             } catch (error) {
                 console.error('Error exporting report:', error);
                 showNotification('Failed to export report', 'error');
@@ -1153,27 +1233,41 @@
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
             modal.innerHTML = `
-                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-md p-6 w-96">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Export Report</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full mx-4 relative">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Export Report</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[80vh] pr-4">
                     <form id="exportReportForm" class="space-y-4">
                         <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Select Report</label>
-                            <select name="reportId" class="w-full px-4 py-2 border rounded-md" required>
+                            <label for="export-report-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Report</label>
+                            <select id="export-report-id" name="reportId" required 
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 ${reports.map(report => `<option value="${report.id}">${report.name}</option>`).join('')}
                             </select>
                         </div>
                         <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Export Format</label>
-                            <select name="format" class="w-full px-4 py-2 border rounded-md" required>
+                            <label for="export-format" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Export Format</label>
+                            <select id="export-format" name="format" required 
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 <option value="csv" ${preSelectedFormat === 'csv' ? 'selected' : ''}>CSV</option>
                                 <option value="excel" ${preSelectedFormat === 'excel' ? 'selected' : ''}>Excel</option>
+                                <option value="pdf" ${preSelectedFormat === 'pdf' ? 'selected' : ''}>PDF</option>
                             </select>
                         </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export</button>
+                        <div class="flex justify-end space-x-4 pt-4">
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Export
+                            </button>
                         </div>
                     </form>
+                    </div>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -1184,7 +1278,6 @@
                 const formData = new FormData(e.target);
                 const reportId = formData.get('reportId');
                 const format = formData.get('format');
-                
                 try {
                     const response = await fetch(`/api/reports/${reportId}/export`, {
                         method: 'POST',
@@ -1194,15 +1287,15 @@
                         },
                         body: JSON.stringify({ format })
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error('Failed to export report');
                     }
-                    
+
                     if (format === 'pdf') {
-                        const result = await response.json();
-                        showNotification('PDF export not implemented yet', 'warning');
+                        showNotification('PDF export initiated. Check your downloads.', 'success');
                     } else {
+                        showNotification('Preparing download... please wait', 'info');
                         // Download the file
                         const blob = await response.blob();
                         const url = window.URL.createObjectURL(blob);
@@ -1213,10 +1306,11 @@
                         a.click();
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
-                        showNotification('Report exported successfully!', 'success');
+                        showNotification(`Report exported as ${format.toUpperCase()} successfully!`, 'success');
                     }
-                    
+
                     modal.remove();
+
                 } catch (error) {
                     console.error('Error exporting report:', error);
                     showNotification('Failed to export report', 'error');
@@ -1230,11 +1324,9 @@
                 const response = await fetch(`/api/reports/${id}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-                
                 if (!response.ok) {
                     throw new Error('Failed to load report');
                 }
-                
                 const payload = await response.json();
                 const report = (payload && payload.report) ? payload.report : payload;
                 showReportDetails(report);
@@ -1249,11 +1341,9 @@
                 const response = await fetch(`/api/reports/${id}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
-                
                 if (!response.ok) {
                     throw new Error('Failed to load report');
                 }
-                
                 const report = await response.json();
                 showEditReportModal(report);
             } catch (error) {
@@ -1263,98 +1353,170 @@
         }
 
         async function deleteReport(id) {
-            if (!confirm('Are you sure you want to delete this report?')) {
-                return;
-            }
-            
+            // Use custom modal for confirmation instead of browser's native confirm
+            showDeleteReportConfirmation(id);
+        }
+
+        async function confirmDeleteReport(id) {
             try {
+                // Show loading state
+                const confirmBtn = document.querySelector('#confirmDeleteReportBtnModal');
+                if (confirmBtn) {
+                    confirmBtn.textContent = 'Deleting...';
+                    confirmBtn.disabled = true;
+                }
+
                 const response = await fetch(`/api/reports/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to delete report');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 showNotification('Report deleted successfully!', 'success');
-                loadReports();
+                
+                // Close the modal and refresh data
+                const deleteModal = document.getElementById('deleteReportModal');
+                if (deleteModal) {
+                    deleteModal.remove();
+                }
+                
+                // Refresh the reports list and summary
+                await loadReports();
+                await loadReportSummary();
+                
             } catch (error) {
                 console.error('Error deleting report:', error);
-                showNotification('Failed to delete report', 'error');
+                showNotification(`Failed to delete report: ${error.message}`, 'error');
+                
+                // Reset button state
+                const confirmBtn = document.querySelector('#confirmDeleteReportBtnModal');
+                if (confirmBtn) {
+                    confirmBtn.textContent = 'Delete';
+                    confirmBtn.disabled = false;
+                }
             }
         }
 
-        // Show report details
+        function showDeleteReportConfirmation(reportId) {
+            let deleteModal = document.getElementById('deleteReportModal');
+            if (!deleteModal) {
+                deleteModal = document.createElement('div');
+                deleteModal.id = 'deleteReportModal';
+                deleteModal.className = 'hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
+                deleteModal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-6 w-full sm:w-96 text-center mx-4">
+                        <div class="flex items-center justify-center mb-4">
+                            <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4">Confirm Deletion</h3>
+                        <p class="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-6">Are you sure you want to delete this report? This action cannot be undone.</p>
+                        <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+                            <button id="confirmDeleteReportBtnModal" class="w-full sm:w-auto px-4 sm:px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200">Delete</button>
+                            <button id="cancelDeleteReportBtnModal" class="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(deleteModal);
+            }
+
+            const confirmBtn = deleteModal.querySelector('#confirmDeleteReportBtnModal');
+            const cancelBtn = deleteModal.querySelector('#cancelDeleteReportBtnModal');
+
+            // Clear previous listeners to avoid duplicates
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+
+            deleteModal.querySelector('#confirmDeleteReportBtnModal').addEventListener('click', () => confirmDeleteReport(reportId));
+            deleteModal.querySelector('#cancelDeleteReportBtnModal').addEventListener('click', () => deleteModal.classList.add('hidden'));
+
+            deleteModal.classList.remove('hidden');
+        }
+
+        // Show report details modal
         function showReportDetails(report) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
             modal.innerHTML = `
-                <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-lg shadow-md p-6 w-11/12 lg:w-3/4 max-h-[85vh] overflow-y-auto">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${report.name || 'Report'}</h3>
-                        <div class="flex items-center gap-2">
-                            <button id="toggleInlineEdit" class="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">Edit</button>
-                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">×</button>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-8 max-w-2xl w-full mx-4 relative">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">${report.name || 'Report'}</h3>
+                        <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+                            <button id="toggleInlineEdit" class="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200 text-sm">
+                                <i class="fas fa-edit mr-2"></i>Edit
+                            </button>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+                                <i class="fas fa-times text-lg sm:text-xl"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                                <span class="category-chip">${report.category || 'general'}</span>
-                        </div>
-                        <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                                <span class="status-chip status-${(report.status || 'pending').toLowerCase()}">${(report.status || 'pending').replace(/_/g,' ').replace(/\b\w/g, m => m.toUpperCase())}</span>
-                        </div>
-                        <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Created</label>
-                                <div class="text-gray-800 dark:text-gray-100">${report.created_at ? new Date(report.created_at).toLocaleString() : '—'}</div>
-                        </div>
-                        <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Updated</label>
-                                <div class="text-gray-800 dark:text-gray-100">${report.updated_at ? new Date(report.updated_at).toLocaleString() : '—'}</div>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                            <p class="text-gray-800 dark:text-gray-100">${report.description || 'No description'}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data</label>
-                            <pre class="bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 p-4 rounded mt-2 overflow-x-auto">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</pre>
-                        </div>
-                        <!-- Inline edit form -->
-                        <form id="inlineEditForm" class="space-y-4 hidden">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Report Name</label>
-                                    <input type="text" name="name" value="${(report.name||'').replace(/\"/g,'&quot;')}" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                                    <input type="text" name="description" value="${(report.description||'').replace(/\"/g,'&quot;')}" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                </div>
+                    <div class="space-y-4 sm:space-y-6 text-gray-700 dark:text-gray-300 overflow-y-auto max-h-[70vh]">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div>
+                                <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Category:</strong>
+                                <span class="text-xs sm:text-sm">${report.category || 'general'}</span>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data (JSON)</label>
-                                <textarea name="data" rows="8" class="w-full font-mono text-sm px-4 py-3 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</textarea>
-                                <div id="inlineDataError" class="hidden mt-1 text-sm text-red-600">Invalid JSON</div>
+                                <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Status:</strong>
+                                <span class="text-xs sm:text-sm">${(report.status || 'pending').replace(/_/g,' ').replace(/\b\w/g, m => m.toUpperCase())}</span>
                             </div>
-                            <div class="flex justify-end gap-2">
-                                <button type="button" id="cancelInlineEdit" class="px-3 py-1 rounded-md bg-gray-500 hover:bg-gray-600 text-white text-sm">Cancel</button>
-                                <button type="submit" class="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">Save</button>
+                            <div>
+                                <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Created:</strong>
+                                <span class="text-xs sm:text-sm">${report.created_at ? new Date(report.created_at).toLocaleString() : '—'}</span>
+                            </div>
+                            <div>
+                                <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Updated:</strong>
+                                <span class="text-xs sm:text-sm">${report.updated_at ? new Date(report.updated_at).toLocaleString() : '—'}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2">Description:</strong>
+                            <p class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md text-xs sm:text-sm">${report.description || 'No description'}</p>
+                        </div>
+                        <div>
+                            <strong class="block text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2">Data:</strong>
+                            <pre class="bg-gray-50 dark:bg-gray-700 p-3 rounded-md overflow-x-auto text-xs sm:text-sm">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</pre>
+                        </div>
+
+                        <!-- Inline edit form -->
+                        <form id="inlineEditForm" class="space-y-3 sm:space-y-4 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 hidden">
+                            <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Edit Report Details</h4>
+                            <div>
+                                <label for="inline-edit-name" class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Report Name</label>
+                                <input type="text" id="inline-edit-name" name="name" value="${(report.name||'').replace(/"/g,'&quot;')}" 
+                                       class="mt-1 block w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                            </div>
+                            <div>
+                                <label for="inline-edit-description" class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                                <textarea id="inline-edit-description" name="description" rows="3" 
+                                          class="mt-1 block w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">${(report.description||'').replace(/"/g,'&quot;')}</textarea>
+                            </div>
+                            <div>
+                                <label for="inline-edit-data" class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Data (JSON)</label>
+                                <textarea id="inline-edit-data" name="data" rows="6 sm:rows-8" 
+                                          class="mt-1 block w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</textarea>
+                                <div id="inlineDataError" class="text-red-500 text-xs sm:text-sm mt-1 hidden">Invalid JSON</div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                                <button type="button" id="cancelInlineEdit" class="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200 text-sm">Cancel</button>
+                                <button type="submit" class="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200 text-sm">Save</button>
                             </div>
                         </form>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
+
             // Inline edit toggles
             const editBtn = modal.querySelector('#toggleInlineEdit');
             const formEl = modal.querySelector('#inlineEditForm');
             const cancelBtn = modal.querySelector('#cancelInlineEdit');
+
             editBtn?.addEventListener('click', () => formEl?.classList.toggle('hidden'));
             cancelBtn?.addEventListener('click', () => formEl?.classList.add('hidden'));
 
@@ -1363,19 +1525,31 @@
                 e.preventDefault();
                 const fd = new FormData(formEl);
                 const payload = Object.fromEntries(fd.entries());
+
                 try { if (payload.data) JSON.parse(payload.data); } catch { modal.querySelector('#inlineDataError')?.classList.remove('hidden'); return; }
+
                 try {
                     const currentRes = await fetch(`/api/reports/${report.id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
                     const currentPayload = await currentRes.json();
                     const current = (currentPayload && currentPayload.report) ? currentPayload.report : currentPayload;
+                    
                     const mergedData = (() => { try { const newObj = payload.data ? JSON.parse(payload.data) : undefined; const oldObj = current && current.data ? (typeof current.data === 'string' ? JSON.parse(current.data) : current.data) : undefined; return (newObj && oldObj) ? { ...oldObj, ...newObj } : (newObj ?? oldObj); } catch { return undefined; } })();
-                    const putRes = await fetch(`/api/reports/${report.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify({ name: payload.name || current.name, description: payload.description ?? current.description, category: current.category, status: current.status, data: mergedData }) });
+
+                    const putRes = await fetch(`/api/reports/${report.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: JSON.stringify({ name: payload.name || current.name, description: payload.description ?? current.description, category: current.category, status: current.status, data: mergedData })
+                    });
+
                     if (!putRes.ok) throw new Error('Failed to update report');
+
                     // Update heading and description live
                     const nameEl = modal.querySelector('h3'); if (nameEl && payload.name) nameEl.textContent = payload.name;
-                    const descEl = modal.querySelector('p.text-gray-800'); if (descEl && typeof payload.description !== 'undefined') descEl.textContent = payload.description;
+                    const descEl = modal.querySelector('p'); if (descEl && typeof payload.description !== 'undefined') descEl.textContent = payload.description;
+
                     formEl?.classList.add('hidden');
                     showNotification('Report updated successfully', 'success');
+
                 } catch (err) { console.error(err); showNotification('Failed to update report', 'error'); }
             });
         }
@@ -1385,46 +1559,63 @@
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50';
             modal.innerHTML = `
-                <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl p-6 w-11/12 lg:w-3/4 max-h-[90vh] overflow-y-auto">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Edit Report</h3>
-                    <form id="editReportForm" class="space-y-5">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 relative">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Edit Report</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[70vh] pr-4">
+                    <form id="editReportForm" class="space-y-4">
                         <input type="hidden" name="id" value="${report.id}">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Report Name</label>
-                                <input type="text" name="name" value="${report.name || ''}" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Category</label>
-                                <select name="category" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                                    ${['general','applications','scholarships','users','financial','analytics','operations','marketing','custom','finance'].map(c => `<option value="${c}" ${String(report.category||'').toLowerCase()===c?'selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Status</label>
-                                <select name="status" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                                    ${['pending','in_progress','completed','reviewed','exported','archived'].map(s => `<option value="${s}" ${String(report.status||'pending').toLowerCase()===s?'selected':''}>${s.replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase())}</option>`).join('')}
-                            </select>
-                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Created</label>
-                                <input type="text" value="${report.created_at ? new Date(report.created_at).toLocaleString() : '—'}" class="w-full px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" disabled>
+                                <label for="edit-report-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Name</label>
+                                <input type="text" id="edit-report-name" name="name" value="${report.name || ''}" required 
+                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label for="edit-report-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                                <select id="edit-report-category" name="category" required 
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    ${['general','applications','scholarships','users','financial','analytics','operations','marketing','custom','finance'].map(c => `<option value="${c}" ${String(report.category||'').toLowerCase()===c?'selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="edit-report-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                                <select id="edit-report-status" name="status" required 
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    ${['pending','in_progress','completed','reviewed','exported','archived'].map(s => `<option value="${s}" ${String(report.status||'pending').toLowerCase()===s?'selected':''}>${s.replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase())}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="edit-report-created" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Created</label>
+                                <input type="text" id="edit-report-created" value="${report.created_at ? new Date(report.created_at).toLocaleString() : '—'}" disabled 
+                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 cursor-not-allowed">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Description</label>
-                            <textarea name="description" class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="3">${report.description || ''}</textarea>
+                            <label for="edit-report-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                            <textarea id="edit-report-description" name="description" rows="3" 
+                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">${report.description || ''}</textarea>
                         </div>
                         <div>
-                            <label class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Data (JSON)</label>
-                            <textarea name="data" class="w-full font-mono text-sm px-4 py-3 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="10">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</textarea>
-                            <div id="dataError" class="hidden mt-1 text-sm text-red-600">Invalid JSON</div>
+                            <label for="edit-report-data" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Data (JSON)</label>
+                            <textarea id="edit-report-data" name="data" rows="10" 
+                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">${(() => { try { const val = report.data; const obj = (val && typeof val === 'string') ? JSON.parse(val) : (val || {}); return JSON.stringify(obj, null, 2); } catch { return '{}'; } })()}</textarea>
+                            <div id="dataError" class="text-red-500 text-sm mt-1 hidden">Invalid JSON</div>
                         </div>
-                        <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Save Changes</button>
+                        <div class="flex justify-end space-x-4 pt-4">
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200">
+                                Save Changes
+                            </button>
                         </div>
                     </form>
+                    </div>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -1434,6 +1625,7 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData.entries());
+
                 // Validate JSON
                 try { if (data.data) JSON.parse(data.data); } catch (err) { const el=document.getElementById('dataError'); if(el){ el.classList.remove('hidden'); } return; }
                 
@@ -1443,7 +1635,7 @@
                     if (!currentRes.ok) throw new Error('Failed to load existing report');
                     const currentPayload = await currentRes.json();
                     const current = (currentPayload && currentPayload.report) ? currentPayload.report : currentPayload;
-
+                    
                     // Build merged payload: prefer user inputs, fallback to existing
                     const newDataObj = (() => { try { return data.data ? JSON.parse(data.data) : undefined; } catch { return undefined; } })();
                     const existingDataObj = (() => { try { return current && current.data ? (typeof current.data === 'string' ? JSON.parse(current.data) : current.data) : undefined; } catch { return undefined; } })();
@@ -1464,14 +1656,15 @@
                             data: mergedData
                         })
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error('Failed to update report');
                     }
-                    
+
                     showNotification('Report updated successfully!', 'success');
                     modal.remove();
                     loadReports();
+
                 } catch (error) {
                     console.error('Error updating report:', error);
                     showNotification('Failed to update report', 'error');
@@ -1506,249 +1699,190 @@
             }
         });
 
-        function updateSimpleReportChartFromReports(items) {
-            const now = new Date();
-            const days = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date(now);
-                d.setDate(now.getDate() - i);
-                days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
-            }
-            const labels = days.map(d => d.toLocaleDateString());
-            const counts = labels.map(() => 0);
-            (items || []).forEach(r => {
-                if (!r.created_at) return;
-                const k = new Date(r.created_at).toLocaleDateString();
-                const idx = labels.indexOf(k);
-                if (idx >= 0) counts[idx] += 1;
-            });
-            simpleReportChart.data.labels = labels;
-            simpleReportChart.data.datasets[0].data = counts;
-            // Update tick/legend colors from CSS variables each refresh to reflect theme
-            const chartText = getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim();
-            const chartGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim();
-            simpleReportChart.options.scales.x.ticks.color = chartText;
-            simpleReportChart.options.scales.y.ticks.color = chartText;
-            simpleReportChart.options.scales.x.grid.color = chartGrid;
-            simpleReportChart.options.scales.y.grid.color = chartGrid;
-            simpleReportChart.update();
-        }
-
         // Comparative Chart
         const comparativeCtx = document.getElementById('comparativeChart').getContext('2d');
         const comparativeChart = new Chart(comparativeCtx, {
             type: 'bar',
             data: {
-                labels: ['Exported', 'Unexported'],
-                datasets: [
-                    {
-                        label: 'Reports',
-                        data: [0, 0],
-                        backgroundColor: [
-                            'rgba(34, 197, 94, 0.8)',  // Green for exported
-                            'rgba(239, 68, 68, 0.8)'   // Red for unexported
-                        ],
-                        borderColor: [
-                            'rgba(34, 197, 94, 1)',
-                            'rgba(239, 68, 68, 1)'
-                        ],
-                        borderWidth: 2
-                    }
-                ]
+                labels: [],
+                datasets: [{
+                    label: 'Reports by Category',
+                    data: [],
+                    backgroundColor: 'rgba(147, 51, 234, 0.8)',
+                    borderColor: 'rgba(147, 51, 234, 1)',
+                    borderWidth: 1
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim()
-                        }
-                    }
-                },
+                plugins: { legend: { display: true, labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim() } } },
                 scales: {
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim()
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim()
-                        },
-                        beginAtZero: true,
-                        precision: 0
-                    }
+                    x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim() }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim() } },
+                    y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim() }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim() }, beginAtZero: true, precision: 0 }
                 }
             }
         });
 
+        function updateSimpleReportChartFromReports(items) {
+            const grouping = document.getElementById('reportGroupingFilter')?.value || 'daily';
+            let labels = [];
+            let dataMap = new Map();
+
+            const processDate = (date) => {
+                const d = new Date(date);
+                switch (grouping) {
+                    case 'weekly':
+                        d.setDate(d.getDate() - d.getDay()); // Start of week (Sunday)
+                        return `Week of ${d.toLocaleDateString()}`;
+                    case 'monthly':
+                        return `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+                    case 'yearly':
+                        return `${d.getFullYear()}`;
+                    case 'daily':
+                    default:
+                        return d.toLocaleDateString();
+                }
+            };
+
+            items.forEach(report => {
+                const date = processDate(report.created_at);
+                if (!dataMap.has(date)) {
+                    dataMap.set(date, 0);
+                }
+                dataMap.set(date, dataMap.get(date) + 1);
+            });
+
+            labels = Array.from(dataMap.keys());
+            const data = Array.from(dataMap.values());
+
+            simpleReportChart.data.labels = labels;
+            simpleReportChart.data.datasets[0].data = data;
+            simpleReportChart.update();
+        }
+
         function updateComparativeChartFromReports(items) {
-            const exported = (items || []).filter(r => r.status === 'exported').length;
-            const unexported = (items || []).filter(r => r.status !== 'exported').length;
+            const categoryMap = new Map();
             
-            comparativeChart.data.datasets[0].data = [exported, unexported];
-            comparativeChart.options.scales.x.ticks.color = getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim();
-            comparativeChart.options.scales.y.ticks.color = getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim();
-            comparativeChart.options.plugins.legend.labels.color = getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim();
+            items.forEach(report => {
+                const category = report.category || 'general';
+                if (!categoryMap.has(category)) {
+                    categoryMap.set(category, 0);
+                }
+                categoryMap.set(category, categoryMap.get(category) + 1);
+            });
+
+            const labels = Array.from(categoryMap.keys());
+            const data = Array.from(categoryMap.values());
+
+            comparativeChart.data.labels = labels;
+            comparativeChart.data.datasets[0].data = data;
             comparativeChart.update();
         }
 
-        // Helper to refresh chart colors on theme changes without data changes
+        // Function to refresh chart colors based on theme
         function refreshChartColors() {
-            const chartText = getComputedStyle(document.documentElement).getPropertyValue('--chart-text').trim();
-            const chartGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim();
-            if (simpleReportChart) {
-                simpleReportChart.options.scales.x.ticks.color = chartText;
-                simpleReportChart.options.scales.y.ticks.color = chartText;
-                simpleReportChart.options.scales.x.grid.color = chartGrid;
-                simpleReportChart.options.scales.y.grid.color = chartGrid;
-                if (simpleReportChart.options.plugins && simpleReportChart.options.plugins.legend && simpleReportChart.options.plugins.legend.labels) {
-                    simpleReportChart.options.plugins.legend.labels.color = chartText;
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e5e7eb' : '#374151';
+            const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+            // Update simple report chart
+            simpleReportChart.options.plugins.legend.labels.color = textColor;
+            simpleReportChart.options.scales.x.ticks.color = textColor;
+            simpleReportChart.options.scales.x.grid.color = gridColor;
+            simpleReportChart.options.scales.y.ticks.color = textColor;
+            simpleReportChart.options.scales.y.grid.color = gridColor;
+            simpleReportChart.update();
+
+            // Update comparative chart
+            comparativeChart.options.plugins.legend.labels.color = textColor;
+            comparativeChart.options.scales.x.ticks.color = textColor;
+            comparativeChart.options.scales.x.grid.color = gridColor;
+            comparativeChart.options.scales.y.ticks.color = textColor;
+            comparativeChart.options.scales.y.grid.color = gridColor;
+            comparativeChart.update();
+        }
+
+        // Quick export functions for the export buttons
+        async function quickExport(format) {
+            try {
+                // Get current filter values
+                const status = document.getElementById('reportTypeFilter')?.value || 'all';
+                const category = document.getElementById('reportCategoryFilter')?.value || 'all';
+                const date = document.getElementById('reportDateFilter')?.value || 'all';
+                const startDate = document.getElementById('reportStartDateFilter')?.value || '';
+                const endDate = document.getElementById('reportEndDateFilter')?.value || '';
+
+                const filters = {
+                    status: status !== 'all' ? status : undefined,
+                    category: category !== 'all' ? category : undefined,
+                    date: date !== 'all' ? date : undefined,
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined
+                };
+
+                // Remove undefined values
+                Object.keys(filters).forEach(key => {
+                    if (filters[key] === undefined) {
+                        delete filters[key];
+                    }
+                });
+
+                showNotification(`Preparing ${format.toUpperCase()} export...`, 'info');
+
+                const response = await fetch('/api/reports/bulk-export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ format, filters })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to export reports');
                 }
-                simpleReportChart.update();
+
+                if (format === 'pdf') {
+                    const result = await response.json();
+                    showNotification(`Bulk PDF export initiated for ${result.totalReports} reports.`, 'success');
+                } else {
+                    // Download the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bulk_reports_export_${new Date().toISOString().split('T')[0]}.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showNotification(`Bulk export as ${format.toUpperCase()} completed successfully!`, 'success');
+                }
+
+            } catch (error) {
+                console.error('Error in quick export:', error);
+                showNotification('Failed to export reports: ' + error.message, 'error');
             }
-            if (comparativeChart) {
-                comparativeChart.options.scales.x.ticks.color = chartText;
-                comparativeChart.options.scales.y.ticks.color = chartText;
-                if (comparativeChart.options.plugins && comparativeChart.options.plugins.legend && comparativeChart.options.plugins.legend.labels) {
-                    comparativeChart.options.plugins.legend.labels.color = chartText;
-                }
-                comparativeChart.update();
+        }
+
+        // Add event listeners for quick export buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            // Quick export buttons
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+            const exportCSVBtn = document.getElementById('exportCSVBtn');
+            const exportPDFBtn = document.getElementById('exportPDFBtn');
+
+            if (exportExcelBtn) {
+                exportExcelBtn.addEventListener('click', () => quickExport('excel'));
             }
-        }
-
-        // Apply correct colors on initial load and when system preference changes
-        try { refreshChartColors(); } catch (e) {}
-        try {
-            const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-            if (mq && typeof mq.addEventListener === 'function') {
-                mq.addEventListener('change', refreshChartColors);
+            if (exportCSVBtn) {
+                exportCSVBtn.addEventListener('click', () => quickExport('csv'));
             }
-        } catch (e) {}
-
-        // Export functionality
-        const exportExcelBtn = document.getElementById('exportExcelBtn');
-        const exportCSVBtn = document.getElementById('exportCSVBtn');
-        
-        if (exportExcelBtn) {
-            exportExcelBtn.addEventListener('click', () => {
-                showExportReportModal('excel');
-            });
-        }
-        
-        if (exportCSVBtn) {
-            exportCSVBtn.addEventListener('click', () => {
-                showExportReportModal('csv');
-            });
-        }
-
-        // Sidebar Submenu Toggle
-        const reportsSubmenuToggle = document.getElementById('reportsSubmenuToggle');
-        const reportsSubmenu = document.getElementById('reportsSubmenu');
-
-        if (reportsSubmenuToggle && reportsSubmenu) {
-        reportsSubmenuToggle.addEventListener('click', () => {
-            reportsSubmenu.classList.toggle('hidden');
-        });
-        }
-
-        // Modals Interactivity
-        const editReportModal = document.getElementById('editReportModal');
-        const deleteReportModal = document.getElementById('deleteReportModal');
-        const notification = document.getElementById('notification');
-        const notificationMessage = document.getElementById('notificationMessage');
-
-        document.querySelectorAll('.editReportBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (editReportModal) {
-                editReportModal.classList.remove('hidden');
-                }
-            });
-        });
-
-        document.querySelectorAll('.deleteReportBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (deleteReportModal) {
-                deleteReportModal.classList.remove('hidden');
-                }
-            });
-        });
-
-        const saveEditReportBtn = document.getElementById('saveEditReportBtn');
-        const cancelEditReportBtn = document.getElementById('cancelEditReportBtn');
-        const confirmDeleteReportBtn = document.getElementById('confirmDeleteReportBtn');
-        const cancelDeleteReportBtn = document.getElementById('cancelDeleteReportBtn');
-
-        if (saveEditReportBtn && editReportModal) {
-            saveEditReportBtn.addEventListener('click', () => {
-            editReportModal.classList.add('hidden');
-            showNotification('Report edited successfully!');
-        });
-        }
-
-        if (cancelEditReportBtn && editReportModal) {
-            cancelEditReportBtn.addEventListener('click', () => {
-            editReportModal.classList.add('hidden');
-        });
-        }
-
-        if (confirmDeleteReportBtn && deleteReportModal) {
-            confirmDeleteReportBtn.addEventListener('click', () => {
-            deleteReportModal.classList.add('hidden');
-            showNotification('Report deleted successfully!');
-        });
-        }
-
-        if (cancelDeleteReportBtn && deleteReportModal) {
-            cancelDeleteReportBtn.addEventListener('click', () => {
-            deleteReportModal.classList.add('hidden');
-        });
-        }
-
-        function showNotification(message, type = 'success') {
-            notificationMessage.textContent = message;
-            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md shadow-md ${
-                type === 'success' ? 'bg-green-500' : 
-                type === 'error' ? 'bg-red-500' : 
-                type === 'warning' ? 'bg-yellow-500' : 
-                'bg-blue-500'
-            } text-white`;
-            notification.classList.remove('hidden');
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 3000);
-        }
-
-        // Drag-and-Drop Functionality
-        const reportTableBody = document.querySelector('#reportTable tbody');
-        let draggedRow = null;
-
-        if (reportTableBody) {
-        reportTableBody.addEventListener('dragstart', (e) => {
-            draggedRow = e.target;
-        });
-
-        reportTableBody.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        reportTableBody.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (draggedRow && e.target.tagName === 'TR') {
-                reportTableBody.insertBefore(draggedRow, e.target.nextSibling);
+            if (exportPDFBtn) {
+                exportPDFBtn.addEventListener('click', () => quickExport('pdf'));
             }
         });
-        }
     </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function(){
-              var fab=document.getElementById('admin-fab-menu'), ov=document.getElementById('admin-fab-overlay'), md=document.getElementById('admin-fab-modal'), x=document.getElementById('admin-fab-close');
-              if(fab&&ov&&md){ function o(){ov.classList.remove('hidden'); md.classList.remove('hidden');}
-                function c(){ov.classList.add('hidden'); md.classList.add('hidden');}
-                fab.addEventListener('click',o); ov.addEventListener('click',c); if(x) x.addEventListener('click',c); }
-            });
-          </script>
 </body>
 </html>

@@ -13,7 +13,8 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import roleRoutes from './routes/roles.js';
 import serviceRoutes from './routes/services.js';
-import partnerRoutes from './routes/partners.js';
+import adminServicesRoutes from './routes/admin-services.js';
+
 import paymentRoutes from './routes/payments.js';
 import scholarshipRoutes from './routes/scholarships.js';
 import contactRoutes from './routes/contact.js';
@@ -23,6 +24,7 @@ import adminRoutes from './routes/admin.js';
 import adminAccountRoutes from './routes/adminAccount.js';
 import adminDashboardRoutes from './routes/admin-dashboard.js';
 import adminApplicationsRoutes from './routes/admin-applications.js';
+import adminPartnersRoutes from './routes/admin-partners.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
 import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
 import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
@@ -34,7 +36,9 @@ import reportsRoutes from './routes/reports.js'; // ✅ ADDED HERE
 import advertisementRoutes from './routes/advertisements.js'; // ✅ ADDED HERE
 import servicesMonetizationRoutes from './routes/services-monetization.js';
 import scholarshipDocumentsRoutes from './routes/scholarship-documents.js';
-import partnershipImagesRoutes from './routes/partnership-images.js';
+import adminProfileRoutes from './routes/admin-profile.js'; // ✅ ADDED HERE
+import passwordChangeRoutes from './routes/password-change.js'; // NEW PASSWORD CHANGE ROUTES
+
 import userNotificationsApiRoutes from './routes/user-notifications.js';
 import teamRoutes from './routes/team.js';
 
@@ -59,6 +63,7 @@ app.use(compression({
 }));
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
@@ -66,9 +71,10 @@ app.use(session({
     cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
-// Global request timeout safeguard (10s)
+// API request timeout safeguard (60s) — avoid interfering with static file streams
 app.use((req, res, next) => {
-    res.setTimeout(10000, () => {
+    if (!req.path.startsWith('/api')) return next();
+    res.setTimeout(60000, () => {
         if (!res.headersSent) {
             res.status(503).json({ error: true, message: 'Request timed out' });
         }
@@ -77,13 +83,13 @@ app.use((req, res, next) => {
 });
 
 // Global API rate limiter (per IP)
-const apiLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 300,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-app.use('/api', apiLimiter);
+// const apiLimiter = rateLimit({
+//     windowMs: 60 * 1000,
+//     max: 300,
+//     standardHeaders: true,
+//     legacyHeaders: false
+// });
+// app.use('/api', apiLimiter);
 
 // Basic rate limiting for heavy endpoints
 const heavyLimiter = rateLimit({
@@ -97,7 +103,7 @@ app.use('/api/admin-dashboard', heavyLimiter);
 app.use('/api/admin-applications', heavyLimiter);
 app.use('/api/scholarships', heavyLimiter);
 app.use('/api/scholarship-documents', heavyLimiter);
-app.use('/api/partnership-images', heavyLimiter);
+
 app.use('/api/user-notifications', heavyLimiter);
 
 // Database connection test
@@ -115,7 +121,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/services', serviceRoutes);
-app.use('/api/partners', partnerRoutes);
+app.use('/api/admin/services', adminServicesRoutes);
+
 app.use('/api/payments', paymentRoutes);
 app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/contact', contactRoutes);
@@ -123,8 +130,10 @@ app.use('/api/subscribe-newsletter', newsletterRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminAccountRoutes);
+app.use('/api/admin/partners', adminPartnersRoutes);
 app.use('/api/admin-dashboard', adminDashboardRoutes);
 app.use('/api/admin-dashboard', adminApplicationsRoutes);
+app.use('/api/admin/profile', adminProfileRoutes); // ✅ ADDED HERE
 app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
 app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
 app.use('/api/security-questions', securityQuestionsRoutes); // ✅ ADDED HERE
@@ -136,7 +145,8 @@ app.use('/api/reports', reportsRoutes); // ✅ ADDED HERE
 app.use('/api/advertisements', advertisementRoutes); // ✅ ADDED HERE
 app.use('/api/services-monetization', servicesMonetizationRoutes);
 app.use('/api/scholarship-documents', scholarshipDocumentsRoutes);
-app.use('/api/partnership-images', partnershipImagesRoutes);
+app.use('/api/password-change', passwordChangeRoutes); // NEW PASSWORD CHANGE ROUTES
+
 app.use('/api/user-notifications', userNotificationsApiRoutes);
 app.use('/api/team', teamRoutes);
 
@@ -154,33 +164,45 @@ app.use(async (req, res, next) => {
 
         let blockedPages = [];
         try { blockedPages = JSON.parse(settings.maintenance_pages || '[]'); } catch { blockedPages = []; }
-
-        // If specific pages selected: only block those. If none selected: block nothing (advanced mode intent).
         if (blockedPages.length === 0) return next();
 
-        // Normalize requested path to a page filename
-        let p = req.path;
-        if (!p || p === '/') p = '/home.html';
-        // Only consider direct HTML requests or root
-        const isHtml = p.endsWith('.html') || p === '/home.html';
-        if (!isHtml) return next();
+        // Normalize request path, consider clean URLs and .html, skip asset-like extensions
+        let p = (req.path || '/').toLowerCase();
+        if (p === '/') p = '/home.html';
+        const lastSeg = p.split('/').pop();
+        const extMatch = lastSeg.match(/\.([a-z0-9]+)$/i);
+        const ext = extMatch ? extMatch[1] : '';
+        if (ext && ext !== 'html') return next(); // allow assets
 
-        const fileName = p.split('/').pop().toLowerCase();            // e.g., service.html
-        const baseNoExt = fileName.replace(/\.html$/i, '');           // e.g., service
+        const fileName = ext === 'html' ? lastSeg : `${lastSeg}.html`; // ensure filename-like
+        const baseNoExt = lastSeg.replace(/\.html$/i, '');
+        const pLower = p;
+        const pNoSlash = pLower.startsWith('/') ? pLower.slice(1) : pLower;
+        const pNoSlashBase = pNoSlash.replace(/\.html$/i, '');
+
         const normalizedBlocked = blockedPages.map(x => {
             const s = String(x || '').toLowerCase();
-            return { full: s, base: s.replace(/\.html$/i, '') };
+            const noSlash = s.startsWith('/') ? s.slice(1) : s;
+            const base = s.replace(/\.html$/i, '');
+            const noSlashBase = noSlash.replace(/\.html$/i, '');
+            return { full: s, noSlash, base, noSlashBase };
         });
 
         const isBlocked = normalizedBlocked.some(entry => {
-            return entry.full === fileName || entry.full === p.toLowerCase() || entry.base === baseNoExt;
+            return entry.full === fileName
+                || entry.full === pLower
+                || entry.base === baseNoExt
+                || entry.noSlash === fileName
+                || entry.noSlash === pNoSlash
+                || entry.noSlashBase === baseNoExt
+                || entry.noSlashBase === pNoSlashBase;
         });
+
         if (isBlocked) {
             return res.sendFile(path.join(__dirname, 'public', 'maintenance.html'));
         }
         return next();
     } catch (e) {
-        // On error, fail open
         return next();
     }
 });
@@ -191,7 +213,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Serve static HTML files with caching for assets
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
-        // Cache busting via filenames is assumed for assets; HTML should not be cached aggressively
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-cache');
         } else if (/(\.css|\.js|\.png|\.jpg|\.jpeg|\.gif|\.svg|\.webp|\.woff2?)$/i.test(filePath)) {
@@ -207,7 +228,6 @@ app.get('*', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  // Log error details
   console.error('--- ERROR START ---');
   console.error('Time:', new Date().toISOString());
   console.error('Request:', req.method, req.originalUrl);
@@ -219,7 +239,9 @@ app.use((err, req, res, next) => {
   if (err.status) console.error('HTTP status:', err.status);
   console.error('--- ERROR END ---');
 
-  // Respond with JSON error
+  if (res.headersSent) {
+    return next(err);
+  }
   res.status(err.status || 500).json({
     error: true,
     message: err.message || 'Internal Server Error',
