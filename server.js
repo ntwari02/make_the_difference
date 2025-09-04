@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import session from 'express-session';
-import MySQLStore from 'express-mysql-session';
+import connectMySQL from 'express-mysql-session';
 import dotenv from 'dotenv';
 import pool from './config/database.js';
 import compression from 'compression';
@@ -69,6 +69,7 @@ app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 
 // Persistent session store (MySQL) to avoid MemoryStore in production
+const MySQLStore = connectMySQL(session);
 const sessionStore = new MySQLStore({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,

@@ -1,0 +1,30 @@
+/* Admin Sidebar Transform Fix */
+/* This file ensures the sidebar transform works properly */
+
+#admin-sidebar {
+    /* Force transform to work */
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+}
+
+#admin-sidebar:not(.-translate-x-full) {
+    transform: translateX(0) !important;
+}
+
+/* Desktop behavior */
+@media (min-width: 768px) {
+    #admin-sidebar {
+        transform: translateX(0) !important;
+    }
+}
+
+/* Mobile behavior */
+@media (max-width: 767px) {
+    #admin-sidebar {
+        transform: translateX(-100%) !important;
+    }
+    
+    #admin-sidebar:not(.-translate-x-full) {
+        transform: translateX(0) !important;
+    }
+}

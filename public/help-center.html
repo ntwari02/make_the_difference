@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center - Make The Difference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="js/maintenance-guard.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/include-navbar.js" defer></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <!-- Navbar will be included here -->
+    <div id="navbar-container"></div>
+
+    <main class="min-h-screen pt-20 pb-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Help Center
+                </h1>
+                <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                    Need assistance? We're here to help! Submit a help request and our support team will get back to you as soon as possible.
+                </p>
+            </div>
+
+            <!-- Help Categories -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-question-circle text-2xl text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">General Support</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Questions about our services, platform usage, or general inquiries</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-graduation-cap text-2xl text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Scholarship Help</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Assistance with scholarship applications, requirements, or eligibility</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-tools text-2xl text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Technical Issues</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Problems with the website, login issues, or technical difficulties</p>
+                </div>
+            </div>
+
+            <!-- Submit Help Request Form -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-12">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Submit Help Request</h2>
+                
+                <form id="help-request-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Email *
+                            </label>
+                            <input type="email" id="email" name="email" required 
+                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                   placeholder="Your email address">
+                        </div>
+                        <div>
+                            <label for="painPoint" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Issue Type *
+                            </label>
+                            <select id="painPoint" name="painPoint" required 
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Select issue type</option>
+                                <option value="password_reset">Password Reset</option>
+                                <option value="login_issues">Login Issues</option>
+                                <option value="scholarship_help">Scholarship Help</option>
+                                <option value="technical_support">Technical Support</option>
+                                <option value="account_issues">Account Issues</option>
+                                <option value="general_inquiry">General Inquiry</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Subject *
+                        </label>
+                        <input type="text" id="subject" name="subject" required 
+                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                               placeholder="Brief description of your issue">
+                    </div>
+                    
+                    <div>
+                        <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Message *
+                        </label>
+                        <textarea id="message" name="message" rows="5" required 
+                                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                  placeholder="Please provide detailed information about your issue..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" 
+                                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- My Help Requests -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">My Help Requests</h2>
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm text-gray-600 dark:text-gray-300">Show:</label>
+                        <select id="page-size-selector" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white">
+                            <option value="5">5 per page</option>
+                            <option value="10">10 per page</option>
+                            <option value="20">20 per page</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="help-requests-container">
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600 dark:text-gray-300">Loading your help requests...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-2xl text-green-600 dark:text-green-400"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Request Submitted!</h3>
+                <p class="text-gray-600 dark:text-gray-300 mb-6">
+                    Your help request has been submitted successfully. Our support team will review it and get back to you soon.
+                </p>
+                <button id="close-success-modal" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Request Detail Modal -->
+    <div id="request-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Help Request Details</h3>
+                <button id="close-detail-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="request-detail-content" class="space-y-4">
+                <!-- Content will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        function checkAuth() {
+            const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+            const user = localStorage.getItem('user') || localStorage.getItem('currentUser');
+            
+            if (!token || !user) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Get current user info
+        function getCurrentUser() {
+            try {
+                const userStr = localStorage.getItem('user') || localStorage.getItem('currentUser');
+                return userStr ? JSON.parse(userStr) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Submit help request
+        async function submitHelpRequest(formData) {
+            try {
+                const user = getCurrentUser();
+                if (!user) {
+                    throw new Error('User not authenticated');
+                }
+
+                const response = await fetch('/api/help/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`
+                    },
+                                         body: JSON.stringify({
+                         email: formData.get('email'),
+                         painPoint: formData.get('painPoint'),
+                         subject: formData.get('subject'),
+                         message: formData.get('message')
+                     })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to submit help request');
+                }
+
+                return result;
+            } catch (error) {
+                console.error('Error submitting help request:', error);
+                throw error;
+            }
+        }
+
+        // Pagination variables
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let allHelpRequests = [];
+
+        // Load user's help requests
+        async function loadHelpRequests() {
+            try {
+                const user = getCurrentUser();
+                if (!user) return;
+
+                const response = await fetch(`/api/help/user-requests/${user.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to load help requests');
+                }
+
+                allHelpRequests = result.items || [];
+                currentPage = 1;
+                displayHelpRequests();
+            } catch (error) {
+                console.error('Error loading help requests:', error);
+                allHelpRequests = [];
+                displayHelpRequests();
+            }
+        }
+
+                // Display help requests with pagination
+        function displayHelpRequests() {
+            const container = document.getElementById('help-requests-container');
+            
+            if (!allHelpRequests || allHelpRequests.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Help Requests</h3>
+                        <p class="text-gray-600 dark:text-gray-300">You haven't submitted any help requests yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(allHelpRequests.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentRequests = allHelpRequests.slice(startIndex, endIndex);
+
+            // Display current page requests
+            const requestsHtml = currentRequests.map(request => {
+                const statusBadge = getStatusBadge(request.status);
+                const createdDate = new Date(request.created_at).toLocaleDateString();
+                
+                return `
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-4 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                    ${request.subject}
+                                </h3>
+                                <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                    <span><i class="fas fa-envelope mr-1"></i>${request.email}</span>
+                                    <span><i class="fas fa-calendar mr-1"></i>${createdDate}</span>
+                                    <span>${getPainPointBadge(request.pain_point)}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-700 dark:text-gray-200 mb-4 line-clamp-2">
+                            ${request.message}
+                        </p>
+                        
+                        <div class="flex justify-between items-center">
+                            <button onclick="viewRequestDetail(${request.id})" 
+                                    class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </button>
+                            
+                            <div class="flex items-center gap-2">
+                                ${request.status === 'resolved' ? 
+                                    `<span class="text-sm text-gray-500 dark:text-gray-400">
+                                        Resolved on ${new Date(request.updated_at).toLocaleDateString()}
+                                    </span>` : ''
+                                }
+                                ${request.status === 'active' ? 
+                                    `<span class="text-sm text-blue-500 dark:text-blue-400 flex items-center gap-1">
+                                        <i class="fas fa-comment"></i>Feedback received
+                                    </span>` : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add pagination controls
+            const paginationHtml = `
+                <div class="mt-8 flex items-center justify-between">
+                    <div class="text-sm text-gray-700 dark:text-gray-300">
+                        Showing ${startIndex + 1} to ${Math.min(endIndex, allHelpRequests.length)} of ${allHelpRequests.length} requests
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePage(${currentPage - 1})" 
+                                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                ${currentPage === 1 ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                        </button>
+                        <span class="px-3 py-2 text-sm text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
+                            Page ${currentPage} of ${totalPages}
+                        </span>
+                        <button onclick="changePage(${currentPage + 1})" 
+                                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                ${currentPage === totalPages ? 'disabled' : ''}>
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = requestsHtml + paginationHtml;
+        }
+
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const statusConfig = {
+                'pending': { color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300', text: 'Pending' },
+                'active': { color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300', text: 'Active' },
+                'resolved': { color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', text: 'Resolved' }
+            };
+            
+            const config = statusConfig[status] || statusConfig['pending'];
+            return `<span class="px-3 py-1 rounded-full text-xs font-medium ${config.color}">${config.text}</span>`;
+        }
+
+        // Get pain point badge HTML
+        function getPainPointBadge(painPoint) {
+            const painPointConfig = {
+                'password_reset': { color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300', text: 'Password Reset', icon: 'fas fa-key' },
+                'login_issues': { color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300', text: 'Login Issues', icon: 'fas fa-sign-in-alt' },
+                'scholarship_help': { color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', text: 'Scholarship Help', icon: 'fas fa-graduation-cap' },
+                'technical_support': { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', text: 'Technical Support', icon: 'fas fa-tools' },
+                'account_issues': { color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300', text: 'Account Issues', icon: 'fas fa-user-cog' },
+                'general_inquiry': { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300', text: 'General Inquiry', icon: 'fas fa-question' }
+            };
+            
+            const config = painPointConfig[painPoint] || painPointConfig['general_inquiry'];
+            return `<span class="px-2 py-1 rounded text-xs font-medium ${config.color}"><i class="${config.icon} mr-1"></i>${config.text}</span>`;
+        }
+
+        // Change page function
+        function changePage(page) {
+            const totalPages = Math.ceil(allHelpRequests.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayHelpRequests();
+            }
+        }
+
+        // Change page size function
+        function changePageSize(newSize) {
+            itemsPerPage = parseInt(newSize);
+            currentPage = 1; // Reset to first page
+            displayHelpRequests();
+        }
+
+
+
+        // View request detail
+        async function viewRequestDetail(requestId) {
+            try {
+                const response = await fetch(`/api/help/request/${requestId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to load request details');
+                }
+
+                const request = result.request;
+                const content = document.getElementById('request-detail-content');
+                
+                                 content.innerHTML = `
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                         <div>
+                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
+                             <p class="text-gray-900 dark:text-white">${request.email}</p>
+                         </div>
+                         <div>
+                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Issue Type</label>
+                             <p class="text-gray-900 dark:text-white">${getPainPointBadge(request.pain_point)}</p>
+                         </div>
+                         <div>
+                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                             <p class="text-gray-900 dark:text-white">${getStatusBadge(request.status).replace('px-3 py-1 rounded-full text-xs font-medium ', '')}</p>
+                         </div>
+                         <div>
+                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Created</label>
+                             <p class="text-gray-900 dark:text-white">${new Date(request.created_at).toLocaleString()}</p>
+                         </div>
+                     </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Subject</label>
+                        <p class="text-gray-900 dark:text-white font-medium">${request.subject}</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Message</label>
+                        <p class="text-gray-900 dark:text-white">${request.message}</p>
+                    </div>
+                    
+                    ${request.status === 'active' ? `
+                    <div class="mb-6">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                            <div class="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
+                                <i class="fas fa-comment"></i>
+                                <span class="font-medium">Admin Feedback Received</span>
+                            </div>
+                            <p class="text-blue-600 dark:text-blue-400 text-sm">
+                                An administrator has reviewed your request and provided feedback. 
+                                Please check your email for details or contact support if you need further assistance.
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+
+                `;
+                
+                document.getElementById('request-detail-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading request details:', error);
+                alert('Failed to load request details. Please try again.');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+            
+            // Load help requests
+            loadHelpRequests();
+            
+            // Page size selector
+            const pageSizeSelector = document.getElementById('page-size-selector');
+            if (pageSizeSelector) {
+                pageSizeSelector.addEventListener('change', function(e) {
+                    changePageSize(e.target.value);
+                });
+            }
+            
+            // Form submission
+            const form = document.getElementById('help-request-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+                    
+                    const formData = new FormData(form);
+                    await submitHelpRequest(formData);
+                    
+                    // Show success modal
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    
+                    // Reset form
+                    form.reset();
+                    
+                    // Reload help requests
+                    loadHelpRequests();
+                    
+                } catch (error) {
+                    alert('Failed to submit help request: ' + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+            
+            // Modal close handlers
+            document.getElementById('close-success-modal').addEventListener('click', function() {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-detail-modal').addEventListener('click', function() {
+                document.getElementById('request-detail-modal').classList.add('hidden');
+            });
+            
+            // Close modals when clicking outside
+            document.getElementById('success-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('request-detail-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="col-span-1 md:col-span-2">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Make The Difference</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        Empowering students to achieve their dreams through scholarships, mentorship, and comprehensive support.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="home.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Home</a></li>
+                        <li><a href="about.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">About</a></li>
+                        <li><a href="scholarship.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Scholarships</a></li>
+                        <li><a href="service.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Services</a></li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="help-center.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Help Center</a></li>
+                        <li><a href="contact.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Contact</a></li>
+                        <li><a href="faq.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        © 2024 Make The Difference. All rights reserved.
+                    </p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm">Privacy Policy</a>
+                        <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/logout-utility.js"></script>
+    <script>
+        // Initialize navbar on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Include navbar
+            includeNavbar();
+        });
+    </script>
+</body>
+</html>

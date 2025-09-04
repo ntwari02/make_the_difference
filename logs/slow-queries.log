@@ -2418,3 +2418,32 @@
 2025-09-03T03:40:54.273Z [810ms] UPDATE help_requests SET status = ?, updated_at = NOW() WHERE id = ?
 2025-09-03T03:40:54.372Z [340ms] UPDATE help_requests SET status = ?, updated_at = NOW() WHERE id = ?
 2025-09-03T03:40:56.676Z [608ms] UPDATE help_requests SET status = ?, updated_at = NOW() WHERE id = ?
+2025-09-04T05:32:21.940Z [1230ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:22.011Z [1294ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:22.027Z [1343ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:22.672Z [1338ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:25.362Z [349ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:27.828Z [493ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:27.879Z [517ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:28.888Z [874ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:29.715Z [388ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-04T05:32:47.595Z [465ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-09-04T05:32:47.709Z [493ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-04T05:32:47.827Z [300ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-04T05:32:50.385Z [324ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(application_date) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(application_date) = DATE_SUB(CURDATE(), INTERVAL 1 DA
+2025-09-04T05:32:51.294Z [316ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        

@@ -135,9 +135,7 @@ config/secrets.json
 # Session store
 sessions/
 
-# Upload directories
-uploads/
-public/uploads/
+
 
 # Cache directories
 .cache/
