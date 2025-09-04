@@ -23,10 +23,24 @@ const upload = multer({ storage });
 // GET current settings
 router.get('/', bypassAuth, async (req, res) => {
     try {
-        // Ensure maintenance_pages column exists
+        // Ensure maintenance_pages column exists (check before altering to avoid duplicate errors)
         try {
-            await pool.query("ALTER TABLE general_settings ADD COLUMN maintenance_pages JSON NULL AFTER maintenance_mode");
-        } catch (e) { /* ignore if exists */ }
+            const [dbRows] = await pool.query("SELECT DATABASE() AS db");
+            const currentDb = dbRows && dbRows[0] ? dbRows[0].db : null;
+            if (currentDb) {
+                const [cols] = await pool.query(
+                    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'general_settings' 
+                     AND COLUMN_NAME = 'maintenance_pages' LIMIT 1`,
+                    [currentDb]
+                );
+                if (!cols || cols.length === 0) {
+                    await pool.query("ALTER TABLE general_settings ADD COLUMN maintenance_pages JSON NULL AFTER maintenance_mode");
+                }
+            }
+        } catch (e) {
+            // Intentionally ignore here so settings endpoint still responds
+        }
         const [rows] = await pool.query("SELECT * FROM general_settings ORDER BY id DESC LIMIT 1");
         res.json(rows[0] || {});
     } catch (err) {
