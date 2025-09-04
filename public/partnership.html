@@ -48,6 +48,30 @@
   <style>
     .no-scrollbar::-webkit-scrollbar{ display:none; }
     .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    /* Individual partner navigation arrows */
+    @media (max-width: 768px) {
+      .partner-nav-btn {
+        opacity: 0.7 !important;
+        transition: opacity 0.2s ease;
+      }
+      .partner-nav-btn:hover,
+      .partner-nav-btn:active {
+        opacity: 1 !important;
+      }
+    }
+    /* Show arrows on touch devices */
+    @media (hover: none) and (pointer: coarse) {
+      .partner-nav-btn {
+        opacity: 0.8 !important;
+      }
+    }
   </style>
 </head>
 
@@ -128,7 +152,7 @@
             <button id="partnersPrev" type="button" class="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
               <i class="bi bi-chevron-left text-xl"></i>
             </button>
-            <div id="partnersCarousel" class="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-2 pr-6">
+            <div id="partnersCarousel" class="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-2 pr-6 pl-4">
             </div>
             <button id="partnersNext" type="button" class="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
               <i class="bi bi-chevron-right text-xl"></i>
@@ -448,39 +472,107 @@
         ];
 
         const norm = p => { if(!p) return ''; let s=String(p).replace(/\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+        // Define beautiful gradient colors and icons for each partner type
+        const typeConfig = {
+          corporate: {
+            gradient: 'from-blue-500 to-indigo-600',
+            icon: 'fas fa-building',
+            bgPattern: 'bg-blue-50 dark:bg-blue-900/20',
+            borderColor: 'border-blue-200 dark:border-blue-700'
+          },
+          academic: {
+            gradient: 'from-purple-500 to-pink-600',
+            icon: 'fas fa-graduation-cap',
+            bgPattern: 'bg-purple-50 dark:bg-purple-900/20',
+            borderColor: 'border-purple-200 dark:border-purple-700'
+          },
+          government: {
+            gradient: 'from-green-500 to-emerald-600',
+            icon: 'fas fa-landmark',
+            bgPattern: 'bg-green-50 dark:bg-green-900/20',
+            borderColor: 'border-green-200 dark:border-green-700'
+          },
+          nonprofit: {
+            gradient: 'from-orange-500 to-red-600',
+            icon: 'fas fa-heart',
+            bgPattern: 'bg-orange-50 dark:bg-orange-900/20',
+            borderColor: 'border-orange-200 dark:border-orange-700'
+          },
+          individual: {
+            gradient: 'from-teal-500 to-cyan-600',
+            icon: 'fas fa-user-tie',
+            bgPattern: 'bg-teal-50 dark:bg-teal-900/20',
+            borderColor: 'border-teal-200 dark:border-teal-700'
+          }
+        };
+
         container.innerHTML = allTypes.map((t, idx)=>{
           const group = byType[t.key] || [];
+          const config = typeConfig[t.key] || typeConfig.corporate;
           // Use backend-grouped partners by type first with avatars
           const backItems = (groups[t.key] || []).map(p => ({ name: (p.organization || p.name), img: norm(p.profile_picture) })).filter(x=>x.name);
           const imgItems = group.map(g => ({ name: (g.title || g.image_name || (g.description? g.description.slice(0,40)+'…' : 'Image')), img: norm(g.image_path) }));
-          const listItems = (backItems.length ? backItems.slice(0,10) : imgItems.slice(0,10));
-          const listHtml = listItems.length ? listItems.map(it=>`<li class="flex items-center gap-2">
-            ${it.img ? `<img src="${it.img}" class="w-6 h-6 rounded object-cover border" onerror="this.style.display='none'">` : `<i class='bi bi-person-circle text-gray-400'></i>`}
-            <span>${it.name}</span>
-          </li>`).join('') : '<li>No partners yet</li>';
+          const listItems = (backItems.length ? backItems.slice(0,6) : imgItems.slice(0,6));
+          const listHtml = listItems.length ? listItems.map(it=>`<div class="flex items-center gap-3 p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            ${it.img ? `<img src="${it.img}" class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm" onerror="this.style.display='none'">` : `<div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center"><i class='fas fa-user text-xs text-gray-500'></i></div>`}
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">${it.name}</span>
+          </div>`).join('') : '<div class="text-center py-4 text-gray-500 dark:text-gray-400"><i class="fas fa-users text-2xl mb-2"></i><p>No partners yet</p></div>';
+          
           return `
-          <div class=\"bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden\"> 
-            <div class=\"p-6 space-y-3\">
-              <h4 class=\"text-2xl font-semibold text-gray-900 dark:text-white\">${t.label}</h4>
-              <p class=\"text-gray-700 dark:text-gray-300\">${{
+          <div class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 ${config.bgPattern} border ${config.borderColor}">
+            <!-- Gradient Header -->
+            <div class="relative h-32 bg-gradient-to-br ${config.gradient} p-6">
+              <div class="absolute inset-0 bg-black/10"></div>
+              <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <i class="${config.icon} text-2xl text-white"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xl font-bold text-white">${t.label}</h4>
+                    <p class="text-white/80 text-sm">${listItems.length} partners</p>
+                  </div>
+                </div>
+                <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                  <i class="fas fa-arrow-right text-white/60 group-hover:text-white transition-colors"></i>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6 space-y-4">
+              <p class="text-gray-700 dark:text-gray-300 leading-relaxed">${{
                 corporate: 'We collaborate with companies and enterprises to create internships, sponsorships, and joint programs that open doors for students and professionals alike.',
                 academic: 'Universities, colleges, and training institutes join us to co-develop curricula, co-host events, and extend pathways for learners into advanced study and research.',
                 government: 'Public sector bodies partner with us to widen access, promote skills development, and support national and regional education initiatives.',
                 nonprofit: 'Foundations and NGOs work with us to reach underserved communities, fund scholarships, and deliver mission-aligned impact.',
                 individual: 'Ambassadors, mentors, and philanthropists support our mission with expertise, networks, and direct sponsorships.'
               }[t.key] || 'Partners in this category collaborate with us to expand opportunities and impact.'}</p>
-              <div class=\"text-gray-700 dark:text-gray-300\">
-                <div class=\"font-semibold mb-1\">Recent or representative partners:</div>
-                <ul class=\"list-disc list-inside\">${listHtml}</ul>
+              
+              <!-- Partners List -->
+              <div class="space-y-2">
+                <h5 class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <i class="fas fa-users text-sm"></i>
+                  Recent Partners
+                </h5>
+                <div class="space-y-2 max-h-32 overflow-y-auto no-scrollbar">${listHtml}</div>
               </div>
-              <div class=\"text-sm text-gray-600 dark:text-gray-400\">
-                <span class=\"font-semibold\">Typical collaboration:</span> ${{
-                  corporate: 'Internship pipelines, corporate scholarships, branded challenges, employee mentorships.',
-                  academic: 'Exchange programs, joint certificates, co-branded workshops, faculty talks.',
-                  government: 'Policy-aligned training, youth programs, grant coordination, public events.',
-                  nonprofit: 'Scholarship funds, community outreach, impact reporting, volunteer programs.',
-                  individual: 'Mentoring, speaking, introductions, direct sponsorship and advocacy.'
-                }[t.key] || 'Programming and initiatives tailored to mutual goals.'}
+              
+              <!-- Collaboration Types -->
+              <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <h5 class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                  <i class="fas fa-handshake text-sm"></i>
+                  Typical Collaboration
+                </h5>
+                <div class="flex flex-wrap gap-2">
+                  ${(t.key === 'corporate' ? ['Internships', 'Scholarships', 'Challenges', 'Mentorships'] :
+                     t.key === 'academic' ? ['Exchange Programs', 'Certificates', 'Workshops', 'Faculty Talks'] :
+                     t.key === 'government' ? ['Training', 'Youth Programs', 'Grants', 'Public Events'] :
+                     t.key === 'nonprofit' ? ['Scholarship Funds', 'Outreach', 'Impact Reports', 'Volunteers'] :
+                     ['Mentoring', 'Speaking', 'Introductions', 'Sponsorship']).map(tag => 
+                    `<span class="px-3 py-1 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">${tag}</span>`
+                  ).join('')}
+                </div>
               </div>
             </div>
           </div>`;
@@ -512,21 +604,41 @@
             const status = (p.status || 'approved').toString();
             const msg = (p.message || '').trim();
             return `
-              <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-100 dark:border-gray-700 min-w-[320px] snap-start">
+              <div class="relative group bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-100 dark:border-gray-700 min-w-[320px] max-w-[320px] snap-start">
+                <!-- Navigation arrows for mobile -->
+                <button class="partner-nav-btn partner-prev absolute -left-4 top-1/2 -translate-y-1/2 z-20 h-8 w-8 md:hidden items-center justify-center rounded-full bg-white dark:bg-gray-700 shadow-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 opacity-0 group-hover:opacity-100" data-direction="prev">
+                  <i class="fas fa-chevron-left text-sm text-gray-600 dark:text-gray-300"></i>
+                </button>
+                <button class="partner-nav-btn partner-next absolute -right-4 top-1/2 -translate-y-1/2 z-20 h-8 w-8 md:hidden items-center justify-center rounded-full bg-white dark:bg-gray-700 shadow-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 opacity-0 group-hover:opacity-100" data-direction="next">
+                  <i class="fas fa-chevron-right text-sm text-gray-600 dark:text-gray-300"></i>
+                </button>
+                
                 <div class="flex items-start gap-4">
-                  ${img ? `<img src="${img}" class="w-16 h-16 rounded object-cover border" alt="${p.organization || p.name}" onerror="this.style.display='none'">` : `<div class="w-16 h-16 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="bi bi-person-circle text-3xl"></i></div>`}
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                      <div class="text-lg font-semibold text-gray-900 dark:text-white">${p.organization || p.name || 'Partner'}</div>
-                      <span class="text-xs px-2 py-0.5 rounded-full ${status==='approved'?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300':status==='pending'?'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300':'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}">${status}</span>
+                  ${img ? `<img src="${img}" class="w-16 h-16 rounded object-cover border flex-shrink-0" alt="${p.organization || p.name}" onerror="this.style.display='none'">` : `<div class="w-16 h-16 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 flex-shrink-0"><i class="bi bi-person-circle text-3xl"></i></div>`}
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="text-lg font-semibold text-gray-900 dark:text-white truncate">${p.organization || p.name || 'Partner'}</div>
+                      <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${status==='approved'?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300':status==='pending'?'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300':'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}">${status}</span>
                     </div>
-                    <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
-                      <div><span class="font-medium">Contact:</span> ${p.name || '—'}</div>
-                      <div><span class="font-medium">Email:</span> ${p.email ? `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="mailto:${p.email}">${p.email}</a>` : '—'}</div>
-                      <div><span class="font-medium">Phone:</span> ${p.phone ? `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="tel:${p.phone}">${p.phone}</a>` : '—'}</div>
-                      <div><span class="font-medium">Since:</span> ${created || '—'}</div>
+                    <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-500 dark:text-gray-400 flex-shrink-0">Contact:</span>
+                        <span class="truncate" title="${p.name || '—'}">${p.name || '—'}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-500 dark:text-gray-400 flex-shrink-0">Email:</span>
+                        ${p.email ? `<a class="text-blue-600 dark:text-blue-400 hover:underline truncate block" href="mailto:${p.email}" title="${p.email}">${p.email}</a>` : '<span>—</span>'}
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-500 dark:text-gray-400 flex-shrink-0">Phone:</span>
+                        ${p.phone ? `<a class="text-blue-600 dark:text-blue-400 hover:underline truncate block" href="tel:${p.phone}" title="${p.phone}">${p.phone}</a>` : '<span>—</span>'}
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-500 dark:text-gray-400 flex-shrink-0">Since:</span>
+                        <span class="truncate">${created || '—'}</span>
+                      </div>
                     </div>
-                    ${msg ? `<div class="mt-2 text-sm text-gray-700 dark:text-gray-200">${msg}</div>` : ''}
+                    ${msg ? `<div class="mt-3 text-sm text-gray-700 dark:text-gray-200 line-clamp-2" title="${msg}">${msg}</div>` : ''}
                   </div>
                 </div>
               </div>`;
@@ -567,6 +679,18 @@
             prevBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(-1); startAuto(); });
             nextBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(1); startAuto(); });
           }
+
+          // Handle individual partner navigation arrows (mobile)
+          const individualNavBtns = el.querySelectorAll('.partner-nav-btn');
+          individualNavBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              stopAuto();
+              const direction = btn.getAttribute('data-direction');
+              scrollByAmount(direction === 'next' ? 1 : -1);
+              startAuto();
+            });
+          });
         }
       }catch(e){
         const container = document.getElementById('partner-types');

@@ -28,6 +28,7 @@ import adminDashboardRoutes from './routes/admin-dashboard.js';
 import adminApplicationsRoutes from './routes/admin-applications.js';
 import adminPartnersRoutes from './routes/admin-partners.js';
 import publicPartnersRoutes from './routes/partners.js';
+import partnershipImagesRoutes from './routes/partnership-images.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
 import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
 import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
@@ -181,6 +182,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminAccountRoutes);
 app.use('/api/admin/partners', adminPartnersRoutes);
 app.use('/api/partners', publicPartnersRoutes);
+app.use('/api/partnership-images', partnershipImagesRoutes);
 app.use('/api/admin-dashboard', adminDashboardRoutes);
 app.use('/api/admin-dashboard', adminApplicationsRoutes);
 app.use('/api/admin/profile', adminProfileRoutes); // ✅ ADDED HERE
