@@ -3,21 +3,21 @@
   #admin-page-title{ display:none; }
 }
 </style>
-<nav class="admin-header bg-white shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav class="admin-header bg-white shadow-sm w-full overflow-x-hidden">
+    <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-3">
                 <button id="admin-sidebar-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none" title="Toggle menu">
                     <i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
                 </button>
-                <h1 id="admin-page-title" class="text-xl font-bold text-gray-800 dark:text-white">Admin</h1>
+                <h1 id="admin-page-title" class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white truncate max-w-[55vw] sm:max-w-none">Admin</h1>
             </div>
-            <div id="admin-right-actions" class="flex items-center space-x-2 sm:space-x-4">
+            <div id="admin-right-actions" class="flex items-center space-x-1 sm:space-x-2">
                 <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" aria-label="Toggle theme">
                     <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
                 </button>
                 <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 font-medium transition-colors duration-200">
-                    <i class="fas fa-sign-out-alt mr-1"></i> <span class="hidden sm:inline">Logout</span>
+                    <i class="fas fa-sign-out-alt mr-1"></i> <span class="hidden xs:inline sm:inline">Logout</span>
                 </button>
             </div>
         </div>
