@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "npm run prebuild:clean && npm run build:css",
+    "heroku-postbuild": "npm run build",
     "migrate": "node scripts/migrate.js",
     "migrate:prune": "node scripts/prune-migrations.js",
     "build:css": "node scripts/build-css.js",
