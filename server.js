@@ -92,6 +92,8 @@ const sessionStore = new MySQLStore({
     checkExpirationInterval: 15 * 60 * 1000,
     expiration: 24 * 60 * 60 * 1000,
     createDatabaseTable: true,
+    disableTouch: true,
+    endConnectionOnClose: false,
     schema: {
         tableName: 'sessions',
         columnNames: {
