@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import session from 'express-session';
 import connectMySQL from 'express-mysql-session';
+import mysql from 'mysql2';
 import dotenv from 'dotenv';
 import pool from './config/database.js';
 import compression from 'compression';
@@ -70,12 +71,26 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 
 // Persistent session store (MySQL) to avoid MemoryStore in production
 const MySQLStore = connectMySQL(session);
-const sessionStore = new MySQLStore({
+
+// Dedicated pool for session store with keep-alive to avoid ECONNRESET on proxies
+const sessionPool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'Loading99.99%',
     database: process.env.DB_NAME || 'mbappe',
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+    connectTimeout: process.env.DB_CONNECT_TIMEOUT ? parseInt(process.env.DB_CONNECT_TIMEOUT, 10) : 20000
+});
+
+const sessionStore = new MySQLStore({
+    clearExpired: true,
+    checkExpirationInterval: 15 * 60 * 1000,
+    expiration: 24 * 60 * 60 * 1000,
     createDatabaseTable: true,
     schema: {
         tableName: 'sessions',
@@ -85,7 +100,7 @@ const sessionStore = new MySQLStore({
             data: 'data'
         }
     }
-});
+}, sessionPool);
 
 app.use(session({
     store: sessionStore,
