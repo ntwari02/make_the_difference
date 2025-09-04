@@ -94,12 +94,13 @@ app.use((req, res, next) => {
 // });
 // app.use('/api', apiLimiter);
 
-// Basic rate limiting for heavy endpoints
+// Basic rate limiting for heavy endpoints (tuned for higher throughput)
 const heavyLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 120,
+    windowMs: 60 * 1000, // 1 minute
+    max: 1000, // allow more requests per IP per minute
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    keyGenerator: (req, _res) => req.ip
 });
 
 app.use('/api/admin-dashboard', heavyLimiter);

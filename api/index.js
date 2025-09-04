@@ -27,11 +27,14 @@ app.use(helmet({
 app.use(hpp());
 app.use(compression());
 
-// Rate limiting
+// Rate limiting (tuned for higher throughput with proxy-aware IPs)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: 60 * 1000, // 1 minute windows
+  max: 3000, // allow up to 1000 requests per IP per minute
+  standardHeaders: true, // send rate limit info in the RateLimit-* headers
+  legacyHeaders: false, // disable the X-RateLimit-* headers
+  message: 'Too many requests from this IP, please try again later.',
+  keyGenerator: (req, _res) => req.ip
 });
 app.use('/api/', limiter);
 
