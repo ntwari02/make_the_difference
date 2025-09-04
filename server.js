@@ -51,8 +51,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy for rate limiting behind Render proxy
-app.set('trust proxy', 1);
+// Trust proxy for rate limiting behind Render proxy (trust all proxies)
+app.set('trust proxy', true);
 
 // Middleware
 app.set('etag', 'strong');
@@ -126,6 +126,7 @@ const heavyLimiter = rateLimit({
     max: 1000, // allow more requests per IP per minute
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
     keyGenerator: (req, _res) => req.ip
 });
 

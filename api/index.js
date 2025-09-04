@@ -16,8 +16,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Trust proxy for rate limiting behind Render proxy
-app.set('trust proxy', 1);
+// Trust proxy for rate limiting behind Render proxy (trust all proxies)
+app.set('trust proxy', true);
 
 // Security middleware
 app.use(helmet({
@@ -33,6 +33,7 @@ const limiter = rateLimit({
   max: 3000, // allow up to 1000 requests per IP per minute
   standardHeaders: true, // send rate limit info in the RateLimit-* headers
   legacyHeaders: false, // disable the X-RateLimit-* headers
+  validate: { xForwardedForHeader: false },
   message: 'Too many requests from this IP, please try again later.',
   keyGenerator: (req, _res) => req.ip
 });
