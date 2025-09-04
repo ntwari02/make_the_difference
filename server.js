@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import dotenv from 'dotenv';
 import pool from './config/database.js';
 import compression from 'compression';
@@ -67,11 +68,35 @@ app.use(compression({
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 
+// Persistent session store (MySQL) to avoid MemoryStore in production
+const sessionStore = new MySQLStore({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'Loading99.99%',
+    database: process.env.DB_NAME || 'mbappe',
+    createDatabaseTable: true,
+    schema: {
+        tableName: 'sessions',
+        columnNames: {
+            session_id: 'session_id',
+            expires: 'expires',
+            data: 'data'
+        }
+    }
+});
+
 app.use(session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+    }
 }));
 
 // API request timeout safeguard (60s) — avoid interfering with static file streams
