@@ -45,38 +45,67 @@
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <style>
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  </style>
 </head>
 
 <body class="font-roboto text-base text-gray-700 dark:bg-gray-900 dark:text-gray-300 transition-colors duration-300">
   <div id="navbar-container"></div>
 
   <main class="container mx-auto px-4 pt-20">
-    <section class="py-16 text-center">
-      <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Partner with MBAPE Global</h2>
-      <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-        Join our network of esteemed partners and contribute to global education.
-      </p>
+    <!-- Hero -->
+    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border border-gray-100 dark:border-gray-700 shadow-lg mt-4" data-aos="fade-up">
+      <div class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+      <div class="px-6 py-14 sm:py-18 lg:py-20 text-center max-w-5xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-sm mb-4">
+          <i class="bi bi-stars"></i>
+          <span>Co-create opportunities that scale impact</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+          Partner with <span class="text-blue-600 dark:text-blue-400">MBAPE Global</span>
+        </h1>
+        <p class="mt-4 text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          Join a growing network of universities, companies, nonprofits and public institutions empowering learners worldwide.
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="#become-partner" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow">
+            Get Started
+          </a>
+          <a href="#why-partner" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-lg bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-600 font-semibold hover:bg-blue-50 dark:hover:bg-gray-600">
+            Learn More
+          </a>
+        </div>
+        <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex items-center justify-center gap-2"><i class="bi bi-people"></i><span>10k+ learners</span></div>
+          <div class="flex items-center justify-center gap-2"><i class="bi bi-building"></i><span>100+ partners</span></div>
+          <div class="flex items-center justify-center gap-2"><i class="bi bi-globe"></i><span>20+ countries</span></div>
+          <div class="flex items-center justify-center gap-2"><i class="bi bi-award"></i><span>Scholarship pathways</span></div>
+        </div>
+      </div>
     </section>
 
-    <section class="py-16 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg mb-12">
+    <section id="why-partner" class="py-16 bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-lg mb-12 border border-gray-100 dark:border-gray-700" data-aos="fade-up">
       <div class="container mx-auto px-4">
-        <h3 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-10">Why Partner With Us?</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-lg shadow-md">
+        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-2">Why partner with us?</h3>
+        <p class="text-center text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10">Clear value for each partner segment. We co-design programs, measure outcomes and tell the impact story together.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-xl shadow border border-gray-100 dark:border-gray-600 transition-transform duration-300 hover:-translate-y-1" data-aos="fade-up" data-aos-delay="0">
             <div class="bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <i class="bi bi-globe text-3xl"></i>
             </div>
             <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Global Reach</h4>
             <p class="text-gray-600 dark:text-gray-300">Expand your institution's reach to a diverse international student base.</p>
           </div>
-          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-lg shadow-md">
+          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-xl shadow border border-gray-100 dark:border-gray-600 transition-transform duration-300 hover:-translate-y-1" data-aos="fade-up" data-aos-delay="100">
             <div class="bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <i class="bi bi-lightbulb text-3xl"></i>
             </div>
             <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Impactful Collaboration</h4>
             <p class="text-gray-600 dark:text-gray-300">Work with us to create impactful educational programs and initiatives.</p>
           </div>
-          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-lg shadow-md">
+          <div class="text-center p-6 bg-white dark:bg-gray-700 rounded-xl shadow border border-gray-100 dark:border-gray-600 transition-transform duration-300 hover:-translate-y-1" data-aos="fade-up" data-aos-delay="200">
             <div class="bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <i class="bi bi-graph-up text-3xl"></i>
             </div>
@@ -87,10 +116,10 @@
       </div>
     </section>
 
-    <section class="py-16">
+    <section class="py-16" data-aos="fade-up">
       <div class="container mx-auto px-4">
         <h3 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-10">Types of Partnerships</h3>
-        <div id="partner-types" class="space-y-10">
+        <div id="partner-types" class="space-y-8">
           <!-- Partner types populated by JS from /api/partnership-images -->
             </div>
         <div class="mt-14">
@@ -99,7 +128,7 @@
             <button id="partnersPrev" type="button" class="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
               <i class="bi bi-chevron-left text-xl"></i>
             </button>
-            <div id="partnersCarousel" class="flex gap-4 overflow-hidden snap-x snap-mandatory scroll-smooth pb-2">
+            <div id="partnersCarousel" class="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-2 pr-6">
             </div>
             <button id="partnersNext" type="button" class="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-gray-700 shadow hover:bg-white dark:hover:bg-gray-600">
               <i class="bi bi-chevron-right text-xl"></i>
@@ -109,13 +138,52 @@
       </div>
     </section>
 
-    <section class="py-16 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg mb-12">
+    <!-- FAQ -->
+    <section class="py-12" data-aos="fade-up">
+      <div class="container mx-auto px-4 max-w-4xl">
+        <h3 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-8">Frequently Asked Questions</h3>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <details class="group p-6" aria-label="What types of partners do you work with?">
+            <summary class="flex cursor-pointer items-center justify-between text-left text-gray-900 dark:text-white font-semibold">
+              What types of partners do you work with?
+              <span class="ml-4 transition-transform group-open:rotate-180"><i class="bi bi-chevron-down"></i></span>
+            </summary>
+            <div class="mt-3 text-gray-600 dark:text-gray-300">We collaborate with universities, NGOs, government agencies, corporations, and individual ambassadors.</div>
+          </details>
+          <details class="group p-6" aria-label="How do we measure impact?">
+            <summary class="flex cursor-pointer items-center justify-between text-left text-gray-900 dark:text-white font-semibold">
+              How do we measure impact?
+              <span class="ml-4 transition-transform group-open:rotate-180"><i class="bi bi-chevron-down"></i></span>
+            </summary>
+            <div class="mt-3 text-gray-600 dark:text-gray-300">We define shared goals, track participation and outcomes, and deliver simple impact dashboards and reports.</div>
+          </details>
+          <details class="group p-6" aria-label="What is the typical onboarding time?">
+            <summary class="flex cursor-pointer items-center justify-between text-left text-gray-900 dark:text-white font-semibold">
+              What is the typical onboarding time?
+              <span class="ml-4 transition-transform group-open:rotate-180"><i class="bi bi-chevron-down"></i></span>
+            </summary>
+            <div class="mt-3 text-gray-600 dark:text-gray-300">Most collaborations start within 2–4 weeks depending on scope and compliance needs.</div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="become-partner" class="py-16 bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-lg mb-12 border border-gray-100 dark:border-gray-700" data-aos="fade-up">
       <div class="container mx-auto px-4">
         <h3 class="text-3xl font-bold text-gray-900 dark:text-white text-center mb-10">Become a Partner</h3>
         <p class="text-lg text-gray-600 dark:text-gray-400 text-center mb-8">
           Interested in partnering with MBAPE Global? Fill out the form below and our team will get in touch.
         </p>
-        <form id="partnershipForm" class="max-w-3xl mx-auto bg-white dark:bg-gray-700 p-8 rounded-lg shadow-md border-l-4 border-blue-500">
+        <div id="partnerSuccessBanner" class="hidden max-w-3xl mx-auto mb-6 rounded-xl border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 p-4">
+          <div class="flex items-start gap-3">
+            <i class="bi bi-check-circle-fill text-xl"></i>
+            <div>
+              <div class="font-semibold">Thank you! Your partnership inquiry has been submitted.</div>
+              <div class="text-sm opacity-90">Our team will reach out shortly. You can continue exploring our partners below.</div>
+            </div>
+          </div>
+        </div>
+        <form id="partnershipForm" class="max-w-3xl mx-auto bg-white dark:bg-gray-700 p-8 rounded-xl shadow-md border-l-4 border-blue-500">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label for="partnerName" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Your Name</label>
@@ -278,6 +346,10 @@
           if (response.ok) {
             displayMessageBox('Partnership inquiry submitted successfully!', 'success');
             form.reset();
+            const banner = document.getElementById('partnerSuccessBanner');
+            if (banner) {
+              banner.classList.remove('hidden');
+            }
           } else {
             throw new Error(result.message || result.error || 'Failed to submit inquiry');
           }
@@ -311,6 +383,9 @@
             messageBox.remove();
         }, 3000); // Message disappears after 3 seconds
     }
+
+    // Initialize AOS if available
+    if (window.AOS) { AOS.init({ once: true, duration: 600, easing: 'ease-out' }); }
 
     // Load partner images by type and list partner names
     (async function loadPartnerTypes(){
@@ -502,3 +577,507 @@
 </body>
 
 </html>
+
+    document.getElementById('partnershipForm').addEventListener('submit', async (e) => {
+
+      e.preventDefault();
+
+      
+
+      const form = e.target;
+
+      const formData = {
+
+        name: form.partnerName.value,
+
+        email: form.partnerEmail.value,
+
+        organization: form.organizationName.value,
+
+        phone: form.partnerPhone.value,
+
+        message: form.partnerMessage.value
+
+      };
+
+
+
+      try {
+
+        const response = await fetch('/api/partners', {
+
+          method: 'POST',
+
+          headers: {
+
+            'Content-Type': 'application/json',
+
+          },
+
+          body: JSON.stringify(formData)
+
+        });
+
+
+
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+
+          const result = await response.json();
+
+          if (response.ok) {
+
+            displayMessageBox('Partnership inquiry submitted successfully!', 'success');
+
+            form.reset();
+
+          } else {
+
+            throw new Error(result.message || result.error || 'Failed to submit inquiry');
+
+          }
+
+        } else {
+
+          const text = await response.text();
+
+          throw new Error(text || 'Failed to submit inquiry');
+
+        }
+
+      } catch (error) {
+
+        console.error('Error:', error);
+
+        displayMessageBox(error.message || 'Error submitting inquiry. Please try again.', 'error');
+
+      }
+
+    });
+
+
+
+    // Custom message box function (copied from admin dashboard for consistency)
+
+    function displayMessageBox(message, type = 'info') {
+
+        const messageBox = document.createElement('div');
+
+        messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
+
+        
+
+        if (type === 'success') {
+
+            messageBox.classList.add('bg-green-500');
+
+        } else if (type === 'error') {
+
+            messageBox.classList.add('bg-red-500');
+
+        } else {
+
+            messageBox.classList.add('bg-blue-500');
+
+        }
+
+
+
+        messageBox.textContent = message;
+
+        document.body.appendChild(messageBox);
+
+
+
+        setTimeout(() => {
+
+            messageBox.remove();
+
+        }, 3000); // Message disappears after 3 seconds
+
+    }
+
+
+
+    // Load partner images by type and list partner names
+
+    (async function loadPartnerTypes(){
+
+      try{
+
+        const container = document.getElementById('partner-types');
+
+        if (!container) return;
+
+        container.innerHTML = `<div class="text-center text-gray-500 dark:text-gray-400">Loading partner types...</div>`;
+
+        const fetchJson = async (url, ms=8000) => {
+
+          const ctl = new AbortController();
+
+          const id = setTimeout(()=>ctl.abort(), ms);
+
+          try {
+
+            const res = await fetch(url, { signal: ctl.signal });
+
+            clearTimeout(id);
+
+            if (!res.ok) return null;
+
+            return await res.json().catch(()=>null);
+
+          } catch { clearTimeout(id); return null; }
+
+        };
+
+
+
+        const [imgData, grouped] = await Promise.all([
+
+          fetchJson('/api/partnership-images'),
+
+          fetchJson('/api/partners/types/approved')
+
+        ]);
+
+        const images = imgData && (imgData.images || imgData.data || (Array.isArray(imgData)?imgData:[])) || [];
+
+        let groups = grouped && grouped.groups ? grouped.groups : {};
+
+        let partners = Object.values(groups).flat();
+
+
+
+        // Fallback: if grouped is empty, fetch flat approved list and build groups here
+
+        if (!partners.length) {
+
+          const approved = await fetchJson('/api/partners/approved');
+
+          const flat = approved && (approved.partners || (Array.isArray(approved)?approved:[])) || [];
+
+          const inferKey = (p) => {
+
+            const explicit = (p.partner_type||'').toLowerCase();
+
+            if (explicit) return explicit;
+
+            const hay = `${p.organization||''} ${p.name||''} ${p.message||''}`.toLowerCase();
+
+            const has = (...k) => k.some(x => hay.includes(x));
+
+            if (has('university','college','institute','school','academy','polytechnic')) return 'academic';
+
+            if (has('ministry','department','authority','agency','gov','government','council')) return 'government';
+
+            if (has('ngo','non-profit','nonprofit','foundation','charity','association','society')) return 'nonprofit';
+
+            if (has('ltd','inc','corp','company','enterprise','holdings','plc','co.','corporate')) return 'corporate';
+
+            return 'individual';
+
+          };
+
+          groups = { corporate: [], academic: [], government: [], nonprofit: [], individual: [] };
+
+          for (const p of flat) { groups[inferKey(p)].push(p); }
+
+          partners = flat;
+
+        }
+
+        if (!images.length && !partners.length){
+
+          container.innerHTML = `<div class="text-center text-gray-500 dark:text-gray-400">No partners yet.</div>`;
+
+          return;
+
+        }
+
+        // Group by partner_type
+
+        const byType = images.reduce((acc, img)=>{ const k=(img.partner_type||'').toLowerCase(); (acc[k] ||= []).push(img); return acc; }, {});
+
+
+
+        // Render ALL known types, even if no images exist yet
+
+        const allTypes = [
+
+          { key: 'corporate', label: 'Corporate Partner' },
+
+          { key: 'academic', label: 'Academic Partner' },
+
+          { key: 'government', label: 'Government Partner' },
+
+          { key: 'nonprofit', label: 'Non-Profit Partner' },
+
+          { key: 'individual', label: 'Individual Partner' }
+
+        ];
+
+
+
+        const norm = p => { if(!p) return ''; let s=String(p).replace(/\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+
+        container.innerHTML = allTypes.map((t, idx)=>{
+
+          const group = byType[t.key] || [];
+
+          // Use backend-grouped partners by type first with avatars
+
+          const backItems = (groups[t.key] || []).map(p => ({ name: (p.organization || p.name), img: norm(p.profile_picture) })).filter(x=>x.name);
+
+          const imgItems = group.map(g => ({ name: (g.title || g.image_name || (g.description? g.description.slice(0,40)+'…' : 'Image')), img: norm(g.image_path) }));
+
+          const listItems = (backItems.length ? backItems.slice(0,10) : imgItems.slice(0,10));
+
+          const listHtml = listItems.length ? listItems.map(it=>`<li class="flex items-center gap-2">
+
+            ${it.img ? `<img src="${it.img}" class="w-6 h-6 rounded object-cover border" onerror="this.style.display='none'">` : `<i class='bi bi-person-circle text-gray-400'></i>`}
+
+            <span>${it.name}</span>
+
+          </li>`).join('') : '<li>No partners yet</li>';
+
+          return `
+
+          <div class=\"bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden\"> 
+
+            <div class=\"p-6 space-y-3\">
+
+              <h4 class=\"text-2xl font-semibold text-gray-900 dark:text-white\">${t.label}</h4>
+
+              <p class=\"text-gray-700 dark:text-gray-300\">${{
+
+                corporate: 'We collaborate with companies and enterprises to create internships, sponsorships, and joint programs that open doors for students and professionals alike.',
+
+                academic: 'Universities, colleges, and training institutes join us to co-develop curricula, co-host events, and extend pathways for learners into advanced study and research.',
+
+                government: 'Public sector bodies partner with us to widen access, promote skills development, and support national and regional education initiatives.',
+
+                nonprofit: 'Foundations and NGOs work with us to reach underserved communities, fund scholarships, and deliver mission-aligned impact.',
+
+                individual: 'Ambassadors, mentors, and philanthropists support our mission with expertise, networks, and direct sponsorships.'
+
+              }[t.key] || 'Partners in this category collaborate with us to expand opportunities and impact.'}</p>
+
+              <div class=\"text-gray-700 dark:text-gray-300\">
+
+                <div class=\"font-semibold mb-1\">Recent or representative partners:</div>
+
+                <ul class=\"list-disc list-inside\">${listHtml}</ul>
+
+              </div>
+
+              <div class=\"text-sm text-gray-600 dark:text-gray-400\">
+
+                <span class=\"font-semibold\">Typical collaboration:</span> ${{
+
+                  corporate: 'Internship pipelines, corporate scholarships, branded challenges, employee mentorships.',
+
+                  academic: 'Exchange programs, joint certificates, co-branded workshops, faculty talks.',
+
+                  government: 'Policy-aligned training, youth programs, grant coordination, public events.',
+
+                  nonprofit: 'Scholarship funds, community outreach, impact reporting, volunteer programs.',
+
+                  individual: 'Mentoring, speaking, introductions, direct sponsorship and advocacy.'
+
+                }[t.key] || 'Programming and initiatives tailored to mutual goals.'}
+
+              </div>
+
+            </div>
+
+          </div>`;
+
+        }).join('');
+
+
+
+        // Render individual partner cards into horizontal carousel
+
+        const listEl = document.getElementById('partnersCarousel');
+
+        if (listEl && partners.length){
+
+          const norm = p => { if(!p) return ''; let s=String(p).replace(/\\\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+
+          const guessImageFor = partner => {
+
+            // First, try exact match by organization or name in image title/description
+
+            const org = (partner.organization || '').toLowerCase();
+
+            const nm = (partner.name || '').toLowerCase();
+
+            let match = images.find(im => (im.title||'').toLowerCase().includes(org) || (im.description||'').toLowerCase().includes(org) || (im.title||'').toLowerCase().includes(nm) || (im.description||'').toLowerCase().includes(nm));
+
+            if (match) return norm(match.image_path);
+
+            // Otherwise, try by type keywords
+
+            const types = ['corporate','academic','government','nonprofit','individual'];
+
+            for (const t of types){
+
+              if (org.includes(t) || nm.includes(t)){
+
+                match = images.find(im => (im.partner_type||'').toLowerCase() === t);
+
+                if (match) return norm(match.image_path);
+
+              }
+
+            }
+
+            return '';
+
+          };
+
+          listEl.innerHTML = partners.map(p => {
+
+            const img = norm(p.profile_picture) || guessImageFor(p);
+
+            const created = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+
+            const status = (p.status || 'approved').toString();
+
+            const msg = (p.message || '').trim();
+
+            return `
+
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-100 dark:border-gray-700 min-w-[320px] snap-start">
+
+                <div class="flex items-start gap-4">
+
+                  ${img ? `<img src="${img}" class="w-16 h-16 rounded object-cover border" alt="${p.organization || p.name}" onerror="this.style.display='none'">` : `<div class="w-16 h-16 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400"><i class="bi bi-person-circle text-3xl"></i></div>`}
+
+                  <div class="flex-1">
+
+                    <div class="flex items-center gap-2">
+
+                      <div class="text-lg font-semibold text-gray-900 dark:text-white">${p.organization || p.name || 'Partner'}</div>
+
+                      <span class="text-xs px-2 py-0.5 rounded-full ${status==='approved'?'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300':status==='pending'?'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300':'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}">${status}</span>
+
+                    </div>
+
+                    <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
+
+                      <div><span class="font-medium">Contact:</span> ${p.name || '—'}</div>
+
+                      <div><span class="font-medium">Email:</span> ${p.email ? `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="mailto:${p.email}">${p.email}</a>` : '—'}</div>
+
+                      <div><span class="font-medium">Phone:</span> ${p.phone ? `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="tel:${p.phone}">${p.phone}</a>` : '—'}</div>
+
+                      <div><span class="font-medium">Since:</span> ${created || '—'}</div>
+
+                    </div>
+
+                    ${msg ? `<div class="mt-2 text-sm text-gray-700 dark:text-gray-200">${msg}</div>` : ''}
+
+                  </div>
+
+                </div>
+
+              </div>`;
+
+          }).join('');
+
+
+
+          // Carousel controls
+
+          const el = listEl;
+
+          // Auto sliding every 3 seconds, wrap to start at end
+
+          let autoTimer;
+
+          const step = () => {
+
+            const firstCard = el.querySelector('.snap-start');
+
+            const cardW = (firstCard ? firstCard.clientWidth : 320) + 16; // include gap
+
+            const atEnd = el.scrollLeft + el.clientWidth + 5 >= el.scrollWidth;
+
+            if (atEnd) {
+
+              el.scrollTo({ left: 0, behavior: 'smooth' });
+
+            } else {
+
+              el.scrollBy({ left: cardW, behavior: 'smooth' });
+
+            }
+
+          };
+
+          const startAuto = () => { clearInterval(autoTimer); autoTimer = setInterval(step, 1300); };
+
+          const stopAuto = () => { clearInterval(autoTimer); };
+
+          startAuto();
+
+          // Pause on hover to improve UX
+
+          el.addEventListener('mouseenter', stopAuto);
+
+          el.addEventListener('mouseleave', startAuto);
+
+
+
+          // Wire Prev/Next buttons for manual control
+
+          const prevBtn = document.getElementById('partnersPrev');
+
+          const nextBtn = document.getElementById('partnersNext');
+
+          const scrollByAmount = (dir) => {
+
+            const firstCard = el.querySelector('.snap-start');
+
+            const cardW = (firstCard ? firstCard.clientWidth : 320) + 16;
+
+            el.scrollBy({ left: dir * cardW, behavior: 'smooth' });
+
+          };
+
+          if (prevBtn && nextBtn) {
+
+            prevBtn.classList.remove('hidden');
+
+            nextBtn.classList.remove('hidden');
+
+            prevBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(-1); startAuto(); });
+
+            nextBtn.addEventListener('click', () => { stopAuto(); scrollByAmount(1); startAuto(); });
+
+          }
+
+        }
+
+      }catch(e){
+
+        const container = document.getElementById('partner-types');
+
+        if (container) container.innerHTML = `<div class="text-center text-red-500">Failed to load partners.</div>`;
+
+      }
+
+    })();
+
+  </script>
+
+</body>
+
+
+
+</html>
+
+
