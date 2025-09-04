@@ -83,7 +83,9 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Do not ignore the public directory so static pages are deployed
+# Keep uploads excluded
+#!public
 
 # Storybook build outputs
 .out
