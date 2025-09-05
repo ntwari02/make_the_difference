@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Notifications & Messaging</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: { 100:'#BFDBFE',200:'#93C5FD',300:'#60A5FA',400:'#3B82F6',500:'#2563EB',600:'#1D4ED8',700:'#1E40AF',800:'#1E3A8A',900:'#172554' }
+            },
+            fontFamily: { 'raleway': ['Raleway','sans-serif'] }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Admin layout CSS (matches other admin pages) -->
+    <link rel="stylesheet" href="css/admin-layout.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/admin-sidebar-fix.css">
+    <script>
+      (function(){
+        try {
+          const theme = localStorage.getItem('color-theme');
+          if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch {}
+      })();
+    </script>
+    <!-- Admin includes -->
+    <script src="js/include-admin-header.js" defer></script>
+    <script src="js/include-admin-sidebar.js" defer></script>
+</head>
+<body class="admin-layout font-raleway bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen" data-page="notifications">
+    <!-- Admin Header/Sidebar -->
+    <div id="admin-sidebar-container"></div>
+    <div id="admin-header-container" data-page-title="Notifications"></div>
+
+        <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
+        <div class="admin-content-container p-6">
+            <div class="max-w-full mx-auto px-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold">Notifications & Conversations</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">View, reply and send updates to users</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="refreshBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
+                    <a id="exportCsvBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md" href="#"><i class="fas fa-file-export mr-2"></i>Export CSV</a>
+                    <button id="newChatBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"><i class="fas fa-comment mr-2"></i>New Chat</button>
+                    <!-- <button id="newGroupBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"><i class="fas fa-users mr-2"></i>New Group</button> -->
+                    <button id="newAnnouncementBtn" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"><i class="fas fa-bullhorn mr-2"></i>New Announcement</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="md:col-span-2">
+                  <input id="filterSearch" type="text" placeholder="Search by subject, email or message" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+                </div>
+                <div>
+                  <input id="filterFrom" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+                </div>
+                <div>
+                  <input id="filterTo" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+                </div>
+                <div>
+                  <select id="filterReplies" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600">
+                    <option value="any">Replies: Any</option>
+                    <option value="0">No replies</option>
+                    <option value=">0">Has replies</option>
+                  </select>
+                </div>
+                <div>
+                  <select id="filterSort" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600">
+                    <option value="updated_desc">Newest updated</option>
+                    <option value="updated_asc">Oldest updated</option>
+                    <option value="created_desc">Newest created</option>
+                    <option value="created_asc">Oldest created</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="applyFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700">Apply</button>
+                  <button id="clearFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700">Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
+                <!-- Conversations list -->
+                <div class="lg:col-span-1 order-2 lg:order-1">
+                    <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[20rem] sm:h-[24rem] lg:h-[48rem] xl:h-[52rem] flex flex-col">
+                        <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                            <h3 class="text-base sm:text-lg font-semibold">Messages</h3>
+                            <div class="flex gap-1 sm:gap-2">
+                                <button id="filterAll" class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700">All</button>
+                                <button id="filterOpen" class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700">Recent</button>
+                            </div>
+                        </div>
+                        <div id="conversationList" class="flex-1 overflow-y-auto"></div>
+                        <div class="p-2 sm:p-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                          <div class="text-xs text-gray-500"><span id="pageInfo">Page 1</span></div>
+                          <div class="flex gap-1 sm:gap-2">
+                            <button id="prevPage" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-xs">Prev</button>
+                            <button id="nextPage" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-xs">Next</button>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details + reply (DM) -->
+                <div class="lg:col-span-2 order-1 lg:order-2">
+                    <div id="conversationDetails" class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[24rem] sm:h-[28rem] lg:h-[34rem] xl:h-[38rem] flex flex-col">
+                        <div class="p-4 sm:p-6 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-comments text-3xl sm:text-4xl mb-4"></i>
+                            <p class="text-sm sm:text-base">Select a conversation to view and reply</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Groups Section - COMMENTED OUT -->
+            <!-- <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div class="lg:col-span-1">
+                    <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[28rem] flex flex-col">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Groups</h3>
+                        </div>
+                        <div id="groupList" class="flex-1 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <div id="groupDetails" class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[28rem] flex flex-col">
+                        <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-users text-4xl mb-4"></i>
+                            <p>Select a group to view and send messages</p>
+                        </div>
+                    </div>
+                </div>
+            </div> -->
+
+            <!-- New Announcement Modal -->
+            <div id="announcementModal" class="fixed inset-0 hidden z-50">
+                <div class="absolute inset-0 bg-black/50" data-close></div>
+                <div class="relative max-w-xl w-[95%] mx-auto mt-24 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="font-semibold">Send Announcement</h3>
+                        <button class="p-1" data-close><i class="fas fa-times"></i></button>
+                    </div>
+                    <form id="announcementForm" class="p-4 space-y-3">
+                        <div>
+                            <label class="text-sm">User IDs (comma-separated) - optional</label>
+                            <input id="annUserIds" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. 12,45,78 (leave empty to target by email below or send to single email)" />
+                        </div>
+                        <div>
+                            <label class="text-sm">Single user email - optional</label>
+                            <input id="annEmail" type="email" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="user@example.com" />
+                        </div>
+                        <div>
+                            <label class="text-sm">Title</label>
+                            <input id="annTitle" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" required />
+                        </div>
+                        <div>
+                            <label class="text-sm">Message</label>
+                            <textarea id="annMessage" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 h-32" required></textarea>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" class="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700" data-close>Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700">Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- New Group Modal - COMMENTED OUT -->
+            <!-- <div id="groupModal" class="fixed inset-0 hidden z-50">
+                <div class="absolute inset-0 bg-black/50" data-close></div>
+                <div class="relative max-w-xl w-[95%] mx-auto mt-24 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="font-semibold">Create Group</h3>
+                        <button class="p-1" data-close><i class="fas fa-times"></i></button>
+                    </div>
+                    <form id="groupForm" class="p-4 space-y-3">
+                        <div>
+                            <label class="text-sm">Group name</label>
+                            <input id="grpName" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. Support Team" required />
+                        </div>
+                        <div>
+                            <label class="text-sm">Members by User IDs (comma-separated)</label>
+                            <input id="grpUserIds" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. 12,45,78" />
+                        </div>
+                        <div>
+                            <label class="text-sm">Members by emails (comma-separated)</label>
+                            <input id="grpEmails" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. a@x.com,b@y.com" />
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" class="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700" data-close>Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">Create</button>
+                        </div>
+                    </form>
+                </div>
+            </div> -->
+
+            <!-- New Chat Modal -->
+            <div id="newChatModal" class="fixed inset-0 hidden z-50">
+                <div class="absolute inset-0 bg-black/50" data-close></div>
+                <div class="relative max-w-xl w-[95%] mx-auto mt-24 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="font-semibold">Start New Chat</h3>
+                        <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" data-close>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Search Users</label>
+                            <input id="userSearchInput" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="Type name or email to search..." />
+                        </div>
+                        <div id="userSearchResults" class="max-h-60 overflow-y-auto border dark:border-gray-600 rounded">
+                            <div class="p-4 text-center text-gray-500">Start typing to search for users...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Modal -->
+            <div id="imageModal" class="fixed inset-0 hidden z-50">
+                <div class="absolute inset-0 bg-black bg-opacity-75" onclick="closeImageModal()"></div>
+                <div class="relative flex items-center justify-center min-h-screen p-4">
+                    <div class="relative max-w-4xl max-h-full">
+                        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                        <img id="modalImage" src="" alt="Chat Image" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <script>
+      // Basic include hooks (assuming these scripts replace containers)
+      document.addEventListener('DOMContentLoaded', () => {
+        // no-op; included scripts manage header/sidebar
+      });
+
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user')||'{}');
+      if (!token || !(user?.isAdmin === true || user?.isAdmin === 1 || user?.isAdmin === '1' || user?.isAdmin === 'true')) {
+        window.location.href = 'login.html';
+      }
+
+      let conversations = [];
+      let filtered = [];
+      let selectedId = null;
+      let page = 1;
+      const pageSize = 20;
+
+      async function fetchConversations() {
+        try {
+          const q = encodeURIComponent(document.getElementById('filterSearch')?.value||'');
+          const from = encodeURIComponent(document.getElementById('filterFrom')?.value||'');
+          const to = encodeURIComponent(document.getElementById('filterTo')?.value||'');
+          const replies = encodeURIComponent(document.getElementById('filterReplies')?.value||'any');
+          const sort = encodeURIComponent(document.getElementById('filterSort')?.value||'updated_desc');
+          const res = await fetch(`/api/notifications/admin/conversations?q=${q}&from=${from}&to=${to}&replies=${replies}&sort=${sort}&page=${page}&limit=${pageSize}`, { headers: { 'Authorization': `Bearer ${token}` }});
+          if (res.ok) {
+            const data = await res.json();
+            conversations = data.conversations || [];
+            const totalPages = Math.max(1, (data.pagination && data.pagination.pages) || Math.ceil((conversations.length||0)/pageSize));
+            const pageInfo = document.getElementById('pageInfo');
+            if (pageInfo) pageInfo.textContent = `Page ${data.pagination?.page || page} of ${totalPages}`;
+            applyAndRender();
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      function applyFilters() {
+        const q = (document.getElementById('filterSearch')?.value||'').toLowerCase();
+        const from = document.getElementById('filterFrom')?.value;
+        const to = document.getElementById('filterTo')?.value;
+        const replies = document.getElementById('filterReplies')?.value;
+        const sort = document.getElementById('filterSort')?.value;
+
+        filtered = (conversations||[]).filter(c => {
+          const hay = `${c.subject||''} ${c.user_email||c.email||''} ${c.notification_message||''}`.toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          const created = new Date(c.created_at);
+          if (from && created < new Date(from)) return false;
+          if (to && created > new Date(to+'T23:59:59')) return false;
+          if (replies === '0' && Number(c.reply_count||0) !== 0) return false;
+          if (replies === '>0' && Number(c.reply_count||0) <= 0) return false;
+          return true;
+        });
+
+        filtered.sort((a,b) => {
+          const aC = new Date(a.created_at), bC = new Date(b.created_at);
+          const aU = new Date(a.updated_at||a.created_at), bU = new Date(b.updated_at||b.created_at);
+          switch (sort) {
+            case 'updated_asc': return aU - bU;
+            case 'updated_desc': return bU - aU;
+            case 'created_asc': return aC - bC;
+            case 'created_desc': return bC - aC;
+            default: return bU - aU;
+          }
+        });
+      }
+
+      function applyAndRender() {
+        applyFilters();
+        page = Math.max(1, Math.min(page, Math.ceil((filtered.length||0) / pageSize) || 1));
+        renderConversationList();
+      }
+
+      function renderConversationList() {
+        const container = document.getElementById('conversationList');
+        if (!container) return;
+        if (!Array.isArray(filtered) || filtered.length === 0) {
+          container.innerHTML = '<div class="p-4 text-sm text-gray-500">No conversations</div>';
+          const pageInfo = document.getElementById('pageInfo');
+          if (pageInfo) pageInfo.textContent = 'Page 1';
+          return;
+        }
+        const start = (page-1)*pageSize;
+        const items = filtered.slice(start, start+pageSize);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        const pageInfo = document.getElementById('pageInfo');
+        if (pageInfo) pageInfo.textContent = `Page ${page} of ${totalPages}`;
+
+        container.innerHTML = items.map(c => `
+          <div class="conv-item p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedId==c.id?'bg-blue-50 dark:bg-blue-900/20':''}"
+               onclick="console.log('Clicked conversation:', ${c.id}); selectConversation(${c.id})">
+            <div class="flex items-start justify-between">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm font-semibold truncate">${c.subject || 'Message'}</h4>
+                  ${c.reply_count>0?`<span class='text-xs bg-green-500 text-white px-2 py-0.5 rounded'>${c.reply_count} replies</span>`:''}
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">${c.notification_message || ''}</p>
+                <div class="text-[11px] text-gray-400 mt-1">${new Date(c.updated_at||c.created_at).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function selectConversation(id){
+        try{
+          console.log('Selecting conversation:', id);
+          // Update selected conversation
+          selectedId = id;
+          
+          const res = await fetch(`/api/notifications/admin/conversations/${id}`, { headers:{ 'Authorization': `Bearer ${token}` }});
+          if(!res.ok){ 
+            console.error('Failed to fetch conversation:', res.status);
+            return; 
+          }
+          const data = await res.json();
+          const conv = data.conversation; const replies = data.replies||[];
+          // Build index for quoted lookups
+          try{ window.__adminReplyIndex = {}; replies.forEach(r=>{ if(r&&r.id!=null) window.__adminReplyIndex[r.id]=r; }); }catch{}
+          const box = document.getElementById('conversationDetails');
+          if(!box) return;
+          box.innerHTML = `
+          <div class="flex flex-col h-full">
+            <div class="hidden"></div>
+            <div class="flex-1 overflow-y-auto p-3 sm:p-6 space-y-2 sm:space-y-3 max-h-60 sm:max-h-80 lg:max-h-96" id="messagesArea">
+              ${renderAdminMessages(replies, conv.id)}
+            </div>
+            <div class="flex-shrink-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div id="dmPreview" class="mb-2 sm:mb-3 hidden max-h-16 sm:max-h-20 overflow-y-auto"></div>
+              <form onsubmit="return sendAdminReply(event, ${conv.id})" class="flex gap-1 sm:gap-2 items-center">
+                <button type="button" id="attachBtn" title="Attach" class="px-2 sm:px-3 py-2 rounded bg-gray-100 dark:bg-gray-700"><i class="fas fa-paperclip text-sm sm:text-base"></i></button>
+                <input id="fileInput" type="file" class="hidden" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip" />
+                <input id="adminReplyInput" type="text" class="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="Type a reply..." />
+                <button class="px-3 sm:px-4 py-2 rounded bg-primary-600 text-white"><i class="fas fa-paper-plane text-sm sm:text-base"></i></button>
+              </form>
+            </div>
+          </div>`;
+          setTimeout(()=>{
+            const ab=document.getElementById('attachBtn'); const fi=document.getElementById('fileInput'); if(ab&&fi){ ab.addEventListener('click', ()=>fi.click()); }
+          }, 0);
+          
+          // Re-render conversation list to show selected state
+          renderConversationList();
+        }catch(e){ console.error(e); }
+      }
+      
+      // Make selectConversation available globally
+      window.selectConversation = selectConversation;
+
+      async function sendAdminReply(e, conversationId) {
+        e.preventDefault();
+        const input = document.getElementById('adminReplyInput');
+        const message = (input?.value||'').trim();
+        const fi = document.getElementById('fileInput');
+        const preview = document.getElementById('dmPreview');
+        if (!message && (!fi || !fi.files || fi.files.length===0)) return false;
+        try{
+          // encode quoted reply marker if set
+          let payloadMsg = message;
+          if (window.__adminReplyToId){ payloadMsg = `__REPLY__:${window.__adminReplyToId}__||` + message; }
+          const res = await fetch(`/api/notifications/admin/conversations/${conversationId}/replies`, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: payloadMsg }) });
+          if (res.ok){ input.value=''; window.__adminReplyToId=null; if(preview){ preview.classList.add('hidden'); preview.innerHTML=''; } await selectConversation(conversationId); }
+        }catch(err){ console.error(err); }
+        return false;
+      }
+
+      // Socket setup for typing/read indicators
+      function setupSocket(conversationId){
+        try{
+          if (!window.chatSocket) {
+            const userId = (user && (user.id || user.userId)) || 'admin';
+            window.chatSocket = window.io('/', { auth: { userId } });
+            const typingElId = 'typingIndicator';
+            window.chatSocket.on('typing', (p)=>{ if(String(p.conversationId)===String(conversationId)){ let el=document.getElementById(typingElId); if(!el){ el=document.createElement('div'); el.id=typingElId; el.className='px-6 pb-2 text-xs text-gray-500'; const area=document.getElementById('messagesArea'); area && area.parentElement.insertBefore(el, area.nextSibling); } el.textContent='typing...'; }});
+            window.chatSocket.on('stopTyping', (p)=>{ if(String(p.conversationId)===String(conversationId)){ const el=document.getElementById(typingElId); if(el) el.textContent=''; }});
+            window.chatSocket.on('message', (m)=>{ if(String(m.conversationId)===String(conversationId)) fetchConversations(); });
+          }
+          window.chatSocket.emit('joinConversation', conversationId);
+        }catch{}
+      }
+
+      // Announcement modal controls
+      const modal = document.getElementById('announcementModal');
+      document.getElementById('newAnnouncementBtn').addEventListener('click',()=>{ modal.classList.remove('hidden'); });
+      modal.addEventListener('click',(e)=>{ if(e.target.hasAttribute('data-close')|| e.target.closest('[data-close]')) modal.classList.add('hidden'); });
+
+      document.getElementById('announcementForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const idsRaw = document.getElementById('annUserIds').value.trim();
+        const email = document.getElementById('annEmail').value.trim();
+        const title = document.getElementById('annTitle').value.trim();
+        const message = document.getElementById('annMessage').value.trim();
+        if (!title || !message) return;
+        try {
+          if (idsRaw) {
+            const userIds = idsRaw.split(',').map(x=>parseInt(x.trim(),10)).filter(Boolean);
+            await fetch('/api/user-notifications/bulk', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ userIds, type: 'announcement', title, message, relatedUrl: '' })
+            });
+          } else if (email) {
+            // Legacy single-email support
+            await fetch('/api/notifications', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ email, title, message })
+            });
+          }
+          modal.classList.add('hidden');
+          document.getElementById('announcementForm').reset();
+          fetchConversations();
+        } catch (e) { console.error(e); }
+      });
+
+      // Group modal controls - COMMENTED OUT
+      // const groupModal = document.getElementById('groupModal');
+      // document.getElementById('newGroupBtn').addEventListener('click',()=>{ groupModal.classList.remove('hidden'); });
+      // groupModal.addEventListener('click',(e)=>{ if(e.target.hasAttribute('data-close')|| e.target.closest('[data-close]')) groupModal.classList.add('hidden'); });
+
+      // New Chat modal controls
+      const newChatModal = document.getElementById('newChatModal');
+      const userSearchInput = document.getElementById('userSearchInput');
+      const userSearchResults = document.getElementById('userSearchResults');
+      let searchTimeout;
+
+      document.getElementById('newChatBtn').addEventListener('click',()=>{ 
+        console.log('New chat button clicked, token:', token ? 'present' : 'missing');
+        newChatModal.classList.remove('hidden'); 
+        userSearchInput.focus();
+      });
+      newChatModal.addEventListener('click',(e)=>{ 
+        if(e.target.hasAttribute('data-close')|| e.target.closest('[data-close]')) {
+          newChatModal.classList.add('hidden');
+          userSearchInput.value = '';
+          userSearchResults.innerHTML = '<div class="p-4 text-center text-gray-500">Start typing to search for users...</div>';
+        }
+      });
+
+      // User search functionality
+      userSearchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+          userSearchResults.innerHTML = '<div class="p-4 text-center text-gray-500">Start typing to search for users...</div>';
+          return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+          try {
+            console.log('Searching for users with query:', query);
+            const res = await fetch(`/api/notifications/admin/users/search?q=${encodeURIComponent(query)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            console.log('Search response status:', res.status);
+            if (res.ok) {
+              const data = await res.json();
+              console.log('Search response data:', data);
+              renderUserSearchResults(data.users);
+            } else {
+              const errorData = await res.json();
+              console.error('Search API error:', errorData);
+              userSearchResults.innerHTML = '<div class="p-4 text-center text-red-500">API Error: ' + (errorData.message || 'Unknown error') + '</div>';
+            }
+          } catch (error) {
+            console.error('Error searching users:', error);
+            userSearchResults.innerHTML = '<div class="p-4 text-center text-red-500">Network Error: ' + error.message + '</div>';
+          }
+        }, 300);
+      });
+
+      function renderUserSearchResults(users) {
+        if (users.length === 0) {
+          userSearchResults.innerHTML = '<div class="p-4 text-center text-gray-500">No users found</div>';
+          return;
+        }
+
+        userSearchResults.innerHTML = users.map(user => `
+          <div class="p-3 border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer user-result" 
+               data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}">
+            <div class="font-medium">${user.name}</div>
+            <div class="text-sm text-gray-500">${user.email}</div>
+            <div class="text-xs text-gray-400">Joined: ${new Date(user.created_at).toLocaleDateString()}</div>
+          </div>
+        `).join('');
+
+        // Add click handlers for user selection
+        userSearchResults.querySelectorAll('.user-result').forEach(el => {
+          el.addEventListener('click', async () => {
+            const userId = el.dataset.userId;
+            const userName = el.dataset.userName;
+            const userEmail = el.dataset.userEmail;
+            
+            console.log('User clicked:', { userId, userName, userEmail });
+            
+            try {
+              const res = await fetch('/api/notifications/admin/conversations/new', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ userId, userName, userEmail })
+              });
+              
+              console.log('Conversation creation response status:', res.status);
+              
+              if (res.ok) {
+                const data = await res.json();
+                console.log('Conversation created:', data);
+                
+                newChatModal.classList.add('hidden');
+                userSearchInput.value = '';
+                userSearchResults.innerHTML = '<div class="p-4 text-center text-gray-500">Start typing to search for users...</div>';
+                
+                // Refresh conversations and open the new/existing conversation
+                console.log('Refreshing conversations...');
+                await fetchConversations();
+                console.log('Selecting conversation:', data.conversationId);
+                await selectConversation(data.conversationId);
+                
+                // Show success message
+                const message = data.isNew ? 'New conversation started!' : 'Existing conversation opened!';
+                alert(message);
+              } else {
+                const errorData = await res.json();
+                console.error('API Error:', errorData);
+                alert('Error: ' + (errorData.message || 'Failed to create conversation'));
+              }
+            } catch (error) {
+              console.error('Error creating conversation:', error);
+              alert('Error starting conversation: ' + error.message);
+            }
+          });
+        });
+      }
+      // Group form submission - COMMENTED OUT
+      // document.getElementById('groupForm').addEventListener('submit', async (e)=>{
+      //   e.preventDefault();
+      //   const name = document.getElementById('grpName').value.trim();
+      //   const idsRaw = document.getElementById('grpUserIds').value.trim();
+      //   const emailsRaw = document.getElementById('grpEmails').value.trim();
+      //   if (!name) return;
+      //   try {
+      //     const userIds = idsRaw ? idsRaw.split(',').map(x=>parseInt(x.trim(),10)).filter(Boolean) : [];
+      //     const emails = emailsRaw ? emailsRaw.split(',').map(x=>x.trim()).filter(Boolean) : [];
+      //     const res = await fetch('/api/notifications/admin/groups', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name, userIds, emails }) });
+      //     if (res.ok){
+      //       groupModal.classList.add('hidden');
+      //       document.getElementById('groupForm').reset();
+      //       alert('Group created');
+      //     } else {
+      //       alert('Failed to create group');
+      //     }
+      //   } catch (e) { console.error(e); }
+      // });
+
+      document.getElementById('refreshBtn').addEventListener('click', fetchConversations);
+      document.getElementById('filterAll').addEventListener('click', ()=>{ const s=document.getElementById('filterSearch'); const f=document.getElementById('filterFrom'); const t=document.getElementById('filterTo'); const r=document.getElementById('filterReplies'); if(s)s.value=''; if(f)f.value=''; if(t)t.value=''; if(r)r.value='any'; page=1; applyAndRender(); });
+      document.getElementById('filterOpen').addEventListener('click', ()=>{ const r=document.getElementById('filterReplies'); if(r) r.value='>0'; page=1; applyAndRender(); });
+      document.getElementById('applyFilters').addEventListener('click', ()=>{ page=1; applyAndRender(); });
+      document.getElementById('clearFilters').addEventListener('click', ()=>{ const s=document.getElementById('filterSearch'); const f=document.getElementById('filterFrom'); const t=document.getElementById('filterTo'); const r=document.getElementById('filterReplies'); const so=document.getElementById('filterSort'); if(s)s.value=''; if(f)f.value=''; if(t)t.value=''; if(r)r.value='any'; if(so)so.value='updated_desc'; page=1; applyAndRender(); });
+      document.getElementById('prevPage').addEventListener('click', ()=>{ if (page>1){ page--; fetchConversations(); }});
+      document.getElementById('nextPage').addEventListener('click', ()=>{ page++; fetchConversations(); });
+
+      // Export CSV with current filters
+      document.getElementById('exportCsvBtn').addEventListener('click', (e)=>{
+        e.preventDefault();
+        const q = encodeURIComponent(document.getElementById('filterSearch')?.value||'');
+        const from = encodeURIComponent(document.getElementById('filterFrom')?.value||'');
+        const to = encodeURIComponent(document.getElementById('filterTo')?.value||'');
+        const replies = encodeURIComponent(document.getElementById('filterReplies')?.value||'any');
+        const sort = encodeURIComponent(document.getElementById('filterSort')?.value||'updated_desc');
+        const url = `/api/notifications/admin/conversations/export?q=${q}&from=${from}&to=${to}&replies=${replies}&sort=${sort}`;
+        window.open(url, '_blank');
+      });
+
+      fetchConversations();
+      setInterval(fetchConversations, 60000);
+
+      // Image Modal Functions
+      function openImageModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        modalImage.src = imageSrc;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      }
+
+      function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scrolling
+      }
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeImageModal();
+        }
+      });
+
+      // Message Action Functions
+      function copyMessage(message) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(message).then(() => {
+            showToast('Message copied to clipboard!', 'success');
+          }).catch(() => {
+            showToast('Failed to copy message', 'error');
+          });
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = message;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showToast('Message copied to clipboard!', 'success');
+        }
+      }
+
+      function replyToMessage(messageId, senderName, messagePreview) {
+        const input = document.getElementById('adminReplyInput');
+        const pv = document.getElementById('dmPreview');
+        window.__adminReplyToId = messageId;
+        
+        // Get the full message from the reply index
+        const fullMessage = window.__adminReplyIndex && window.__adminReplyIndex[messageId] 
+          ? window.__adminReplyIndex[messageId].message 
+          : messagePreview;
+        
+        if (pv){ 
+          pv.classList.remove('hidden'); 
+          pv.innerHTML = `<div class=\"text-xs p-2 border-l-4 border-gray-400 bg-gray-50 dark:bg-gray-700\"><div class=\"font-semibold mb-1\">Replying to ${senderName}</div><div>${fullMessage}</div></div>`; 
+        }
+        if (input) { input.focus(); }
+      }
+
+      // function replyToGroupMessage(messageId, senderName, messagePreview) {
+      //   const input = document.getElementById('groupMsgInput');
+      //   if (input) {
+      //     input.value = `Replying to ${senderName}: ${messagePreview}`;
+      //     input.focus();
+      //     showToast('Reply mode activated', 'info');
+      //   }
+      // }
+
+      function forwardMessage(messageId) {
+        const message = window.__adminReplyIndex && window.__adminReplyIndex[messageId];
+        if (!message) {
+          showToast('Message not found', 'error');
+          return;
+        }
+
+        // Create forward modal dynamically
+        const modal = document.createElement('div');
+        modal.id = 'adminForwardModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+        modal.innerHTML = `
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Forward Message</h3>
+            <div class="space-y-4">
+              <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                <div class="font-semibold text-gray-700 dark:text-gray-300 mb-1">Original message:</div>
+                <div class="text-gray-600 dark:text-gray-400">${message.message || 'No message content'}</div>
+                ${message.attachment_url ? `<div class="mt-2 text-xs text-blue-600 dark:text-blue-400"><i class="fas fa-paperclip mr-1"></i>Has attachment</div>` : ''}
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Forward to conversation:</label>
+                <select id="adminForwardConversationSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
+                  <option value="">Select a conversation...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a note (optional):</label>
+                <textarea id="adminForwardNote" placeholder="Add a message..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+              <button onclick="closeAdminForwardModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+              <button onclick="sendAdminForwardMessage(${messageId})" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Forward</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        loadAdminConversationsForForward();
+      }
+
+      function closeAdminForwardModal() {
+        const modal = document.getElementById('adminForwardModal');
+        if (modal) {
+          modal.remove();
+        }
+      }
+
+      async function loadAdminConversationsForForward() {
+        try {
+          const response = await fetch('/api/notifications/admin/conversations', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load conversations');
+          }
+
+          const data = await response.json();
+          const conversations = data.conversations || data;
+          const select = document.getElementById('adminForwardConversationSelect');
+          
+          select.innerHTML = '<option value="">Select a conversation...</option>';
+          conversations.forEach(conv => {
+            if (conv.id !== selectedId) {
+              select.innerHTML += `<option value="${conv.id}">${conv.notification_title || 'Conversation'} - ${conv.user_name || conv.user_email || 'Unknown'}</option>`;
+            }
+          });
+        } catch (error) {
+          console.error('Error loading conversations:', error);
+          showToast('Failed to load conversations', 'error');
+        }
+      }
+
+      async function sendAdminForwardMessage(messageId) {
+        const message = window.__adminReplyIndex && window.__adminReplyIndex[messageId];
+        if (!message) {
+          showToast('Message not found', 'error');
+          return;
+        }
+
+        const targetConversationId = document.getElementById('adminForwardConversationSelect').value;
+        const note = document.getElementById('adminForwardNote').value.trim();
+
+        if (!targetConversationId) {
+          showToast('Please select a conversation', 'error');
+          return;
+        }
+
+        try {
+          // Prepare forward message
+          const forwardMessage = `Forwarded message: ${message.message}${note ? `\n\nNote: ${note}` : ''}`;
+
+          const response = await fetch(`/api/notifications/admin/conversations/${targetConversationId}/replies`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ message: forwardMessage })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to forward message');
+          }
+
+          showToast('Message forwarded successfully', 'success');
+          closeAdminForwardModal();
+
+        } catch (error) {
+          console.error('Error forwarding message:', error);
+          showToast('Failed to forward message', 'error');
+        }
+      }
+
+      // function forwardGroupMessage(messageId) {
+      //   showToast('Forward feature coming soon!', 'info');
+      // }
+
+      async function deleteMessage(messageId) {
+        if (confirm('Are you sure you want to delete this message?')) {
+          try {
+            const res = await fetch(`/api/notifications/admin/replies/${messageId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              showToast('Message deleted successfully', 'success');
+              // Refresh the current conversation
+              if (selectedId) {
+                await selectConversation(selectedId);
+              }
+            } else {
+              showToast('Failed to delete message', 'error');
+            }
+          } catch (error) {
+            console.error('Error deleting message:', error);
+            showToast('Failed to delete message', 'error');
+          }
+        }
+      }
+
+      // async function deleteGroupMessage(messageId) {
+      //   if (confirm('Are you sure you want to delete this message?')) {
+      //     try {
+      //       const res = await fetch(`/api/notifications/groups/messages/${messageId}`, {
+      //         method: 'DELETE',
+      //         headers: { 'Authorization': `Bearer ${token}` }
+      //       });
+      //       if (res.ok) {
+      //         showToast('Message deleted successfully', 'success');
+      //         // Refresh the current group
+      //         const groupId = document.querySelector('[data-group-id]')?.dataset.groupId;
+      //         if (groupId) {
+      //           await openGroup(groupId);
+      //         }
+      //       } else {
+      //         showToast('Failed to delete message', 'error');
+      //       }
+      //     } catch (error) {
+      //       console.error('Error deleting group message:', error);
+      //       showToast('Failed to delete message', 'error');
+      //     }
+      //   }
+      // }
+
+      // Toast notification function
+      function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+          success: 'bg-green-500',
+          error: 'bg-red-500',
+          info: 'bg-blue-500',
+          warning: 'bg-yellow-500'
+        };
+        
+        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+          toast.style.transform = 'translateX(0)';
+          toast.style.opacity = '1';
+        }, 100);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+          toast.style.transform = 'translateX(100%)';
+          toast.style.opacity = '0';
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 300);
+        }, 3000);
+      }
+
+      // ===== Groups UI - COMMENTED OUT =====
+      // async function fetchGroups(){
+      //   try{ const res = await fetch('/api/notifications/admin/groups', { headers:{ 'Authorization': `Bearer ${token}` }}); if(res.ok){ const data=await res.json(); renderGroups(data.groups||[]); } }catch(e){ console.error(e); }
+      // }
+      // function renderGroups(groups){
+      //   const container = document.getElementById('groupList'); if(!container) return;
+      //   if(!groups.length){ container.innerHTML = '<div class="p-4 text-sm text-gray-500">No groups</div>'; return; }
+      //   container.innerHTML = groups.map(g=>`
+      //     <div class="p-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" onclick="openGroup(${g.id})">
+      //       <div class="flex items-center justify-between">
+      //         <div class="font-medium truncate">${g.name}</div>
+      //         <div class="text-xs text-gray-400">${g.member_count||0} members</div>
+      //       </div>
+      //     </div>
+      //   `).join('');
+      // }
+      // async function openGroup(groupId){
+      //   try{
+      //     const box = document.getElementById('groupDetails');
+      //     if(box) box.innerHTML = '<div class="p-6 text-gray-500">Loading...</div>';
+      //     const res = await fetch(`/api/notifications/groups/${groupId}/messages`, { headers:{ 'Authorization': `Bearer ${token}` }});
+      //     const data = res.ok ? await res.json() : { messages: [] };
+      //     renderGroupChat(groupId, (data.messages||[]).reverse());
+      //     // Join socket room
+      //     try{
+      //       if (!window.io){ const s=document.createElement('script'); s.src='https://cdn.socket.io/4.7.5/socket.io.min.js'; s.onload=()=>setupGroupSocket(groupId); document.body.appendChild(s);} else { setupGroupSocket(groupId); }
+      //     }catch{}
+      //   }catch(e){ console.error(e); }
+      // }
+      // function renderGroupChat(groupId, messages){
+      //   const box = document.getElementById('groupDetails'); if(!box) return;
+      //   box.innerHTML = `
+      //     <div class="flex flex-col h-full">
+      //       <div id="groupMsgs" class="flex-1 overflow-y-auto p-4 space-y-3">
+      //         ${messages.map(m=>`
+      //           <div class="flex ${String(m.sender_id||'')==='admin'?'justify-end':'justify-start'}">
+      //             <div class="max-w-xs lg:max-w-md group">
+      //               <div class="rounded p-3 ${m.sender_id?'bg-blue-100 dark:bg-blue-800':'bg-gray-100 dark:bg-gray-700'}">
+      //                 ${m.attachment_url ? `
+      //                   <div class="mb-2">
+      //                     ${/^image\//.test(m.attachment_type||'') ? `<img src="/uploads/chat/${m.attachment_url}" alt="attachment" class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal('/uploads/chat/${m.attachment_url}')" />` : `
+      //                       <a href="/uploads/chat/${m.attachment_url}" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors">
+      //                         <i class="fas fa-download"></i>
+      //                         <span>Download ${m.attachment_type ? m.attachment_type.split('/')[1] || 'file' : 'attachment'}</span>
+      //                       </a>
+      //                     `}
+      //                   </div>
+      //                 ` : ''}
+      //                 ${m.message?`<p class="text-sm">${m.message}</p>`:''}
+      //                 <div class="message-actions mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      //                   <div class="flex gap-1">
+      //                     <button onclick="copyMessage('${m.message || ''}')\" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-800 rounded" title="Copy">
+      //                       <i class="fas fa-copy text-xs"></i>
+      //                     </button>
+      //                     <button onclick="replyToGroupMessage(${m.id}, '${m.sender_email || 'User'}', '${(m.message || '').substring(0, 50)}...')" class="p-1 text-gray-500 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-800 rounded" title="Reply">
+      //                       <i class="fas fa-reply text-xs"></i>
+      //                     </button>
+      //                     <button onclick="forwardGroupMessage(${m.id})" class="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-800 rounded" title="Forward">
+      //                       <i class="fas fa-share text-xs"></i>
+      //                     </button>
+      //                     ${String(m.sender_id||'') === 'admin' ? `
+      //                       <button onclick="deleteGroupMessage(${m.id})" class="p-1 text-gray-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-800 rounded" title="Delete">
+      //                         <i class="fas fa-trash text-xs"></i>
+      //                       </button>
+      //                     ` : ''}
+      //                   </div>
+      //                 </div>
+      //               </div>
+      //               <div class="text-[11px] text-gray-500 mt-1">${new Date(m.created_at).toLocaleString()}</div>
+      //             </div>
+      //           </div>
+      //         `).join('')}
+      //       </div>
+      //       <div class="p-3 border-t border-gray-200 dark:border-gray-700">
+      //         <form onsubmit="return sendGroupMessage(event, ${groupId})" class="flex gap-2 items-center">
+      //           <button type="button" id="attachGroupBtn" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700"><i class="fas fa-paperclip"></i></button>
+      //           <input id="groupFileInput" type="file" class="hidden" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip" />
+      //           <input id="groupMsgInput" type="text" class="flex-1 px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="Message" />
+      //           <button class="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"><i class="fas fa-paper-plane"></i></button>
+      //         </form>
+      //       </div>
+      //     </div>`;
+      //   setTimeout(()=>{
+      //     const ab=document.getElementById('attachGroupBtn'); const fi=document.getElementById('groupFileInput'); if(ab&&fi){ ab.addEventListener('click', ()=>fi.click()); }
+      //   },0);
+      // }
+      // async function sendGroupMessage(e, groupId){
+      //   e.preventDefault();
+      //   const input = document.getElementById('groupMsgInput');
+      //   const msg = (input?.value||'').trim();
+      //   const fi = document.getElementById('groupFileInput');
+      //   try{
+      //     if (fi && fi.files && fi.files.length){
+      //       const fd = new FormData(); Array.from(fi.files).forEach(f=>fd.append('files', f));
+      //       const uploadRes = await fetch(`/api/notifications/groups/${groupId}/attachments`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: fd });
+      //       if (uploadRes.ok) {
+      //         fi.value='';
+      //         // Refresh the group to show the uploaded files
+      //         await openGroup(groupId);
+      //       }
+      //     }
+      //     if (msg){
+      //       const res = await fetch(`/api/notifications/groups/${groupId}/messages`, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: msg }) });
+      //       if (res.ok){ input.value=''; openGroup(groupId); try{ window.groupSocket && window.groupSocket.emit('group:messagePosted', { groupId, message: msg }); }catch{} }
+      //     } else {
+      //       // no text, just attachments sent - refresh
+      //       openGroup(groupId);
+      //     }
+      //   }catch(err){ console.error(err); }
+      //   return false;
+      // }
+      // function setupGroupSocket(groupId){
+      //   try{
+      //     if (!window.groupSocket){ const userId = (user && (user.id || user.userId)) || 'admin'; window.groupSocket = window.io('/', { auth:{ userId }}); window.groupSocket.on('group:message', (m)=>{ if(String(m.groupId)===String(groupId)) openGroup(groupId); }); }
+      //     window.groupSocket.emit('joinGroup', groupId);
+      //   }catch{}
+      // }
+      // Render admin messages function
+      function renderAdminMessages(replies, conversationId) {
+        try {
+          window.__adminVisibleCount = window.__adminVisibleCount || {};
+          const key = `adm-conv-${conversationId}`;
+          const total = replies.length;
+          
+          if (!window.__adminVisibleCount[key]) {
+            window.__adminVisibleCount[key] = Math.max(1, Math.ceil(total * 0.25));
+          }
+          
+          const count = Math.min(total, window.__adminVisibleCount[key]);
+          const start = Math.max(0, total - count);
+          const slice = replies.slice(start);
+          
+          // Build reply index for quoted replies
+          window.__adminReplyIndex = {};
+          replies.forEach(reply => {
+            window.__adminReplyIndex[reply.id] = reply;
+          });
+          
+          const messagesHtml = slice.map(reply => {
+            const parsed = parseReply(reply.message || '');
+            const quoted = parsed.replyToId && window.__adminReplyIndex[parsed.replyToId] ? window.__adminReplyIndex[parsed.replyToId].message : '';
+            const msgHtml = parsed.text || '';
+            
+            return `
+              <div class="flex ${reply.sender_type === 'admin' ? 'justify-end' : 'justify-start'} mb-3 sm:mb-4">
+                <div class="max-w-[85%] sm:max-w-xs lg:max-w-md group" data-reply-id="${reply.id}">
+                  <div class="rounded p-2 sm:p-3 ${reply.sender_type === 'admin' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-700'}">
+                    ${quoted ? `<div class="mb-2 border-l-4 border-gray-400 pl-2 text-xs text-gray-600 dark:text-gray-300">${quoted}</div>` : ''}
+                    ${reply.attachment_url ? renderAdminAttachment(reply) : ''}
+                    ${msgHtml ? `<p class="text-xs sm:text-sm break-words">${msgHtml}</p>` : ''}
+                    <div class="message-actions mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div class="flex gap-1 flex-wrap">
+                        <button onclick="copyMessage('${(reply.message || '').replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-600 rounded" title="Copy">
+                          <i class="fas fa-copy text-xs"></i>
+                        </button>
+                        <button onclick="replyToMessage(${reply.id}, '${(reply.sender_name || reply.sender_email || reply.sender_type || '').replace(/'/g, "\\'")}', '${((parsed.text || '')).substring(0, 50).replace(/'/g, "\\'")}...')" class="p-1 text-gray-500 hover:text-green-600 rounded" title="Reply">
+                          <i class="fas fa-reply text-xs"></i>
+                        </button>
+                        <button onclick="forwardMessage(${reply.id})" class="p-1 text-gray-500 hover:text-purple-600 rounded" title="Forward">
+                          <i class="fas fa-share text-xs"></i>
+                        </button>
+                        <button onclick="deleteMessage(${reply.id})" class="p-1 text-gray-500 hover:text-red-600 rounded" title="Delete">
+                          <i class="fas fa-trash text-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between mt-1 text-xs text-gray-500">
+                    <span class="truncate">${reply.sender_name || reply.sender_email || reply.sender_type}</span>
+                    <span class="flex items-center">
+                      ${new Date(reply.created_at).toLocaleString()} 
+                      <span class="ml-1 ${reply.is_read ? 'text-green-500' : 'text-blue-300'}">
+                        <i class="fas fa-check-double"></i>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          const loadMoreBtn = count < total ? `
+            <div class="text-center">
+              <button class="text-xs px-3 py-1 rounded bg-gray-100 dark:bg-gray-700" onclick="loadMoreAdminMessages('${key}', ${total}, ${conversationId})">
+                See older messages
+              </button>
+            </div>
+          ` : '';
+          
+          return loadMoreBtn + messagesHtml;
+        } catch (e) {
+          console.error('Error rendering admin messages:', e);
+          return '';
+        }
+      }
+      
+      // Parse reply message for quoted replies
+      function parseReply(message) {
+        const mark = '__REPLY__:';
+        const sep = '__||';
+        
+        if (typeof message !== 'string') return { text: message };
+        
+        if (message.startsWith(mark)) {
+          const rest = message.slice(mark.length);
+          const idx = rest.indexOf(sep);
+          if (idx > -1) {
+            return {
+              replyToId: parseInt(rest.slice(0, idx), 10),
+              text: rest.slice(idx + sep.length)
+            };
+          }
+        }
+        
+        return { text: message };
+      }
+      
+      // Render admin attachment
+      function renderAdminAttachment(reply) {
+        if (!reply.attachment_url) return '';
+        
+        const isImage = /^image\//.test(reply.attachment_type || '');
+        
+        if (isImage) {
+          return `
+            <div class="mb-2">
+              <img src="/uploads/chat/${reply.attachment_url}" alt="attachment" 
+                   class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
+                   onclick="openImageModal('/uploads/chat/${reply.attachment_url}')" />
+            </div>
+          `;
+        } else {
+          return `
+            <div class="mb-2">
+              <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}')" 
+                      class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
+                <i class="fas fa-download"></i>
+                <span>Download ${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}</span>
+              </button>
+            </div>
+          `;
+        }
+      }
+      
+      // Load more admin messages
+      function loadMoreAdminMessages(key, total, conversationId) {
+        window.__adminVisibleCount[key] = Math.min(total, window.__adminVisibleCount[key] + Math.max(1, Math.ceil(total * 0.25)));
+        selectConversation(conversationId);
+      }
+
+      // Download file function
+      function downloadFile(filePath, fileName) {
+        try {
+          console.log('Download attempt:', filePath, 'fileName:', fileName);
+          
+          // Validate file path
+          if (!filePath || !filePath.startsWith('/uploads/chat/')) {
+            throw new Error('Invalid file path');
+          }
+          
+          // First, try to fetch the file to check if it exists
+          fetch(filePath, { method: 'HEAD' })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`File not found: ${response.status} ${response.statusText}`);
+              }
+              
+              // File exists, proceed with download
+              const link = document.createElement('a');
+              link.href = filePath;
+              link.target = '_blank'; // Open in new tab as fallback
+              
+              // Set proper filename with extension
+              const fileExtension = fileName.includes('.') ? '' : '.file';
+              const downloadName = (fileName || 'download') + fileExtension;
+              link.download = downloadName;
+              
+              // Add download attributes
+              link.setAttribute('download', downloadName);
+              link.style.display = 'none';
+              
+              // Append to body, click, and remove
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              console.log('Download initiated:', filePath, 'as', link.download);
+              alert('Download started successfully!');
+            })
+            .catch(error => {
+              console.error('File check failed:', error);
+              alert(`File unavailable: ${error.message}`);
+            });
+            
+        } catch (error) {
+          console.error('Download failed:', error);
+          alert('Download failed. Please try again.');
+        }
+      }
+
+      // initial load groups - COMMENTED OUT
+      // fetchGroups();
+      // expose for inline onclick handlers - COMMENTED OUT
+      // window.openGroup = openGroup;
+    </script>
+</body>
+</html>
+
+

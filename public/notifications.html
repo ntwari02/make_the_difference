@@ -1,511 +1,1041 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications & Conversations</title>
+    <title>Notifications - Make The Difference</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script>
-      (function() {
-        try {
-          var theme = localStorage.getItem('color-theme');
-          if (
-            theme === 'dark' ||
-            (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          ) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        } catch (e) {}
-      })();
+        tailwind.config = {
+            darkMode: 'class',
+        }
     </script>
+    <style>
+        .message-actions {
+            transition: opacity 0.2s ease;
+        }
+        .group:hover .message-actions {
+            opacity: 1;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen">
+<body class="h-full bg-gray-50 dark:bg-gray-900">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div class="max-w-7xl mx-auto px-4  sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Notifications & Conversations</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="dashboard.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
+    <div id="navbar-container"></div>
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header Section -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Your Messages</h2>
-                <p class="text-gray-600 dark:text-gray-400">View notifications and continue conversations with admin</p>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-2">
-                <button id="markAllReadBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm">
-                    <i class="fas fa-check-double mr-2"></i>Mark All as Read
-                </button>
-                <button id="refreshBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm">
-                    <i class="fas fa-sync-alt mr-2"></i>Refresh
-                </button>
-            </div>
-        </div>
-
-        <!-- Filter Tabs -->
-        <div class="flex flex-wrap gap-2 mb-6">
-            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" data-filter="all">All Messages</button>
-            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="notifications">Notifications</button>
-            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="conversations">Conversations</button>
-            <button type="button" class="filter-btn px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" data-filter="unread">Unread</button>
-        </div>
-
-        <!-- Content Container -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Messages List -->
-            <div class="lg:col-span-1">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Messages</h3>
-                    </div>
-                    <div id="messagesList" class="max-h-96 overflow-y-auto">
-                        <!-- Messages will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Conversation/Notification Details -->
-            <div class="lg:col-span-2">
-                <div id="messageDetails" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <div class="p-6 text-center text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-comments text-4xl mb-4"></i>
-                        <p>Select a message to view details and reply</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loadingState" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <p class="mt-4 text-gray-600 dark:text-gray-400 text-lg">Loading messages...</p>
-        </div>
-
-        <!-- Empty State -->
-        <div id="emptyState" class="text-center py-12 hidden">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 max-w-md mx-auto">
-                <i class="fas fa-bell text-6xl text-gray-400 mb-6"></i>
-                <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No messages</h3>
-                <p class="text-gray-500 dark:text-gray-500">You don't have any messages yet.</p>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // Auth check
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token) {
-            window.location.href = 'login.html';
-        }
-
-        let allNotifications = [];
-        let allConversations = [];
-        let currentFilter = 'all';
-        let selectedMessageId = null;
-        let selectedMessageType = null; // 'notification' or 'conversation'
-
-        // Filter buttons functionality
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                filterBtns.forEach(b => b.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300'));
-                this.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-700', 'dark:text-blue-300');
-                currentFilter = this.dataset.filter;
-                renderMessages();
-            });
-        });
-
-        // Fetch all data
-        async function fetchAllData() {
-            try {
-                showLoading(true);
-                
-                // Fetch notifications and conversations in parallel
-                const [notificationsResponse, conversationsResponse] = await Promise.all([
-                    fetch('/api/notifications', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }),
-                    fetch('/api/notifications/conversations', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                ]);
-                
-                if (notificationsResponse.ok) {
-                    allNotifications = await notificationsResponse.json();
-                }
-                
-                if (conversationsResponse.ok) {
-                    allConversations = await conversationsResponse.json();
-                }
-                
-                renderMessages();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                showError('Error loading messages. Please check your connection.');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Show error message
-        function showError(message) {
-            const container = document.getElementById('messagesList');
-            container.innerHTML = `
-                <div class="p-4">
-                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                        <div class="flex">
-                            <i class="fas fa-exclamation-triangle text-red-400 mt-1 mr-3"></i>
+    <div class="min-h-screen pt-16">
+        <div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+            <div class="max-w-full mx-auto">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                    <!-- Mobile Header with Toggle -->
+                    <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-                                <p class="text-sm text-red-700 dark:text-red-300 mt-1">${message}</p>
+                                <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                                    <i class="fas fa-bell mr-2"></i>Notifications & Messages
+                                </h1>
+                                <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">View your notifications and chat with support</p>
+                            </div>
+                            <!-- Mobile Toggle Button -->
+                            <button id="mobileToggle" class="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row h-[28rem] sm:h-[32rem] lg:h-[36rem]">
+                        <!-- Left Sidebar - Notifications -->
+                        <div id="notificationsSidebar" class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 overflow-y-auto lg:block hidden">
+                            <div class="p-3 sm:p-4">
+                                <h3 class="font-semibold text-gray-900 dark:text-white mb-3 text-sm sm:text-base">Notifications</h3>
+                                <div id="notificationsList" class="space-y-2">
+                                    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                        <p class="text-sm">Loading notifications...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Chat Area -->
+                        <div class="flex-1 flex flex-col min-h-0">
+                            <div id="chatArea" class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <div class="text-center p-4">
+                                    <i class="fas fa-comments text-3xl sm:text-4xl mb-4"></i>
+                                    <p class="text-sm sm:text-base">Select a notification to start chatting</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+        </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 dark:bg-gray-900 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <a href="home.html" class="flex items-center">
+                        <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-10 w-auto object-contain mr-3">
+                        <span class="text-xl font-bold dark:text-white">MBAPE GLOBAL</span>
+                    </a>
+                    <div class="mt-3 text-gray-300 dark:text-gray-400 text-sm">
+                        <p>Remera-Gisimenti</p>
+                        <p>Equity Bank 2nd Floor</p>
+                        <p class="mt-2"><strong>Phone:</strong> +1(431) 309-2173</p>
+                        <p><strong>Email:</strong> reaglegroup8@gmail.com</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-3 dark:text-white">Quick Links</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="home.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Home</a></li>
+                        <li><a href="about.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">About us</a></li>
+                        <li><a href="service.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Services</a></li>
+                        <li><a href="contact.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-3 dark:text-white">Support</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="help-center.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Help Center</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Terms of Service</a></li>
+                        <li><a href="notifications.html" class="text-gray-300 hover:text-blue-400 dark:hover:text-blue-400">Messages</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="text-center mt-6 pt-6 border-t border-gray-700 text-gray-300 dark:text-gray-400 text-sm">
+                <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">MBAPE GLOBAL</strong> <span>All Rights Reserved</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Image Modal -->
+    <div id="userImageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+        <div class="relative max-w-full max-h-full">
+            <button onclick="closeUserImageModal()" class="absolute top-2 right-2 text-white text-xl sm:text-2xl hover:text-gray-300 z-10 bg-black bg-opacity-50 rounded-full p-2">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="userModalImage" src="" alt="Modal Image" class="max-w-full max-h-full object-contain rounded">
+        </div>
+    </div>
+
+    <!-- Forward Modal -->
+    <div id="forwardModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Forward Message</h3>
+            <div class="space-y-4">
+                <div id="forwardMessagePreview" class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                    <!-- Message preview will be inserted here -->
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Forward to:</label>
+                    <select id="forwardToSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" onchange="handleForwardToChange()">
+                        <option value="same">Same conversation</option>
+                        <option value="other">Another conversation</option>
+                        <option value="new">New chat by email</option>
+                    </select>
+                </div>
+                <div id="conversationSelect" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select conversation:</label>
+                    <select id="forwardConversationSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
+                    </select>
+                </div>
+                <div id="emailInput" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recipient email(s):</label>
+                    <input type="text" id="forwardEmails" placeholder="email1@example.com, email2@example.com" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a note (optional):</label>
+                    <textarea id="forwardNote" placeholder="Add a message..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeForwardModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+                <button onclick="sendForwardMessage()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Forward</button>
+            </div>
+            </div>
+        </div>
+
+    <!-- Scripts -->
+    <script src="/js/include-navbar.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentConversationId = null;
+        let conversations = [];
+        let notifications = [];
+        let userReplyIndex = {};
+
+        // Initialize Socket.IO
+        function initSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+            });
+
+            socket.on('newMessage', (data) => {
+                if (data.conversationId === currentConversationId) {
+                    loadConversationMessages(currentConversationId);
+                }
+            });
+
+            socket.on('messageRead', (data) => {
+                if (data.conversationId === currentConversationId) {
+                    loadConversationMessages(currentConversationId);
+                }
+            });
         }
 
-        // Render messages based on current filter
-        function renderMessages() {
-            const container = document.getElementById('messagesList');
-            const loadingState = document.getElementById('loadingState');
-            const emptyState = document.getElementById('emptyState');
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                console.log('Loading notifications...');
+        const token = localStorage.getItem('token');
+        if (!token) {
+                    console.log('No token found, redirecting to login');
+                    window.location.href = '/login';
+                    return;
+                }
 
-            // Hide loading state
-            loadingState.classList.add('hidden');
+                console.log('Fetching notifications from API...');
+                const response = await fetch('/api/notifications', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-            // Filter messages
-            let filteredMessages = [];
-            
-            if (currentFilter === 'notifications') {
-                filteredMessages = allNotifications.map(n => ({
-                    ...n,
-                    type: 'notification',
-                    displayId: n.id,
-                    title: n.title,
-                    message: n.message,
-                    date: n.created_at,
-                    isRead: n.is_read
-                }));
-            } else if (currentFilter === 'conversations') {
-                filteredMessages = allConversations.map(c => ({
-                    ...c,
-                    type: 'conversation',
-                    displayId: c.id,
-                    title: c.subject,
-                    message: c.notification_message,
-                    date: c.updated_at,
-                    isRead: true,
-                    replyCount: c.reply_count || 0
-                }));
-            } else if (currentFilter === 'unread') {
-                const unreadNotifications = allNotifications.filter(n => !n.is_read).map(n => ({
-                    ...n,
-                    type: 'notification',
-                    displayId: n.id,
-                    title: n.title,
-                    message: n.message,
-                    date: n.created_at,
-                    isRead: n.is_read
-                }));
-                filteredMessages = unreadNotifications;
-            } else { // 'all'
-                const notificationMessages = allNotifications.map(n => ({
-                    ...n,
-                    type: 'notification',
-                    displayId: n.id,
-                    title: n.title,
-                    message: n.message,
-                    date: n.created_at,
-                    isRead: n.is_read
-                }));
-                const conversationMessages = allConversations.map(c => ({
-                    ...c,
-                    type: 'conversation',
-                    displayId: c.id,
-                    title: c.subject,
-                    message: c.notification_message,
-                    date: c.updated_at,
-                    isRead: true,
-                    replyCount: c.reply_count || 0
-                }));
-                filteredMessages = [...notificationMessages, ...conversationMessages];
+                console.log('Notifications API response status:', response.status);
+
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Unauthorized, redirecting to login');
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to load notifications');
+                }
+
+                notifications = await response.json();
+                console.log('Notifications loaded:', notifications);
+                renderNotifications();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                document.getElementById('notificationsList').innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Failed to load notifications</p>
+                    </div>
+                `;
             }
+        }
 
-            // Sort by date (newest first)
-            filteredMessages.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            // Show empty state if no messages
-            if (filteredMessages.length === 0) {
-                container.innerHTML = '';
-                emptyState.classList.remove('hidden');
+        // Render notifications
+        function renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            console.log('Rendering notifications:', notifications);
+            
+            if (notifications.length === 0) {
+            container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                        <p>No notifications yet</p>
+                            </div>
+                `;
                 return;
             }
 
-            emptyState.classList.add('hidden');
-
-            // Render message list
-            container.innerHTML = filteredMessages.map(message => `
-                <div class="message-item p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedMessageId === message.displayId && selectedMessageType === message.type ? 'bg-blue-50 dark:bg-blue-900/20' : ''}" 
-                     onclick="selectMessage('${message.type}', ${message.displayId})">
+            container.innerHTML = notifications.map(notification => `
+                <div class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900' : ''}" 
+                     onclick="selectNotification(${notification.id})" data-notification-id="${notification.id}">
                     <div class="flex items-start justify-between">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="text-sm font-semibold text-gray-800 dark:text-white truncate">${message.title}</h4>
-                                ${!message.isRead ? '<span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">New</span>' : ''}
-                                ${message.type === 'conversation' && message.replyCount > 0 ? `<span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">${message.replyCount} replies</span>` : ''}
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">${message.message}</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400">${formatDate(message.date)}</span>
-                                <span class="text-xs text-gray-400 capitalize">${message.type}</span>
-                            </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900 dark:text-white text-sm">${notification.title || 'New Message'}</h4>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${notification.message || 'You have a new message'}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">${formatDate(notification.created_at)}</p>
                         </div>
+                        ${!notification.is_read ? '<div class="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>' : ''}
                     </div>
                 </div>
             `).join('');
-        }
 
-        // Select a message to view details
-        async function selectMessage(type, id) {
-            selectedMessageId = id;
-            selectedMessageType = type;
-            
-            // Update UI to show selected message
-            document.querySelectorAll('.message-item').forEach(item => {
-                item.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+            // Add event listeners after rendering
+            container.querySelectorAll('[data-notification-id]').forEach(element => {
+                const notificationId = element.getAttribute('data-notification-id');
+                element.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Notification clicked:', notificationId);
+                    selectNotification(parseInt(notificationId));
+                });
             });
-            event.target.closest('.message-item').classList.add('bg-blue-50', 'dark:bg-blue-900/20');
-            
-            // Load message details
-            await loadMessageDetails(type, id);
         }
 
-        // Load message details
-        async function loadMessageDetails(type, id) {
+        // Select notification and load conversation
+        async function selectNotification(notificationId) {
+            console.log('selectNotification called with ID:', notificationId);
             try {
-                const detailsContainer = document.getElementById('messageDetails');
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.error('No token found');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                console.log('Fetching conversation for notification:', notificationId);
+                const response = await fetch(`/api/notifications/conversations`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                console.log('Response status:', response.status);
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Failed to load conversation:', errorText);
+                    throw new Error('Failed to load conversation');
+                }
+
+                const conversations = await response.json();
+                console.log('Conversations loaded:', conversations);
                 
-                if (type === 'notification') {
-                    // For notifications, show the notification details
-                    const notification = allNotifications.find(n => n.id == id);
-                    if (!notification) return;
-                    
-                    detailsContainer.innerHTML = `
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${notification.title}</h3>
-                                <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(notification.created_at)}</span>
+                // Find the conversation that matches this notification ID
+                const conversation = conversations.find(conv => conv.notification_id == notificationId);
+                
+                if (!conversation) {
+                    console.error('No conversation found for notification:', notificationId);
+                    showToast('No conversation found for this notification');
+                return;
+            }
+
+                console.log('Found conversation:', conversation);
+                currentConversationId = conversation.id;
+                
+                // Join Socket.IO room
+                if (socket) {
+                    socket.emit('joinConversation', { conversationId: conversation.id });
+                }
+
+                await loadConversationMessages(conversation.id);
+            } catch (error) {
+                console.error('Error selecting notification:', error);
+                showToast('Failed to load conversation');
+            }
+        }
+
+        // Make selectNotification globally accessible
+        window.selectNotification = selectNotification;
+
+        // Load conversation messages
+        async function loadConversationMessages(conversationId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/notifications/conversations/${conversationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to load messages');
+                }
+
+                const data = await response.json();
+                console.log('Conversation data loaded:', data);
+                renderMessages(data.replies, conversationId);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                showToast('Failed to load messages');
+            }
+        }
+
+        // Render messages
+        function renderMessages(replies, conversationId) {
+            const chatArea = document.getElementById('chatArea');
+            
+            // Build reply index for quoted replies
+            userReplyIndex = {};
+            replies.forEach(reply => {
+                userReplyIndex[reply.id] = reply;
+            });
+
+            const messagesHtml = replies.map(reply => {
+                const parsed = parseReply(reply.message || '');
+                const quoted = parsed.replyToId && userReplyIndex[parsed.replyToId] ? userReplyIndex[parsed.replyToId].message : '';
+                const msgHtml = parsed.text || '';
+
+                return `
+                    <div class="flex ${reply.sender_type === 'admin' ? 'justify-start' : 'justify-end'} mb-3 sm:mb-4">
+                        <div class="max-w-[85%] sm:max-w-xs lg:max-w-md group" data-reply-id="${reply.id}">
+                            <div class="rounded p-2 sm:p-3 ${reply.sender_type === 'admin' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-700'}">
+                                ${quoted ? `<div class="mb-2 border-l-4 border-gray-400 pl-2 text-xs text-gray-600 dark:text-gray-300">${quoted}</div>` : ''}
+                                ${reply.attachment_url ? renderAttachment(reply) : ''}
+                                ${msgHtml ? `<p class="text-xs sm:text-sm text-gray-800 dark:text-gray-200 break-words">${msgHtml}</p>` : ''}
+                                <div class="message-actions mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <div class="flex gap-1 flex-wrap">
+                                        <button class="p-1 text-gray-500 hover:text-blue-600 rounded copy-btn" data-msg="${encodeURIComponent(reply.message || '')}" title="Copy">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                        <button class="p-1 text-gray-500 hover:text-green-600 rounded reply-btn" data-id="${reply.id}" data-preview="${encodeURIComponent((msgHtml || '').substring(0, 50))}" title="Reply">
+                                            <i class="fas fa-reply text-xs"></i>
+                                        </button>
+                                        <button onclick="openForwardModal(${reply.id})" class="p-1 text-gray-500 hover:text-purple-600 rounded" title="Forward">
+                                            <i class="fas fa-share text-xs"></i>
+                                        </button>
+                                        <button onclick="deleteUserMessage(${reply.id})" class="p-1 text-gray-500 hover:text-red-600 rounded" title="Delete">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
-                                <p class="text-gray-700 dark:text-gray-300">${notification.message}</p>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500 dark:text-gray-400">Notification</span>
-                                ${!notification.is_read ? `
-                                    <button onclick="markAsRead(${notification.id})" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm">
-                                        Mark as Read
-                                    </button>
-                                ` : ''}
+                            <div class="flex items-center justify-between mt-1 text-xs">
+                                <span class="text-gray-500 dark:text-gray-400 truncate">${reply.sender_name || reply.sender_email || reply.sender_type}</span>
+                                <span class="text-gray-500 dark:text-gray-400 flex items-center">
+                                    ${formatDate(reply.created_at)} 
+                                    <span class="ml-1 ${reply.is_read ? 'text-green-500' : 'text-blue-300'}">
+                                        <i class="fas fa-check-double"></i>
+                                    </span>
+                                </span>
                             </div>
                         </div>
-                    `;
-                } else if (type === 'conversation') {
-                    // For conversations, fetch and show the conversation with replies
-                    const response = await fetch(`/api/notifications/conversations/${id}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        const conversation = data.conversation;
-                        const replies = data.replies;
-                        
-                        detailsContainer.innerHTML = `
-                            <div class="flex flex-col h-full">
-                                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${conversation.subject}</h3>
-                                        <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(conversation.created_at)}</span>
-                                    </div>
-                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
-                                        <p class="text-gray-700 dark:text-gray-300">${conversation.notification_message}</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex-1 overflow-y-auto p-6 space-y-4">
-                                    ${replies.map(reply => `
-                                        <div class="flex ${reply.sender_type === 'user' ? 'justify-end' : 'justify-start'}">
-                                            <div class="max-w-xs lg:max-w-md">
-                                                <div class="bg-${reply.sender_type === 'user' ? 'blue' : 'gray'}-100 dark:bg-${reply.sender_type === 'user' ? 'blue' : 'gray'}-800 rounded-lg p-3">
-                                                    <p class="text-sm text-gray-800 dark:text-gray-200">${reply.message}</p>
-                                                </div>
-                                                <div class="flex items-center justify-between mt-1">
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${reply.sender_name || reply.sender_email}</span>
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(reply.created_at)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                
-                                <div class="p-6 border-t border-gray-200 dark:border-gray-700">
-                                    <form onsubmit="sendReply(event, ${conversation.id})" class="flex gap-2">
-                                        <input type="text" id="replyMessage" placeholder="Type your reply..." 
-                                               class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                                            <i class="fas fa-paper-plane"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        `;
+                    </div>
+                `;
+            }).join('');
+
+            chatArea.innerHTML = `
+                <div class="w-full h-full flex flex-col">
+                    <div class="flex-1 overflow-y-auto p-3 sm:p-6 space-y-2 sm:space-y-3 max-h-60 sm:max-h-80 lg:max-h-96">
+                        ${messagesHtml}
+                    </div>
+                    <div class="flex-shrink-0 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <div id="userPreview" class="mb-2 sm:mb-3 hidden max-h-16 sm:max-h-20 overflow-y-auto"></div>
+                        <form onsubmit="sendReply(event, ${conversationId})" class="flex gap-1 sm:gap-2 items-center">
+                            <button type="button" id="attachUserBtn" class="px-2 sm:px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600" title="Attach files">
+                                <i class="fas fa-paperclip text-sm sm:text-base"></i>
+                            </button>
+                            <input id="userFileInput" type="file" class="hidden" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip" />
+                            <input type="text" id="replyMessage" placeholder="Type your reply..." 
+                                   class="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <button type="submit" class="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-paper-plane text-sm sm:text-base"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            // Wire up event listeners
+            wireMessageActions();
+            wireFileUpload();
+        }
+
+        // Render attachment
+        function renderAttachment(reply) {
+            if (!reply.attachment_url) return '';
+            
+            const isImage = /^image\//.test(reply.attachment_type || '');
+            
+            if (isImage) {
+                return `
+                    <div class="mb-2">
+                        <img src="/uploads/chat/${reply.attachment_url}" alt="attachment" 
+                             class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
+                             onclick="openUserImageModal('/uploads/chat/${reply.attachment_url}')" />
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="mb-2">
+                        <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}')" 
+                                class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
+                            <i class="fas fa-download"></i>
+                            <span>Download ${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}</span>
+                        </button>
+                    </div>
+                `;
                     }
                 }
-            } catch (error) {
-                console.error('Error loading message details:', error);
-                showError('Error loading message details.');
+
+        // Parse reply message for quoted replies
+        function parseReply(message) {
+            const mark = '__REPLY__:';
+            const sep = '__||';
+            
+            if (typeof message !== 'string') return { text: message };
+            
+            if (message.startsWith(mark)) {
+                const rest = message.slice(mark.length);
+                const idx = rest.indexOf(sep);
+                if (idx > -1) {
+                    return {
+                        replyToId: parseInt(rest.slice(0, idx), 10),
+                        text: rest.slice(idx + sep.length)
+                    };
+                }
             }
+            
+            return { text: message };
+        }
+
+        // Wire message action buttons
+        function wireMessageActions() {
+            // Copy buttons
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const msg = decodeURIComponent(e.currentTarget.getAttribute('data-msg'));
+                    navigator.clipboard.writeText(msg).then(() => {
+                        showToast('Message copied to clipboard');
+                    });
+                });
+            });
+
+            // Reply buttons
+            document.querySelectorAll('.reply-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const preview = decodeURIComponent(e.currentTarget.getAttribute('data-preview'));
+                    replyToUserMsgByText(id, 'Admin', preview);
+                });
+            });
+        }
+
+        // Wire file upload
+        function wireFileUpload() {
+            const attachBtn = document.getElementById('attachUserBtn');
+            const fileInput = document.getElementById('userFileInput');
+            const previewBox = document.getElementById('userPreview');
+            
+            if (!attachBtn || !fileInput) return;
+
+            window.__userPendingFiles = [];
+
+            attachBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', () => {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    previewBox.classList.add('hidden');
+                    previewBox.innerHTML = '';
+                    return;
+                }
+
+                const MAX_SIZE = 30 * 1024 * 1024; // 30MB per file
+                const filesArr = Array.from(fileInput.files);
+                const tooBig = filesArr.find(f => f.size > MAX_SIZE);
+                
+                if (tooBig) {
+                    alert(`File too large: ${tooBig.name}. Max 30MB`);
+                    fileInput.value = '';
+                    return;
+                }
+
+                window.__userPendingFiles = filesArr;
+                renderFilePreviews();
+            });
+        }
+
+        // Render file previews
+        function renderFilePreviews() {
+            const previewBox = document.getElementById('userPreview');
+            const items = window.__userPendingFiles.map((f, idx) => {
+                const type = f.type || '';
+                if (/^image\//.test(type)) {
+                    const url = URL.createObjectURL(f);
+                    return `
+                        <div class="inline-flex items-center gap-2 p-2 border rounded mr-2 mb-2 bg-gray-50 dark:bg-gray-700">
+                            <img src="${url}" class="h-12 w-12 object-cover rounded" alt="preview" />
+                            <span class="text-xs truncate max-w-[10rem]">${f.name}</span>
+                            <button type="button" data-remove="${idx}" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="inline-flex items-center gap-2 p-2 border rounded mr-2 mb-2 bg-gray-50 dark:bg-gray-700">
+                        <i class="fas fa-file"></i>
+                        <span class="text-xs truncate max-w-[12rem]">${f.name}</span>
+                        <button type="button" data-remove="${idx}" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            previewBox.innerHTML = `
+                <div class="text-xs text-gray-500 mb-1">Attachments ready to send:</div>
+                <div class="flex flex-wrap">${items}</div>
+            `;
+            previewBox.classList.remove('hidden');
+
+            // Wire remove buttons
+            previewBox.querySelectorAll('[data-remove]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const i = parseInt(e.currentTarget.getAttribute('data-remove'), 10);
+                    window.__userPendingFiles.splice(i, 1);
+                    document.getElementById('userFileInput').value = '';
+                    
+                    if (window.__userPendingFiles.length === 0) {
+                        previewBox.classList.add('hidden');
+                        previewBox.innerHTML = '';
+                    } else {
+                        renderFilePreviews();
+                    }
+                });
+            });
         }
 
         // Send reply
         async function sendReply(event, conversationId) {
             event.preventDefault();
+            
             const messageInput = document.getElementById('replyMessage');
             const message = messageInput.value.trim();
-            
-            if (!message) return;
-            
+            const files = window.__userPendingFiles || [];
+
+            if (!message && files.length === 0) {
+                showToast('Please enter a message or attach a file');
+                return;
+            }
+
             try {
+                const token = localStorage.getItem('token');
+                
+                // Send message first
+                if (message) {
+                    // Encode quoted reply marker if set
+                    let payloadMsg = message;
+                    if (window.__userReplyToId) {
+                        payloadMsg = `__REPLY__:${window.__userReplyToId}__||` + message;
+                    }
+                    
                 const response = await fetch(`/api/notifications/conversations/${conversationId}/replies`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ message })
-                });
-                
-                if (response.ok) {
-                    messageInput.value = '';
-                    // Reload conversation details
-                    await loadMessageDetails('conversation', conversationId);
-                    // Refresh all data
-                    await fetchAllData();
+                        body: JSON.stringify({ message: payloadMsg })
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Failed to send message');
+                    }
                 }
+
+                // Send files if any
+                if (files.length > 0) {
+                    const formData = new FormData();
+                    files.forEach(file => {
+                        formData.append('files', file);
+                    });
+
+                    const response = await fetch(`/api/notifications/conversations/${conversationId}/attachments`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Failed to send files');
+                    }
+                }
+
+                // Clear form
+                    messageInput.value = '';
+                document.getElementById('userFileInput').value = '';
+                window.__userPendingFiles = [];
+                window.__userReplyToId = null;
+                document.getElementById('userPreview').classList.add('hidden');
+                document.getElementById('userPreview').innerHTML = '';
+
+                // Reload messages
+                await loadConversationMessages(conversationId);
+                
+                showToast('Message sent successfully');
             } catch (error) {
                 console.error('Error sending reply:', error);
-                alert('Error sending reply. Please try again.');
+                showToast('Failed to send message');
             }
         }
 
-        // Mark notification as read
-        async function markAsRead(notificationId) {
+        // Message action functions
+        function copyUserMsg(message) {
+            navigator.clipboard.writeText(message).then(() => {
+                showToast('Message copied to clipboard');
+            });
+        }
+
+        function replyToUserMsgByText(replyId, senderName, preview) {
+            const messageInput = document.getElementById('replyMessage');
+            const previewBox = document.getElementById('userPreview');
+            const quotedMessage = userReplyIndex[replyId];
+            
+            // Store the reply ID for when sending
+            window.__userReplyToId = replyId;
+            
+            if (quotedMessage) {
+                const fullMessage = quotedMessage.message || '';
+                if (previewBox) {
+                    previewBox.classList.remove('hidden');
+                    previewBox.innerHTML = `
+                        <div class="text-xs p-2 border-l-4 border-gray-400 bg-gray-50 dark:bg-gray-700 mb-2">
+                            <div class="font-semibold mb-1">Replying to ${senderName}</div>
+                            <div>${fullMessage}</div>
+                        </div>
+                    `;
+                }
+            } else {
+                if (previewBox) {
+                    previewBox.classList.remove('hidden');
+                    previewBox.innerHTML = `
+                        <div class="text-xs p-2 border-l-4 border-gray-400 bg-gray-50 dark:bg-gray-700 mb-2">
+                            <div class="font-semibold mb-1">Replying to ${senderName}</div>
+                            <div>${preview}</div>
+                        </div>
+                    `;
+                }
+            }
+            messageInput.focus();
+        }
+
+        function openForwardModal(messageId) {
+            const message = userReplyIndex[messageId];
+            if (!message) {
+                showToast('Message not found');
+                return;
+            }
+
+            // Show message preview
+            const preview = document.getElementById('forwardMessagePreview');
+            preview.innerHTML = `
+                <div class="font-semibold text-gray-700 dark:text-gray-300 mb-1">Original message:</div>
+                <div class="text-gray-600 dark:text-gray-400">${message.message || 'No message content'}</div>
+                ${message.attachment_url ? `<div class="mt-2 text-xs text-blue-600 dark:text-blue-400"><i class="fas fa-paperclip mr-1"></i>Has attachment</div>` : ''}
+            `;
+
+            document.getElementById('forwardModal').classList.remove('hidden');
+            document.getElementById('forwardModal').setAttribute('data-message-id', messageId);
+            
+            // Reset form
+            document.getElementById('forwardToSelect').value = 'same';
+            document.getElementById('forwardNote').value = '';
+            handleForwardToChange();
+        }
+
+        function closeForwardModal() {
+            document.getElementById('forwardModal').classList.add('hidden');
+            document.getElementById('forwardModal').removeAttribute('data-message-id');
+        }
+
+        function handleForwardToChange() {
+            const forwardTo = document.getElementById('forwardToSelect').value;
+            const conversationSelect = document.getElementById('conversationSelect');
+            const emailInput = document.getElementById('emailInput');
+
+            // Hide all options first
+            conversationSelect.classList.add('hidden');
+            emailInput.classList.add('hidden');
+
+            if (forwardTo === 'other') {
+                conversationSelect.classList.remove('hidden');
+                loadConversationsForForward();
+            } else if (forwardTo === 'new') {
+                emailInput.classList.remove('hidden');
+            }
+        }
+
+        async function loadConversationsForForward() {
             try {
-                const response = await fetch(`/api/notifications/${notificationId}/read`, {
-                    method: 'PATCH',
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/notifications/conversations', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
 
-                if (response.ok) {
-                    // Update local state
-                    const notification = allNotifications.find(n => n.id === notificationId);
-                    if (notification) {
-                        notification.is_read = true;
-                        renderMessages();
-                    }
+                if (!response.ok) {
+                    throw new Error('Failed to load conversations');
                 }
+
+                const conversations = await response.json();
+                const select = document.getElementById('forwardConversationSelect');
+                
+                select.innerHTML = '<option value="">Select a conversation...</option>';
+                conversations.forEach(conv => {
+                    if (conv.id !== currentConversationId) {
+                        select.innerHTML += `<option value="${conv.id}">${conv.notification_title || 'Conversation'} - ${conv.user_name || conv.email || 'Unknown'}</option>`;
+                    }
+                });
             } catch (error) {
-                console.error('Error marking notification as read:', error);
+                console.error('Error loading conversations:', error);
+                showToast('Failed to load conversations');
             }
         }
 
-        // Mark all notifications as read
-        document.getElementById('markAllReadBtn').addEventListener('click', async function() {
+        async function sendForwardMessage() {
+            const messageId = document.getElementById('forwardModal').getAttribute('data-message-id');
+            const forwardTo = document.getElementById('forwardToSelect').value;
+            const note = document.getElementById('forwardNote').value.trim();
+
+            if (!messageId) {
+                showToast('No message selected');
+                return;
+            }
+
+            const message = userReplyIndex[messageId];
+            if (!message) {
+                showToast('Message not found');
+                return;
+            }
+
             try {
-                const unreadNotifications = allNotifications.filter(n => !n.is_read);
+                const token = localStorage.getItem('token');
+                let targetConversationId = null;
+                let targetEmails = null;
+
+                if (forwardTo === 'same') {
+                    targetConversationId = currentConversationId;
+                } else if (forwardTo === 'other') {
+                    targetConversationId = document.getElementById('forwardConversationSelect').value;
+                    if (!targetConversationId) {
+                        showToast('Please select a conversation');
+                        return;
+                    }
+                } else if (forwardTo === 'new') {
+                    targetEmails = document.getElementById('forwardEmails').value.trim();
+                    if (!targetEmails) {
+                        showToast('Please enter recipient email(s)');
+                        return;
+                    }
+                }
+
+                // Prepare forward message
+                const forwardMessage = `Forwarded message: ${message.message}${note ? `\n\nNote: ${note}` : ''}`;
+
+                if (targetConversationId) {
+                    // Send to existing conversation
+                    const response = await fetch(`/api/notifications/conversations/${targetConversationId}/replies`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ message: forwardMessage })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to forward message');
+                    }
+                } else if (targetEmails) {
+                    // Create new conversation and send
+                    const response = await fetch('/api/notifications/conversations/new', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ 
+                            emails: targetEmails.split(',').map(e => e.trim()),
+                            message: forwardMessage
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to create new conversation');
+                    }
+                }
+
+                showToast('Message forwarded successfully');
+                closeForwardModal();
                 
-                if (unreadNotifications.length === 0) {
-                    alert('No unread notifications to mark.');
+                // Reload current conversation if forwarding to same
+                if (forwardTo === 'same' && currentConversationId) {
+                    await loadConversationMessages(currentConversationId);
+                }
+
+            } catch (error) {
+                console.error('Error forwarding message:', error);
+                showToast('Failed to forward message');
+            }
+        }
+
+        // Image modal functions
+        function openUserImageModal(imageSrc) {
+            document.getElementById('userModalImage').src = imageSrc;
+            document.getElementById('userImageModal').classList.remove('hidden');
+        }
+
+        function closeUserImageModal() {
+            document.getElementById('userImageModal').classList.add('hidden');
+        }
+
+        // Delete user message
+        async function deleteUserMessage(messageId) {
+            if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
                     return;
                 }
 
-                // Mark all unread notifications as read
-                for (const notification of unreadNotifications) {
-                    await fetch(`/api/notifications/${notification.id}/read`, {
-                        method: 'PATCH',
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/notifications/replies/${messageId}`, {
+                    method: 'DELETE',
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
-                    notification.is_read = true;
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
                 }
 
-                renderMessages();
+                if (!response.ok) {
+                    throw new Error('Failed to delete message');
+                }
+
+                showToast('Message deleted successfully');
+                
+                // Reload messages
+                if (currentConversationId) {
+                    await loadConversationMessages(currentConversationId);
+                }
+                
             } catch (error) {
-                console.error('Error marking all notifications as read:', error);
-                alert('Error marking notifications as read. Please try again.');
+                console.error('Error deleting message:', error);
+                showToast('Failed to delete message');
             }
-        });
+        }
 
-        // Refresh messages
-        document.getElementById('refreshBtn').addEventListener('click', function() {
-            fetchAllData();
-        });
-
-        // Format date
+        // Utility functions
         function formatDate(dateString) {
             const date = new Date(dateString);
-            const now = new Date();
-            const diffInHours = (now - date) / (1000 * 60 * 60);
+            return date.toLocaleString();
+        }
 
-            if (diffInHours < 1) {
-                const minutes = Math.floor((now - date) / (1000 * 60));
-                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-            } else if (diffInHours < 24) {
-                const hours = Math.floor(diffInHours);
-                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-            } else if (diffInHours < 168) { // 7 days
-                const days = Math.floor(diffInHours / 24);
-                return `${days} day${days !== 1 ? 's' : ''} ago`;
-            } else {
-                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        function showToast(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+
+        // Download file function
+        function downloadFile(filePath, fileName) {
+            try {
+                console.log('Download attempt:', filePath, 'fileName:', fileName);
+                
+                // Validate file path
+                if (!filePath || !filePath.startsWith('/uploads/chat/')) {
+                    throw new Error('Invalid file path');
+                }
+                
+                // First, try to fetch the file to check if it exists
+                fetch(filePath, { method: 'HEAD' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`File not found: ${response.status} ${response.statusText}`);
+                        }
+                        
+                        // File exists, proceed with download
+                        const link = document.createElement('a');
+                        link.href = filePath;
+                        link.target = '_blank'; // Open in new tab as fallback
+                        
+                        // Set proper filename with extension
+                        const fileExtension = fileName.includes('.') ? '' : '.file';
+                        const downloadName = (fileName || 'download') + fileExtension;
+                        link.download = downloadName;
+                        
+                        // Add download attributes
+                        link.setAttribute('download', downloadName);
+                        link.style.display = 'none';
+                        
+                        // Append to body, click, and remove
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        console.log('Download initiated:', filePath, 'as', link.download);
+                        showToast('Download started successfully!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('File check failed:', error);
+                        showToast(`File unavailable: ${error.message}`, 'error');
+                    });
+                    
+            } catch (error) {
+                console.error('Download failed:', error);
+                showToast('Download failed. Please try again.', 'error');
             }
         }
 
-        // Show loading state
-        function showLoading(isLoading) {
-            const loadingState = document.getElementById('loadingState');
-            if (isLoading) {
-                loadingState.classList.remove('hidden');
-            } else {
-                loadingState.classList.add('hidden');
+        // Mobile toggle functionality
+        function initMobileToggle() {
+            const mobileToggle = document.getElementById('mobileToggle');
+            const notificationsSidebar = document.getElementById('notificationsSidebar');
+            
+            if (mobileToggle && notificationsSidebar) {
+                mobileToggle.addEventListener('click', () => {
+                    notificationsSidebar.classList.toggle('hidden');
+                    const icon = mobileToggle.querySelector('i');
+                    if (notificationsSidebar.classList.contains('hidden')) {
+                        icon.className = 'fas fa-bars text-xl';
+                    } else {
+                        icon.className = 'fas fa-times text-xl';
+                    }
+                });
             }
         }
 
-        // Initial load
-        fetchAllData();
-
-        // Auto-refresh every 30 seconds
-        setInterval(fetchAllData, 30000);
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Notifications page loaded');
+            initSocket();
+            loadNotifications();
+            initMobileToggle();
+        });
     </script>
 </body>
 </html> 

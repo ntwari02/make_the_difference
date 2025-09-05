@@ -92,7 +92,12 @@ async function initializeNavbar() {
             mobileMenu: document.getElementById('mobile-menu'),
             mobileMenuClose: document.getElementById('mobile-menu-close'),
             mobileMenuBackdrop: document.getElementById('mobile-menu-backdrop'),
-            mobileAuthButtons: document.getElementById('mobileAuthButtons')
+            mobileAuthButtons: document.getElementById('mobileAuthButtons'),
+            notificationBell: document.getElementById('notification-bell'),
+            notificationDropdown: document.getElementById('notification-dropdown'),
+            notificationList: document.getElementById('notification-list'),
+            notificationBadge: document.getElementById('notification-badge'),
+            noNotifications: document.getElementById('no-notifications')
         };
         
         // Store elements globally
@@ -112,6 +117,7 @@ async function initializeNavbar() {
         initializeUserMenu(elements);
         initializeMobileMenu(elements);
         initializeAuthSystem(elements);
+        initializeNotifications(elements);
         
         // Set up event listeners
         setupEventListeners(elements);
@@ -238,6 +244,119 @@ function initializeAuthSystem(elements) {
             window.location.href = 'logout.html';
         });
     }
+}
+
+// Initialize notifications (bell + dropdown)
+function initializeNotifications(elements) {
+    const { notificationBell, notificationDropdown, notificationBadge } = elements;
+    if (!notificationBell) {
+        console.error('[Notifications] notificationBell element not found');
+        return;
+    }
+    if (!notificationDropdown) {
+        console.warn('[Notifications] notificationDropdown not found (navigation mode will still work)');
+    }
+
+    // Initial diagnostics
+    try {
+        const rect = notificationBell.getBoundingClientRect();
+        console.log('[Notifications] Bell ready', {
+            exists: !!notificationBell,
+            classes: notificationBell.className,
+            rect: { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) },
+            computedDisplay: window.getComputedStyle(notificationBell).display,
+            computedVisibility: window.getComputedStyle(notificationBell).visibility,
+            computedPointerEvents: window.getComputedStyle(notificationBell).pointerEvents
+        });
+    } catch (e) {
+        console.log('[Notifications] Unable to measure bell:', e?.message || e);
+    }
+
+    // Navigate to notifications page on click
+    notificationBell.addEventListener('click', (e) => {
+        console.log('[Notifications] Bell click detected', {
+            target: e.target && (e.target.id || e.target.tagName),
+            time: new Date().toISOString()
+        });
+        try {
+            e.preventDefault();
+        } catch {}
+        const dest = 'notifications.html';
+        console.log('[Notifications] Navigating to', dest);
+        window.location.href = dest;
+    });
+
+    // Expose a small debugger
+    window.debugNotificationBell = function() {
+        if (!notificationBell) return console.log('[Notifications] Bell not found');
+        const rect = notificationBell.getBoundingClientRect();
+        console.log('[Notifications] Debug bell', {
+            classes: notificationBell.className,
+            hiddenClass: notificationBell.classList.contains('hidden'),
+            style: {
+                display: notificationBell.style.display,
+                visibility: notificationBell.style.visibility
+            },
+            computed: {
+                display: window.getComputedStyle(notificationBell).display,
+                visibility: window.getComputedStyle(notificationBell).visibility,
+                pointerEvents: window.getComputedStyle(notificationBell).pointerEvents,
+                zIndex: window.getComputedStyle(notificationBell).zIndex
+            },
+            rect
+        });
+    };
+
+    // Unread badge updater
+    async function updateNotificationBadge() {
+        try {
+            if (!notificationBadge) return;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                notificationBadge.classList.add('hidden');
+                return;
+            }
+
+            // Try modern endpoint first
+            let count = 0;
+            try {
+                const res = await fetch('/api/user-notifications/unread-count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    count = Number(data.unreadCount || 0);
+                } else {
+                    throw new Error('Primary unread endpoint not OK');
+                }
+            } catch {
+                // Fallback to legacy endpoint
+                const res2 = await fetch('/api/notifications/count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    count = Number((data2.count !== undefined ? data2.count : data2.unreadCount) || 0);
+                }
+            }
+
+            if (count > 0) {
+                notificationBadge.textContent = count > 99 ? '99+' : String(count);
+                notificationBadge.classList.remove('hidden');
+            } else {
+                notificationBadge.classList.add('hidden');
+            }
+        } catch (err) {
+            console.warn('[Notifications] Failed to update badge:', err?.message || err);
+        }
+    }
+
+    // Initial badge update and periodic refresh
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 60000);
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'token' || e.key === 'user') updateNotificationBadge();
+    });
 }
 
 // Set up all event listeners

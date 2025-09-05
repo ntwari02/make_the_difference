@@ -10,6 +10,9 @@ import dotenv from 'dotenv';
 import pool from './config/database.js';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import fs from 'fs';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -30,7 +33,6 @@ import adminPartnersRoutes from './routes/admin-partners.js';
 import publicPartnersRoutes from './routes/partners.js';
 import partnershipImagesRoutes from './routes/partnership-images.js';
 import settingsRoutes from './routes/settings.js'; // ✅ ADDED HERE
-import emailTemplatesRoutes from './routes/emailTemplates.js'; // ✅ ADDED HERE
 import securityQuestionsRoutes from './routes/securityQuestions.js'; // ✅ ADDED HERE
 import adminHelpRoutes from './routes/admin-help.js'; // ✅ ADDED HERE
 import userHelpRoutes from './routes/user-help.js'; // ✅ ADDED HERE
@@ -53,13 +55,58 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = new SocketIOServer(server, {
+    cors: { origin: '*', methods: ['GET','POST','PATCH','PUT','DELETE'] }
+});
+// Expose io to routes via app
+app.set('io', io);
 
-// Trust proxy for rate limiting behind Render proxy (trust all proxies)
-app.set('trust proxy', true);
+// Global safety nets to avoid process crash during development on transient errors
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+    if (process.env.NODE_ENV === 'production') process.exit(1);
+});
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    if (process.env.NODE_ENV === 'production') process.exit(1);
+});
+
+// Trust proxy only in production (prevents permissive trust proxy in dev)
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
 
 // Middleware
 app.set('etag', 'strong');
 app.use(cors());
+// Clean URLs middleware: serve /about as /about.html and redirect /about.html -> /about
+app.use((req, res, next) => {
+    try {
+        const originalPath = req.path || '/';
+        // Skip API, uploads and assets with extensions
+        if (
+            originalPath.startsWith('/api') ||
+            originalPath.startsWith('/uploads') ||
+            /\.[a-z0-9]+$/i.test(originalPath)
+        ) {
+            // If request explicitly has .html, redirect to clean path
+            if (/\.html$/i.test(originalPath)) {
+                const clean = originalPath.replace(/\.html$/i, '') || '/';
+                return res.redirect(301, clean + (req.url.endsWith('/') && clean !== '/' ? '/' : ''));
+            }
+            return next();
+        }
+
+        // Try to serve matching HTML file from public directory
+        const candidate = originalPath === '/' ? 'home.html' : `${originalPath.replace(/^\//, '')}.html`;
+        const fullPath = path.join(__dirname, 'public', candidate);
+        if (fs.existsSync(fullPath)) {
+            return res.sendFile(fullPath);
+        }
+        return next();
+    } catch (e) {
+        return next();
+    }
+});
 // Enable gzip/brotli compression for responses
 app.use(compression({
     threshold: 1024,
@@ -71,6 +118,24 @@ app.use(compression({
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 
+// Session store configuration with dev fallback when DB is unavailable
+const useMemorySession = String(process.env.DEV_USE_MEMORY_SESSION || '').toLowerCase() === 'true';
+let sessionMiddleware;
+
+if (useMemorySession) {
+    console.warn('Using in-memory session store (DEV_USE_MEMORY_SESSION=true). Not recommended for production.');
+    sessionMiddleware = session({
+        secret: process.env.SESSION_SECRET || 'default_secret',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000
+        }
+    });
+} else {
 // Persistent session store (MySQL) to avoid MemoryStore in production
 const MySQLStore = connectMySQL(session);
 
@@ -89,7 +154,14 @@ const sessionPool = mysql.createPool({
     connectTimeout: process.env.DB_CONNECT_TIMEOUT ? parseInt(process.env.DB_CONNECT_TIMEOUT, 10) : 20000
 });
 
-const sessionStore = new MySQLStore({
+    // Extra safety: log pool errors without crashing in development
+    sessionPool.on('error', (err) => {
+        console.error('Session DB pool error:', err);
+    });
+
+    let sessionStore;
+    try {
+        sessionStore = new MySQLStore({
     clearExpired: true,
     checkExpirationInterval: 15 * 60 * 1000,
     expiration: 24 * 60 * 60 * 1000,
@@ -105,8 +177,25 @@ const sessionStore = new MySQLStore({
         }
     }
 }, sessionPool);
+    } catch (e) {
+        console.error('Failed to initialize MySQL session store:', e);
+        if (process.env.NODE_ENV === 'production') throw e;
+        console.warn('Falling back to in-memory session store for development.');
+        sessionMiddleware = session({
+            secret: process.env.SESSION_SECRET || 'default_secret',
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: process.env.NODE_ENV === 'production',
+                httpOnly: true,
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000
+            }
+        });
+    }
 
-app.use(session({
+    if (!sessionMiddleware) {
+        sessionMiddleware = session({
     store: sessionStore,
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
@@ -117,7 +206,11 @@ app.use(session({
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000
     }
-}));
+        });
+    }
+}
+
+app.use(sessionMiddleware);
 
 // API request timeout safeguard (60s) — avoid interfering with static file streams
 app.use((req, res, next) => {
@@ -187,7 +280,6 @@ app.use('/api/admin-dashboard', adminDashboardRoutes);
 app.use('/api/admin-dashboard', adminApplicationsRoutes);
 app.use('/api/admin/profile', adminProfileRoutes); // ✅ ADDED HERE
 app.use('/api/settings', settingsRoutes); // ✅ ADDED HERE
-app.use('/api/email-templates', emailTemplatesRoutes); // ✅ ADDED HERE
 app.use('/api/security-questions', securityQuestionsRoutes); // ✅ ADDED HERE
 app.use('/api/admin-help', adminHelpRoutes); // ✅ ADDED HERE
 app.use('/api/help', userHelpRoutes); // ✅ ADDED HERE
@@ -260,7 +352,13 @@ app.use(async (req, res, next) => {
 });
 
 // Serve uploads statically so profile pictures and documents are accessible
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+// Fallback to serve legacy files saved under root uploads (pre-migration)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Ensure chat uploads directory exists at runtime under public/uploads/chat
+try {
+    fs.mkdirSync(path.join(__dirname, 'public', 'uploads', 'chat'), { recursive: true });
+} catch {}
 
 // Serve static HTML files with caching for assets
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -273,7 +371,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }));
 
-// Fallback to index.html for SPA-like behavior (optional but good practice)
+// Fallback to home.html for unknown routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
@@ -302,7 +400,69 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Socket.IO real-time chat scaffolding
+io.on('connection', (socket) => {
+    try {
+        const userId = socket.handshake.auth?.userId || socket.handshake.query?.userId || 'guest';
+        socket.data.userId = userId;
+
+        // Join a conversation room
+        socket.on('joinConversation', (conversationId) => {
+            if (!conversationId) return;
+            socket.join(`conv:${conversationId}`);
+            io.to(`conv:${conversationId}`).emit('presence', { userId, status: 'online', conversationId });
+        });
+
+        // Typing indicators
+        socket.on('typing', ({ conversationId }) => {
+            if (!conversationId) return;
+            socket.to(`conv:${conversationId}`).emit('typing', { userId, conversationId });
+        });
+        socket.on('stopTyping', ({ conversationId }) => {
+            if (!conversationId) return;
+            socket.to(`conv:${conversationId}`).emit('stopTyping', { userId, conversationId });
+        });
+
+        // Read receipts
+        socket.on('readConversation', ({ conversationId }) => {
+            if (!conversationId) return;
+            socket.to(`conv:${conversationId}`).emit('readConversation', { userId, conversationId, at: Date.now() });
+        });
+
+        // New message broadcast (optional client emit after REST success)
+        socket.on('messagePosted', ({ conversationId, message }) => {
+            if (!conversationId || !message) return;
+            io.to(`conv:${conversationId}`).emit('message', { conversationId, message, fromUserId: userId, at: Date.now() });
+        });
+
+        // ===== Group rooms =====
+        socket.on('joinGroup', (groupId) => {
+            if (!groupId) return;
+            socket.join(`group:${groupId}`);
+            io.to(`group:${groupId}`).emit('group:presence', { userId, status: 'online', groupId });
+        });
+
+        socket.on('group:typing', ({ groupId }) => {
+            if (!groupId) return;
+            socket.to(`group:${groupId}`).emit('group:typing', { userId, groupId });
+        });
+        socket.on('group:stopTyping', ({ groupId }) => {
+            if (!groupId) return;
+            socket.to(`group:${groupId}`).emit('group:stopTyping', { userId, groupId });
+        });
+
+        socket.on('group:messagePosted', ({ groupId, message }) => {
+            if (!groupId || !message) return;
+            io.to(`group:${groupId}`).emit('group:message', { groupId, message, fromUserId: userId, at: Date.now() });
+        });
+
+        socket.on('disconnect', () => {
+            // Could emit presence offline per room if tracked
+        });
+    } catch {}
+});
+
 // Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

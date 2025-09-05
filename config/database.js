@@ -15,23 +15,41 @@ const pool = mysql.createPool({
     password: process.env.DB_PASSWORD || 'Loading99.99%',
     database: process.env.DB_NAME || 'mbappe',
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 5, // Reduced for Railway
     queueLimit: 0,
-    ssl: shouldUseSsl ? { rejectUnauthorized: true } : undefined,
-    connectTimeout: process.env.DB_CONNECT_TIMEOUT ? parseInt(process.env.DB_CONNECT_TIMEOUT, 10) : 20000,
+    ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined, // More permissive SSL
+    connectTimeout: process.env.DB_CONNECT_TIMEOUT ? parseInt(process.env.DB_CONNECT_TIMEOUT, 10) : 30000, // Increased timeout
     enableKeepAlive: true,
     keepAliveInitialDelay: 0
 });
 
-// Test the connection
-pool.getConnection((err, connection) => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-        return;
-    }
-    console.log('Successfully connected to database');
-    connection.release();
-});
+// Test the connection with retry logic
+let connectionRetries = 0;
+const maxRetries = 3;
+
+function testConnection() {
+    pool.getConnection((err, connection) => {
+        if (err) {
+            connectionRetries++;
+            console.error(`Database connection attempt ${connectionRetries}/${maxRetries} failed:`, err.message);
+            
+            if (connectionRetries < maxRetries) {
+                console.log(`Retrying connection in 5 seconds...`);
+                setTimeout(testConnection, 5000);
+            } else {
+                console.error('Max connection retries reached. Database may be unavailable.');
+            }
+            return;
+        }
+        
+        console.log('Successfully connected to database');
+        connectionRetries = 0; // Reset on success
+        connection.release();
+    });
+}
+
+// Initial connection test
+testConnection();
 
 // Export both pool and db for consistency
 const promised = pool.promise();
@@ -44,20 +62,39 @@ try { if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true }); }
 
 promised.query = async (...args) => {
     const start = Date.now();
-    try {
-        const result = await originalQuery(...args);
-        const elapsed = Date.now() - start;
-        if (elapsed >= SLOW_MS) {
-            const sqlPreview = typeof args[0] === 'string' ? args[0].slice(0, 200) : '[non-string-sql]';
-            const line = `${new Date().toISOString()} [${elapsed}ms] ${sqlPreview}\n`;
-            console.warn('[SLOW-QUERY]', line.trim());
-            try { fs.appendFileSync(slowLogFile, line); } catch {}
+    let retries = 0;
+    const maxRetries = 2;
+    
+    while (retries <= maxRetries) {
+        try {
+            const result = await originalQuery(...args);
+            const elapsed = Date.now() - start;
+            if (elapsed >= SLOW_MS) {
+                const sqlPreview = typeof args[0] === 'string' ? args[0].slice(0, 200) : '[non-string-sql]';
+                const line = `${new Date().toISOString()} [${elapsed}ms] ${sqlPreview}\n`;
+                console.warn('[SLOW-QUERY]', line.trim());
+                try { fs.appendFileSync(slowLogFile, line); } catch {}
+            }
+            return result;
+        } catch (err) {
+            const elapsed = Date.now() - start;
+            
+            // Check if it's a connection-related error that we should retry
+            const isConnectionError = err.code === 'ETIMEDOUT' || 
+                                   err.code === 'ECONNRESET' || 
+                                   err.code === 'PROTOCOL_CONNECTION_LOST' ||
+                                   err.message.includes('connect ETIMEDOUT');
+            
+            if (isConnectionError && retries < maxRetries) {
+                retries++;
+                console.warn(`[QUERY-RETRY ${retries}/${maxRetries}] Connection error, retrying in 1s:`, err.message);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+            }
+            
+            console.error(`[QUERY-ERROR ${elapsed}ms]`, err.message);
+            throw err;
         }
-        return result;
-    } catch (err) {
-        const elapsed = Date.now() - start;
-        console.error(`[QUERY-ERROR ${elapsed}ms]`, err.message);
-        throw err;
     }
 };
 

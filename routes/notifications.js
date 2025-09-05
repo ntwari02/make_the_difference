@@ -2,8 +2,135 @@ import express from 'express';
 import db from '../config/database.js';
 import { auth, bypassAuth } from '../middleware/auth.js';
 import nodemailer from 'nodemailer';
+import multer from 'multer';
+import path from 'path';
 
 const router = express.Router();
+
+// Search users endpoint for admin
+router.get('/admin/users/search', auth, async (req, res) => {
+  try {
+    const { q } = req.query;
+    console.log('User search query:', q, 'User:', req.user);
+    
+    if (!q || q.length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const searchTerm = `%${q}%`;
+    const [users] = await db.query(`
+      SELECT id, full_name as name, email, created_at 
+      FROM users 
+      WHERE (full_name LIKE ? OR email LIKE ?) 
+      AND id != ?
+      ORDER BY full_name ASC 
+      LIMIT 20
+    `, [searchTerm, searchTerm, req.user?.id || 0]);
+
+    console.log('Found users:', users.length);
+    res.json({ users });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ message: 'Failed to search users' });
+  }
+});
+
+// Create new conversation with user
+router.post('/admin/conversations/new', auth, async (req, res) => {
+  try {
+    const { userId, userEmail, userName } = req.body;
+    console.log('Creating conversation with:', { userId, userEmail, userName });
+    
+    if (!userId && !userEmail) {
+      return res.status(400).json({ message: 'User ID or email required' });
+    }
+
+    // Check if conversation already exists
+    let existingConversation;
+    if (userId) {
+      [existingConversation] = await db.query(
+        'SELECT id FROM conversations WHERE user_id = ? LIMIT 1',
+        [userId]
+      );
+    } else {
+      [existingConversation] = await db.query(
+        'SELECT id FROM conversations WHERE email = ? LIMIT 1',
+        [userEmail]
+      );
+    }
+
+    if (existingConversation.length > 0) {
+      console.log('Found existing conversation:', existingConversation[0].id);
+      return res.json({ 
+        success: true, 
+        conversationId: existingConversation[0].id,
+        isNew: false 
+      });
+    }
+
+    // Create new conversation (requires a notification first)
+    console.log('Creating new conversation...');
+    
+    // First create a notification for this direct chat
+    const [notifResult] = await db.query(`
+      INSERT INTO notifications (user_id, email, title, message, is_read, created_at)
+      VALUES (?, ?, ?, 'Direct chat initiated by admin', 0, CURRENT_TIMESTAMP)
+    `, [userId || null, userEmail || null, `Chat with ${userName || userEmail}`]);
+    
+    // Then create the conversation that references this notification
+    const [result] = await db.query(`
+      INSERT INTO conversations (notification_id, user_id, email, admin_id, subject, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [notifResult.insertId, userId || null, userEmail || null, req.user.id, `Chat with ${userName || userEmail}`]);
+
+    console.log('New conversation created with ID:', result.insertId);
+    res.json({ 
+      success: true, 
+      conversationId: result.insertId,
+      isNew: true 
+    });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ message: 'Failed to create conversation' });
+  }
+});
+
+// Multer setup for chat attachments
+const storage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, path.join(process.cwd(), 'public', 'uploads', 'chat'));
+  },
+  filename: function (_req, file, cb) {
+    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ts = Date.now();
+    const unique = `${ts}_${safe}`;
+    cb(null, unique);
+  }
+});
+const upload = multer({
+  storage,
+  // Increase per-file limit to 30MB and keep total files at 6
+  limits: { fileSize: 30 * 1024 * 1024, files: 6 },
+  fileFilter: (_req, file, cb) => {
+    try {
+      const allowed = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/zip', 'application/x-zip-compressed'
+      ];
+      if (allowed.includes(file.mimetype)) return cb(null, true);
+      // Allow unknown but safe extensions as a fallback
+      const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+      const extOk = ['jpg','jpeg','png','gif','webp','pdf','doc','docx','xls','xlsx','zip'].includes(ext);
+      return cb(null, extOk);
+    } catch {
+      return cb(null, false);
+    }
+  }
+});
+
 
 
 function getMailer() {
@@ -116,10 +243,12 @@ router.post('/', bypassAuth, async (req, res) => {
 // Get notifications for logged-in user
 router.get('/', auth, async (req, res) => {
   try {
+    console.log('[API] GET /api/notifications user:', { id: req.user?.id, email: req.user?.email });
     const [rows] = await db.query(
       'SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC',
       [req.user.id, req.user.email]
     );
+    console.log('[API] /api/notifications rows:', rows?.length || 0);
     res.json(rows);
   } catch (error) {
     console.error(error);
@@ -130,6 +259,7 @@ router.get('/', auth, async (req, res) => {
 // Get conversations for logged-in user
 router.get('/conversations', auth, async (req, res) => {
   try {
+    console.log('[API] GET /api/notifications/conversations user:', { id: req.user?.id, email: req.user?.email });
     const [conversations] = await db.query(`
       SELECT 
         c.*,
@@ -144,7 +274,7 @@ router.get('/conversations', auth, async (req, res) => {
       GROUP BY c.id
       ORDER BY c.updated_at DESC
     `, [req.user.id, req.user.email]);
-    
+    console.log('[API] /api/notifications/conversations count:', conversations?.length || 0);
     res.json(conversations);
   } catch (error) {
     console.error(error);
@@ -156,6 +286,7 @@ router.get('/conversations', auth, async (req, res) => {
 router.get('/conversations/:id', auth, async (req, res) => {
   try {
     const conversationId = req.params.id;
+    console.log('[API] GET /api/notifications/conversations/:id user:', { id: req.user?.id, email: req.user?.email }, 'id:', conversationId);
     
     // Get conversation details
     const [conversations] = await db.query(`
@@ -173,6 +304,7 @@ router.get('/conversations/:id', auth, async (req, res) => {
     `, [conversationId, req.user.id, req.user.email]);
     
     if (conversations.length === 0) {
+      console.warn('[API] conversation not found or not authorized for user:', conversationId);
       return res.status(404).json({ message: 'Conversation not found.' });
     }
     
@@ -187,6 +319,7 @@ router.get('/conversations/:id', auth, async (req, res) => {
       ORDER BY r.created_at ASC
     `, [conversationId]);
     
+    console.log('[API] /api/notifications/conversations/:id replies:', replies?.length || 0);
     res.json({
       conversation: conversations[0],
       replies: replies
@@ -239,10 +372,263 @@ router.post('/conversations/:id/replies', auth, async (req, res) => {
   }
 });
 
+// Upload chat attachments
+router.post('/conversations/:id/attachments', auth, upload.array('files', 6), async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    // Basic access check
+    const [conversations] = await db.query(
+      'SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)',
+      [conversationId, req.user.id, req.user.email]
+    );
+    if (conversations.length === 0) {
+      return res.status(404).json({ message: 'Conversation not found.' });
+    }
+
+    const files = (req.files || []).map(f => ({
+      originalName: f.originalname,
+      filename: f.filename,
+      path: f.filename, // Store just filename, reconstruct full path in frontend
+      size: f.size,
+      mimetype: f.mimetype
+    }));
+
+    // Store each as a reply with attachment metadata (simple approach)
+    for (const file of files) {
+      await db.query(
+        'INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [conversationId, 'user', req.user.id, req.user.email, '', file.path, file.mimetype, file.size]
+      );
+    }
+
+    // Update updated_at
+    await db.query('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [conversationId]);
+
+    res.status(201).json({ success: true, files });
+  } catch (error) {
+    console.error('Error uploading attachments:', error);
+    res.status(500).json({ message: 'Failed to upload attachments.' });
+  }
+});
+
+// Admin upload chat attachments (for DM), mark as admin sender
+router.post('/admin/conversations/:id/attachments', bypassAuth, upload.array('files', 6), async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    // Ensure conversation exists
+    const [conversations] = await db.query('SELECT id FROM conversations WHERE id = ? LIMIT 1', [conversationId]);
+    if (conversations.length === 0) {
+      return res.status(404).json({ message: 'Conversation not found.' });
+    }
+
+    const files = (req.files || []).map(f => ({
+      originalName: f.originalname,
+      filename: f.filename,
+      path: f.filename, // Store just filename, reconstruct full path in frontend
+      size: f.size,
+      mimetype: f.mimetype
+    }));
+
+    const inserted = [];
+    for (const file of files) {
+      const [ins] = await db.query(
+        'INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [conversationId, 'admin', req.user?.id || null, req.user?.email || null, '', file.path, file.mimetype, file.size]
+      );
+      inserted.push({ id: ins.insertId, ...file });
+    }
+
+    await db.query('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [conversationId]);
+
+    // Emit socket event to conversation room for attachments
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conv:${conversationId}`).emit('message', {
+          conversationId,
+          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'admin', created_at: new Date() })),
+          at: Date.now()
+        });
+      }
+    } catch {}
+
+    res.status(201).json({ success: true, files, inserted });
+  } catch (error) {
+    console.error('Error uploading admin attachments:', error);
+    res.status(500).json({ message: 'Failed to upload attachments.' });
+  }
+});
+
+// ===== Groups (basic schema assumed: groups(id,name,created_by,created_at), group_members(group_id,user_id,email,role), group_messages(id,group_id,sender_id,sender_email,message,attachment_url,created_at)) =====
+
+// Create a new group (admin only)
+router.post('/admin/groups', bypassAuth, async (req, res) => {
+  try {
+    const { name, userIds = [], emails = [] } = req.body || {};
+    if (!name) return res.status(400).json({ message: 'Group name is required' });
+    const creatorId = req.user?.id || null;
+
+    const [gRes] = await db.query('INSERT INTO `groups` (name, created_by) VALUES (?, ?)', [name, creatorId]);
+    const groupId = gRes.insertId;
+
+    // Add members by userIds
+    for (const uid of (userIds || [])) {
+      await db.query('INSERT INTO `group_members` (group_id, user_id) VALUES (?, ?)', [groupId, uid]);
+    }
+    // Add members by emails (for users without id yet)
+    for (const em of (emails || [])) {
+      if (!em) continue;
+      await db.query('INSERT INTO `group_members` (group_id, email) VALUES (?, ?)', [groupId, em]);
+    }
+
+    res.status(201).json({ success: true, groupId });
+  } catch (e) {
+    console.error('Error creating group:', e);
+    res.status(500).json({ message: 'Failed to create group' });
+  }
+});
+
+// List groups (admin view)
+router.get('/admin/groups', bypassAuth, async (_req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT g.*, (SELECT COUNT(*) FROM \`group_members\` gm WHERE gm.group_id=g.id) as member_count
+      FROM \`groups\` g ORDER BY g.created_at DESC
+    `);
+    res.json({ success: true, groups: rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Failed to list groups' });
+  }
+});
+
+// Post a group message
+router.post('/groups/:id/messages', auth, async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const { message = '' } = req.body || {};
+    if (!message) return res.status(400).json({ message: 'Message required' });
+    // Validate membership by user id or email
+    const [m] = await db.query('SELECT 1 FROM `group_members` WHERE group_id=? AND (user_id=? OR email=?) LIMIT 1', [groupId, req.user.id, req.user.email]);
+    if (m.length === 0) return res.status(403).json({ message: 'Not a member' });
+    const [ins] = await db.query('INSERT INTO `group_messages` (group_id, sender_id, sender_email, message) VALUES (?, ?, ?, ?)', [groupId, req.user.id, req.user.email, message]);
+    res.status(201).json({ success: true, id: ins.insertId });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Failed to post message' });
+  }
+});
+
+// Upload group attachments
+router.post('/groups/:id/attachments', auth, upload.array('files', 6), async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const [m] = await db.query('SELECT 1 FROM `group_members` WHERE group_id=? AND (user_id=? OR email=?) LIMIT 1', [groupId, req.user.id, req.user.email]);
+    if (m.length === 0) return res.status(403).json({ message: 'Not a member' });
+    const files = (req.files || []).map(f => ({
+      path: f.filename, // Store just filename, reconstruct full path in frontend
+      type: f.mimetype,
+      size: f.size
+    }));
+    for (const f of files) {
+      await db.query('INSERT INTO `group_messages` (group_id, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?)', [groupId, req.user.id, req.user.email, '', f.path, f.type, f.size]);
+    }
+    res.status(201).json({ success: true, files });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Failed to upload attachments' });
+  }
+});
+
+// Fetch group messages (paginated)
+router.get('/groups/:id/messages', auth, async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const { page = 1, limit = 50 } = req.query;
+    const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+    const pageSize = Math.max(1, Math.min(200, parseInt(String(limit), 10) || 50));
+    const offset = (pageNum - 1) * pageSize;
+
+    const [m] = await db.query('SELECT 1 FROM `group_members` WHERE group_id=? AND (user_id=? OR email=?) LIMIT 1', [groupId, req.user.id, req.user.email]);
+    if (m.length === 0) return res.status(403).json({ message: 'Not a member' });
+
+    const [rows] = await db.query(`
+      SELECT id, group_id, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size, created_at
+      FROM \`group_messages\`
+      WHERE group_id = ?
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [groupId, pageSize, offset]);
+
+    res.json({ success: true, messages: rows, pagination: { page: pageNum, limit: pageSize } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Failed to fetch messages' });
+  }
+});
+
+
 // Admin: Get all conversations
 router.get('/admin/conversations', bypassAuth, async (req, res) => {
   try {
-    const [conversations] = await db.query(`
+    const {
+      q = '',
+      from = '',
+      to = '',
+      replies = 'any', // 'any' | '0' | '>0'
+      sort = 'updated_desc', // updated_desc|updated_asc|created_desc|created_asc
+      page = '1',
+      limit = '20'
+    } = req.query || {};
+
+    const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+    const pageSize = Math.max(1, Math.min(100, parseInt(String(limit), 10) || 20));
+    const offset = (pageNum - 1) * pageSize;
+
+    const conditions = [];
+    const params = [];
+
+    if (q) {
+      conditions.push(`(n.title LIKE ? OR n.message LIKE ? OR u.email LIKE ? OR c.email LIKE ?)`);
+      const like = `%${q}%`;
+      params.push(like, like, like, like);
+    }
+    if (from) {
+      conditions.push(`c.created_at >= ?`);
+      params.push(from);
+    }
+    if (to) {
+      conditions.push(`c.created_at <= DATE_ADD(?, INTERVAL 1 DAY)`);
+      params.push(to);
+    }
+    if (replies === '0') {
+      conditions.push(`(SELECT COUNT(*) FROM replies rr WHERE rr.conversation_id = c.id) = 0`);
+    } else if (replies === '>0') {
+      conditions.push(`(SELECT COUNT(*) FROM replies rr WHERE rr.conversation_id = c.id) > 0`);
+    }
+
+    const whereSql = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    let orderSql = 'ORDER BY c.updated_at DESC';
+    switch (sort) {
+      case 'updated_asc': orderSql = 'ORDER BY c.updated_at ASC'; break;
+      case 'created_desc': orderSql = 'ORDER BY c.created_at DESC'; break;
+      case 'created_asc': orderSql = 'ORDER BY c.created_at ASC'; break;
+      default: orderSql = 'ORDER BY c.updated_at DESC';
+    }
+
+    // Count total distinct conversations matching filters
+    const countSql = `
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      ${whereSql}
+    `;
+    const [countRows] = await db.query(countSql, params);
+    const total = countRows[0]?.total || 0;
+
+    const dataSql = `
       SELECT 
         c.*,
         n.title as notification_title,
@@ -257,14 +643,97 @@ router.get('/admin/conversations', bypassAuth, async (req, res) => {
       LEFT JOIN users u ON c.user_id = u.id
       LEFT JOIN users admin ON c.admin_id = admin.id
       LEFT JOIN replies r ON c.id = r.conversation_id
+      ${whereSql}
       GROUP BY c.id
-      ORDER BY c.updated_at DESC
-    `);
-    
-    res.json(conversations);
+      ${orderSql}
+      LIMIT ? OFFSET ?
+    `;
+    const dataParams = [...params, pageSize, offset];
+    const [rows] = await db.query(dataSql, dataParams);
+
+    res.json({
+      success: true,
+      conversations: rows,
+      pagination: {
+        page: pageNum,
+        limit: pageSize,
+        total,
+        pages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching conversations.' });
+  }
+});
+
+// Export filtered conversations as CSV
+router.get('/admin/conversations/export', bypassAuth, async (req, res) => {
+  try {
+    const {
+      q = '', from = '', to = '', replies = 'any', sort = 'updated_desc'
+    } = req.query || {};
+
+    const conditions = [];
+    const params = [];
+    if (q) {
+      conditions.push(`(n.title LIKE ? OR n.message LIKE ? OR u.email LIKE ? OR c.email LIKE ?)`);
+      const like = `%${q}%`;
+      params.push(like, like, like, like);
+    }
+    if (from) { conditions.push(`c.created_at >= ?`); params.push(from); }
+    if (to) { conditions.push(`c.created_at <= DATE_ADD(?, INTERVAL 1 DAY)`); params.push(to); }
+    if (replies === '0') { conditions.push(`(SELECT COUNT(*) FROM replies rr WHERE rr.conversation_id = c.id) = 0`); }
+    else if (replies === '>0') { conditions.push(`(SELECT COUNT(*) FROM replies rr WHERE rr.conversation_id = c.id) > 0`); }
+    const whereSql = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    let orderSql = 'ORDER BY c.updated_at DESC';
+    switch (sort) {
+      case 'updated_asc': orderSql = 'ORDER BY c.updated_at ASC'; break;
+      case 'created_desc': orderSql = 'ORDER BY c.created_at DESC'; break;
+      case 'created_asc': orderSql = 'ORDER BY c.created_at ASC'; break;
+      default: orderSql = 'ORDER BY c.updated_at DESC';
+    }
+
+    const sql = `
+      SELECT 
+        c.id,
+        c.created_at,
+        c.updated_at,
+        n.title,
+        n.message,
+        COALESCE(u.email, c.email) AS user_email,
+        (SELECT COUNT(*) FROM replies rr WHERE rr.conversation_id = c.id) AS reply_count
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      ${whereSql}
+      ${orderSql}
+      LIMIT 5000
+    `;
+    const [rows] = await db.query(sql, params);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="conversations.csv"');
+    res.write('id,created_at,updated_at,title,message,user_email,reply_count\n');
+    for (const r of rows) {
+      const line = [
+        r.id,
+        new Date(r.created_at).toISOString(),
+        new Date(r.updated_at || r.created_at).toISOString(),
+        JSON.stringify(r.title||'').replace(/^"|"$/g,'')
+          .replace(/\\n/g,' '),
+        JSON.stringify((r.message||'').toString()).replace(/^"|"$/g,'')
+          .replace(/\\n/g,' '),
+        r.user_email || '',
+        r.reply_count || 0
+      ].map(v => typeof v === 'string' && v.includes(',') ? `"${v.replace(/"/g,'""')}"` : v).join(',');
+      res.write(line + '\n');
+    }
+    res.end();
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Error exporting conversations.' });
   }
 });
 
@@ -346,6 +815,18 @@ router.post('/admin/conversations/:id/replies', bypassAuth, async (req, res) => 
       [conversationId]
     );
     
+    // Emit socket event to conversation room for real-time user updates
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conv:${conversationId}`).emit('message', {
+          conversationId,
+          message: { id: result.insertId, conversation_id: Number(conversationId), sender_type: 'admin', sender_id: req.user?.id || null, sender_email: req.user?.email || null, message, created_at: new Date() },
+          at: Date.now()
+        });
+      }
+    } catch {}
+    
     res.status(201).json({ 
       id: result.insertId,
       message: 'Reply sent successfully!' 
@@ -384,6 +865,121 @@ router.get('/count', auth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching notification count.' });
+  }
+});
+
+// Delete a reply message (admin only)
+router.delete('/admin/replies/:id', bypassAuth, async (req, res) => {
+  try {
+    const replyId = req.params.id;
+    
+    // Check if reply exists and get conversation info
+    const [replies] = await db.query(`
+      SELECT r.*, c.id as conversation_id
+      FROM replies r
+      JOIN conversations c ON r.conversation_id = c.id
+      WHERE r.id = ?
+    `, [replyId]);
+    
+    if (replies.length === 0) {
+      return res.status(404).json({ message: 'Reply not found.' });
+    }
+    
+    const reply = replies[0];
+    
+    // Only allow admin to delete their own messages or any message if they're admin
+    if (reply.sender_type !== 'admin') {
+      return res.status(403).json({ message: 'Only admin messages can be deleted.' });
+    }
+    
+    // Delete the reply
+    await db.query('DELETE FROM replies WHERE id = ?', [replyId]);
+    
+    // Update conversation timestamp
+    await db.query(
+      'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [reply.conversation_id]
+    );
+    
+    res.json({ success: true, message: 'Reply deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    res.status(500).json({ message: 'Error deleting reply.' });
+  }
+});
+
+// Delete a reply message (user)
+router.delete('/replies/:id', auth, async (req, res) => {
+  try {
+    const replyId = req.params.id;
+    const userId = req.user.id;
+    
+    // Check if reply exists and get conversation info
+    const [replies] = await db.query(`
+      SELECT r.*, c.id as conversation_id, c.user_id
+      FROM replies r
+      JOIN conversations c ON r.conversation_id = c.id
+      WHERE r.id = ?
+    `, [replyId]);
+    
+    if (replies.length === 0) {
+      return res.status(404).json({ message: 'Reply not found.' });
+    }
+    
+    const reply = replies[0];
+    
+    // Only allow user to delete their own messages from their conversations
+    if (reply.sender_type !== 'user' || reply.user_id !== userId) {
+      return res.status(403).json({ message: 'You can only delete your own messages.' });
+    }
+    
+    // Delete the reply
+    await db.query('DELETE FROM replies WHERE id = ?', [replyId]);
+    
+    // Update conversation timestamp
+    await db.query(
+      'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [reply.conversation_id]
+    );
+    
+    res.json({ success: true, message: 'Reply deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    res.status(500).json({ message: 'Error deleting reply.' });
+  }
+});
+
+// Delete a group message (admin only)
+router.delete('/groups/messages/:id', bypassAuth, async (req, res) => {
+  try {
+    const messageId = req.params.id;
+    
+    // Check if message exists and get group info
+    const [messages] = await db.query(`
+      SELECT gm.*, g.id as group_id
+      FROM group_messages gm
+      JOIN \`groups\` g ON gm.group_id = g.id
+      WHERE gm.id = ?
+    `, [messageId]);
+    
+    if (messages.length === 0) {
+      return res.status(404).json({ message: 'Message not found.' });
+    }
+    
+    const message = messages[0];
+    
+    // Only allow admin to delete their own messages or any message if they're admin
+    if (String(message.sender_id) !== String(req.user?.id || 'admin')) {
+      return res.status(403).json({ message: 'Only admin messages can be deleted.' });
+    }
+    
+    // Delete the message
+    await db.query('DELETE FROM group_messages WHERE id = ?', [messageId]);
+    
+    res.json({ success: true, message: 'Group message deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting group message:', error);
+    res.status(500).json({ message: 'Error deleting group message.' });
   }
 });
 
