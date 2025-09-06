@@ -297,7 +297,7 @@
             <!-- Step 1: Email Input -->
             <div id="step1" class="space-y-4">
                 <p class="text-gray-600 dark:text-gray-400">
-                    Enter your email address to receive security questions for password reset.
+                    Enter your email address to choose a password reset method.
                 </p>
                 <div id="forgotMsg" class="hidden text-sm text-blue-600 dark:text-blue-400"></div>
                 <div>
@@ -311,9 +311,17 @@
                         placeholder="Enter your email" 
                     >
                 </div>
-                <button id="getQuestionsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                    Get Security Questions
+                <div id="resetOptions" class="space-y-3 mt-4">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Choose a reset method:</p>
+                    <button id="getQuestionsBtn" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        Get Security Questions
                     </button>
+                    <button id="sendOtpBtn" onclick="sendOTP(); return false;" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        <i class="fas fa-envelope mr-2"></i>
+                        Send OTP on Email
+                    </button>
+                </div>
                 <div id="autoResetNotice" class="hidden text-sm mt-2 text-green-600">A reset link has been issued by an admin. You can reset your password now.</div>
             </div>
 
@@ -343,6 +351,39 @@
                 <button id="verifyAnswersBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
                         Verify Answers
                     </button>
+            </div>
+
+            <!-- Step 2.5: OTP Verification -->
+            <div id="step2_5" class="space-y-4 hidden">
+                <p class="text-gray-600 dark:text-gray-400">
+                    We've sent a verification code to your email. Enter the code below to reset your password.
+                </p>
+                <div>
+                    <label for="otpCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Verification Code
+                    </label>
+                    <input 
+                        type="text" 
+                        id="otpCode" 
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-center text-lg tracking-widest"
+                        placeholder="Enter 6-digit code" 
+                        maxlength="6"
+                    >
+                </div>
+                <div id="otpError" class="hidden text-sm text-red-600 dark:text-red-400">
+                    Invalid verification code. Please try again.
+                </div>
+                <div class="flex space-x-2">
+                    <button id="verifyOtpBtn" onclick="verifyOTP(); return false;" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                        Verify Code
+                    </button>
+                    <button id="resendOtpBtn" onclick="resendOTP(); return false;" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                        Resend Code
+                    </button>
+                </div>
+                <div id="otpTimer" class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                    Code expires in <span id="otpCountdown">300</span> seconds
+                </div>
             </div>
 
             <!-- Step 3: New Password -->
@@ -390,13 +431,359 @@
                         </button>
                     </div>
                 </div>
-                <button id="resetPasswordBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                <button id="resetPasswordBtn" onclick="resetPassword(); return false;" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
                         Reset Password
                     </button>
             </div>
         </div>
     </div>
 
+    <!-- Inline functions to ensure they're available immediately -->
+    <script>
+        // Global functions available immediately
+        
+        window.sendOTP = async function() {
+            console.log('🎯 sendOTP function called!');
+            
+            const email = document.getElementById('forgotEmail').value.trim();
+            console.log('📧 Email:', email);
+            
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+
+            const btn = document.getElementById('sendOtpBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+            }
+
+            try {
+                console.log('🚀 Making API request...');
+                const response = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, purpose: 'password_reset' })
+                });
+
+                console.log('📡 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+
+                if (response.ok && data && data.success) {
+                    console.log('✅ SUCCESS!');
+                    // Display OTP in alert for development/testing
+                    if (data.otp) {
+                        alert('✅ ' + data.message + '\n\nOTP Code: ' + data.otp);
+                    } else {
+                        alert('✅ ' + data.message);
+                    }
+                    // Show OTP step
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2_5').classList.remove('hidden');
+                } else {
+                    console.log('❌ FAILED:', data);
+                    alert('❌ ' + (data.message || 'Failed to send verification code'));
+                }
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                alert('❌ Failed to send verification code. Please try again.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-envelope mr-2"></i>Send OTP on Email';
+                }
+            }
+        };
+        
+        // Verify OTP function
+        window.verifyOTP = async function() {
+            console.log('🎯 verifyOTP function called!');
+            
+            const otpCode = document.getElementById('otpCode').value.trim();
+            const email = document.getElementById('forgotEmail').value.trim();
+            
+            console.log('🔑 OTP Code:', otpCode);
+            console.log('📧 Email:', email);
+            
+            if (!otpCode) {
+                alert('Please enter the verification code');
+                return;
+            }
+
+            const btn = document.getElementById('verifyOtpBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+            }
+
+            try {
+                console.log('🚀 Verifying OTP...');
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, otp: otpCode, purpose: 'password_reset' })
+                });
+
+                console.log('📡 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+
+                if (response.ok && data && data.success) {
+                    console.log('✅ OTP verified successfully!');
+                    // Store the reset token for password reset
+                    if (data.resetToken) {
+                        window.resetToken = data.resetToken;
+                        console.log('🔑 Reset token stored:', data.resetToken);
+                    }
+                    alert('✅ ' + data.message);
+                    // Show password reset step
+                    document.getElementById('step2_5').classList.add('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
+                } else {
+                    console.log('❌ OTP verification failed:', data);
+                    alert('❌ ' + (data.message || 'Invalid verification code'));
+                }
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                alert('❌ Failed to verify code. Please try again.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Verify Code';
+                }
+            }
+        };
+        
+        // Resend OTP function
+        window.resendOTP = async function() {
+            console.log('🎯 resendOTP function called!');
+            
+            const email = document.getElementById('forgotEmail').value.trim();
+            
+            if (!email) {
+                alert('Email not found');
+                return;
+            }
+
+            const btn = document.getElementById('resendOtpBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+            }
+
+            try {
+                console.log('🚀 Resending OTP...');
+                const response = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, purpose: 'password_reset' })
+                });
+
+                console.log('📡 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+
+                if (response.ok && data && data.success) {
+                    console.log('✅ OTP resent successfully!');
+                    // Display OTP in alert for development/testing
+                    if (data.otp) {
+                        alert('✅ ' + data.message + '\n\nOTP Code: ' + data.otp);
+                    } else {
+                        alert('✅ ' + data.message);
+                    }
+                    // Reset timer
+                    if (window.startOtpTimer) {
+                        window.startOtpTimer();
+                    }
+                } else {
+                    console.log('❌ OTP resend failed:', data);
+                    alert('❌ ' + (data.message || 'Failed to resend verification code'));
+                }
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                alert('❌ Failed to resend code. Please try again.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Resend Code';
+                }
+            }
+        };
+        
+        // Reset Password function
+        window.resetPassword = async function() {
+            console.log('🎯 resetPassword function called!');
+            
+            const newPasswordEl = document.getElementById('newPassword');
+            const confirmPasswordEl = document.getElementById('confirmNewPassword');
+            const emailEl = document.getElementById('forgotEmail');
+            
+            if (!newPasswordEl) {
+                alert('New password field not found');
+                return;
+            }
+            if (!confirmPasswordEl) {
+                alert('Confirm password field not found');
+                return;
+            }
+            if (!emailEl) {
+                alert('Email field not found');
+                return;
+            }
+            
+            const newPassword = newPasswordEl.value;
+            const confirmPassword = confirmPasswordEl.value;
+            const email = emailEl.value.trim();
+            
+            console.log('🔑 New Password:', newPassword ? '***' : 'empty');
+            console.log('🔑 Confirm Password:', confirmPassword ? '***' : 'empty');
+            console.log('📧 Email:', email);
+            
+            if (!newPassword) {
+                alert('Please enter a new password');
+                return;
+            }
+            
+            if (!confirmPassword) {
+                alert('Please confirm your password');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+
+            const btn = document.getElementById('resetPasswordBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resetting...';
+            }
+
+            try {
+                console.log('🚀 Resetting password...');
+                const response = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        token: window.resetToken || 'no-token', // Use stored reset token
+                        newPassword: newPassword
+                    })
+                });
+
+                console.log('📡 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+
+                if (response.ok && data && data.success) {
+                    console.log('✅ Password reset successfully!');
+                    alert('✅ ' + data.message + '\n\nYou can now login with your new password.');
+                    
+                    // Clear all form fields first
+                    if (emailEl) emailEl.value = '';
+                    if (newPasswordEl) newPasswordEl.value = '';
+                    if (confirmPasswordEl) confirmPasswordEl.value = '';
+                    
+                    // Reset modal to step 1 for next use
+                    document.getElementById('step1').classList.remove('hidden');
+                    document.getElementById('step2_5').classList.add('hidden');
+                    document.getElementById('step3').classList.add('hidden');
+                    
+                    // Clear any stored tokens
+                    window.resetToken = null;
+                    window.currentOtp = null;
+                    
+                    // Close forgot password modal completely
+                    const modal = document.getElementById('forgotPasswordModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.style.display = 'none';
+                    }
+                    
+                    // Ensure main login form is visible
+                    const loginForm = document.getElementById('loginForm');
+                    if (loginForm) {
+                        loginForm.style.display = 'block';
+                        loginForm.style.visibility = 'visible';
+                    }
+                    
+                    // Focus on login form after a short delay
+                    setTimeout(() => {
+                        const loginEmailInput = document.getElementById('email');
+                        if (loginEmailInput) {
+                            loginEmailInput.focus();
+                            // Add a brief highlight to the login form
+                            loginEmailInput.style.borderColor = '#10b981';
+                            loginEmailInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            setTimeout(() => {
+                                loginEmailInput.style.borderColor = '';
+                                loginEmailInput.style.boxShadow = '';
+                            }, 3000);
+                        }
+                    }, 100);
+                    
+                    console.log('🔄 Redirected back to login form');
+                } else {
+                    console.log('❌ Password reset failed:', data);
+                    alert('❌ ' + (data.message || 'Failed to reset password'));
+                }
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                alert('❌ Failed to reset password. Please try again.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Reset Password';
+                }
+            }
+        };
+        
+        // Function to reset modal state
+        window.resetForgotPasswordModal = function() {
+            console.log('🔄 Resetting forgot password modal state');
+            const modal = document.getElementById('forgotPasswordModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'block';
+            }
+            
+            // Reset to step 1
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2_5').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            
+            // Clear form fields
+            const emailField = document.getElementById('forgotEmail');
+            if (emailField) emailField.value = '';
+            
+            // Clear tokens
+            window.resetToken = null;
+            window.currentOtp = null;
+        };
+        
+        console.log('🔧 Functions loaded inline and available immediately');
+        
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 DOM loaded, functions ready');
+        });
+    </script>
+    
     <script src="js/unified-login.js"></script>
 </body>
 </html>

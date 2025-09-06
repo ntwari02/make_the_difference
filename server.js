@@ -44,6 +44,7 @@ import servicesMonetizationRoutes from './routes/services-monetization.js';
 import scholarshipDocumentsRoutes from './routes/scholarship-documents.js';
 import adminProfileRoutes from './routes/admin-profile.js'; // ✅ ADDED HERE
 import passwordChangeRoutes from './routes/password-change.js'; // NEW PASSWORD CHANGE ROUTES
+import userProfileRoutes from './routes/user-profile.js'; // USER PROFILE ROUTES
 
 import userNotificationsApiRoutes from './routes/user-notifications.js';
 import teamRoutes from './routes/team.js';
@@ -290,6 +291,7 @@ app.use('/api/advertisements', advertisementRoutes); // ✅ ADDED HERE
 app.use('/api/services-monetization', servicesMonetizationRoutes);
 app.use('/api/scholarship-documents', scholarshipDocumentsRoutes);
 app.use('/api/password-change', passwordChangeRoutes); // NEW PASSWORD CHANGE ROUTES
+app.use('/api/user', userProfileRoutes); // USER PROFILE ROUTES
 
 app.use('/api/user-notifications', userNotificationsApiRoutes);
 app.use('/api/team', teamRoutes);

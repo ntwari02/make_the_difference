@@ -39,6 +39,10 @@ export const auth = async (req, res, next) => {
         const [users] = await db.query('SELECT id, email, full_name FROM users WHERE id = ?', [decoded.id]);
 
         if (users.length === 0) {
+            if (res.headersSent) {
+                console.error('Headers already sent, cannot send user not found response');
+                return;
+            }
             return res.status(401).json({ message: 'User not found' });
         }
 
@@ -46,6 +50,11 @@ export const auth = async (req, res, next) => {
         req.user = users[0];
         next();
     } catch (error) {
+        // Check if response has already been sent
+        if (res.headersSent) {
+            console.error('Headers already sent, cannot send error response:', error.message);
+            return;
+        }
         res.status(401).json({ message: 'Token is not valid' });
     }
 };
@@ -71,6 +80,10 @@ export const adminAuth = async (req, res, next) => {
         
         if (users.length === 0) {
             console.log('ADMIN AUTH FAILED: User not found');
+            if (res.headersSent) {
+                console.error('Headers already sent, cannot send admin user not found response');
+                return;
+            }
             return res.status(401).json({ message: 'User not found' });
         }
 
@@ -80,6 +93,10 @@ export const adminAuth = async (req, res, next) => {
         
         if (adminUsers.length === 0) {
             console.log('ADMIN AUTH FAILED: No admin user found or inactive for user_id:', decoded.id);
+            if (res.headersSent) {
+                console.error('Headers already sent, cannot send admin account not found response');
+                return;
+            }
             return res.status(403).json({ message: 'Admin account not found or inactive' });
         }
 
@@ -110,6 +127,11 @@ export const adminAuth = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('ADMIN AUTH ERROR:', error.message);
+        // Check if response has already been sent
+        if (res.headersSent) {
+            console.error('Headers already sent, cannot send admin auth error response:', error.message);
+            return;
+        }
         res.status(401).json({ message: 'Token verification failed, authorization denied' });
     }
 };
@@ -127,6 +149,10 @@ export const checkPermission = (resource, action) => {
         }
 
         if (!req.user || !req.user.permissions) {
+            if (res.headersSent) {
+                console.error('Headers already sent, cannot send permission error response');
+                return;
+            }
             return res.status(403).json({ 
                 success: false, 
                 error: 'Insufficient permissions' 
@@ -145,6 +171,10 @@ export const checkPermission = (resource, action) => {
             return next();
         }
 
+        if (res.headersSent) {
+            console.error('Headers already sent, cannot send permission error response');
+            return;
+        }
         return res.status(403).json({ 
             success: false, 
             error: `Insufficient permissions: ${resource}:${action}` 

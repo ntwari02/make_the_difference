@@ -1,26 +1,304 @@
 <style>
+/* Mobile-first responsive design for admin header */
 @media (max-width: 500px){
   #admin-page-title{ display:none; }
 }
+
+/* Extra small mobile devices (320px and below) */
+@media (max-width: 320px) {
+  .admin-header {
+    padding: 0.25rem 0;
+  }
+  
+  .admin-header .container {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  
+  .admin-header .flex {
+    height: 2.5rem; /* h-10 */
+    min-height: 2.5rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 0.25rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.125rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 0.25rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.25rem;
+  }
+  
+  .admin-header .text-sm {
+    font-size: 0.75rem;
+  }
+  
+  .admin-header .h-6 {
+    height: 1.25rem;
+  }
+  
+  .admin-header .w-6 {
+    width: 1.25rem;
+  }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 0.375rem 0;
+  }
+  
+  .admin-header .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .admin-header .flex {
+    height: 2.75rem; /* h-11 */
+    min-height: 2.75rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 0.375rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.25rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 0.375rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.375rem;
+  }
+  
+  .admin-header .text-sm {
+    font-size: 0.8rem;
+  }
+  
+  .admin-header .h-7 {
+    height: 1.5rem;
+  }
+  
+  .admin-header .w-7 {
+    width: 1.5rem;
+  }
+}
+
+/* Mobile devices (640px and below) */
+@media (max-width: 640px) {
+  .admin-header {
+    padding: 0.5rem 0;
+  }
+  
+  .admin-header .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .admin-header .flex {
+    height: 3rem; /* h-12 */
+    min-height: 3rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 0.5rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.375rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 0.5rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.5rem;
+  }
+  
+  .admin-header .text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .admin-header .h-8 {
+    height: 1.75rem;
+  }
+  
+  .admin-header .w-8 {
+    width: 1.75rem;
+  }
+}
+
+/* Tablet devices (768px and below) */
+@media (max-width: 768px) {
+  .admin-header .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .admin-header .flex {
+    height: 3.5rem; /* h-14 */
+    min-height: 3.5rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 0.75rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.5rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 0.75rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.625rem;
+  }
+  
+  .admin-header .h-9 {
+    height: 2rem;
+  }
+  
+  .admin-header .w-9 {
+    width: 2rem;
+  }
+}
+
+/* Large tablets and small desktops (1024px and below) */
+@media (max-width: 1024px) {
+  .admin-header .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  
+  .admin-header .flex {
+    height: 4rem; /* h-16 */
+    min-height: 4rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 1rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.75rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 1rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.75rem;
+  }
+  
+  .admin-header .h-10 {
+    height: 2.25rem;
+  }
+  
+  .admin-header .w-10 {
+    width: 2.25rem;
+  }
+}
+
+/* Ensure touch targets are adequate for mobile */
+@media (max-width: 768px) {
+  .admin-header button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .admin-header a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Improve text readability on small screens */
+@media (max-width: 640px) {
+  .admin-header .text-xs {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+  
+  .admin-header .text-sm {
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+}
+
+/* Optimize for very small screens */
+@media (max-width: 360px) {
+  .admin-header .container {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+  
+  .admin-header .flex {
+    height: 2.5rem;
+    min-height: 2.5rem;
+  }
+  
+  .admin-header .gap-2 {
+    gap: 0.25rem;
+  }
+  
+  .admin-header .space-x-1 {
+    gap: 0.125rem;
+  }
+  
+  .admin-header .mr-2 {
+    margin-right: 0.25rem;
+  }
+  
+  .admin-header .p-1 {
+    padding: 0.25rem;
+  }
+  
+  .admin-header .h-6 {
+    height: 1.25rem;
+  }
+  
+  .admin-header .w-6 {
+    width: 1.25rem;
+  }
+  
+  .admin-header .text-xs {
+    font-size: 0.7rem;
+  }
+}
 </style>
-<nav class="admin-header bg-white shadow-sm w-full overflow-x-hidden">
-    <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex items-center gap-3">
-                <button id="admin-sidebar-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none" title="Toggle menu">
-                    <i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
+<nav class="admin-header bg-white dark:bg-gray-800 shadow-sm w-full overflow-x-hidden">
+    <div class="w-full max-w-7xl mx-auto px-1 sm:px-2 md:px-3 lg:px-6 xl:px-8">
+        <div class="flex justify-between items-center h-10 sm:h-12 md:h-14 lg:h-16">
+            <div class="flex items-center gap-1 sm:gap-2 md:gap-3">
+                <button id="admin-sidebar-toggle" class="md:hidden p-1 sm:p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all duration-200" title="Toggle menu">
+                    <i class="fas fa-bars text-gray-600 dark:text-gray-300 text-xs sm:text-sm md:text-base"></i>
                 </button>
                 <a href="admin_dashboard.html" class="flex items-center">
-                    <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-8 w-auto sm:h-10 object-contain mr-3">
-                    <h1 id="admin-page-title" class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white truncate max-w-[55vw] sm:max-w-none">Admin</h1>
+                    <img src="/img/logo.png" alt="Logo" class="h-6 sm:h-8 md:h-10 lg:h-12 xl:h-16 w-auto object-contain mr-1 sm:mr-2 md:mr-3">
                 </a>
             </div>
-            <div id="admin-right-actions" class="flex items-center space-x-1 sm:space-x-2">
-                <button id="theme-toggle" class="p-2 rounded-lg focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" aria-label="Toggle theme">
-                    <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
+            <div id="admin-right-actions" class="flex items-center space-x-0.5 sm:space-x-1 md:space-x-2">
+                <button id="theme-toggle" class="p-1 sm:p-1.5 md:p-2 rounded-lg focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" aria-label="Toggle theme">
+                    <i id="theme-icon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg"></i>
                 </button>
-                <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 font-medium transition-colors duration-200">
-                    <i class="fas fa-sign-out-alt mr-1"></i> <span class="hidden xs:inline sm:inline">Logout</span>
+                <button id="logoutBtn" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 font-medium transition-colors duration-200 text-xs sm:text-sm md:text-base px-1 sm:px-2 py-1 rounded">
+                    <i class="fas fa-sign-out-alt mr-0.5 sm:mr-1"></i> 
+                    <span class="hidden xs:inline sm:inline">Logout</span>
                 </button>
             </div>
         </div>

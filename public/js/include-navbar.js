@@ -1,4 +1,5 @@
 // js/include-navbar.js
+// Updated: 2024-01-XX - Removed userNameDisplay references
 
 /**
  * Robust navbar inclusion system with proper error handling and timing management
@@ -19,6 +20,13 @@ async function includeNavbar() {
     try {
         console.log('🚀 Starting navbar inclusion...');
         
+        // Check if navbar container exists
+        const navbarContainer = document.getElementById('navbar-container');
+        if (!navbarContainer) {
+            console.log('⚠️ Navbar container not found, skipping navbar inclusion');
+            return;
+        }
+        
         // Fetch navbar HTML
         const response = await fetch('navbar.html');
         if (!response.ok) {
@@ -26,14 +34,9 @@ async function includeNavbar() {
         }
         
         const html = await response.text();
-        const navbarContainer = document.getElementById('navbar-container');
-        
-        if (!navbarContainer) {
-            throw new Error('Navbar container not found!');
-        }
         
         // Inject HTML
-            navbarContainer.innerHTML = html;
+        navbarContainer.innerHTML = html;
         navbarState.isLoaded = true;
         console.log('✅ Navbar HTML injected successfully');
         
@@ -50,10 +53,14 @@ async function includeNavbar() {
 // Wait for DOM elements to be available
 async function waitForDOMReady() {
     return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait time
+        
         const checkElements = () => {
+            attempts++;
             const requiredElements = [
-                'theme-toggle', 'userMenu', 'userMenuButton', 'userMenuDropdown',
-                'authButtons', 'userNameDisplay', 'adminDashboardBtn', 'logoutButton'
+                'theme-toggle', 'userMenu', 'profilePhotoButton',
+                'authButtons'
             ];
             
             const missingElements = requiredElements.filter(id => !document.getElementById(id));
@@ -61,8 +68,15 @@ async function waitForDOMReady() {
             if (missingElements.length === 0) {
                 console.log('✅ All required DOM elements found');
                 resolve();
+            } else if (attempts >= maxAttempts) {
+                console.log('⚠️ Timeout waiting for elements, proceeding anyway:', missingElements);
+                resolve();
             } else {
-                console.log('⏳ Waiting for elements:', missingElements);
+                console.log('⏳ Waiting for elements:', missingElements, `(attempt ${attempts}/${maxAttempts})`);
+                // Debug: Check if userNameDisplay is being looked for
+                if (missingElements.includes('userNameDisplay')) {
+                    console.error('❌ ERROR: userNameDisplay should not be in required elements! This indicates a caching issue.');
+                }
                 setTimeout(checkElements, 100);
             }
         };
@@ -82,12 +96,9 @@ async function initializeNavbar() {
             themeToggleDarkIcon: document.getElementById('theme-toggle-dark-icon'),
             themeToggleLightIcon: document.getElementById('theme-toggle-light-icon'),
             userMenu: document.getElementById('userMenu'),
-            userMenuButton: document.getElementById('userMenuButton'),
-            userMenuDropdown: document.getElementById('userMenuDropdown'),
+            userMenuButton: document.getElementById('profilePhotoButton'),
             authButtons: document.getElementById('authButtons'),
-            userNameDisplay: document.getElementById('userNameDisplay'),
             adminDashboardBtn: document.getElementById('adminDashboardBtn'),
-            logoutButton: document.getElementById('logoutButton'),
             mobileMenuButton: document.getElementById('mobile-menu-button'),
             mobileMenu: document.getElementById('mobile-menu'),
             mobileMenuClose: document.getElementById('mobile-menu-close'),
@@ -99,6 +110,15 @@ async function initializeNavbar() {
             notificationBadge: document.getElementById('notification-badge'),
             noNotifications: document.getElementById('no-notifications')
         };
+        
+        // Log missing elements for debugging
+        const missingElements = Object.entries(elements)
+            .filter(([key, element]) => !element)
+            .map(([key]) => key);
+        
+        if (missingElements.length > 0) {
+            console.log('⚠️ Some elements not found:', missingElements);
+        }
         
         // Store elements globally
         navbarState.elements = elements;
@@ -118,6 +138,7 @@ async function initializeNavbar() {
         initializeMobileMenu(elements);
         initializeAuthSystem(elements);
         initializeNotifications(elements);
+        initializeProfileModal();
         
         // Set up event listeners
         setupEventListeners(elements);
@@ -180,24 +201,19 @@ function initializeTheme(elements) {
             });
 }
 
-// Initialize user menu system
+// Initialize user profile photo system
 function initializeUserMenu(elements) {
-    const { userMenuButton, userMenuDropdown, userMenu } = elements;
+    const { userMenuButton, userMenu } = elements;
     
-    if (!userMenuButton || !userMenuDropdown) return;
+    if (!userMenuButton) return;
     
-    // Toggle dropdown
+    // Handle profile photo click
     userMenuButton.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        userMenuDropdown.classList.toggle('hidden');
-        console.log('🔄 User menu toggled, hidden:', userMenuDropdown.classList.contains('hidden'));
-    });
-    
-    // Close when clicking outside
-    document.addEventListener('click', (e) => {
-        if (userMenu && !userMenu.contains(e.target)) {
-            userMenuDropdown.classList.add('hidden');
-        }
+        
+        // Open profile modal
+        openProfileModal();
     });
 }
 
@@ -235,15 +251,167 @@ function initializeMobileMenu(elements) {
 
 // Initialize authentication system
 function initializeAuthSystem(elements) {
-    const { logoutButton } = elements;
+    // Logout is now handled in the profile modal
+    // No direct logout button in navbar anymore
+}
+
+// Profile modal functions
+function openProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (!modal) return;
     
-    // Logout handler
-    if (logoutButton) {
-        logoutButton.addEventListener('click', (e) => {
-            e.preventDefault();
+    // Load user data
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const fullName = user.full_name || user.fullName || 'User';
+    const email = user.email || 'user@example.com';
+    const profilePicture = user.profile_picture || user.profile_picture_path || '';
+    const role = user.isAdmin ? 'Admin' : 'User';
+    const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown';
+    
+    // Update modal content
+    const nameEl = document.getElementById('profileModalName');
+    const emailEl = document.getElementById('profileModalEmail');
+    const avatarEl = document.getElementById('profileModalAvatar');
+    const fallbackEl = document.getElementById('profileModalFallback');
+    const roleEl = document.getElementById('profileModalRole');
+    const fullNameEl = document.getElementById('profileModalFullName');
+    const emailDetailEl = document.getElementById('profileModalEmailDetail');
+    const roleDetailEl = document.getElementById('profileModalRoleDetail');
+    const joinDateEl = document.getElementById('profileModalJoinDate');
+    
+    if (nameEl) nameEl.textContent = fullName;
+    if (emailEl) emailEl.textContent = email;
+    if (roleEl) roleEl.textContent = role;
+    if (fullNameEl) fullNameEl.textContent = fullName;
+    if (emailDetailEl) emailDetailEl.textContent = email;
+    if (roleDetailEl) roleDetailEl.textContent = role;
+    if (joinDateEl) joinDateEl.textContent = joinDate;
+    
+    // Handle profile picture
+    if (profilePicture) {
+        const src = profilePicture.startsWith('http') || profilePicture.startsWith('/') 
+            ? profilePicture 
+            : `/${profilePicture}`;
+        if (avatarEl) {
+            avatarEl.src = src;
+            avatarEl.classList.remove('hidden');
+        }
+        if (fallbackEl) fallbackEl.classList.add('hidden');
+    } else {
+        // Show initials
+        const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        if (fallbackEl) {
+            fallbackEl.textContent = initials || 'U';
+            fallbackEl.classList.remove('hidden');
+        }
+        if (avatarEl) avatarEl.classList.add('hidden');
+    }
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+// Update profile photo in navbar
+function updateProfilePhoto(user) {
+    const profilePhoto = document.getElementById('profilePhoto');
+    const profilePhotoFallback = document.getElementById('profilePhotoFallback');
+    
+    if (!profilePhoto || !profilePhotoFallback) return;
+    
+    const profilePicture = user.profile_picture || user.profile_picture_path || '';
+    const fullName = user.full_name || user.fullName || 'User';
+    
+    if (profilePicture) {
+        const src = profilePicture.startsWith('http') || profilePicture.startsWith('/') 
+            ? profilePicture 
+            : `/${profilePicture}`;
+        profilePhoto.src = src;
+        profilePhoto.classList.remove('hidden');
+        profilePhotoFallback.classList.add('hidden');
+    } else {
+        // Show initials
+        const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        profilePhotoFallback.textContent = initials || 'U';
+        profilePhotoFallback.classList.remove('hidden');
+        profilePhoto.classList.add('hidden');
+    }
+}
+
+// Initialize profile modal
+function initializeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    const closeBtn = document.getElementById('closeProfileModal');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const changePhotoBtn = document.getElementById('changePhotoBtn');
+    
+    if (!modal) return;
+    
+    // Close button handler
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeProfileModal);
+    }
+    
+    // Edit profile button
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', () => {
+            closeProfileModal();
+            openEditProfileModal();
+        });
+    }
+    
+    // Change password button
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', () => {
+            closeProfileModal();
+            openChangePasswordModal();
+        });
+    }
+    
+    // Logout button
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            closeProfileModal();
             window.location.href = 'logout.html';
         });
     }
+    
+    // Change photo button
+    if (changePhotoBtn) {
+        changePhotoBtn.addEventListener('click', () => {
+            closeProfileModal();
+            openPhotoUploadModal();
+        });
+    }
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeProfileModal();
+        }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeProfileModal();
+        }
+    });
+    
+    // Initialize other modals
+    initializeEditProfileModal();
+    initializeChangePasswordModal();
+    initializePhotoUploadModal();
 }
 
 // Initialize notifications (bell + dropdown)
@@ -272,8 +440,8 @@ function initializeNotifications(elements) {
         console.log('[Notifications] Unable to measure bell:', e?.message || e);
     }
 
-    // Navigate to notifications page on click
-    notificationBell.addEventListener('click', (e) => {
+    // Navigate to notifications page on click with preloading
+    notificationBell.addEventListener('click', async (e) => {
         console.log('[Notifications] Bell click detected', {
             target: e.target && (e.target.id || e.target.tagName),
             time: new Date().toISOString()
@@ -281,9 +449,46 @@ function initializeNotifications(elements) {
         try {
             e.preventDefault();
         } catch {}
-        const dest = 'notifications.html';
-        console.log('[Notifications] Navigating to', dest);
-        window.location.href = dest;
+        
+        // Add loading state to bell
+        const originalContent = notificationBell.innerHTML;
+        notificationBell.innerHTML = `
+            <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        `;
+        notificationBell.disabled = true;
+        
+        try {
+            // Preload notifications data
+            const token = localStorage.getItem('token');
+            if (token) {
+                const response = await fetch('/api/notifications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const notifications = await response.json();
+                    // Store in sessionStorage for instant loading
+                    sessionStorage.setItem('notifications_cache', JSON.stringify(notifications));
+                    sessionStorage.setItem('notifications_timestamp', Date.now().toString());
+                }
+            }
+            
+            // Navigate to notifications page
+            const dest = 'notifications.html';
+            console.log('[Notifications] Navigating to', dest);
+            window.location.href = dest;
+        } catch (error) {
+            console.error('[Notifications] Preload failed:', error);
+            // Still navigate even if preload fails
+            window.location.href = 'notifications.html';
+        } finally {
+            // Restore original state if navigation fails
+            setTimeout(() => {
+                notificationBell.innerHTML = originalContent;
+                notificationBell.disabled = false;
+            }, 1000);
+        }
     });
 
     // Expose a small debugger
@@ -357,6 +562,9 @@ function initializeNotifications(elements) {
     window.addEventListener('storage', (e) => {
         if (e.key === 'token' || e.key === 'user') updateNotificationBadge();
     });
+    
+    // Make updateNotificationBadge globally available
+    window.updateNotificationBadge = updateNotificationBadge;
 }
 
 // Set up all event listeners
@@ -382,7 +590,7 @@ function setupEventListeners(elements) {
 // Update authentication state and dashboard visibility
 async function updateAuthState(elements) {
     try {
-        const { authButtons, userMenu, userNameDisplay, adminDashboardBtn, mobileAuthButtons } = elements;
+        const { authButtons, userMenu, adminDashboardBtn, mobileAuthButtons } = elements;
         
                 const token = localStorage.getItem('token');
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -401,7 +609,9 @@ async function updateAuthState(elements) {
             // Show user menu, hide auth buttons
             if (authButtons) authButtons.classList.add('hidden');
             if (userMenu) userMenu.classList.remove('hidden');
-            if (userNameDisplay) userNameDisplay.textContent = user.full_name;
+            
+            // Update profile photo
+            updateProfilePhoto(user);
             
             // Handle admin dashboard button visibility
             await handleAdminDashboardVisibility(adminDashboardBtn, user);
@@ -677,6 +887,13 @@ function addDebugFunctions(elements) {
 function handleNavbarError(error) {
     console.error('❌ Navbar loading failed:', error);
     
+    // Only retry if navbar container exists
+    const navbarContainer = document.getElementById('navbar-container');
+    if (!navbarContainer) {
+        console.log('⚠️ No navbar container found, skipping error handling');
+        return;
+    }
+    
     if (navbarState.retryCount < navbarState.maxRetries) {
         navbarState.retryCount++;
         console.log(`🔄 Retrying navbar load (${navbarState.retryCount}/${navbarState.maxRetries})...`);
@@ -688,14 +905,11 @@ function handleNavbarError(error) {
         console.error('❌ Max retries reached, navbar failed to load');
         
         // Show fallback navbar
-        const navbarContainer = document.getElementById('navbar-container');
-        if (navbarContainer) {
-            navbarContainer.innerHTML = `
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    <strong>Error:</strong> Failed to load navigation bar. Please refresh the page.
-                </div>
-            `;
-        }
+        navbarContainer.innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <strong>Error:</strong> Failed to load navigation bar. Please refresh the page.
+            </div>
+        `;
     }
 }
 
@@ -725,6 +939,507 @@ if (document.readyState === 'loading') {
 } else {
     forceHideAdminDashboardButton();
     includeNavbar();
+}
+
+// ==================== PROFILE MODAL FUNCTIONS ====================
+
+// Edit Profile Modal Functions
+function openEditProfileModal() {
+    const modal = document.getElementById('editProfileModal');
+    if (!modal) return;
+    
+    // Load current user data
+    loadUserProfileData();
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditProfileModal() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function initializeEditProfileModal() {
+    const modal = document.getElementById('editProfileModal');
+    const closeBtn = document.getElementById('closeEditProfileModal');
+    const cancelBtn = document.getElementById('cancelEditProfile');
+    const form = document.getElementById('editProfileForm');
+    
+    if (!modal) return;
+    
+    // Close button handlers
+    if (closeBtn) closeBtn.addEventListener('click', closeEditProfileModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeEditProfileModal);
+    
+    // Form submission
+    if (form) {
+        form.addEventListener('submit', handleEditProfileSubmit);
+    }
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeEditProfileModal();
+        }
+    });
+}
+
+async function loadUserProfileData() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch('/api/user/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const user = data.user;
+            
+            // Populate form fields
+            document.getElementById('editFullName').value = user.full_name || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editPhone').value = user.phone || '';
+            document.getElementById('editBio').value = user.bio || '';
+        }
+    } catch (error) {
+        console.error('Error loading profile data:', error);
+    }
+}
+
+async function handleEditProfileSubmit(e) {
+    e.preventDefault();
+    
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const saveText = document.getElementById('saveProfileText');
+    const saveLoading = document.getElementById('saveProfileLoading');
+    
+    // Show loading state
+    saveBtn.disabled = true;
+    saveText.classList.add('hidden');
+    saveLoading.classList.remove('hidden');
+    
+    try {
+        const formData = {
+            full_name: document.getElementById('editFullName').value.trim(),
+            email: document.getElementById('editEmail').value.trim(),
+            phone: document.getElementById('editPhone').value.trim(),
+            bio: document.getElementById('editBio').value.trim()
+        };
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/user/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Update localStorage with new user data
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const updatedUser = { ...currentUser, ...result.user };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            // Update profile modal display
+            updateProfileModalDisplay(updatedUser);
+            
+            // Close modal
+            closeEditProfileModal();
+            
+            // Show success message
+            showAlert('Profile updated successfully!', 'success');
+        } else {
+            throw new Error(result.error || 'Failed to update profile');
+        }
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        showAlert(error.message || 'Failed to update profile', 'error');
+    } finally {
+        // Reset button state
+        saveBtn.disabled = false;
+        saveText.classList.remove('hidden');
+        saveLoading.classList.add('hidden');
+    }
+}
+
+// Change Password Modal Functions
+function openChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    if (!modal) return;
+    
+    // Clear form
+    document.getElementById('changePasswordForm').reset();
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function initializeChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    const closeBtn = document.getElementById('closeChangePasswordModal');
+    const cancelBtn = document.getElementById('cancelChangePassword');
+    const form = document.getElementById('changePasswordForm');
+    
+    if (!modal) return;
+    
+    // Close button handlers
+    if (closeBtn) closeBtn.addEventListener('click', closeChangePasswordModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeChangePasswordModal);
+    
+    // Form submission
+    if (form) {
+        form.addEventListener('submit', handleChangePasswordSubmit);
+    }
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeChangePasswordModal();
+        }
+    });
+}
+
+async function handleChangePasswordSubmit(e) {
+    e.preventDefault();
+    
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showAlert('New passwords do not match', 'error');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('savePasswordBtn');
+    const saveText = document.getElementById('savePasswordText');
+    const saveLoading = document.getElementById('savePasswordLoading');
+    
+    // Show loading state
+    saveBtn.disabled = true;
+    saveText.classList.add('hidden');
+    saveLoading.classList.remove('hidden');
+    
+    try {
+        const formData = {
+            currentPassword: document.getElementById('currentPassword').value,
+            newPassword: newPassword
+        };
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/password-change/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Close modal
+            closeChangePasswordModal();
+            
+            // Show success message
+            showAlert('Password changed successfully!', 'success');
+        } else {
+            throw new Error(result.error || 'Failed to change password');
+        }
+    } catch (error) {
+        console.error('Error changing password:', error);
+        showAlert(error.message || 'Failed to change password', 'error');
+    } finally {
+        // Reset button state
+        saveBtn.disabled = false;
+        saveText.classList.remove('hidden');
+        saveLoading.classList.add('hidden');
+    }
+}
+
+// Photo Upload Modal Functions
+function openPhotoUploadModal() {
+    const modal = document.getElementById('photoUploadModal');
+    if (!modal) return;
+    
+    // Load current photo
+    loadCurrentPhoto();
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closePhotoUploadModal() {
+    const modal = document.getElementById('photoUploadModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function initializePhotoUploadModal() {
+    const modal = document.getElementById('photoUploadModal');
+    const closeBtn = document.getElementById('closePhotoUploadModal');
+    const cancelBtn = document.getElementById('cancelPhotoUpload');
+    const selectBtn = document.getElementById('selectPhotoBtn');
+    const removeBtn = document.getElementById('removePhotoBtn');
+    const saveBtn = document.getElementById('savePhotoBtn');
+    const fileInput = document.getElementById('photoFileInput');
+    
+    if (!modal) return;
+    
+    // Close button handlers
+    if (closeBtn) closeBtn.addEventListener('click', closePhotoUploadModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closePhotoUploadModal);
+    
+    // Select photo button
+    if (selectBtn && fileInput) {
+        selectBtn.addEventListener('click', () => fileInput.click());
+    }
+    
+    // File input change
+    if (fileInput) {
+        fileInput.addEventListener('change', handlePhotoSelect);
+    }
+    
+    // Remove photo button
+    if (removeBtn) {
+        removeBtn.addEventListener('click', handleRemovePhoto);
+    }
+    
+    // Save photo button
+    if (saveBtn) {
+        saveBtn.addEventListener('click', handleSavePhoto);
+    }
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closePhotoUploadModal();
+        }
+    });
+}
+
+async function loadCurrentPhoto() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch('/api/user/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const user = data.user;
+            
+            const previewImg = document.getElementById('photoPreview');
+            const previewFallback = document.getElementById('photoPreviewFallback');
+            
+            if (user.profile_picture) {
+                previewImg.src = user.profile_picture;
+                previewImg.classList.remove('hidden');
+                previewFallback.classList.add('hidden');
+            } else {
+                previewImg.classList.add('hidden');
+                previewFallback.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading current photo:', error);
+    }
+}
+
+function handlePhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showAlert('Please select an image file', 'error');
+        return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showAlert('File size must be less than 5MB', 'error');
+        return;
+    }
+    
+    // Preview image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const previewImg = document.getElementById('photoPreview');
+        const previewFallback = document.getElementById('photoPreviewFallback');
+        
+        previewImg.src = e.target.result;
+        previewImg.classList.remove('hidden');
+        previewFallback.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+async function handleRemovePhoto() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/user/remove-photo', {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Update preview
+            const previewImg = document.getElementById('photoPreview');
+            const previewFallback = document.getElementById('photoPreviewFallback');
+            
+            previewImg.classList.add('hidden');
+            previewFallback.classList.remove('hidden');
+            
+            // Update main profile photo
+            updateProfilePhoto({ profile_picture: '' });
+            
+            showAlert('Profile photo removed successfully!', 'success');
+        } else {
+            throw new Error(result.error || 'Failed to remove photo');
+        }
+    } catch (error) {
+        console.error('Error removing photo:', error);
+        showAlert(error.message || 'Failed to remove photo', 'error');
+    }
+}
+
+async function handleSavePhoto() {
+    const fileInput = document.getElementById('photoFileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showAlert('Please select a photo first', 'error');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('savePhotoBtn');
+    const saveText = document.getElementById('savePhotoText');
+    const saveLoading = document.getElementById('savePhotoLoading');
+    
+    // Show loading state
+    saveBtn.disabled = true;
+    saveText.classList.add('hidden');
+    saveLoading.classList.remove('hidden');
+    
+    try {
+        const formData = new FormData();
+        formData.append('photo', file);
+        
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/user/upload-photo', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Update main profile photo
+            updateProfilePhoto({ profile_picture: result.profile_picture });
+            
+            // Close modal
+            closePhotoUploadModal();
+            
+            showAlert('Profile photo updated successfully!', 'success');
+        } else {
+            throw new Error(result.error || 'Failed to upload photo');
+        }
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        showAlert(error.message || 'Failed to upload photo', 'error');
+    } finally {
+        // Reset button state
+        saveBtn.disabled = false;
+        saveText.classList.remove('hidden');
+        saveLoading.classList.add('hidden');
+    }
+}
+
+// Utility Functions
+function updateProfileModalDisplay(user) {
+    // Update profile modal content
+    const nameEl = document.getElementById('profileModalName');
+    const emailEl = document.getElementById('profileModalEmail');
+    const avatarEl = document.getElementById('profileModalAvatar');
+    const fallbackEl = document.getElementById('profileModalFallback');
+    const roleEl = document.getElementById('profileModalRole');
+    const fullNameEl = document.getElementById('profileModalFullName');
+    const emailDetailEl = document.getElementById('profileModalEmailDetail');
+    const roleDetailEl = document.getElementById('profileModalRoleDetail');
+    const joinDateEl = document.getElementById('profileModalJoinDate');
+    
+    if (nameEl) nameEl.textContent = user.full_name || 'User';
+    if (emailEl) emailEl.textContent = user.email || 'user@example.com';
+    if (roleEl) roleEl.textContent = user.isAdmin ? 'Admin' : 'User';
+    if (fullNameEl) fullNameEl.textContent = user.full_name || '-';
+    if (emailDetailEl) emailDetailEl.textContent = user.email || '-';
+    if (roleDetailEl) roleDetailEl.textContent = user.isAdmin ? 'Admin' : 'User';
+    if (joinDateEl) joinDateEl.textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown';
+    
+    // Handle profile picture
+    if (user.profile_picture) {
+        const src = user.profile_picture.startsWith('http') || user.profile_picture.startsWith('/') 
+            ? user.profile_picture 
+            : `/${user.profile_picture}`;
+        if (avatarEl) {
+            avatarEl.src = src;
+            avatarEl.classList.remove('hidden');
+        }
+        if (fallbackEl) fallbackEl.classList.add('hidden');
+    } else {
+        // Show initials
+        const initials = (user.full_name || 'User').trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        if (fallbackEl) {
+            fallbackEl.textContent = initials || 'U';
+            fallbackEl.classList.remove('hidden');
+        }
+        if (avatarEl) avatarEl.classList.add('hidden');
+    }
+}
+
+function showAlert(message, type = 'info') {
+    // Create alert element
+    const alert = document.createElement('div');
+    alert.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg max-w-sm ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        type === 'warning' ? 'bg-yellow-500 text-white' :
+        'bg-blue-500 text-white'
+    }`;
+    alert.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(alert);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
 }
 
 // Export for potential external use

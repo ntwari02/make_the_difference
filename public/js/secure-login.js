@@ -487,6 +487,9 @@ const ForgotPasswordHandler = {
                     this.showStep(3);
                 } else if (response.requires_admin) {
                     AlertManager.show(response.message, 'warning');
+                } else if (response.requires_otp) {
+                    // Show OTP option when security questions fail
+                    this.showOTPOption();
                 } else {
                     throw new Error(response.message || 'Incorrect answers');
                 }
@@ -544,6 +547,12 @@ const ForgotPasswordHandler = {
         document.getElementById('forgotPasswordForm').reset();
         document.getElementById('securityQuestionsForm').reset();
         document.getElementById('resetPasswordForm').reset();
+        
+        // Hide OTP step if it exists
+        const otpStep = document.getElementById('step-otp');
+        if (otpStep) {
+            otpStep.classList.add('hidden');
+        }
     },
 
     populateSecurityQuestions: function(questions) {
@@ -566,6 +575,154 @@ const ForgotPasswordHandler = {
                        maxlength="255">
             `;
             container.appendChild(questionDiv);
+        });
+    },
+
+    showOTPOption: function() {
+        // Hide security questions and show OTP option
+        document.getElementById('step2').classList.add('hidden');
+        
+        // Create OTP step if it doesn't exist
+        let otpStep = document.getElementById('step-otp');
+        if (!otpStep) {
+            otpStep = this.createOTPStep();
+            document.getElementById('forgotPasswordModal').querySelector('.modal-body').appendChild(otpStep);
+        }
+        
+        otpStep.classList.remove('hidden');
+        AlertManager.show('Incorrect answers. You can use a security code sent to your email instead.', 'info');
+    },
+
+    createOTPStep: function() {
+        const step = document.createElement('div');
+        step.id = 'step-otp';
+        step.className = 'step hidden';
+        step.innerHTML = `
+            <div class="text-center mb-6">
+                <div class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-envelope text-2xl text-blue-600 dark:text-blue-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Security Code Verification</h3>
+                <p class="text-gray-600 dark:text-gray-400">We'll send a 6-digit security code to your email address.</p>
+            </div>
+            
+            <form id="otpForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Security Code
+                    </label>
+                    <input type="text" 
+                           id="otp-input" 
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-center text-2xl tracking-widest" 
+                           placeholder="000000" 
+                           maxlength="6"
+                           pattern="[0-9]{6}"
+                           required>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" 
+                            id="send-otp-btn" 
+                            class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Send Security Code
+                    </button>
+                    <button type="button" 
+                            id="verify-otp-btn" 
+                            class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="fas fa-check mr-2"></i>
+                        Verify Code
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <button type="button" 
+                            id="back-to-questions-btn" 
+                            class="text-blue-600 dark:text-blue-400 hover:underline">
+                        <i class="fas fa-arrow-left mr-1"></i>
+                        Back to Security Questions
+                    </button>
+                </div>
+            </form>
+        `;
+        
+        // Add event listeners
+        this.addOTPEventListeners(step);
+        
+        return step;
+    },
+
+    addOTPEventListeners: function(step) {
+        const sendOtpBtn = step.querySelector('#send-otp-btn');
+        const verifyOtpBtn = step.querySelector('#verify-otp-btn');
+        const backToQuestionsBtn = step.querySelector('#back-to-questions-btn');
+        const otpInput = step.querySelector('#otp-input');
+
+        // Send OTP
+        sendOtpBtn.addEventListener('click', async () => {
+            try {
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+                
+                const response = await window.api.post('/security-questions/send-otp', {
+                    email: currentEmail
+                });
+
+                if (response.success) {
+                    AlertManager.show(response.message, 'success');
+                    otpInput.focus();
+                } else {
+                    throw new Error(response.message || 'Failed to send security code');
+                }
+            } catch (error) {
+                AlertManager.show(error.message || 'An error occurred', 'error');
+            } finally {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Send Security Code';
+            }
+        });
+
+        // Verify OTP
+        verifyOtpBtn.addEventListener('click', async () => {
+            const otp = otpInput.value.trim();
+            
+            if (!otp || otp.length !== 6) {
+                AlertManager.show('Please enter a valid 6-digit security code', 'error');
+                return;
+            }
+
+            try {
+                verifyOtpBtn.disabled = true;
+                verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+                
+                const response = await window.api.post('/security-questions/verify-otp', {
+                    email: currentEmail,
+                    otp: otp
+                });
+
+                if (response.success && response.can_reset) {
+                    resetToken = response.reset_token;
+                    this.showStep(3);
+                } else {
+                    throw new Error(response.message || 'Invalid security code');
+                }
+            } catch (error) {
+                AlertManager.show(error.message || 'An error occurred', 'error');
+            } finally {
+                verifyOtpBtn.disabled = false;
+                verifyOtpBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Verify Code';
+            }
+        });
+
+        // Back to security questions
+        backToQuestionsBtn.addEventListener('click', () => {
+            step.classList.add('hidden');
+            this.showStep(2);
+        });
+
+        // Auto-format OTP input
+        otpInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
     }
 };

@@ -34,6 +34,86 @@
         } catch {}
       })();
     </script>
+    <!-- Mobile-specific improvements -->
+    <style>
+        /* Mobile-first responsive improvements */
+        @media (max-width: 640px) {
+            /* Better touch targets for mobile */
+            button, a, input, select, textarea {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Improved text readability on mobile */
+            body {
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            
+            /* Better spacing for mobile */
+            .admin-card {
+                margin-bottom: 1rem;
+            }
+            
+            /* Improved scrolling on mobile */
+            .overflow-y-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            
+            /* Better modal positioning on mobile */
+            .fixed.inset-0 {
+                padding: 1rem;
+            }
+            
+            /* Improved conversation item layout */
+            .conv-item {
+                padding: 0.75rem;
+            }
+            
+            /* Better message layout on mobile */
+            .max-w-\[85\%\] {
+                max-width: 90%;
+            }
+        }
+        
+        /* Tablet improvements */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .lg\:grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Smooth scrolling for better UX */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Better focus states for accessibility */
+        button:focus, a:focus, input:focus, select:focus, textarea:focus {
+            outline: 2px solid #3B82F6;
+            outline-offset: 2px;
+        }
+        
+        /* Improved hover states for touch devices */
+        @media (hover: none) and (pointer: coarse) {
+            .hover\:bg-gray-50:hover {
+                background-color: transparent;
+            }
+            
+            .hover\:bg-blue-600:hover {
+                background-color: #2563eb;
+            }
+        }
+        
+        /* Better message actions visibility on mobile */
+        @media (max-width: 640px) {
+            .message-actions {
+                opacity: 1 !important;
+            }
+        }
+    </style>
+    
     <!-- Admin includes -->
     <script src="js/include-admin-header.js" defer></script>
     <script src="js/include-admin-sidebar.js" defer></script>
@@ -44,65 +124,65 @@
     <div id="admin-header-container" data-page-title="Notifications"></div>
 
         <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
-        <div class="admin-content-container p-6">
-            <div class="max-w-full mx-auto px-4">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold">Notifications & Conversations</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">View, reply and send updates to users</p>
+        <div class="admin-content-container p-3 sm:p-4 md:p-6">
+            <div class="max-w-full mx-auto px-2 sm:px-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div class="text-center sm:text-left">
+                    <h1 class="text-xl sm:text-2xl font-bold">Notifications & Conversations</h1>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">View, reply and send updates to users</p>
                 </div>
-                <div class="flex gap-2">
-                    <button id="refreshBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
-                    <a id="exportCsvBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md" href="#"><i class="fas fa-file-export mr-2"></i>Export CSV</a>
-                    <button id="newChatBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"><i class="fas fa-comment mr-2"></i>New Chat</button>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-2">
+                    <button id="refreshBtn" class="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm sm:text-base"><i class="fas fa-sync-alt mr-1 sm:mr-2"></i><span class="hidden sm:inline">Refresh</span></button>
+                    <a id="exportCsvBtn" class="px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm sm:text-base" href="#"><i class="fas fa-file-export mr-1 sm:mr-2"></i><span class="hidden sm:inline">Export CSV</span></a>
+                    <button id="newChatBtn" class="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm sm:text-base"><i class="fas fa-comment mr-1 sm:mr-2"></i><span class="hidden sm:inline">New Chat</span></button>
                     <!-- <button id="newGroupBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"><i class="fas fa-users mr-2"></i>New Group</button> -->
-                    <button id="newAnnouncementBtn" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"><i class="fas fa-bullhorn mr-2"></i>New Announcement</button>
+                    <button id="newAnnouncementBtn" class="px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 text-sm sm:text-base"><i class="fas fa-bullhorn mr-1 sm:mr-2"></i><span class="hidden sm:inline">New Announcement</span></button>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div class="md:col-span-2">
-                  <input id="filterSearch" type="text" placeholder="Search by subject, email or message" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+            <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-4 sm:mb-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="sm:col-span-2 lg:col-span-2">
+                  <input id="filterSearch" type="text" placeholder="Search by subject, email or message" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" />
                 </div>
                 <div>
-                  <input id="filterFrom" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+                  <input id="filterFrom" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" />
                 </div>
                 <div>
-                  <input id="filterTo" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" />
+                  <input id="filterTo" type="date" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" />
                 </div>
                 <div>
-                  <select id="filterReplies" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600">
-                    <option value="any">Replies: Any</option>
-                    <option value="0">No replies</option>
-                    <option value=">0">Has replies</option>
+                  <select id="filterReplies" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base">
+                    <option value="any">Status: Any</option>
+                    <option value="0">Read</option>
+                    <option value=">0">Unread</option>
                   </select>
                 </div>
                 <div>
-                  <select id="filterSort" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600">
+                  <select id="filterSort" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base">
                     <option value="updated_desc">Newest updated</option>
                     <option value="updated_asc">Oldest updated</option>
                     <option value="created_desc">Newest created</option>
                     <option value="created_asc">Oldest created</option>
                   </select>
                 </div>
-                <div class="flex items-center gap-2">
-                  <button id="applyFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700">Apply</button>
-                  <button id="clearFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700">Clear</button>
+                <div class="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
+                  <button id="applyFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-sm sm:text-base flex-1">Apply</button>
+                  <button id="clearFilters" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-sm sm:text-base flex-1">Clear</button>
                 </div>
               </div>
             </div>
 
-            <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
+            <div class="flex flex-col lg:grid lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                 <!-- Conversations list -->
                 <div class="lg:col-span-1 order-2 lg:order-1">
-                    <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[20rem] sm:h-[24rem] lg:h-[48rem] xl:h-[52rem] flex flex-col">
+                    <div class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[18rem] sm:h-[22rem] lg:h-[48rem] xl:h-[52rem] flex flex-col">
                         <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                            <h3 class="text-base sm:text-lg font-semibold">Messages</h3>
+                            <h3 class="text-sm sm:text-base lg:text-lg font-semibold">Messages</h3>
                             <div class="flex gap-1 sm:gap-2">
                                 <button id="filterAll" class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700">All</button>
-                                <button id="filterOpen" class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700">Recent</button>
+                                <button id="filterOpen" class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700">Unread</button>
                             </div>
                         </div>
                         <div id="conversationList" class="flex-1 overflow-y-auto"></div>
@@ -118,10 +198,10 @@
 
                 <!-- Details + reply (DM) -->
                 <div class="lg:col-span-2 order-1 lg:order-2">
-                    <div id="conversationDetails" class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[24rem] sm:h-[28rem] lg:h-[34rem] xl:h-[38rem] flex flex-col">
-                        <div class="p-4 sm:p-6 text-center text-gray-500 dark:text-gray-400">
-                            <i class="fas fa-comments text-3xl sm:text-4xl mb-4"></i>
-                            <p class="text-sm sm:text-base">Select a conversation to view and reply</p>
+                    <div id="conversationDetails" class="admin-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-[22rem] sm:h-[26rem] lg:h-[34rem] xl:h-[38rem] flex flex-col">
+                        <div class="p-3 sm:p-4 lg:p-6 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-comments text-2xl sm:text-3xl lg:text-4xl mb-3 sm:mb-4"></i>
+                            <p class="text-xs sm:text-sm lg:text-base">Select a conversation to view and reply</p>
                         </div>
                     </div>
                 </div>
@@ -148,33 +228,33 @@
             </div> -->
 
             <!-- New Announcement Modal -->
-            <div id="announcementModal" class="fixed inset-0 hidden z-50">
+            <div id="announcementModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" data-close></div>
-                <div class="relative max-w-xl w-[95%] mx-auto mt-24 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                        <h3 class="font-semibold">Send Announcement</h3>
-                        <button class="p-1" data-close><i class="fas fa-times"></i></button>
+                <div class="relative max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="font-semibold text-sm sm:text-base">Send Announcement</h3>
+                        <button class="p-1" data-close><i class="fas fa-times text-sm sm:text-base"></i></button>
                     </div>
-                    <form id="announcementForm" class="p-4 space-y-3">
+                    <form id="announcementForm" class="p-3 sm:p-4 space-y-3">
                         <div>
-                            <label class="text-sm">User IDs (comma-separated) - optional</label>
-                            <input id="annUserIds" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. 12,45,78 (leave empty to target by email below or send to single email)" />
+                            <label class="text-xs sm:text-sm">User IDs (comma-separated) - optional</label>
+                            <input id="annUserIds" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" placeholder="e.g. 12,45,78 (leave empty to target by email below or send to single email)" />
                         </div>
                         <div>
-                            <label class="text-sm">Single user email - optional</label>
-                            <input id="annEmail" type="email" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="user@example.com" />
+                            <label class="text-xs sm:text-sm">Single user email - optional</label>
+                            <input id="annEmail" type="email" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" placeholder="user@example.com" />
                         </div>
                         <div>
-                            <label class="text-sm">Title</label>
-                            <input id="annTitle" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" required />
+                            <label class="text-xs sm:text-sm">Title</label>
+                            <input id="annTitle" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" required />
                         </div>
                         <div>
-                            <label class="text-sm">Message</label>
-                            <textarea id="annMessage" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 h-32" required></textarea>
+                            <label class="text-xs sm:text-sm">Message</label>
+                            <textarea id="annMessage" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 h-24 sm:h-32 text-sm sm:text-base" required></textarea>
                         </div>
-                        <div class="flex justify-end gap-2">
-                            <button type="button" class="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700" data-close>Cancel</button>
-                            <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700">Send</button>
+                        <div class="flex flex-col sm:flex-row justify-end gap-2">
+                            <button type="button" class="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-sm sm:text-base" data-close>Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 text-sm sm:text-base">Send</button>
                         </div>
                     </form>
                 </div>
@@ -210,37 +290,35 @@
             </div> -->
 
             <!-- New Chat Modal -->
-            <div id="newChatModal" class="fixed inset-0 hidden z-50">
+            <div id="newChatModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50" data-close></div>
-                <div class="relative max-w-xl w-[95%] mx-auto mt-24 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                        <h3 class="font-semibold">Start New Chat</h3>
-                        <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" data-close>
-                            <i class="fas fa-times"></i>
+                <div class="relative max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="font-semibold text-sm sm:text-base">Start New Chat</h3>
+                        <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1" data-close>
+                            <i class="fas fa-times text-sm sm:text-base"></i>
                         </button>
                     </div>
-                    <div class="p-4">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-2">Search Users</label>
-                            <input id="userSearchInput" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600" placeholder="Type name or email to search..." />
+                    <div class="p-3 sm:p-4">
+                        <div class="mb-3 sm:mb-4">
+                            <label class="block text-xs sm:text-sm font-medium mb-2">Search Users</label>
+                            <input id="userSearchInput" type="text" class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm sm:text-base" placeholder="Type name or email to search..." />
                         </div>
-                        <div id="userSearchResults" class="max-h-60 overflow-y-auto border dark:border-gray-600 rounded">
-                            <div class="p-4 text-center text-gray-500">Start typing to search for users...</div>
+                        <div id="userSearchResults" class="max-h-48 sm:max-h-60 overflow-y-auto border dark:border-gray-600 rounded">
+                            <div class="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">Start typing to search for users...</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Image Modal -->
-            <div id="imageModal" class="fixed inset-0 hidden z-50">
+            <div id="imageModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black bg-opacity-75" onclick="closeImageModal()"></div>
-                <div class="relative flex items-center justify-center min-h-screen p-4">
-                    <div class="relative max-w-4xl max-h-full">
-                        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
-                            <i class="fas fa-times text-2xl"></i>
+                <div class="relative max-w-4xl max-h-full w-full">
+                    <button onclick="closeImageModal()" class="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:text-gray-300 z-10 p-2">
+                        <i class="fas fa-times text-lg sm:text-2xl"></i>
                         </button>
                         <img id="modalImage" src="" alt="Chat Image" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
-                    </div>
                 </div>
             </div>
             </div>
@@ -298,8 +376,8 @@
           const created = new Date(c.created_at);
           if (from && created < new Date(from)) return false;
           if (to && created > new Date(to+'T23:59:59')) return false;
-          if (replies === '0' && Number(c.reply_count||0) !== 0) return false;
-          if (replies === '>0' && Number(c.reply_count||0) <= 0) return false;
+          if (replies === '0' && Number(c.unread_count||0) !== 0) return false;
+          if (replies === '>0' && Number(c.unread_count||0) <= 0) return false;
           return true;
         });
 
@@ -341,13 +419,18 @@
           <div class="conv-item p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedId==c.id?'bg-blue-50 dark:bg-blue-900/20':''}"
                onclick="console.log('Clicked conversation:', ${c.id}); selectConversation(${c.id})">
             <div class="flex items-start justify-between">
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
                   <h4 class="text-sm font-semibold truncate">${c.subject || 'Message'}</h4>
-                  ${c.reply_count>0?`<span class='text-xs bg-green-500 text-white px-2 py-0.5 rounded'>${c.reply_count} replies</span>`:''}
+                  ${c.unread_count>0?`<span class='text-xs bg-red-500 text-white px-2 py-0.5 rounded font-semibold'>${c.unread_count} unread</span>`:''}
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">${c.notification_message || ''}</p>
                 <div class="text-[11px] text-gray-400 mt-1">${new Date(c.updated_at||c.created_at).toLocaleString()}</div>
+              </div>
+              <div class="flex items-center gap-2 ml-2">
+                <button onclick="event.stopPropagation(); deleteAdminConversation(${c.id})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors" title="Delete conversation">
+                  <i class="fas fa-trash text-sm"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -359,6 +442,16 @@
           console.log('Selecting conversation:', id);
           // Update selected conversation
           selectedId = id;
+          
+          // Mark conversation as read
+          try {
+            await fetch(`/api/notifications/admin/conversations/${id}/read`, { 
+              method: 'PUT',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+          } catch (error) {
+            console.warn('Failed to mark conversation as read:', error);
+          }
           
           const res = await fetch(`/api/notifications/admin/conversations/${id}`, { headers:{ 'Authorization': `Bearer ${token}` }});
           if(!res.ok){ 
@@ -842,6 +935,75 @@
         }
       }
 
+      // Delete admin conversation
+      async function deleteAdminConversation(conversationId) {
+        if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone and will delete all messages in this conversation.')) {
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem('token');
+          
+          if (!token) {
+            console.error('No token found in localStorage');
+            showToast('Please log in to delete conversations', 'error');
+            return;
+          }
+          
+          console.log('Attempting to delete conversation:', conversationId);
+          
+          const response = await fetch(`/api/notifications/admin/conversations/${conversationId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          console.log('Delete conversation response status:', response.status);
+          
+          if (response.status === 401 || response.status === 403) {
+            console.error('Authentication failed for delete operation');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Error details:', errorData);
+            
+            if (response.status === 401) {
+              localStorage.removeItem('token');
+              showToast('Session expired. Please log in again.', 'error');
+              setTimeout(() => {
+                window.location.href = '/admin/login';
+              }, 2000);
+            } else {
+              showToast('You do not have permission to delete this conversation', 'error');
+            }
+            return;
+          }
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Delete failed:', errorData);
+            throw new Error(errorData.message || 'Failed to delete conversation');
+          }
+
+          const result = await response.json();
+          console.log('Delete successful:', result);
+          showToast('Conversation deleted successfully', 'success');
+          
+          // Clear selected conversation if it was deleted
+          if (selectedId === conversationId) {
+            selectedId = null;
+            document.getElementById('conversationDetails').innerHTML = '<div class="p-4 text-center text-gray-500">Select a conversation to view messages</div>';
+          }
+          
+          // Reload the entire conversation list from server
+          await fetchConversations();
+          
+        } catch (error) {
+          console.error('Error deleting conversation:', error);
+          showToast('Failed to delete conversation: ' + error.message, 'error');
+        }
+      }
+
       // async function deleteGroupMessage(messageId) {
       //   if (confirm('Are you sure you want to delete this message?')) {
       //     try {
@@ -1133,10 +1295,10 @@
         } else {
           return `
             <div class="mb-2">
-              <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}')" 
+              <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${getDisplayName(reply.attachment_url)}')" 
                       class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
                 <i class="fas fa-download"></i>
-                <span>Download ${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}</span>
+                <span>Download ${getDisplayName(reply.attachment_url)}</span>
               </button>
             </div>
           `;
@@ -1149,6 +1311,18 @@
         selectConversation(conversationId);
       }
 
+      // Extract filename from attachment_url (remove timestamp prefix)
+      function getDisplayName(url) {
+        if (!url) return 'attachment';
+        // Remove timestamp prefix (e.g., "1757074461089_" from "1757074461089_Sure_driving_licence_1_.pdf")
+        const parts = url.split('_');
+        if (parts.length > 1) {
+          // Remove the first part (timestamp) and join the rest
+          return parts.slice(1).join('_');
+        }
+        return url;
+      }
+
       // Download file function
       function downloadFile(filePath, fileName) {
         try {
@@ -1157,6 +1331,11 @@
           // Validate file path
           if (!filePath || !filePath.startsWith('/uploads/chat/')) {
             throw new Error('Invalid file path');
+          }
+          
+          // Validate filename
+          if (!fileName || fileName.trim() === '') {
+            throw new Error('Invalid filename');
           }
           
           // First, try to fetch the file to check if it exists
@@ -1171,9 +1350,19 @@
               link.href = filePath;
               link.target = '_blank'; // Open in new tab as fallback
               
-              // Set proper filename with extension
-              const fileExtension = fileName.includes('.') ? '' : '.file';
-              const downloadName = (fileName || 'download') + fileExtension;
+              // Ensure filename has proper extension
+              let downloadName = fileName;
+              if (!downloadName.includes('.')) {
+                // Try to get extension from file path
+                const pathParts = filePath.split('.');
+                if (pathParts.length > 1) {
+                  const extension = pathParts[pathParts.length - 1];
+                  downloadName = `${downloadName}.${extension}`;
+                } else {
+                  downloadName = `${downloadName}.file`;
+                }
+              }
+              
               link.download = downloadName;
               
               // Add download attributes
@@ -1185,17 +1374,17 @@
               link.click();
               document.body.removeChild(link);
               
-              console.log('Download initiated:', filePath, 'as', link.download);
-              alert('Download started successfully!');
+              console.log('Download initiated:', filePath, 'as', downloadName);
+              showToast(`Download started: ${downloadName}`, 'success');
             })
             .catch(error => {
               console.error('File check failed:', error);
-              alert(`File unavailable: ${error.message}`);
+              showToast(`File unavailable: ${error.message}`, 'error');
             });
             
         } catch (error) {
           console.error('Download failed:', error);
-          alert('Download failed. Please try again.');
+          showToast(`Download failed: ${error.message}`, 'error');
         }
       }
 

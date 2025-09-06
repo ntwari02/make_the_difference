@@ -207,7 +207,7 @@ function wireProfileModal(){
                 const next = document.getElementById('pwNew').value || '';
                 const confirm = document.getElementById('pwConfirm').value || '';
                 if(!current || !next || next!==confirm) throw new Error('Check passwords');
-                const res = await authFetch('/api/auth/change-password', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ currentPassword: current, newPassword: next }) });
+                const res = await authFetch('/api/password-change/change-password', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ currentPassword: current, newPassword: next }) });
                 if(!res.ok) throw new Error('Failed to change password');
                 alert('Password updated');
                 passwordSection && passwordSection.classList.add('hidden');

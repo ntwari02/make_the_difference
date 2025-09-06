@@ -599,7 +599,10 @@ router.get('/applications/recent', adminAuth, async (req, res) => {
                 sa.full_name as applicant_name,
                 sa.email_address as applicant_email,
                 s.name as scholarship_title,
-                u.id as user_id
+                u.id as user_id,
+                u.full_name as user_full_name,
+                u.first_name as user_first_name,
+                u.last_name as user_last_name
             FROM scholarship_applications sa
             LEFT JOIN scholarships s ON sa.scholarship_id = s.id
             LEFT JOIN users u ON LOWER(TRIM(u.email)) = LOWER(TRIM(sa.email_address))

@@ -36,7 +36,13 @@
                                 <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                                     <i class="fas fa-bell mr-2"></i>Notifications & Messages
                                 </h1>
-                                <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">View your notifications and chat with support</p>
+                                <div class="flex items-center mt-1">
+                                    <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">View your notifications and chat with support</p>
+                                    <div id="connectionStatus" class="ml-3 text-xs">
+                                        <i class="fas fa-circle text-yellow-500 mr-1"></i>
+                                        <span class="text-yellow-500">Connecting...</span>
+                                    </div>
+                                </div>
                             </div>
                             <!-- Mobile Toggle Button -->
                             <button id="mobileToggle" class="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -79,7 +85,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <a href="home.html" class="flex items-center">
-                        <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-10 w-auto object-contain mr-3">
+                        <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-16 w-auto object-contain mr-3">
                         <span class="text-xl font-bold dark:text-white">MBAPE GLOBAL</span>
                     </a>
                     <div class="mt-3 text-gray-300 dark:text-gray-400 text-sm">
@@ -174,36 +180,148 @@
         let notifications = [];
         let userReplyIndex = {};
 
-        // Initialize Socket.IO
+        // Initialize Socket.IO with connection management
         function initSocket() {
-            socket = io();
-            
-            socket.on('connect', () => {
-                console.log('Connected to server');
-            });
+            try {
+                socket = io({
+                    timeout: 10000,
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionAttempts: 5,
+                    maxReconnectionAttempts: 5
+                });
+                
+                socket.on('connect', () => {
+                    console.log('✅ Connected to server');
+                    updateConnectionStatus('connected');
+                });
 
-            socket.on('newMessage', (data) => {
-                if (data.conversationId === currentConversationId) {
-                    loadConversationMessages(currentConversationId);
-                }
-            });
+                socket.on('disconnect', (reason) => {
+                    console.log('❌ Disconnected from server:', reason);
+                    updateConnectionStatus('disconnected');
+                });
 
-            socket.on('messageRead', (data) => {
-                if (data.conversationId === currentConversationId) {
-                    loadConversationMessages(currentConversationId);
-                }
-            });
+                socket.on('connect_error', (error) => {
+                    console.error('❌ Connection error:', error);
+                    updateConnectionStatus('error');
+                });
+
+                socket.on('reconnect', (attemptNumber) => {
+                    console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+                    updateConnectionStatus('reconnected');
+                });
+
+                socket.on('reconnect_error', (error) => {
+                    console.error('❌ Reconnection error:', error);
+                    updateConnectionStatus('error');
+                });
+
+                socket.on('reconnect_failed', () => {
+                    console.error('❌ Reconnection failed');
+                    updateConnectionStatus('failed');
+                });
+
+                socket.on('newMessage', (data) => {
+                    console.log('📨 New message received:', data);
+                    if (data.conversationId === currentConversationId) {
+                        loadConversationMessages(currentConversationId).then(() => {
+                            // Scroll to bottom after loading new messages
+                            setTimeout(scrollToBottom, 100);
+                        });
+                    }
+                    // Refresh notifications if on notifications page
+                    if (window.location.pathname.includes('notifications.html')) {
+                        loadNotificationsFromAPI(localStorage.getItem('token'), false);
+                    }
+                });
+
+                socket.on('messageRead', (data) => {
+                    console.log('👁️ Message read:', data);
+                    if (data.conversationId === currentConversationId) {
+                        loadConversationMessages(currentConversationId).then(() => {
+                            // Scroll to bottom after loading updated messages
+                            setTimeout(scrollToBottom, 100);
+                        });
+                    }
+                });
+
+                // Add heartbeat to keep connection alive
+                setInterval(() => {
+                    if (socket && socket.connected) {
+                        socket.emit('ping');
+                    }
+                }, 30000);
+
+            } catch (error) {
+                console.error('Failed to initialize Socket.IO:', error);
+                updateConnectionStatus('error');
+            }
         }
 
-        // Load notifications
+        // Update connection status indicator
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (!statusElement) return;
+
+            const statusConfig = {
+                connected: { text: 'Connected', class: 'text-green-500', icon: 'fas fa-circle' },
+                disconnected: { text: 'Disconnected', class: 'text-yellow-500', icon: 'fas fa-circle' },
+                error: { text: 'Connection Error', class: 'text-red-500', icon: 'fas fa-exclamation-circle' },
+                reconnected: { text: 'Reconnected', class: 'text-green-500', icon: 'fas fa-circle' },
+                failed: { text: 'Connection Failed', class: 'text-red-500', icon: 'fas fa-times-circle' }
+            };
+
+            const config = statusConfig[status] || statusConfig.error;
+            statusElement.innerHTML = `
+                <i class="${config.icon} ${config.class} mr-1"></i>
+                <span class="${config.class}">${config.text}</span>
+            `;
+        }
+
+        // Load notifications with caching and performance optimization
         async function loadNotifications() {
             try {
                 console.log('Loading notifications...');
-        const token = localStorage.getItem('token');
-        if (!token) {
-                    console.log('No token found, redirecting to login');
-                    window.location.href = '/login';
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.log('No token found, showing login prompt');
+                    showErrorState('Please log in to view notifications');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                     return;
+                }
+
+                // Check for cached data first
+                const cachedData = sessionStorage.getItem('notifications_cache');
+                const cacheTimestamp = sessionStorage.getItem('notifications_timestamp');
+                const cacheAge = cacheTimestamp ? Date.now() - parseInt(cacheTimestamp) : Infinity;
+                const CACHE_DURATION = 30000; // 30 seconds
+
+                if (cachedData && cacheAge < CACHE_DURATION) {
+                    console.log('Loading notifications from cache...');
+                    const cachedResponse = JSON.parse(cachedData);
+                    notifications = cachedResponse.notifications || cachedResponse; // Handle both old and new format
+                    renderNotifications();
+                    
+                    // Load fresh data in background
+                    loadNotificationsFromAPI(token, false);
+                    return;
+                }
+
+                // Load from API
+                await loadNotificationsFromAPI(token, true);
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                showErrorState('Failed to load notifications');
+            }
+        }
+
+        // Separate function for API loading
+        async function loadNotificationsFromAPI(token, showLoading = true) {
+            try {
+                if (showLoading) {
+                    showLoadingState();
                 }
 
                 console.log('Fetching notifications from API...');
@@ -218,66 +336,184 @@
                 if (response.status === 401 || response.status === 403) {
                     console.log('Unauthorized, redirecting to login');
                     localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    localStorage.removeItem('user');
+                    showErrorState('Please log in to view notifications');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                     return;
                 }
 
                 if (!response.ok) {
-                    throw new Error('Failed to load notifications');
+                    const errorText = await response.text().catch(() => 'Unknown error');
+                    console.error('API Error:', response.status, errorText);
+                    throw new Error(`Failed to load notifications: ${response.status} ${errorText}`);
                 }
 
-                notifications = await response.json();
+                const responseData = await response.json();
+                notifications = responseData.notifications || responseData; // Handle both old and new format
                 console.log('Notifications loaded:', notifications);
+                
+                // Cache the full response data (including pagination)
+                sessionStorage.setItem('notifications_cache', JSON.stringify(responseData));
+                sessionStorage.setItem('notifications_timestamp', Date.now().toString());
+                
                 renderNotifications();
             } catch (error) {
-                console.error('Error loading notifications:', error);
-                document.getElementById('notificationsList').innerHTML = `
-                    <div class="text-center py-8 text-red-500">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p>Failed to load notifications</p>
-                    </div>
-                `;
+                console.error('Error loading notifications from API:', error);
+                if (showLoading) {
+                    showErrorState('Failed to load notifications');
+                }
             }
         }
 
-        // Render notifications
+        // Show loading state
+        function showLoadingState() {
+            document.getElementById('notificationsList').innerHTML = `
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                    <p>Loading notifications...</p>
+                </div>
+            `;
+        }
+
+        // Show error state
+        function showErrorState(message) {
+            const isAuthError = message.includes('log in') || message.includes('unauthorized');
+            document.getElementById('notificationsList').innerHTML = `
+                <div class="text-center py-8 ${isAuthError ? 'text-yellow-600' : 'text-red-500'}">
+                    <i class="fas ${isAuthError ? 'fa-lock' : 'fa-exclamation-triangle'} text-2xl mb-2"></i>
+                    <p class="text-lg font-medium mb-2">${message}</p>
+                    ${isAuthError ? 
+                        '<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Redirecting to login page...</p>' :
+                        '<button onclick="loadNotifications()" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">Retry</button>'
+                    }
+                </div>
+            `;
+        }
+
+        // Render notifications with performance optimization
         function renderNotifications() {
             const container = document.getElementById('notificationsList');
             console.log('Rendering notifications:', notifications);
             
+            // Ensure notifications is an array
+            if (!Array.isArray(notifications)) {
+                console.error('Notifications is not an array:', notifications);
+                container.innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Error: Invalid notifications data format</p>
+                        <button onclick="loadNotifications()" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Retry
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
             if (notifications.length === 0) {
-            container.innerHTML = `
+                container.innerHTML = `
                     <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                         <i class="fas fa-bell-slash text-2xl mb-2"></i>
                         <p>No notifications yet</p>
-                            </div>
+                    </div>
                 `;
                 return;
             }
 
-            container.innerHTML = notifications.map(notification => `
-                <div class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900' : ''}" 
-                     onclick="selectNotification(${notification.id})" data-notification-id="${notification.id}">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <h4 class="font-medium text-gray-900 dark:text-white text-sm">${notification.title || 'New Message'}</h4>
-                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${notification.message || 'You have a new message'}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">${formatDate(notification.created_at)}</p>
-                        </div>
-                        ${!notification.is_read ? '<div class="w-2 h-2 bg-blue-500 rounded-full ml-2"></div>' : ''}
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
+            
+            // Limit initial render to first 20 items for performance
+            const itemsToRender = notifications.slice(0, 20);
+            
+            itemsToRender.forEach(notification => {
+                const notificationElement = createNotificationElement(notification);
+                fragment.appendChild(notificationElement);
+            });
+
+            // Clear container and append fragment
+            container.innerHTML = '';
+            container.appendChild(fragment);
+
+            // Add infinite scroll for remaining items
+            if (notifications.length > 20) {
+                addInfiniteScroll(container, notifications.slice(20));
+            }
+        }
+
+        // Create individual notification element
+        function createNotificationElement(notification) {
+            const div = document.createElement('div');
+            div.className = `p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900' : ''}`;
+            div.setAttribute('data-notification-id', notification.id);
+            
+            div.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-gray-900 dark:text-white text-sm">${escapeHtml(notification.title || 'New Message')}</h4>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${escapeHtml(notification.message || 'You have a new message')}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">${formatDate(notification.created_at)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${!notification.is_read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                        <button onclick="deleteNotification(${notification.id})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors" title="Delete notification">
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
                     </div>
                 </div>
-            `).join('');
+            `;
 
-            // Add event listeners after rendering
-            container.querySelectorAll('[data-notification-id]').forEach(element => {
-                const notificationId = element.getAttribute('data-notification-id');
-                element.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    console.log('Notification clicked:', notificationId);
-                    selectNotification(parseInt(notificationId));
-                });
+            // Add click handler
+            div.addEventListener('click', (e) => {
+                // Don't trigger notification selection if delete button was clicked
+                if (e.target.closest('button')) {
+                    return;
+                }
+                e.preventDefault();
+                console.log('Notification clicked:', notification.id);
+                selectNotification(notification.id);
             });
+
+            return div;
+        }
+
+        // Add infinite scroll for remaining notifications
+        function addInfiniteScroll(container, remainingNotifications) {
+            let currentIndex = 0;
+            const itemsPerLoad = 10;
+
+            const loadMore = () => {
+                const itemsToAdd = remainingNotifications.slice(currentIndex, currentIndex + itemsPerLoad);
+                if (itemsToAdd.length === 0) return;
+
+                const fragment = document.createDocumentFragment();
+                itemsToAdd.forEach(notification => {
+                    const element = createNotificationElement(notification);
+                    fragment.appendChild(element);
+                });
+
+                container.appendChild(fragment);
+                currentIndex += itemsPerLoad;
+            };
+
+            // Load more when scrolling near bottom
+            container.addEventListener('scroll', () => {
+                if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
+                    loadMore();
+                }
+            });
+
+            // Initial load
+            loadMore();
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Select notification and load conversation
@@ -332,7 +568,39 @@
                     socket.emit('joinConversation', { conversationId: conversation.id });
                 }
 
+                // Mark conversation as read when user views it
+                try {
+                    await fetch(`/api/notifications/conversations/${conversation.id}/read`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    // Update the notification object in memory to mark as read
+                    const notificationIndex = notifications.findIndex(n => n.id === conversation.id);
+                    if (notificationIndex !== -1) {
+                        notifications[notificationIndex].is_read = true;
+                    }
+                    
+                    // Also update the conversation object
+                    conversation.is_read = true;
+                    
+                    // Re-render the notifications list to show updated read status
+                    renderNotifications();
+                    
+                    // Refresh notification badge
+                    if (window.updateNotificationBadge) {
+                        window.updateNotificationBadge();
+                    }
+                } catch (error) {
+                    console.warn('Failed to mark conversation as read:', error);
+                }
+
                 await loadConversationMessages(conversation.id);
+                
+                // Scroll to bottom when opening a conversation
+                setTimeout(scrollToBottom, 100);
             } catch (error) {
                 console.error('Error selecting notification:', error);
                 showToast('Failed to load conversation');
@@ -404,9 +672,9 @@
                                         <button onclick="openForwardModal(${reply.id})" class="p-1 text-gray-500 hover:text-purple-600 rounded" title="Forward">
                                             <i class="fas fa-share text-xs"></i>
                                         </button>
-                                        <button onclick="deleteUserMessage(${reply.id})" class="p-1 text-gray-500 hover:text-red-600 rounded" title="Delete">
+                                        ${reply.sender_type === 'user' ? `<button onclick="deleteUserMessage(${reply.id})" class="p-1 text-gray-500 hover:text-red-600 rounded" title="Delete">
                                             <i class="fas fa-trash text-xs"></i>
-                                        </button>
+                                        </button>` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -449,6 +717,18 @@
             // Wire up event listeners
             wireMessageActions();
             wireFileUpload();
+            
+            // Auto-scroll to bottom after rendering messages
+            scrollToBottom();
+        }
+
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            const chatArea = document.getElementById('chatArea');
+            const messagesContainer = chatArea.querySelector('.flex-1.overflow-y-auto');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
         }
 
         // Render attachment
@@ -456,6 +736,20 @@
             if (!reply.attachment_url) return '';
             
             const isImage = /^image\//.test(reply.attachment_type || '');
+            
+            // Extract filename from attachment_url (remove timestamp prefix)
+            const getDisplayName = (url) => {
+                if (!url) return 'attachment';
+                // Remove timestamp prefix (e.g., "1757074461089_" from "1757074461089_Sure_driving_licence_1_.pdf")
+                const parts = url.split('_');
+                if (parts.length > 1) {
+                    // Remove the first part (timestamp) and join the rest
+                    return parts.slice(1).join('_');
+                }
+                return url;
+            };
+            
+            const displayName = getDisplayName(reply.attachment_url);
             
             if (isImage) {
                 return `
@@ -468,10 +762,10 @@
             } else {
                 return `
                     <div class="mb-2">
-                        <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}')" 
+                        <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${displayName}')" 
                                 class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
                             <i class="fas fa-download"></i>
-                            <span>Download ${reply.attachment_type ? reply.attachment_type.split('/')[1] || 'file' : 'attachment'}</span>
+                            <span>Download ${displayName}</span>
                         </button>
                     </div>
                 `;
@@ -686,6 +980,9 @@
 
                 // Reload messages
                 await loadConversationMessages(conversationId);
+                
+                // Scroll to bottom after sending message
+                setTimeout(scrollToBottom, 100);
                 
                 showToast('Message sent successfully');
             } catch (error) {
@@ -913,23 +1210,54 @@
 
             try {
                 const token = localStorage.getItem('token');
+                
+                // Check if token exists
+                if (!token) {
+                    console.error('No token found in localStorage');
+                    showToast('Please log in to delete messages');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                console.log('Attempting to delete message:', messageId);
+                console.log('Using token:', token ? 'Token exists' : 'No token');
+                
                 const response = await fetch(`/api/notifications/replies/${messageId}`, {
                     method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
+                console.log('Delete response status:', response.status);
+                
                 if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    console.error('Authentication failed for delete operation');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Error details:', errorData);
+                    
+                    // Only redirect if it's actually an auth issue, not a permission issue
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        showToast('Session expired. Please log in again.');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        showToast('You do not have permission to delete this message');
+                    }
                     return;
                 }
 
                 if (!response.ok) {
-                    throw new Error('Failed to delete message');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Delete failed:', errorData);
+                    throw new Error(errorData.message || 'Failed to delete message');
                 }
 
+                const result = await response.json();
+                console.log('Delete successful:', result);
                 showToast('Message deleted successfully');
                 
                 // Reload messages
@@ -939,7 +1267,82 @@
                 
             } catch (error) {
                 console.error('Error deleting message:', error);
-                showToast('Failed to delete message');
+                showToast('Failed to delete message: ' + error.message);
+            }
+        }
+
+        // Delete notification
+        async function deleteNotification(notificationId) {
+            if (!confirm('Are you sure you want to delete this notification? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    console.error('No token found in localStorage');
+                    showToast('Please log in to delete notifications');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                console.log('Attempting to delete notification:', notificationId);
+                
+                const response = await fetch(`/api/notifications/${notificationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Delete notification response status:', response.status);
+                
+                if (response.status === 401 || response.status === 403) {
+                    console.error('Authentication failed for delete operation');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Error details:', errorData);
+                    
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        showToast('Session expired. Please log in again.');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        showToast('You do not have permission to delete this notification');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Delete failed:', errorData);
+                    throw new Error(errorData.message || 'Failed to delete notification');
+                }
+
+                const result = await response.json();
+                console.log('Delete successful:', result);
+                showToast('Notification deleted successfully');
+                
+                // Remove notification from the list
+                const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+                if (notificationIndex !== -1) {
+                    notifications.splice(notificationIndex, 1);
+                }
+                
+                // Re-render the notifications list
+                renderNotifications();
+                
+                // Refresh notification badge
+                if (window.updateNotificationBadge) {
+                    window.updateNotificationBadge();
+                }
+                
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                showToast('Failed to delete notification: ' + error.message);
             }
         }
 
@@ -971,6 +1374,11 @@
                     throw new Error('Invalid file path');
                 }
                 
+                // Validate filename
+                if (!fileName || fileName.trim() === '') {
+                    throw new Error('Invalid filename');
+                }
+                
                 // First, try to fetch the file to check if it exists
                 fetch(filePath, { method: 'HEAD' })
                     .then(response => {
@@ -983,9 +1391,19 @@
                         link.href = filePath;
                         link.target = '_blank'; // Open in new tab as fallback
                         
-                        // Set proper filename with extension
-                        const fileExtension = fileName.includes('.') ? '' : '.file';
-                        const downloadName = (fileName || 'download') + fileExtension;
+                        // Ensure filename has proper extension
+                        let downloadName = fileName;
+                        if (!downloadName.includes('.')) {
+                            // Try to get extension from file path
+                            const pathParts = filePath.split('.');
+                            if (pathParts.length > 1) {
+                                const extension = pathParts[pathParts.length - 1];
+                                downloadName = `${downloadName}.${extension}`;
+                            } else {
+                                downloadName = `${downloadName}.file`;
+                            }
+                        }
+                        
                         link.download = downloadName;
                         
                         // Add download attributes
@@ -997,8 +1415,8 @@
                         link.click();
                         document.body.removeChild(link);
                         
-                        console.log('Download initiated:', filePath, 'as', link.download);
-                        showToast('Download started successfully!', 'success');
+                        console.log('Download initiated:', filePath, 'as', downloadName);
+                        showToast(`Download started: ${downloadName}`, 'success');
                     })
                     .catch(error => {
                         console.error('File check failed:', error);
@@ -1007,7 +1425,7 @@
                     
             } catch (error) {
                 console.error('Download failed:', error);
-                showToast('Download failed. Please try again.', 'error');
+                showToast(`Download failed: ${error.message}`, 'error');
             }
         }
 
@@ -1029,9 +1447,44 @@
             }
         }
 
+        // Register Service Worker for caching
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+            }
+        }
+
+        // Clear old cache if needed
+        function clearOldCache() {
+            try {
+                const cachedData = sessionStorage.getItem('notifications_cache');
+                if (cachedData) {
+                    const parsed = JSON.parse(cachedData);
+                    // If cached data is not in the new format, clear it
+                    if (!parsed.notifications && !Array.isArray(parsed)) {
+                        console.log('Clearing old cache format...');
+                        sessionStorage.removeItem('notifications_cache');
+                        sessionStorage.removeItem('notifications_timestamp');
+                    }
+                }
+            } catch (error) {
+                console.log('Error checking cache, clearing it...');
+                sessionStorage.removeItem('notifications_cache');
+                sessionStorage.removeItem('notifications_timestamp');
+            }
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Notifications page loaded');
+            clearOldCache();
+            registerServiceWorker();
             initSocket();
             loadNotifications();
             initMobileToggle();

@@ -3,6 +3,7 @@ import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { auth, adminAuth } from '../middleware/auth.js';
+import { generateAndSendOTP, verifyOTP } from '../utils/otp.js';
 
 const router = express.Router();
 
@@ -194,21 +195,12 @@ router.post('/verify', async (req, res) => {
                 isAdmin: false
             });
         } else {
-                            // Create admin help request
-                const helpToken = crypto.randomBytes(32).toString('hex');
-            const helpExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
-            
-            await db.query(
-                'UPDATE users SET help_token = ?, help_token_expiry = ?, help_requested_at = NOW() WHERE id = ?',
-                [helpToken, helpExpiry, user.id]
-            );
-
+            // Incorrect answers - offer OTP as alternative
             res.json({ 
                 success: false, 
-                message: 'Incorrect answers. Admin help has been requested. You will be notified when an admin can assist you.',
-                help_token: helpToken,
+                message: 'Incorrect answers. You can try using a security code sent to your email instead.',
                 can_reset: false,
-                requires_admin: true,
+                requires_otp: true,
                 isAdmin: false
             });
         }
@@ -303,6 +295,97 @@ router.get('/admin/mine', adminAuth, async (req, res) => {
     } catch (error) {
         console.error('admin get mine security questions error:', error);
         res.status(500).json({ success: false, message: 'Error fetching admin security questions' });
+    }
+});
+
+// POST send OTP for security login
+router.post('/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email is required'
+            });
+        }
+
+        const result = await generateAndSendOTP(email, 'security_login');
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending security code'
+        });
+    }
+});
+
+// POST verify OTP for security login
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        if (!email || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and OTP are required'
+            });
+        }
+
+        // Find user by email
+        const [users] = await db.query(
+            'SELECT id, email FROM users WHERE email = ?',
+            [email]
+        );
+        
+        if (users.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Invalid email or OTP'
+            });
+        }
+
+        const user = users[0];
+        const verification = await verifyOTP(user.id, otp);
+        
+        if (!verification.valid) {
+            if (verification.expired) {
+                return res.json({
+                    success: false,
+                    message: 'Security code has expired. Please request a new one.'
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    message: 'Invalid security code. Please try again.'
+                });
+            }
+        }
+
+        // Generate a temporary token for password reset
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const expiry = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+        
+        await db.query(
+            'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+            [resetToken, expiry, user.id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Security code verified successfully. You can now reset your password.',
+            reset_token: resetToken,
+            can_reset: true,
+            isAdmin: false
+        });
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error verifying security code'
+        });
     }
 });
 

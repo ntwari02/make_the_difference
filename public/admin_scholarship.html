@@ -134,6 +134,108 @@
         .dark .section-divider {
             background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.4), transparent);
         }
+        
+        /* Mobile-first responsive improvements */
+        @media (max-width: 640px) {
+            /* Better touch targets for mobile */
+            button, a, input, select, textarea {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Improved text readability on mobile */
+            body {
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            
+            /* Better spacing for mobile */
+            .form-section {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            /* Improved modal positioning on mobile */
+            .fixed.inset-0 {
+                padding: 1rem;
+            }
+            
+            /* Better table scrolling on mobile */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            
+            /* Improved form layout on mobile */
+            .grid-cols-1.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Better button layout on mobile */
+            .flex.flex-col.sm\\:flex-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            /* Improved modal sizing on mobile */
+            .max-w-5xl {
+                max-width: 95vw;
+            }
+            
+            /* Better input sizing on mobile */
+            .enhanced-input {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            /* Improved table layout on mobile */
+            .min-w-full {
+                min-width: 100%;
+            }
+            
+            /* Hide less important columns on mobile */
+            .hidden-mobile {
+                display: none;
+            }
+            
+            /* Better card layout on mobile */
+            .grid.grid-cols-1.sm\\:grid-cols-3 {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+        
+        /* Tablet improvements */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .grid.grid-cols-1.sm\\:grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .grid.grid-cols-1.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Smooth scrolling for better UX */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Better focus states for accessibility */
+        button:focus, a:focus, input:focus, select:focus, textarea:focus {
+            outline: 2px solid #3B82F6;
+            outline-offset: 2px;
+        }
+        
+        /* Improved hover states for touch devices */
+        @media (hover: none) and (pointer: coarse) {
+            .hover\\:bg-blue-700:hover {
+                background-color: #1d4ed8;
+            }
+            .hover\\:bg-green-700:hover {
+                background-color: #15803d;
+            }
+        }
     </style>
 </head>
 <body class="admin-layout bg-white dark:bg-gray-900 transition-colors duration-200">
@@ -141,54 +243,56 @@
     <div id="admin-header-container" data-page-title="Scholarships Management"></div>
     
     <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
-        <div class="admin-content-container">
+        <div class="admin-content-container p-3 sm:p-4 md:p-6">
             <!-- Status Summary Cards (top) -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div class="bg-white dark:bg-transparent rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Scholarships</p>
-                            <h3 id="totalScholarships" class="text-2xl font-bold text-gray-800 dark:text-white">0</h3>
+                            <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Scholarships</p>
+                            <h3 id="totalScholarships" class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">0</h3>
                         </div>
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-transparent text-blue-600 dark:text-blue-300">
-                            <i class="fas fa-graduation-cap"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-transparent text-blue-600 dark:text-blue-300">
+                            <i class="fas fa-graduation-cap text-sm sm:text-base"></i>
                         </div>
                     </div>      
                 </div>
-                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                <div class="bg-white dark:bg-transparent rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
-                            <h3 id="activeScholarships" class="text-2xl font-bold text-green-600 dark:text-green-400">0</h3>
+                            <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
+                            <h3 id="activeScholarships" class="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">0</h3>
                         </div>
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-transparent text-green-600 dark:text-green-300">
-                            <i class="fas fa-check-circle"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-green-100 dark:bg-transparent text-green-600 dark:text-green-300">
+                            <i class="fas fa-check-circle text-sm sm:text-base"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-transparent rounded-2xl shadow-lg p-4">
+                <div class="bg-white dark:bg-transparent rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Inactive</p>
-                            <h3 id="inactiveScholarships" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</h3>
+                            <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Inactive</p>
+                            <h3 id="inactiveScholarships" class="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</h3>
                         </div>
-                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-transparent text-yellow-600 dark:text-yellow-300">
-                            <i class="fas fa-pause-circle"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-yellow-100 dark:bg-transparent text-yellow-600 dark:text-yellow-300">
+                            <i class="fas fa-pause-circle text-sm sm:text-base"></i>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Scholarship List and Actions -->
-            <div class="backdrop-blur-md rounded-2xl shadow-xl p-6 mb-6 dark:border-gray-700">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div class="flex gap-2 w-full sm:w-auto">
+            <div class="backdrop-blur-md rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 dark:border-gray-700">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <div class="relative flex-1 sm:w-64">
                             <input type="text" id="searchScholarships" placeholder="Search scholarships..." 
-                                class="light-input w-full pl-10 pr-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                                class="light-input w-full pl-10 pr-4 py-2 sm:py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white text-sm sm:text-base">
+                            <i class="fas fa-search absolute left-3 top-2.5 sm:top-3 text-gray-400"></i>
                         </div>
-                        <button id="newScholarshipBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold whitespace-nowrap">
-                            <i class="fas fa-plus mr-2"></i> New Scholarship
+                        <button id="newScholarshipBtn" class="px-3 sm:px-4 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold whitespace-nowrap text-sm sm:text-base flex items-center justify-center">
+                            <i class="fas fa-plus mr-1 sm:mr-2"></i> 
+                            <span class="hidden sm:inline">New Scholarship</span>
+                            <span class="sm:hidden">New</span>
                         </button>
                     </div>
                 </div>
@@ -198,15 +302,15 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-black dark:text-white">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Level</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Deadline</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Awards</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Applications</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">Level</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">Type</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">Deadline</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">Awards</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">Applications</th>
+                                <th class="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="scholarshipsTableBody" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md divide-y divide-gray-200 dark:divide-gray-700 text-black dark:text-white">
@@ -218,13 +322,13 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 dark:border-gray-700">
-                        <div id="schPageInfo" class="text-sm text-gray-700 dark:text-gray-300">
+                    <div class="px-3 sm:px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 border-t border-gray-200 dark:border-gray-700">
+                        <div id="schPageInfo" class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 text-center sm:text-left">
                             Showing <span id="showingFrom">1</span> - <span id="showingTo">10</span> of <span id="totalItems">0</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button id="prevPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">Previous</button>
-                            <button id="nextPage" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">Next</button>
+                            <button id="prevPage" class="px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 text-xs sm:text-sm">Previous</button>
+                            <button id="nextPage" class="px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 text-xs sm:text-sm">Next</button>
                         </div>
                     </div>
                 </div>
@@ -235,24 +339,24 @@
         </div>
         
         <!-- Scholarship Form Modal -->
-        <div id="scholarshipModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-            <div class="enhanced-modal rounded-3xl shadow-2xl p-8 w-full max-w-5xl mx-4 border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="modalTitle" class="text-xl font-bold text-gray-800 dark:text-white">New Scholarship</h3>
-                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <i class="fas fa-times"></i>
+        <div id="scholarshipModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm p-2 sm:p-4">
+            <div class="enhanced-modal rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-5xl mx-2 sm:mx-4 border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-3 sm:mb-4">
+                    <h3 id="modalTitle" class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">New Scholarship</h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                        <i class="fas fa-times text-lg sm:text-xl"></i>
                     </button>
                 </div>
                 
-                <form id="scholarshipForm" class="space-y-8">
+                <form id="scholarshipForm" class="space-y-4 sm:space-y-6 md:space-y-8">
                     <input type="hidden" id="scholarshipId">
                     
                     <!-- Basic Information Section -->
                     <div class="form-section">
-                        <h4 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-info-circle mr-3 text-blue-500"></i>Basic Information
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                            <i class="fas fa-info-circle mr-2 sm:mr-3 text-blue-500 text-sm sm:text-base"></i>Basic Information
                         </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                         <div>
                                 <label for="name" class="enhanced-label">Scholarship Name <span class="text-red-500">*</span></label>
                             <input type="text" id="name" required
@@ -271,10 +375,10 @@
                     
                     <!-- Details Section -->
                     <div class="form-section">
-                        <h4 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-calendar-alt mr-3 text-green-500"></i>Details & Requirements
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                            <i class="fas fa-calendar-alt mr-2 sm:mr-3 text-green-500 text-sm sm:text-base"></i>Details & Requirements
                         </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                         <div>
                                 <label for="application_deadline" class="enhanced-label">Application Deadline <span class="text-red-500">*</span></label>
                             <input type="text" id="application_deadline" required
@@ -286,7 +390,7 @@
                                     class="enhanced-input w-full" placeholder="Enter amount">
                         </div>
                     </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mt-4 sm:mt-6 md:mt-8">
                         <div>
                                 <label for="academic_level" class="enhanced-label">Academic Level <span class="text-red-500">*</span></label>
                                 <select id="academic_level" required class="enhanced-input w-full">
@@ -311,10 +415,10 @@
                     
                     <!-- Description Section -->
                     <div class="form-section">
-                        <h4 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-file-alt mr-3 text-purple-500"></i>Description & Eligibility
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                            <i class="fas fa-file-alt mr-2 sm:mr-3 text-purple-500 text-sm sm:text-base"></i>Description & Eligibility
                         </h4>
-                        <div class="space-y-8">
+                        <div class="space-y-4 sm:space-y-6 md:space-y-8">
                     <div>
                                 <label for="description" class="enhanced-label">Description <span class="text-red-500">*</span></label>
                                 <textarea id="description" rows="4" required
@@ -331,10 +435,10 @@
                     
                     <!-- PDF Documents Section -->
                     <div class="form-section">
-                        <h4 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-file-pdf mr-3 text-red-500"></i>PDF Documents
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                            <i class="fas fa-file-pdf mr-2 sm:mr-3 text-red-500 text-sm sm:text-base"></i>PDF Documents
                         </h4>
-                        <div class="space-y-6">
+                        <div class="space-y-4 sm:space-y-6">
                             <div>
                                 <label for="documentTitle" class="enhanced-label">Document Title</label>
                                 <input type="text" id="documentTitle" 
@@ -345,7 +449,7 @@
                                 <textarea id="documentDescription" rows="3"
                                     class="enhanced-input w-full resize-none" placeholder="Describe the document..."></textarea>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <label for="documentCategory" class="enhanced-label">Category</label>
                                     <select id="documentCategory" class="enhanced-input w-full">
@@ -362,9 +466,10 @@
                                 </div>
                             </div>
                             <div class="flex justify-end">
-                                <button type="button" id="addDocumentBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-2">
-                                    <i class="fas fa-plus"></i>
-                                    Add Document
+                                <button type="button" id="addDocumentBtn" class="px-3 sm:px-4 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                                    <i class="fas fa-plus text-sm sm:text-base"></i>
+                                    <span class="hidden sm:inline">Add Document</span>
+                                    <span class="sm:hidden">Add</span>
                                 </button>
                             </div>
                             
@@ -427,11 +532,11 @@
                         </div>
                     </div>
                     
-                    <div class="flex justify-end gap-4 pt-4">
-                        <button type="button" id="cancelScholarship" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4">
+                        <button type="button" id="cancelScholarship" class="px-4 py-2 sm:py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base font-semibold">
                             Cancel
                         </button>
-                        <button type="submit" id="saveScholarship" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">
+                        <button type="submit" id="saveScholarship" class="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base">
                             Save Scholarship
                         </button>
                     </div>
@@ -483,6 +588,27 @@
         let currentScholarshipId = null;
         let lastPagination = null;
         
+        // Message box function
+        function displayMessageBox(message, type = 'info') {
+            const messageBox = document.createElement('div');
+            messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg text-white z-[1001]`;
+            
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-500');
+            } else {
+                messageBox.classList.add('bg-blue-500');
+            }
+
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+
+            setTimeout(() => {
+                messageBox.remove();
+            }, 3000);
+        }
+        
         // DOM elements
         const scholarshipsTableBody = document.getElementById('scholarshipsTableBody');
         const searchScholarships = document.getElementById('searchScholarships');
@@ -533,8 +659,34 @@
             }
         }
         
+        // Setup data refresh system
+        function setupDataRefresh() {
+            if (window.adminDataRefresh) {
+                // Register refresh callbacks for scholarship page
+                window.adminDataRefresh.register('scholarships-list', async () => {
+                    console.log('🔄 Refreshing scholarships list...');
+                    await loadScholarships();
+                }, { priority: 'high', debounceMs: 500 });
+
+                window.adminDataRefresh.register('scholarships-stats', async () => {
+                    console.log('🔄 Refreshing scholarships stats...');
+                    await loadStats();
+                }, { priority: 'normal', debounceMs: 1000 });
+
+                window.adminDataRefresh.register('scholarships-documents', async () => {
+                    console.log('🔄 Refreshing scholarships documents...');
+                    await refreshAdminDocumentsList();
+                }, { priority: 'normal', debounceMs: 1000 });
+
+                console.log('✅ Scholarship page data refresh callbacks registered');
+            } else {
+                console.warn('⚠️ Admin data refresh system not available');
+            }
+        }
+
         // Load scholarships when page loads
         document.addEventListener('DOMContentLoaded', () => {
+            setupDataRefresh();
             loadScholarships();
             loadStats();
             // No dev auth seeding
@@ -637,30 +789,28 @@
                 return;
             }
             try{
-                const token = localStorage.getItem('token');
-                if (!token){
-                    try { displayMessageBox('You must be logged in as admin to upload documents.', 'error'); } catch { alert('You must be logged in as admin to upload documents.'); }
-                    return;
-                }
                 const fd = new FormData();
                 fd.append('document', file);
                 fd.append('title', title);
                 fd.append('description', description);
                 fd.append('category', category);
+                
                 const resp = await fetch('/api/scholarship-documents', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
                     body: fd
                 });
+                
                 const result = await resp.json().catch(()=>({}));
                 if (!resp.ok || result.success === false){
                     throw new Error(result.error || 'Failed to upload document');
                 }
+                
                 try { displayMessageBox('Document uploaded successfully!', 'success'); } catch { console.log('Document uploaded successfully!'); }
-                document.getElementById('documentTitle').value='';
-                document.getElementById('documentDescription').value='';
-                document.getElementById('documentCategory').value='application';
-                document.getElementById('documentFile').value='';
+                
+                // Clear document form after successful upload
+                clearDocumentForm();
+                
+                // Refresh the document list to show the new document
                 await refreshAdminDocumentsList();
             }catch(err){
                 console.error('Upload document error:', err);
@@ -684,17 +834,17 @@
                     const size = Number(d.file_size||0);
                     const sizeLabel = size ? (Math.ceil(size/1024)+' KB') : '';
                     return `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-file-pdf text-red-500"></i>
-                                <div>
-                                    <div class="font-medium">${(d.title||'Document')}</div>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg gap-2 sm:gap-3">
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <i class="fas fa-file-pdf text-red-500 text-sm sm:text-base flex-shrink-0"></i>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-medium text-sm sm:text-base truncate">${(d.title||'Document')}</div>
                                     <div class="text-xs text-gray-500">${(d.category||'general')}${sizeLabel?(' • '+sizeLabel):''}</div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <a href="/api/scholarship-documents/download/${d.id}" class="text-blue-600 hover:underline">Download</a>
-                                <button class="text-red-600 hover:underline" onclick="deleteAdminDocument(${d.id})">Delete</button>
+                            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                <button onclick="downloadDocument(${d.id}, '${(d.title||'Document').replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline cursor-pointer text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">Download</button>
+                                <button class="text-red-600 hover:underline text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" onclick="deleteAdminDocument(${d.id})">Delete</button>
                             </div>
                         </div>`;
                 }).join('');
@@ -705,16 +855,108 @@
 
         async function deleteAdminDocument(id){
             try{
-                const token = localStorage.getItem('token');
-                if (!token){ try { displayMessageBox('Not authorized', 'error'); } catch { alert('Not authorized'); } return; }
                 if (!confirm('Delete this document?')) return;
-                const resp = await fetch(`/api/scholarship-documents/${id}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` }});
+                const resp = await fetch(`/api/scholarship-documents/${id}`, { method:'DELETE' });
                 const resj = await resp.json().catch(()=>({}));
                 if (!resp.ok || resj.success === false){ throw new Error(resj.error || 'Failed to delete'); }
                 try { displayMessageBox('Document deleted', 'success'); } catch { console.log('Document deleted'); }
                 await refreshAdminDocumentsList();
             }catch(e){
                 try { displayMessageBox(e.message || 'Delete failed', 'error'); } catch { alert(e.message || 'Delete failed'); }
+            }
+        }
+
+        // Download document function
+        async function downloadDocument(id, fileName) {
+            try {
+                console.log('Downloading document:', id, fileName);
+                
+                // Show loading state
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Downloading...';
+                button.disabled = true;
+                
+                // Fetch the document
+                const response = await fetch(`/api/scholarship-documents/download/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/pdf, application/octet-stream, */*'
+                    }
+                });
+                
+                if (!response.ok) {
+                    // Try to get error message from response
+                    let errorMessage = `Download failed: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        // If response is not JSON, use the default message
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // Check if response is actually a file (not JSON error)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Download failed');
+                }
+                
+                // Get the file blob
+                const blob = await response.blob();
+                
+                // Check if blob is empty or invalid
+                if (blob.size === 0) {
+                    throw new Error('Downloaded file is empty');
+                }
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Set filename with proper extension
+                let downloadName = fileName || 'document';
+                if (!downloadName.toLowerCase().endsWith('.pdf')) {
+                    downloadName += '.pdf';
+                }
+                
+                // Clean filename for download
+                downloadName = downloadName.replace(/[^a-zA-Z0-9._-]/g, '_');
+                
+                link.download = downloadName;
+                link.style.display = 'none';
+                
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                
+                console.log('Download completed:', downloadName);
+                try { 
+                    displayMessageBox(`Download started: ${downloadName}`, 'success'); 
+                } catch { 
+                    console.log(`Download started: ${downloadName}`); 
+                }
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                try { 
+                    displayMessageBox(`Download failed: ${error.message}`, 'error'); 
+                } catch { 
+                    alert(`Download failed: ${error.message}`); 
+                }
+            } finally {
+                // Reset button state
+                if (button) {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
             }
         }
         
@@ -845,7 +1087,28 @@
             document.getElementById('scholarshipId').value = '';
             scholarshipForm.reset();
             currentScholarshipId = null;
+            
+            // Clear document form and list for new scholarship
+            clearDocumentForm();
+            clearDocumentList();
+            
             scholarshipModal.classList.remove('hidden');
+        }
+        
+        // Clear document form
+        function clearDocumentForm() {
+            document.getElementById('documentTitle').value = '';
+            document.getElementById('documentDescription').value = '';
+            document.getElementById('documentCategory').value = 'application';
+            document.getElementById('documentFile').value = '';
+        }
+        
+        // Clear document list
+        function clearDocumentList() {
+            const documentsList = document.getElementById('documentsList');
+            if (documentsList) {
+                documentsList.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400">No documents uploaded yet.</div>';
+            }
         }
         
         // Open edit scholarship modal
@@ -880,6 +1143,11 @@
                 document.getElementById('number_of_awards').value = scholarship.number_of_awards || '';
                 
                 currentScholarshipId = id;
+                
+                // Clear document form and list for edit scholarship
+                clearDocumentForm();
+                clearDocumentList();
+                
                 scholarshipModal.classList.remove('hidden');
                 
             } catch (error) {
@@ -983,6 +1251,12 @@
                     throw new Error(`Failed to save scholarship: ${errorData.message || response.statusText}`);
                 }
                 
+                // Trigger data refresh
+                triggerDataChange('scholarship', currentScholarshipId ? 'update' : 'create', { 
+                    scholarshipId: currentScholarshipId,
+                    formData 
+                });
+                
                 // Reload scholarships and close modal
                 loadScholarships();
                 closeScholarshipModal();
@@ -1025,6 +1299,9 @@
                 if (!response.ok) {
                     throw new Error('Failed to delete scholarship');
                 }
+                
+                // Trigger data refresh
+                triggerDataChange('scholarship', 'delete', { scholarshipId: id });
                 
                 // Reload scholarships
                 loadScholarships();
@@ -1261,6 +1538,10 @@
             if (e.target === modal) modal.classList.add('hidden');
         });
     </script>
+
+    <!-- Admin Data Refresh System -->
+    <script src="js/admin-data-refresh.js"></script>
+    <script src="js/admin-data-utils.js"></script>
 
 </body>
 </html>

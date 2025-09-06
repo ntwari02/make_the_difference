@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Scholarships - MBAPE Global</title>
-  <meta name="description" content="Discover scholarship opportunities to fund your education with MBAPE Global">
+  <title>Scholarships - Reagle_X</title>
+  <meta name="description" content="Discover scholarship opportunities to fund your education with Reagle_X">
   <meta name="keywords" content="scholarships, education funding, study abroad, financial aid">
 
   <link href="assets/img/favicon.png" rel="icon">
@@ -448,7 +448,7 @@
       </div>
 
       <div class="text-center mt-8 pt-8 border-t border-gray-700 text-gray-300 dark:text-gray-400">
-        <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">MBAPE GLOBAL</strong> <span>All Rights Reserved</span></p>
+        <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">Reagle_X</strong> <span>All Rights Reserved</span></p>
       </div>
     </div>
   </footer>
@@ -579,9 +579,9 @@
               <div>
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-1">${d.title || 'Document'}</h3>
                 <p class="text-gray-600 dark:text-gray-400 mb-4">${d.description || ''}</p>
-                <a href="/api/scholarship-documents/download/${d.id}" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center">
+                <button onclick="downloadDocument(${d.id}, '${(d.title||'Document').replace(/'/g, "\\'")}')" class="inline-block bg-primary-500 text-white px-6 py-2 rounded hover:bg-primary-600 transition-all duration-300 flex items-center cursor-pointer">
                   <i class="bi bi-download mr-2"></i> Download (${(Number(d.file_size)||0) ? (Math.ceil(Number(d.file_size)/1024)+' KB') : 'PDF'})
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -591,6 +591,92 @@
         if (container) container.innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load documents.</div>`;
       }
     })();
+
+    // Download document function
+    async function downloadDocument(id, fileName) {
+        try {
+            console.log('Downloading document:', id, fileName);
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split mr-2"></i>Downloading...';
+            button.disabled = true;
+            
+            // Fetch the document
+            const response = await fetch(`/api/scholarship-documents/download/${id}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/pdf, application/octet-stream, */*'
+                }
+            });
+            
+            if (!response.ok) {
+                // Try to get error message from response
+                let errorMessage = `Download failed: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    // If response is not JSON, use the default message
+                }
+                throw new Error(errorMessage);
+            }
+            
+            // Check if response is actually a file (not JSON error)
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Download failed');
+            }
+            
+            // Get the file blob
+            const blob = await response.blob();
+            
+            // Check if blob is empty or invalid
+            if (blob.size === 0) {
+                throw new Error('Downloaded file is empty');
+            }
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Set filename with proper extension
+            let downloadName = fileName || 'document';
+            if (!downloadName.toLowerCase().endsWith('.pdf')) {
+                downloadName += '.pdf';
+            }
+            
+            // Clean filename for download
+            downloadName = downloadName.replace(/[^a-zA-Z0-9._-]/g, '_');
+            
+            link.download = downloadName;
+            link.style.display = 'none';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            
+            console.log('Download completed:', downloadName);
+            alert(`Download started: ${downloadName}`);
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            alert(`Download failed: ${error.message}`);
+        } finally {
+            // Reset button state
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+    }
 
     // Enhanced Profile Picture Upload
     const profileInput = document.getElementById('profilePicture');

@@ -240,18 +240,68 @@ router.post('/', bypassAuth, async (req, res) => {
   }
 });
 
-// Get notifications for logged-in user
+// Get notifications for logged-in user with pagination and optimization
 router.get('/', auth, async (req, res) => {
   try {
-    console.log('[API] GET /api/notifications user:', { id: req.user?.id, email: req.user?.email });
-    const [rows] = await db.query(
-      'SELECT * FROM notifications WHERE user_id = ? OR email = ? ORDER BY created_at DESC',
-      [req.user.id, req.user.email]
-    );
-    console.log('[API] /api/notifications rows:', rows?.length || 0);
-    res.json(rows);
+    const { page = 1, limit = 50, unread_only = false } = req.query;
+    const offset = (page - 1) * limit;
+    
+    console.log('[API] GET /api/notifications user:', { 
+      id: req.user?.id, 
+      email: req.user?.email,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      unread_only: unread_only === 'true'
+    });
+
+    // Build optimized query with proper indexing
+    let query = `
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    `;
+    
+    const params = [req.user.id, req.user.email];
+    
+    if (unread_only === 'true') {
+      query += ' AND is_read = 0';
+    }
+    
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), offset);
+
+    const [rows] = await db.query(query, params);
+    
+    // Get total count for pagination
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      ${unread_only === 'true' ? 'AND is_read = 0' : ''}
+    `;
+    const [countResult] = await db.query(countQuery, [req.user.id, req.user.email]);
+    const total = countResult[0].total;
+
+    console.log('[API] /api/notifications rows:', rows?.length || 0, 'total:', total);
+    
+    res.json({
+      notifications: rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    console.error(error);
+    console.error('[API] Error fetching notifications:', error);
     res.status(500).json({ message: 'Error fetching notifications.' });
   }
 });
@@ -637,7 +687,8 @@ router.get('/admin/conversations', bypassAuth, async (req, res) => {
         u.email as user_email,
         admin.full_name as admin_name,
         COUNT(r.id) as reply_count,
-        MAX(r.created_at) as last_reply_at
+        MAX(r.created_at) as last_reply_at,
+        CASE WHEN COALESCE(c.is_read, 0) = 0 THEN 1 ELSE 0 END as unread_count
       FROM conversations c
       JOIN notifications n ON c.notification_id = n.id
       LEFT JOIN users u ON c.user_id = u.id
@@ -783,6 +834,104 @@ router.get('/admin/conversations/:id', bypassAuth, async (req, res) => {
   }
 });
 
+// Mark conversation as read (user)
+router.put('/conversations/:id/read', auth, async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    
+    // Verify user has access to this conversation
+    const [conversations] = await db.query(
+      'SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)',
+      [conversationId, req.user.id, req.user.email]
+    );
+    
+    if (conversations.length === 0) {
+      return res.status(404).json({ message: 'Conversation not found or access denied.' });
+    }
+    
+    // Check if is_read column exists, if not, just update updated_at
+    try {
+      await db.query(
+        'UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [conversationId]
+      );
+    } catch (columnError) {
+      // If is_read column doesn't exist, just update updated_at
+      if (columnError.code === 'ER_BAD_FIELD_ERROR') {
+        await db.query(
+          'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [conversationId]
+        );
+      } else {
+        throw columnError;
+      }
+    }
+    
+    res.json({ success: true, message: 'Conversation marked as read' });
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    res.status(500).json({ message: 'Error marking conversation as read.' });
+  }
+});
+
+// Admin: Delete conversation
+router.delete('/admin/conversations/:id', bypassAuth, async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    
+    // Check if conversation exists
+    const [conversations] = await db.query(
+      'SELECT * FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    
+    if (conversations.length === 0) {
+      return res.status(404).json({ message: 'Conversation not found.' });
+    }
+    
+    // Delete all replies first (due to foreign key constraint)
+    await db.query('DELETE FROM replies WHERE conversation_id = ?', [conversationId]);
+    
+    // Delete the conversation
+    await db.query('DELETE FROM conversations WHERE id = ?', [conversationId]);
+    
+    res.json({ success: true, message: 'Conversation deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ message: 'Error deleting conversation.' });
+  }
+});
+
+// Admin: Mark conversation as read
+router.put('/admin/conversations/:id/read', bypassAuth, async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    
+    // Check if is_read column exists, if not, just update updated_at
+    try {
+      await db.query(
+        'UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [conversationId]
+      );
+    } catch (columnError) {
+      // If is_read column doesn't exist, just update updated_at
+      if (columnError.code === 'ER_BAD_FIELD_ERROR') {
+        await db.query(
+          'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [conversationId]
+        );
+      } else {
+        throw columnError;
+      }
+    }
+    
+    res.json({ success: true, message: 'Conversation marked as read' });
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    res.status(500).json({ message: 'Error marking conversation as read.' });
+  }
+});
+
 // Admin: Add reply to conversation
 router.post('/admin/conversations/:id/replies', bypassAuth, async (req, res) => {
   try {
@@ -809,11 +958,23 @@ router.post('/admin/conversations/:id/replies', bypassAuth, async (req, res) => 
       [conversationId, 'admin', req.user.id, req.user.email, message]
     );
     
-    // Update conversation timestamp
-    await db.query(
-      'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [conversationId]
-    );
+    // Update conversation timestamp and mark as unread for admin
+    try {
+      await db.query(
+        'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP, is_read = 0 WHERE id = ?',
+        [conversationId]
+      );
+    } catch (columnError) {
+      // If is_read column doesn't exist, just update updated_at
+      if (columnError.code === 'ER_BAD_FIELD_ERROR') {
+        await db.query(
+          'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [conversationId]
+        );
+      } else {
+        throw columnError;
+      }
+    }
     
     // Emit socket event to conversation room for real-time user updates
     try {
@@ -851,6 +1012,31 @@ router.patch('/:id/read', auth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error updating notification.' });
+  }
+});
+
+// Delete notification
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    
+    // Check if notification exists and user has access
+    const [notifications] = await db.query(
+      'SELECT * FROM notifications WHERE id = ? AND (user_id = ? OR email = ?)',
+      [notificationId, req.user.id, req.user.email]
+    );
+    
+    if (notifications.length === 0) {
+      return res.status(404).json({ message: 'Notification not found or access denied.' });
+    }
+    
+    // Delete the notification
+    await db.query('DELETE FROM notifications WHERE id = ?', [notificationId]);
+    
+    res.json({ success: true, message: 'Notification deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ message: 'Error deleting notification.' });
   }
 });
 
@@ -914,6 +1100,8 @@ router.delete('/replies/:id', auth, async (req, res) => {
     const replyId = req.params.id;
     const userId = req.user.id;
     
+    console.log(`[DELETE] Attempting to delete reply ${replyId} by user ${userId}`);
+    
     // Check if reply exists and get conversation info
     const [replies] = await db.query(`
       SELECT r.*, c.id as conversation_id, c.user_id
@@ -923,13 +1111,22 @@ router.delete('/replies/:id', auth, async (req, res) => {
     `, [replyId]);
     
     if (replies.length === 0) {
+      console.log(`[DELETE] Reply ${replyId} not found`);
       return res.status(404).json({ message: 'Reply not found.' });
     }
     
     const reply = replies[0];
+    console.log(`[DELETE] Reply found:`, {
+      id: reply.id,
+      sender_type: reply.sender_type,
+      sender_id: reply.sender_id,
+      user_id: reply.user_id,
+      requesting_user: userId
+    });
     
     // Only allow user to delete their own messages from their conversations
-    if (reply.sender_type !== 'user' || reply.user_id !== userId) {
+    if (reply.sender_type !== 'user' || reply.sender_id !== userId) {
+      console.log(`[DELETE] Permission denied: sender_type=${reply.sender_type}, sender_id=${reply.sender_id}, user_id=${userId}`);
       return res.status(403).json({ message: 'You can only delete your own messages.' });
     }
     
@@ -942,6 +1139,7 @@ router.delete('/replies/:id', auth, async (req, res) => {
       [reply.conversation_id]
     );
     
+    console.log(`[DELETE] Reply ${replyId} deleted successfully by user ${userId}`);
     res.json({ success: true, message: 'Reply deleted successfully.' });
   } catch (error) {
     console.error('Error deleting reply:', error);

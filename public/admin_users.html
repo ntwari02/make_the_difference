@@ -303,6 +303,12 @@
                             focus:outline-none focus:ring-2 focus:ring-primary-500">
                         <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
                     </div>
+                    <button id="toggleInactiveUsers" onclick="toggleInactiveUsers()" 
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 
+                        transition-colors duration-200 flex items-center justify-center">
+                        <i class="fas fa-eye-slash"></i>
+                        <span class="hidden [min-width:701px]:inline-block ml-2">Show Inactive</span>
+                    </button>
                     <button onclick="showAddUserModal()" 
                         class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 
                         transition-colors duration-200 flex items-center justify-center">
@@ -474,13 +480,35 @@
         let totalUsers = 0;
         let filteredUsers = [];
         let currentSearch = '';
+        let showInactiveUsers = false; // Track whether to show inactive users
         // Permissions cache
         let availablePermissions = null; // grouped from API
         let permissionsLoaded = false;
 
+        // Setup data refresh system
+        function setupDataRefresh() {
+            if (window.adminDataRefresh) {
+                // Register refresh callbacks for users page
+                window.adminDataRefresh.register('users-list', async () => {
+                    console.log('🔄 Refreshing users list...');
+                    await loadUsers(currentPage, currentSearch);
+                }, { priority: 'high', debounceMs: 500 });
+
+                window.adminDataRefresh.register('users-cards', async () => {
+                    console.log('🔄 Refreshing users cards...');
+                    await loadUserCounts();
+                }, { priority: 'normal', debounceMs: 1000 });
+
+                console.log('✅ Users page data refresh callbacks registered');
+            } else {
+                console.warn('⚠️ Admin data refresh system not available');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize
+            setupDataRefresh();
             loadUsers();
             loadUserCounts();
             setupEventListeners();
@@ -538,6 +566,9 @@
             try {
                 const token = localStorage.getItem('token');
                 let url = `/api/admin/users?page=${page}&limit=${usersPerPage}`;
+                if (!showInactiveUsers) {
+                    url += '&status=active';
+                }
                 if (search) url += `&search=${encodeURIComponent(search)}`;
                 const response = await fetch(url, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -573,9 +604,57 @@
             }
         }
 
+        // Optimistically update cards based on local state changes
+        function updateCardsOptimistically(user, action) {
+            if (!user) return;
+            
+            const totalEl = document.getElementById('totalUsersCard');
+            const activeEl = document.getElementById('activeUsersCard');
+            const inactiveEl = document.getElementById('inactiveUsersCard');
+            
+            if (action === 'delete') {
+                // Decrease total count
+                if (totalEl) {
+                    const currentTotal = parseInt(totalEl.textContent) || 0;
+                    totalEl.textContent = Math.max(0, currentTotal - 1);
+                }
+                
+                // Decrease active or inactive count based on user status
+                if (user.status === 'active' && activeEl) {
+                    const currentActive = parseInt(activeEl.textContent) || 0;
+                    activeEl.textContent = Math.max(0, currentActive - 1);
+                } else if (user.status === 'inactive' && inactiveEl) {
+                    const currentInactive = parseInt(inactiveEl.textContent) || 0;
+                    inactiveEl.textContent = Math.max(0, currentInactive - 1);
+                }
+            } else if (action === 'create') {
+                // Increase total count
+                if (totalEl) {
+                    const currentTotal = parseInt(totalEl.textContent) || 0;
+                    totalEl.textContent = currentTotal + 1;
+                }
+                
+                // Increase active or inactive count based on user status
+                if (user.status === 'active' && activeEl) {
+                    const currentActive = parseInt(activeEl.textContent) || 0;
+                    activeEl.textContent = currentActive + 1;
+                } else if (user.status === 'inactive' && inactiveEl) {
+                    const currentInactive = parseInt(inactiveEl.textContent) || 0;
+                    inactiveEl.textContent = currentInactive + 1;
+                }
+            } else if (action === 'update') {
+                // For updates, we need to know the old status to update correctly
+                // This is more complex, so we'll rely on the server refresh
+                console.log('📝 User updated - will refresh cards from server');
+            }
+            
+            console.log('🔄 Cards updated optimistically for', action, user.status);
+        }
+
         // Load counts for cards (total, active, inactive)
         async function loadUserCounts() {
             try {
+                console.log('🔄 Loading user counts for cards...');
                 const token = localStorage.getItem('token');
                 async function fetchCount(query) {
                     const url = `/api/admin/users?page=1&limit=1${query}`;
@@ -587,25 +666,35 @@
                     return pag ? (pag.total ?? pag.totalItems ?? 0) : (Array.isArray(data.users) ? data.users.length : 0);
                 }
                 const [total, active, inactive] = await Promise.all([
-                    fetchCount(''),
+                    fetchCount('&status=active'),
                     fetchCount('&status=active'),
                     fetchCount('&status=inactive')
                 ]);
+                console.log('📊 User counts:', { total, active, inactive });
                 const totalEl = document.getElementById('totalUsersCard');
                 const activeEl = document.getElementById('activeUsersCard');
                 const inactiveEl = document.getElementById('inactiveUsersCard');
-                if (totalEl) totalEl.textContent = total;
-                if (activeEl) activeEl.textContent = active;
-                if (inactiveEl) inactiveEl.textContent = inactive;
+                if (totalEl) {
+                    totalEl.textContent = total;
+                    console.log('✅ Updated total users card:', total);
+                }
+                if (activeEl) {
+                    activeEl.textContent = active;
+                    console.log('✅ Updated active users card:', active);
+                }
+                if (inactiveEl) {
+                    inactiveEl.textContent = inactive;
+                    console.log('✅ Updated inactive users card:', inactive);
+                }
             } catch (e) {
-                // Silent fail for cards
+                console.error('❌ Error loading user counts:', e);
             }
         }
 
         async function createUser(userData) {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('/api/admin/users', {
+                const response = await adminFetch('/api/admin/users', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -621,6 +710,16 @@
                     throw err;
                 }
                 await response.json();
+                
+                // Trigger data refresh
+                triggerDataChange('user', 'create', { userData });
+                
+                // Optimistically update cards immediately
+                updateCardsOptimistically(userData, 'create');
+                
+                // Update the cards with new counts after creation
+                await loadUserCounts();
+                
                 return true;
             } catch (error) {
                 handleApiError(error);
@@ -633,7 +732,7 @@
                 if (!token) {
                     throw new Error('Authentication required');
                 }
-                const response = await fetch(`/api/admin/users/${userId}`, {
+                const response = await adminFetch(`/api/admin/users/${userId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -649,6 +748,10 @@
                     throw err;
                 }
                 const result = await response.json();
+                
+                // Trigger data refresh
+                triggerDataChange('user', 'update', { userId, userData });
+                
                 // Optimistically update in-memory list if present
                 const idx = users.findIndex(u => String(u.id) === String(userId));
                 if (idx !== -1) {
@@ -662,6 +765,10 @@
                 }
                 // Refresh from server to ensure consistency
                 await loadUsers(currentPage, currentSearch);
+                
+                // Update the cards with new counts after update (in case status changed)
+                await loadUserCounts();
+                
                 return true;
             } catch (error) {
                 handleApiError(error);
@@ -758,7 +865,7 @@
         }
 
         async function deleteUser(userId) {
-            if (!confirm('Are you sure you want to delete this user?')) return;
+            if (!confirm('Are you sure you want to deactivate this user?')) return;
             
             try {
                 const token = localStorage.getItem('token');
@@ -766,7 +873,7 @@
                     throw new Error('Authentication required');
                 }
 
-                const response = await fetch(`/api/admin/users/${userId}`, {
+                const response = await adminFetch(`/api/admin/users/${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -775,17 +882,66 @@
 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.message || 'Failed to delete user');
+                    throw new Error(error.message || 'Failed to deactivate user');
                 }
+
+                // Trigger data refresh
+                triggerDataChange('user', 'delete', { userId });
 
                 // Optimistically remove from local state and refresh UI immediately
                 if (Array.isArray(users)) {
+                    const deletedUser = users.find(u => String(u.id) === String(userId));
                     users = users.filter(u => String(u.id) !== String(userId));
                     updateUsersTable();
+                    
+                    // Optimistically update cards immediately
+                    updateCardsOptimistically(deletedUser, 'delete');
                 }
                 showNotification('User deactivated successfully', 'success');
-                // Refresh the list to remove the user from the active view
+                
+                // Refresh the list to ensure consistency (this will now only show active users)
                 await loadUsers(currentPage, currentSearch);
+                
+                // Update the cards with new counts after deletion
+                await loadUserCounts();
+            } catch (error) {
+                handleApiError(error);
+            }
+        }
+
+        async function reactivateUser(userId) {
+            if (!confirm('Are you sure you want to reactivate this user?')) return;
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Authentication required');
+                }
+
+                const response = await adminFetch(`/api/admin/users/${userId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: 'active' })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to reactivate user');
+                }
+
+                // Trigger data refresh
+                triggerDataChange('user', 'update', { userId, status: 'active' });
+
+                showNotification('User reactivated successfully', 'success');
+                
+                // Refresh the list to show the reactivated user
+                await loadUsers(currentPage, currentSearch);
+                
+                // Update the cards with new counts after reactivation
+                await loadUserCounts();
             } catch (error) {
                 handleApiError(error);
             }
@@ -836,10 +992,16 @@
                             class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteUser(${user.id})" 
+                        ${user.status === 'inactive' ? 
+                            `<button onclick="reactivateUser(${user.id})" 
+                                class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3">
+                                <i class="fas fa-user-check"></i>
+                            </button>` : 
+                            `<button onclick="deleteUser(${user.id})" 
                             class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                             <i class="fas fa-trash"></i>
-                        </button>
+                            </button>`
+                        }
                     </td>
                 </tr>
             `).join('');
@@ -864,6 +1026,27 @@
         // Search and Pagination
         function handleSearch(e) {
             currentSearch = e.target.value;
+            currentPage = 1;
+            loadUsers(currentPage, currentSearch);
+        }
+
+        // Toggle inactive users visibility
+        function toggleInactiveUsers() {
+            showInactiveUsers = !showInactiveUsers;
+            const button = document.getElementById('toggleInactiveUsers');
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+            
+            if (showInactiveUsers) {
+                icon.className = 'fas fa-eye';
+                text.textContent = 'Hide Inactive';
+                button.className = button.className.replace('bg-gray-200 dark:bg-gray-600', 'bg-blue-200 dark:bg-blue-600');
+            } else {
+                icon.className = 'fas fa-eye-slash';
+                text.textContent = 'Show Inactive';
+                button.className = button.className.replace('bg-blue-200 dark:bg-blue-600', 'bg-gray-200 dark:bg-gray-600');
+            }
+            
             currentPage = 1;
             loadUsers(currentPage, currentSearch);
         }
@@ -1169,6 +1352,10 @@
             }
         }
     </script>
+
+    <!-- Admin Data Refresh System -->
+    <script src="js/admin-data-refresh.js"></script>
+    <script src="js/admin-data-utils.js"></script>
 
 </body>
 </html> 

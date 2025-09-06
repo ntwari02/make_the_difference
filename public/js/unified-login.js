@@ -2,6 +2,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Unified Login System Initialized');
     
+    // Test if elements are available
+    setTimeout(() => {
+        const testBtn = document.getElementById('sendOtpBtn');
+        console.log('🧪 Delayed test - Send OTP button found:', !!testBtn);
+        if (testBtn) {
+            console.log('✅ Button is clickable and ready');
+        }
+    }, 1000);
+    
     // Theme toggle functionality
     const themeToggle = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
@@ -99,9 +108,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAlert(message, type = 'error') {
+        console.log(`📢 Alert: ${type.toUpperCase()} - ${message}`);
+        
         const alertContainer = document.getElementById('alert-container');
+        if (!alertContainer) {
+            console.error('❌ Alert container not found');
+            alert(message); // Fallback to browser alert
+            return;
+        }
+        
         const alertDiv = document.createElement('div');
-        alertDiv.className = `p-4 rounded-lg mb-4 ${
+        alertDiv.className = `p-4 rounded-lg mb-4 animate-fade-in ${
             type === 'error' 
                 ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800' 
                 : 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
@@ -109,15 +126,25 @@ document.addEventListener('DOMContentLoaded', function() {
         alertDiv.innerHTML = `
             <div class="flex items-center">
                 <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'} mr-2"></i>
-                <span>${message}</span>
+                <span class="font-medium">${message}</span>
             </div>
         `;
+        
+        alertContainer.innerHTML = '';
         alertContainer.appendChild(alertDiv);
 
-        // Auto-remove after 5 seconds
+        // Auto-remove after 8 seconds for better visibility
         setTimeout(() => {
-            alertDiv.remove();
-        }, 5000);
+            if (alertDiv.parentNode) {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease-out';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 500);
+            }
+        }, 8000);
     }
 
     // Role detection and badge display
@@ -240,6 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     full_name: data.user.full_name,
                     email: data.user.email,
                     role: data.user.role,
+                    phone: data.user.phone || '',
+                    bio: data.user.bio || '',
                     isAdmin: false,
                     profile_picture: data.user.profile_picture || data.user.profile_picture_path,
                     profile_picture_path: data.user.profile_picture_path || data.user.profile_picture
@@ -286,6 +315,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     full_name: data.user.full_name,
                     email: data.user.email,
                     role: 'admin',
+                    phone: data.user.phone || '',
+                    bio: data.user.bio || '',
                     isAdmin: true,
                     adminLevel: data.user.adminLevel,
                     permissions: data.user.permissions,
@@ -387,21 +418,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const verifyAnswersBtn = document.getElementById('verifyAnswersBtn');
     const resetPasswordBtn = document.getElementById('resetPasswordBtn');
 
+    console.log('🔍 Forgot password modal elements:', {
+        forgotPasswordBtn: !!forgotPasswordBtn,
+        forgotPasswordModal: !!forgotPasswordModal,
+        closeForgotModal: !!closeForgotModal,
+        getQuestionsBtn: !!getQuestionsBtn,
+        verifyAnswersBtn: !!verifyAnswersBtn,
+        resetPasswordBtn: !!resetPasswordBtn
+    });
+
     let currentStep = 1;
     let resetToken = null;
     let isHelpToken = false;
 
     // Modal controls
+    if (forgotPasswordBtn && forgotPasswordModal) {
     forgotPasswordBtn.addEventListener('click', () => {
         forgotPasswordModal.style.display = 'flex';
         currentStep = 1;
         showStep(1);
+            
+            // Check if email is pre-filled from login form
+            const loginEmail = document.getElementById('email').value.trim();
+            if (loginEmail) {
+                const forgotEmail = document.getElementById('forgotEmail');
+                if (forgotEmail) {
+                    forgotEmail.value = loginEmail;
+                    // Trigger the email input event to show reset options
+                    setTimeout(() => {
+                        const event = new Event('input', { bubbles: true });
+                        forgotEmail.dispatchEvent(event);
+                    }, 100);
+                }
+            }
     });
 
     closeForgotModal.addEventListener('click', () => {
         forgotPasswordModal.style.display = 'none';
         resetForm();
     });
+    } else {
+        console.error('❌ Missing forgot password modal elements');
+    }
 
     // Close modal when clicking outside
     forgotPasswordModal.addEventListener('click', (e) => {
@@ -414,6 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showStep(step) {
         document.getElementById('step1').classList.toggle('hidden', step !== 1);
         document.getElementById('step2').classList.toggle('hidden', step !== 2);
+        document.getElementById('step2_5').classList.toggle('hidden', step !== 2.5);
         document.getElementById('step3').classList.toggle('hidden', step !== 3);
     }
 
@@ -422,27 +481,274 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('securityQuestions').innerHTML = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmNewPassword').value = '';
+        document.getElementById('otpCode').value = '';
+        document.getElementById('otpError').classList.add('hidden');
         currentStep = 1;
         resetToken = null;
+        clearOtpTimer();
         showStep(1);
     }
 
-    // Auto-check for admin-issued reset when email is entered
+    // Show reset options when email is entered
     const forgotEmailInput = document.getElementById('forgotEmail');
     const autoResetNotice = document.getElementById('autoResetNotice');
-    // Disable automatic reset token shortcut for users: always show questions first
-    // Admin-specific auto token flow is handled after Get Questions response for admins
-    if (forgotEmailInput) {
-        let debounceTimer = null;
-        forgotEmailInput.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                // Intentionally do nothing to avoid skipping security questions for users
-            }, 500);
+    const resetOptions = document.getElementById('resetOptions');
+    
+    console.log('🔍 Forgot password elements:', {
+        forgotEmailInput: !!forgotEmailInput,
+        resetOptions: !!resetOptions,
+        autoResetNotice: !!autoResetNotice
+    });
+    
+    if (forgotEmailInput && resetOptions) {
+        console.log('✅ Forgot password elements found, buttons are now visible');
+        
+        // Add a manual trigger function for testing
+        window.showResetOptions = () => {
+            const email = forgotEmailInput.value.trim();
+            if (email && email.includes('@')) {
+                console.log('✅ Reset options are visible');
+            } else {
+                console.log('❌ Email not valid for showing reset options');
+            }
+        };
+        
+        // Check if email is already filled when modal opens
+        const checkInitialEmail = () => {
+            const email = forgotEmailInput.value.trim();
+            if (email && email.includes('@') && email.length > 5) {
+                console.log('✅ Initial email detected, reset options are visible');
+            }
+        };
+        
+        // Check initial email after a short delay
+        setTimeout(checkInitialEmail, 100);
+    } else {
+        console.error('❌ Missing forgot password elements:', {
+            forgotEmailInput: !!forgotEmailInput,
+            resetOptions: !!resetOptions
         });
     }
 
+    // Send OTP
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    const otpCode = document.getElementById('otpCode');
+    const otpError = document.getElementById('otpError');
+    const otpTimer = document.getElementById('otpTimer');
+    const otpCountdown = document.getElementById('otpCountdown');
+    
+    console.log('🔍 OTP elements:', {
+        sendOtpBtn: !!sendOtpBtn,
+        verifyOtpBtn: !!verifyOtpBtn,
+        resendOtpBtn: !!resendOtpBtn,
+        otpCode: !!otpCode
+    });
+    
+    // Additional debugging
+    if (sendOtpBtn) {
+        console.log('✅ Send OTP button element found:', sendOtpBtn);
+        console.log('✅ Button text content:', sendOtpBtn.textContent);
+        console.log('✅ Button classes:', sendOtpBtn.className);
+    } else {
+        console.error('❌ Send OTP button element NOT found!');
+        // Try to find it again
+        const retryBtn = document.getElementById('sendOtpBtn');
+        console.log('🔄 Retry finding button:', !!retryBtn);
+    }
+    
+    let otpTimerInterval = null;
+    let currentOtp = null;
+    
+    // NEW SIMPLE APPROACH - Direct button handling
+    console.log('🔄 Setting up Send OTP button with new logic...');
+    
+    // Global debug function
+    window.testFunction = function() {
+        console.log('🧪 Test function called!');
+        alert('Test function works!');
+    };
+    
+    // Make sure the function is available immediately
+    console.log('🔧 sendOTP function will be available as window.sendOTP');
+    
+    // Function to send OTP
+    window.sendOTP = async function() {
+        console.log('🎯 sendOTP function called!');
+        alert('Send OTP function called!'); // Test alert
+        
+        // Debug: Check if function is accessible
+        console.log('🔍 sendOTP function is accessible from window object');
+        
+        const email = document.getElementById('forgotEmail').value.trim();
+        console.log('📧 Email:', email);
+        
+        if (!email) {
+            showAlert('Please enter your email address', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('sendOtpBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+        }
+
+        try {
+            console.log('🚀 Making API request...');
+            const response = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, purpose: 'password_reset' })
+            });
+
+            console.log('📡 Response status:', response.status);
+            const data = await response.json();
+            console.log('📦 Response data:', data);
+
+            if (response.ok && data && data.success) {
+                console.log('✅ SUCCESS!');
+                currentOtp = data.otp;
+                showStep(2.5);
+                startOtpTimer();
+                showAlert('✅ ' + data.message, 'success');
+            } else {
+                console.log('❌ FAILED:', data);
+                showAlert('❌ ' + (data.message || 'Failed to send verification code'), 'error');
+            }
+        } catch (error) {
+            console.error('❌ ERROR:', error);
+            showAlert('❌ Failed to send verification code. Please try again.', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-envelope mr-2"></i>Send OTP on Email';
+            }
+        }
+    };
+    
+    // Set up button click using onclick attribute
+    setTimeout(() => {
+        const btn = document.getElementById('sendOtpBtn');
+        if (btn) {
+            console.log('✅ Button found, setting onclick attribute');
+            btn.setAttribute('onclick', 'sendOTP(); return false;');
+            btn.style.cursor = 'pointer';
+        } else {
+            console.error('❌ Button not found after timeout');
+        }
+            }, 500);
+
+    // Verify OTP button
+    if (verifyOtpBtn) {
+        verifyOtpBtn.addEventListener('click', async () => {
+        const email = document.getElementById('forgotEmail').value.trim();
+        const code = otpCode.value.trim();
+        
+        if (!code) {
+            showAlert('Please enter the verification code', 'error');
+            return;
+        }
+
+        try {
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+            
+            const response = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, otp: code, purpose: 'password_reset' })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data && data.success) {
+                resetToken = data.resetToken; // Store reset token
+                showStep(3); // Show new password step
+                clearOtpTimer();
+                showAlert('Code verified successfully', 'success');
+            } else {
+                otpError.classList.remove('hidden');
+                showAlert(data.message || 'Invalid verification code', 'error');
+            }
+        } catch (error) {
+            console.error('Error verifying OTP:', error);
+            showAlert('Failed to verify code. Please try again.', 'error');
+        } finally {
+            verifyOtpBtn.disabled = false;
+            verifyOtpBtn.innerHTML = 'Verify Code';
+        }
+        });
+    } else {
+        console.error('❌ verifyOtpBtn not found');
+    }
+
+    // Resend OTP button
+    if (resendOtpBtn) {
+        resendOtpBtn.addEventListener('click', async () => {
+        const email = document.getElementById('forgotEmail').value.trim();
+        
+        try {
+            resendOtpBtn.disabled = true;
+            resendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resending...';
+            
+            const response = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, purpose: 'password_reset' })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data && data.success) {
+                currentOtp = data.otp;
+                startOtpTimer();
+                showAlert('New verification code sent', 'success');
+            } else {
+                showAlert(data.message || 'Failed to resend code', 'error');
+            }
+        } catch (error) {
+            console.error('Error resending OTP:', error);
+            showAlert('Failed to resend code. Please try again.', 'error');
+        } finally {
+            resendOtpBtn.disabled = false;
+            resendOtpBtn.innerHTML = 'Resend Code';
+        }
+        });
+    } else {
+        console.error('❌ resendOtpBtn not found');
+    }
+
+    // OTP timer functions
+    function startOtpTimer() {
+        let timeLeft = 300; // 5 minutes
+        otpCountdown.textContent = timeLeft;
+        otpTimerInterval = setInterval(() => {
+            timeLeft--;
+            otpCountdown.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearOtpTimer();
+                showAlert('Verification code expired. Please request a new one.', 'error');
+            }
+        }, 1000);
+    }
+
+    function clearOtpTimer() {
+        if (otpTimerInterval) {
+            clearInterval(otpTimerInterval);
+            otpTimerInterval = null;
+        }
+    }
+
     // Get security questions
+    if (getQuestionsBtn) {
     getQuestionsBtn.addEventListener('click', async () => {
         const email = document.getElementById('forgotEmail').value.trim();
         
@@ -528,6 +834,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('An error occurred while retrieving security questions', 'error');
         }
     });
+    } else {
+        console.error('❌ getQuestionsBtn not found');
+    }
 
     // Verify security answers
     verifyAnswersBtn.addEventListener('click', async () => {

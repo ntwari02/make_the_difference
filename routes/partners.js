@@ -29,13 +29,19 @@ router.post('/', async (req, res) => {
     }
     await db.query(
       `INSERT INTO partners (name, email, organization, phone, message, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'new', NOW())`,
+       VALUES (?, ?, ?, ?, ?, 'pending', NOW())`,
       [name, email, organization || null, phone || null, message || null]
     );
     res.status(201).json({ success: true, message: 'Inquiry received' });
   } catch (err) {
     console.error('Public partner create error:', err);
-    res.status(500).json({ success: false, message: 'Failed to submit inquiry' });
+    console.error('Error details:', {
+      message: err.message,
+      code: err.code,
+      sqlState: err.sqlState,
+      sqlMessage: err.sqlMessage
+    });
+    res.status(500).json({ success: false, message: 'Failed to submit inquiry', error: err.message });
   }
 });
 

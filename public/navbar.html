@@ -1,39 +1,38 @@
 <!-- navbar.html -->
-<header class="bg-white dark:bg-gray-800 py-4 fixed top-0 w-full z-50 shadow-sm">
-  <div class="container mx-auto px-4 flex items-center justify-between">
+<header class="bg-white dark:bg-gray-800 py-1 sm:py-2 fixed top-0 w-full z-50 shadow-sm">
+  <div class="container mx-auto px-2 sm:px-4 flex items-center justify-between">
     <a href="home.html" class="flex items-center">
-      <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-10 w-auto object-contain mr-3">
-      <h1 class="font-raleway font-bold text-2xl tracking-wider text-gray-700 dark:text-white">MBAPE GLOBAL</h1>
+      <img src="/img/logo.png" alt="Logo" class="h-8 sm:h-10 md:h-12 w-auto object-contain">
     </a>
 
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
       <!-- Mobile Menu Button -->
-      <button id="mobile-menu-button" class="md:hidden p-2 rounded-lg focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button id="mobile-menu-button" class="md:hidden p-1 sm:p-1.5 rounded-lg focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path class="mobile-menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           <path class="mobile-menu-close hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
 
-      <button id="theme-toggle" class="p-2 rounded-full focus:outline-none text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
-        <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <button id="theme-toggle" class="p-1 sm:p-1.5 rounded-full focus:outline-none text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg id="theme-toggle-dark-icon" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
         </svg>
-        <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <svg id="theme-toggle-light-icon" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
           <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
         </svg>
       </button>
 
-      <button id="notification-bell" class="relative p-2 rounded-full focus:outline-none text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button id="notification-bell" class="relative p-1 sm:p-1.5 rounded-full focus:outline-none text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span id="notification-badge" class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full hidden">0</span>
+        <span id="notification-badge" class="absolute top-0 right-0 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full hidden">0</span>
       </button>
-      <div id="notification-dropdown" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg py-2 hidden z-50">
-        <div class="px-4 py-2 text-gray-700 dark:text-gray-200 font-semibold border-b border-gray-200 dark:border-gray-700">Notifications</div>
-        <div id="notification-list" class="max-h-80 overflow-y-auto"></div>
-        <div id="no-notifications" class="px-4 py-4 text-center text-gray-400">No notifications</div>
+      <div id="notification-dropdown" class="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg py-2 hidden z-50">
+        <div class="px-3 sm:px-4 py-2 text-gray-700 dark:text-gray-200 font-semibold border-b border-gray-200 dark:border-gray-700 text-sm sm:text-base">Notifications</div>
+        <div id="notification-list" class="max-h-60 sm:max-h-80 overflow-y-auto"></div>
+        <div id="no-notifications" class="px-3 sm:px-4 py-4 text-center text-gray-400 text-sm sm:text-base">No notifications</div>
       </div>
 
       <!-- Main Navigation -->
@@ -50,11 +49,12 @@
       </nav>
 
       <!-- Admin Dashboard Button - Only visible for admin users -->
-      <a href="admin_dashboard.html" id="adminDashboardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg">
-        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="admin_dashboard.html" id="adminDashboardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm">
+        <svg class="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
         </svg>
-        Dashboard
+        <span class="hidden sm:inline">Dashboard</span>
+        <span class="sm:hidden">Dash</span>
       </a>
 
 
@@ -64,22 +64,16 @@
         <!-- Will be populated by JavaScript -->
       </div>
 
-      <!-- User Menu (Hidden by default) -->
+      <!-- User Profile Photo (Hidden by default) -->
       <div id="userMenu" class="relative hidden md:block">
-        <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none">
-          <span id="userNameDisplay" class="text-gray-700 dark:text-gray-300 text-sm"></span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+        <button id="profilePhotoButton" class="focus:outline-none hover:opacity-80 transition-opacity">
+          <div class="relative">
+            <img id="profilePhoto" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600 hidden">
+            <div id="profilePhotoFallback" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+              <span class="text-sm font-bold text-gray-600 dark:text-gray-300">U</span>
+            </div>
+          </div>
         </button>
-                 <div id="userMenuDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
-
-           <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" id="profileLink">Profile</a>
-           <a href="help-center.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Help Center</a>
-           <hr class="my-1 border-gray-200 dark:border-gray-700">
-           <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" id="logoutButton">Logout</a>
-
-         </div>
       </div>
     </div>
   </div>
@@ -87,12 +81,12 @@
   <!-- Mobile Menu (Hidden by default) -->
   <div id="mobile-menu" class="md:hidden fixed inset-0 z-50 opacity-0 pointer-events-none">
     <div class="fixed inset-0 bg-black bg-opacity-50" id="mobile-menu-backdrop"></div>
-    <div class="fixed inset-y-0 right-0 max-w-xs w-full bg-white dark:bg-gray-800 shadow-xl flex flex-col transform translate-x-full transition-all duration-300">
-      <div class="p-4 flex flex-col h-full">
-        <div class="flex items-center justify-between mb-8">
-          <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Menu</h2>
-          <button id="mobile-menu-close" class="p-2 rounded-lg text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="fixed inset-y-0 right-0 max-w-xs sm:max-w-sm w-full bg-white dark:bg-gray-800 shadow-xl flex flex-col transform translate-x-full transition-all duration-300">
+      <div class="p-3 sm:p-4 flex flex-col h-full">
+        <div class="flex items-center justify-between mb-6 sm:mb-8">
+          <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">Menu</h2>
+          <button id="mobile-menu-close" class="p-1.5 sm:p-2 rounded-lg text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
@@ -100,25 +94,120 @@
         
         <!-- Mobile Navigation Links -->
         <nav class="flex-1">
-          <ul class="space-y-2" id="mobileNav">
-            <li><a href="home.html" class="mobile-nav-link">Home</a></li>
-            <li><a href="about.html" class="mobile-nav-link">About</a></li>
-            <li><a href="service.html" class="mobile-nav-link">Services</a></li>
-            <li><a href="scholarship.html" class="mobile-nav-link">Scholarship</a></li>
-            <li><a href="partnership.html" class="mobile-nav-link">Partnership</a></li>
-            <li><a href="contact.html" class="mobile-nav-link">Contact</a></li>
-            <li><a href="help-center.html" class="mobile-nav-link">Help</a></li>
+          <ul class="space-y-1 sm:space-y-2" id="mobileNav">
+            <li><a href="home.html" class="mobile-nav-link text-sm sm:text-base">Home</a></li>
+            <li><a href="about.html" class="mobile-nav-link text-sm sm:text-base">About</a></li>
+            <li><a href="service.html" class="mobile-nav-link text-sm sm:text-base">Services</a></li>
+            <li><a href="scholarship.html" class="mobile-nav-link text-sm sm:text-base">Scholarship</a></li>
+            <li><a href="partnership.html" class="mobile-nav-link text-sm sm:text-base">Partnership</a></li>
+            <li><a href="contact.html" class="mobile-nav-link text-sm sm:text-base">Contact</a></li>
+            <li><a href="help-center.html" class="mobile-nav-link text-sm sm:text-base">Help</a></li>
           </ul>
         </nav>
 
         <!-- Mobile Auth Buttons -->
-        <div id="mobileAuthButtons" class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div id="mobileAuthButtons" class="mt-auto pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
           <!-- Will be populated by JavaScript -->
         </div>
       </div>
     </div>
   </div>
 </header>
+
+<!-- Enhanced Profile Modal -->
+<div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">User Profile</h3>
+        <button id="closeProfileModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <!-- Profile Picture Section -->
+        <div class="flex flex-col items-center mb-6">
+          <div class="relative">
+            <img id="profileModalAvatar" src="" alt="Profile" class="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-600 hidden">
+            <div id="profileModalFallback" class="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-4 border-gray-200 dark:border-gray-600">
+              <span class="text-2xl font-bold text-gray-600 dark:text-gray-300">U</span>
+            </div>
+            <button id="changePhotoBtn" class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </button>
+          </div>
+          <h4 id="profileModalName" class="text-xl font-semibold text-gray-900 dark:text-white mt-3">User Name</h4>
+          <p id="profileModalEmail" class="text-gray-600 dark:text-gray-400">user@example.com</p>
+          <span id="profileModalRole" class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full mt-2">User</span>
+        </div>
+        
+        <!-- User Details Section -->
+        <div class="mb-6">
+          <h5 class="text-lg font-medium text-gray-900 dark:text-white mb-3">Account Details</h5>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Full Name:</span>
+              <span id="profileModalFullName" class="text-sm font-medium text-gray-900 dark:text-white">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Email:</span>
+              <span id="profileModalEmailDetail" class="text-sm font-medium text-gray-900 dark:text-white">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Role:</span>
+              <span id="profileModalRoleDetail" class="text-sm font-medium text-gray-900 dark:text-white">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Member Since:</span>
+              <span id="profileModalJoinDate" class="text-sm font-medium text-gray-900 dark:text-white">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+              <span id="profileModalStatus" class="inline-block bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded-full">Active</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="space-y-3">
+          <button id="editProfileBtn" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            Edit Profile
+          </button>
+          <button id="changePasswordBtn" class="block w-full text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 py-2 px-4 rounded-lg transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+            Change Password
+          </button>
+          <a href="help-center.html" class="block w-full text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 py-2 px-4 rounded-lg transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Help Center
+          </a>
+          <hr class="my-4 border-gray-200 dark:border-gray-700">
+          <button id="logoutBtn" class="block w-full text-center bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <style>
 .nav-link {
@@ -144,10 +233,17 @@
   width: 100%;
   color: #374151;
   font-weight: 500;
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
   border-radius: 0.375rem;
   transition: all 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .mobile-nav-link {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
 }
 
 .dark .mobile-nav-link {
@@ -211,335 +307,203 @@
   background: linear-gradient(135deg, #2563EB, #1E40AF);
   box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
 }
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .mobile-nav-link {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  
+  #notification-dropdown {
+    width: 16rem;
+  }
+}
+
+/* Small screens (phones in landscape) */
+@media (min-width: 481px) and (max-width: 640px) {
+  .mobile-nav-link {
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+  }
+}
 </style>
 
 <!-- Include Logout Utility -->
 <script src="js/logout-utility.js"></script>
 
-<script>
-  // Theme toggle functionality
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-  const userMenu = document.getElementById('userMenu');
-  const userMenuButton = document.getElementById('userMenuButton');
-  const userMenuDropdown = document.getElementById('userMenuDropdown');
-  const authButtons = document.getElementById('authButtons');
-  const userNameDisplay = document.getElementById('userNameDisplay');
-  const dashboardLink = document.getElementById('dashboardLink');
-  const logoutButton = document.getElementById('logoutButton');
-
-  // Initialize theme
-  function initializeTheme() {
-    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      themeToggleLightIcon.classList.remove('hidden');
-      document.documentElement.classList.add('dark');
-    } else {
-      themeToggleDarkIcon.classList.remove('hidden');
-      document.documentElement.classList.remove('dark');
-    }
-  }
-
-  // Toggle theme
-  themeToggleBtn.addEventListener('click', function() {
-    themeToggleDarkIcon.classList.toggle('hidden');
-    themeToggleLightIcon.classList.toggle('hidden');
-
-    if (localStorage.getItem('color-theme')) {
-      if (localStorage.getItem('color-theme') === 'light') {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('color-theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('color-theme', 'light');
-      }
-    } else {
-      if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('color-theme', 'light');
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('color-theme', 'dark');
-      }
-    }
-  });
-
-  // Handle authentication state - REMOVED DUPLICATE CODE
-  // This is now handled by include-navbar.js
-  function updateAuthState() {
-    // This function is intentionally empty to prevent conflicts
-    // Dashboard visibility is handled by include-navbar.js
-  }
-
-  // Toggle user menu
-  userMenuButton?.addEventListener('click', () => {
-    userMenuDropdown.classList.toggle('hidden');
-  });
-
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!userMenu.contains(e.target)) {
-      userMenuDropdown.classList.add('hidden');
-    }
-  });
-
-  // Handle logout
-  logoutButton?.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = 'logout.html';
-  });
-
-  // Mobile menu functionality
-  const mobileMenuButton = document.getElementById('mobile-menu-button');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const mobileMenuClose = document.getElementById('mobile-menu-close');
-  const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
-  const mobileAuthButtons = document.getElementById('mobileAuthButtons');
-
-  function toggleMobileMenu() {
-    const isOpen = mobileMenu.classList.contains('show');
-    
-    if (!isOpen) {
-      // Opening the menu
-      mobileMenu.classList.add('show');
-      document.body.style.overflow = 'hidden';
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Profile</h3>
+        <button id="closeEditProfileModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
       
-      // Show the close icon
-      const menuIcon = mobileMenuButton.querySelector('.mobile-menu-icon');
-      const closeIcon = mobileMenuButton.querySelector('.mobile-menu-close');
-      if (menuIcon && closeIcon) {
-        menuIcon.classList.add('hidden');
-        closeIcon.classList.remove('hidden');
-      }
-    } else {
-      // Closing the menu
-      mobileMenu.classList.remove('show');
-      document.body.style.overflow = '';
+      <!-- Modal Body -->
+      <div class="p-6">
+        <form id="editProfileForm" class="space-y-4">
+          <div>
+            <label for="editFullName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+            <input type="text" id="editFullName" name="fullName" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" required>
+          </div>
+          
+          <div>
+            <label for="editEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+            <input type="email" id="editEmail" name="email" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" required>
+          </div>
+          
+          <div>
+            <label for="editPhone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone (Optional)</label>
+            <input type="tel" id="editPhone" name="phone" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+          </div>
+          
+          <div>
+            <label for="editBio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio (Optional)</label>
+            <textarea id="editBio" name="bio" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" placeholder="Tell us about yourself..."></textarea>
+          </div>
+          
+          <div class="flex space-x-3 pt-4">
+            <button type="button" id="cancelEditProfile" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" id="saveProfileBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <span id="saveProfileText">Save Changes</span>
+              <span id="saveProfileLoading" class="hidden">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Change Password</h3>
+        <button id="closeChangePasswordModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
       
-      // Show the menu icon
-      const menuIcon = mobileMenuButton.querySelector('.mobile-menu-icon');
-      const closeIcon = mobileMenuButton.querySelector('.mobile-menu-close');
-      if (menuIcon && closeIcon) {
-        menuIcon.classList.remove('hidden');
-        closeIcon.classList.add('hidden');
-      }
-    }
-  }
+      <!-- Modal Body -->
+      <div class="p-6">
+        <form id="changePasswordForm" class="space-y-4">
+          <div>
+            <label for="currentPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+            <input type="password" id="currentPassword" name="currentPassword" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" required>
+          </div>
+          
+          <div>
+            <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+            <input type="password" id="newPassword" name="newPassword" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" required minlength="6">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Password must be at least 6 characters long</p>
+          </div>
+          
+          <div>
+            <label for="confirmNewPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+            <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" required>
+          </div>
+          
+          <div class="flex space-x-3 pt-4">
+            <button type="button" id="cancelChangePassword" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" id="savePasswordBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <span id="savePasswordText">Change Password</span>
+              <span id="savePasswordLoading" class="hidden">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Changing...
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
-  // Event listeners for mobile menu
-  mobileMenuButton.addEventListener('click', toggleMobileMenu);
-  mobileMenuClose.addEventListener('click', toggleMobileMenu);
-  mobileMenuBackdrop.addEventListener('click', toggleMobileMenu);
-
-  // Close mobile menu when clicking a link
-  document.querySelectorAll('#mobileNav a').forEach(link => {
-    link.addEventListener('click', () => {
-      toggleMobileMenu();
-    });
-  });
-
-  // Update mobile auth buttons when auth state changes
-  function updateMobileAuthButtons() {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    console.log('🔍 Mobile Auth Update:', { token: !!token, user, isAdmin: user.isAdmin });
-
-    if (token && user) {
-      const dashboardLink = user.isAdmin ? `
-          <a href="admin_dashboard.html" 
-            class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
-            Dashboard
-          </a>
-        ` : '';
+<!-- Photo Upload Modal -->
+<div id="photoUploadModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Change Profile Photo</h3>
+        <button id="closePhotoUploadModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
       
-      console.log('📱 Mobile dashboard link:', user.isAdmin ? 'shown' : 'hidden');
-      
-      mobileAuthButtons.innerHTML = `
-        <div class="flex flex-col space-y-2">
-          <span class="text-sm text-gray-600 dark:text-gray-400">Signed in as</span>
-          <span class="font-medium text-gray-800 dark:text-white">${user.full_name || 'User'}</span>
-          ${dashboardLink}
-          <a href="help-center.html" 
-            class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
-            Help Center
-          </a>
-          <button id="mobileLogoutButton" 
-            class="w-full text-center text-red-600 hover:text-red-700 py-2 transition-colors">
-            Logout
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="text-center">
+          <div class="mx-auto w-32 h-32 mb-4 relative">
+            <img id="photoPreview" src="" alt="Preview" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-600 hidden">
+            <div id="photoPreviewFallback" class="w-32 h-32 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-4 border-gray-200 dark:border-gray-600">
+              <span class="text-4xl font-bold text-gray-600 dark:text-gray-300">U</span>
+            </div>
+          </div>
+          
+          <input type="file" id="photoFileInput" accept="image/*" class="hidden">
+          
+          <div class="space-y-3">
+            <button id="selectPhotoBtn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              Select Photo
+            </button>
+            <button id="removePhotoBtn" class="w-full px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900 transition-colors">
+              Remove Photo
           </button>
         </div>
-      `;
-
-      // Add mobile logout handler
-      document.getElementById('mobileLogoutButton')?.addEventListener('click', () => {
-        window.location.href = 'logout.html';
-      });
-    } else {
-      mobileAuthButtons.innerHTML = `
-        <div class="flex flex-col space-y-2">
-          <a href="login.html" class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
-            Login
-          </a>
-          <a href="signup.html" class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
-            Sign Up
-          </a>
+          
+          <div class="flex space-x-3 pt-4">
+            <button id="cancelPhotoUpload" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Cancel
+            </button>
+            <button id="savePhotoBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <span id="savePhotoText">Save Photo</span>
+              <span id="savePhotoLoading" class="hidden">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading...
+              </span>
+            </button>
+          </div>
         </div>
-      `;
-    }
-  }
+      </div>
+    </div>
+  </div>
+</div>
 
-  // Update both desktop and mobile auth states
-  function updateAllAuthStates() {
-    updateAuthState();
-    updateMobileAuthButtons();
-  }
-
-  // Initialize
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM Content Loaded - Initializing navbar');
-    console.log('🔍 Dashboard link element:', dashboardLink);
-    console.log('🔍 User menu element:', userMenu);
-    
-    initializeTheme();
-    updateAllAuthStates();
-    
-    // Debug: Check localStorage
-    console.log('🔍 LocalStorage check:', {
-      token: localStorage.getItem('token'),
-      user: localStorage.getItem('user'),
-      parsedUser: JSON.parse(localStorage.getItem('user') || '{}')
-    });
-  });
-
-  // Update auth state when storage changes
-  window.addEventListener('storage', updateAllAuthStates);
-  
-  // Debug function - call this from console to test dashboard visibility
-  window.testDashboardVisibility = function() {
-    console.log('🧪 Testing Dashboard Visibility');
-    console.log('Dashboard element:', dashboardLink);
-    console.log('Dashboard classes:', dashboardLink?.classList.toString());
-    console.log('Dashboard hidden:', dashboardLink?.classList.contains('hidden'));
-    console.log('Current user:', JSON.parse(localStorage.getItem('user') || '{}'));
-    console.log('Is admin:', JSON.parse(localStorage.getItem('user') || '{}').isAdmin);
-    
-    // Force show dashboard for testing
-    if (dashboardLink) {
-      dashboardLink.classList.remove('hidden');
-      console.log('✅ Dashboard link forced visible for testing');
-    }
-  };
-  
-  // Force show dashboard link for testing - REMOVE THIS AFTER TESTING
-  window.forceShowDashboard = function() {
-    if (dashboardLink) {
-      dashboardLink.classList.remove('hidden');
-      dashboardLink.style.display = 'block';
-      dashboardLink.style.visibility = 'visible';
-      console.log('🚨 Dashboard link FORCED visible!');
-    } else {
-      console.log('❌ Dashboard link element not found!');
-    }
-  };
-  
-  // Check if user is admin and force show dashboard
-  window.checkAndShowDashboard = function() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    console.log('🔍 Current user data:', user);
-    console.log('🔍 Is admin?', user.isAdmin);
-    console.log('🔍 Dashboard element:', dashboardLink);
-    
-    if (user.isAdmin === true) {
-      console.log('✅ User is admin - showing dashboard');
-      if (dashboardLink) {
-        dashboardLink.classList.remove('hidden');
-        dashboardLink.style.display = 'block';
-        dashboardLink.style.visibility = 'visible';
-        dashboardLink.href = 'admin_dashboard.html';
-        console.log('✅ Dashboard link should now be visible');
-      } else {
-        console.log('❌ Dashboard link element not found!');
-      }
-    } else {
-      console.log('❌ User is NOT admin - hiding dashboard');
-      if (dashboardLink) {
-        dashboardLink.classList.add('hidden');
-        dashboardLink.style.display = 'none';
-      }
-    }
-  };
-  
-  // Simple function to force show dashboard for testing
-  window.showDashboard = function() {
-    if (dashboardLink) {
-      dashboardLink.classList.remove('hidden');
-      dashboardLink.style.display = 'block';
-      dashboardLink.style.visibility = 'visible';
-      console.log('🚨 Dashboard link FORCED visible!');
-    } else {
-      console.log('❌ Dashboard link element not found!');
-    }
-  };
-
-  // Test admin status function - Available immediately
-  function testAdminStatus() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const adminDashboardBtn = document.getElementById('adminDashboardBtn');
-    
-    console.log('🧪 TESTING ADMIN STATUS');
-    console.log('Current user:', user);
-    console.log('User isAdmin:', user.isAdmin);
-    console.log('User isAdmin type:', typeof user.isAdmin);
-    console.log('Admin dashboard button:', adminDashboardBtn);
-    
-    if (adminDashboardBtn) {
-      console.log('Button classes:', adminDashboardBtn.className);
-      console.log('Button hidden:', adminDashboardBtn.classList.contains('hidden'));
-      console.log('Button display:', adminDashboardBtn.style.display);
-      console.log('Button opacity:', adminDashboardBtn.style.opacity);
-    }
-    
-    // Test the admin detection logic
-    const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
-    console.log('Final admin determination:', isAdmin);
-    
-    if (isAdmin) {
-      alert('✅ You are ADMIN! Dashboard button should be visible.');
-      // Force show the button
-      if (adminDashboardBtn) {
-        adminDashboardBtn.classList.remove('hidden');
-        adminDashboardBtn.style.opacity = '1';
-        adminDashboardBtn.style.pointerEvents = 'auto';
-        console.log('✅ Dashboard button force shown!');
-      }
-    } else {
-      alert('❌ You are NOT admin. Dashboard button will be hidden.');
-      // Force hide the button
-      if (adminDashboardBtn) {
-        adminDashboardBtn.classList.add('hidden');
-        adminDashboardBtn.style.opacity = '0';
-        adminDashboardBtn.style.pointerEvents = 'none';
-        console.log('✅ Dashboard button force hidden!');
-      }
-    }
-  }
-
-  // Console test function - run this from browser console
-  window.checkAdminFromConsole = function() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    console.log('🔍 ADMIN STATUS CHECK FROM CONSOLE:');
-    console.log('User:', user);
-    console.log('isAdmin value:', user.isAdmin);
-    console.log('isAdmin type:', typeof user.isAdmin);
-    console.log('isAdmin === true:', user.isAdmin === true);
-    console.log('isAdmin === 1:', user.isAdmin === 1);
-    console.log('isAdmin === "1":', user.isAdmin === '1');
-    console.log('isAdmin === "true":', user.isAdmin === 'true');
-    
-    const isAdmin = user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true';
-    console.log('Final admin determination:', isAdmin);
-    
-    return isAdmin;
-  };
-</script>
+<!-- All navbar functionality is now handled by include-navbar.js -->

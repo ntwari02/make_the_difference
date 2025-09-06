@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import { auth } from '../middleware/auth.js';
+import { generateAndSendOTP, verifyOTP } from '../utils/otp.js';
 const router = express.Router();
 
 // Register new user
@@ -136,6 +137,27 @@ router.post('/login', async (req, res) => {
       console.log('Could not fetch profile picture:', error.message);
     }
 
+    // Get additional profile fields (phone, bio) if they exist
+    let phone = null;
+    let bio = null;
+    try {
+      const [profileData] = await db.query(
+        'SELECT phone, bio FROM users WHERE id = ?',
+        [user.id]
+      );
+      
+      if (profileData.length > 0) {
+        phone = profileData[0].phone;
+        bio = profileData[0].bio;
+      }
+    } catch (error) {
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        console.log('⚠️ Profile columns (phone, bio) not found, using basic fields only');
+      } else {
+        console.log('Could not fetch additional profile data:', error.message);
+      }
+    }
+
     // Create token
     const token = jwt.sign(
       { id: user.id },
@@ -151,6 +173,8 @@ router.post('/login', async (req, res) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
+        phone: phone || '',
+        bio: bio || '',
         profile_picture: profilePicture,
         profile_picture_path: profilePicture
       }
@@ -324,6 +348,42 @@ router.post('/admin-login', async (req, res) => {
       console.error('Error updating admin last login:', error);
     }
 
+    // Get user's profile picture from user_profile_pictures table
+    let profilePicture = null;
+    try {
+      const [profilePics] = await db.query(
+        'SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?',
+        [user.id]
+      );
+      
+      if (profilePics.length > 0 && profilePics[0].profile_picture_path) {
+        profilePicture = profilePics[0].profile_picture_path;
+      }
+    } catch (error) {
+      console.log('Could not fetch profile picture:', error.message);
+    }
+
+    // Get additional profile fields (phone, bio) if they exist
+    let phone = null;
+    let bio = null;
+    try {
+      const [profileData] = await db.query(
+        'SELECT phone, bio FROM users WHERE id = ?',
+        [user.id]
+      );
+      
+      if (profileData.length > 0) {
+        phone = profileData[0].phone;
+        bio = profileData[0].bio;
+      }
+    } catch (error) {
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        console.log('⚠️ Profile columns (phone, bio) not found, using basic fields only');
+      } else {
+        console.log('Could not fetch additional profile data:', error.message);
+      }
+    }
+
     // Safely parse permissions
     let parsedPermissions = {};
     try {
@@ -339,9 +399,13 @@ router.post('/admin-login', async (req, res) => {
         id: user.id,
         full_name: admin.full_name,
         email: admin.email,
+        phone: phone || '',
+        bio: bio || '',
         isAdmin: true,
         adminLevel: admin.admin_level,
-        permissions: parsedPermissions
+        permissions: parsedPermissions,
+        profile_picture: profilePicture,
+        profile_picture_path: profilePicture
       }
     });
   } catch (error) {
@@ -383,5 +447,115 @@ router.get('/me', auth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching current user:', error);
     res.status(500).json({ message: 'Error fetching current user' });
+  }
+});
+
+// Send OTP for password reset
+router.post('/send-otp', async (req, res) => {
+  try {
+    console.log('📧 OTP Request received:', req.body);
+    const { email, purpose = 'password_reset' } = req.body;
+    
+    if (!email) {
+      console.log('❌ No email provided in request');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
+
+    console.log('🔄 Processing OTP request for:', email);
+    const result = await generateAndSendOTP(email, purpose);
+    console.log('📦 OTP result:', result);
+    
+    if (result.success) {
+      console.log('✅ OTP sent successfully');
+      res.json({
+        success: true,
+        message: result.message,
+        otp: result.otp // Only included in development
+      });
+    } else {
+      console.log('❌ OTP send failed:', result.message);
+      res.status(400).json({
+        success: false,
+        message: result.message
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error sending OTP:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Verify OTP for password reset
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp, purpose = 'password_reset' } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and OTP are required' 
+      });
+    }
+
+    // Find user by email
+    const [users] = await db.query(
+      'SELECT id, email FROM users WHERE email = ?',
+      [email]
+    );
+    
+    if (users.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email or OTP'
+      });
+    }
+
+    const user = users[0];
+    const verification = await verifyOTP(user.id, otp);
+    
+    if (verification.expired) {
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
+      });
+    }
+    
+    if (!verification.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP. Please try again.'
+      });
+    }
+
+    // Generate reset token for password reset
+    const resetToken = jwt.sign(
+      { userId: user.id, email: user.email, purpose: 'password_reset' },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '30m' }
+    );
+
+    // Store reset token in database
+    await db.query(
+      'UPDATE users SET reset_token = ?, reset_token_expiry = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE id = ?',
+      [resetToken, user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      resetToken: resetToken
+    });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
   }
 });

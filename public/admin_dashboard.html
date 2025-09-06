@@ -49,6 +49,75 @@
     <link rel="stylesheet" href="css/admin-dashboard.css">
     <link rel="stylesheet" href="css/admin-sidebar-fix.css">
     
+    <!-- Mobile-specific improvements -->
+    <style>
+        /* Mobile-first responsive improvements */
+        @media (max-width: 640px) {
+            /* Better touch targets for mobile */
+            button, a, input, select, textarea {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Improved text readability on mobile */
+            body {
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            
+            /* Better spacing for mobile */
+            .glass {
+                margin-bottom: 1rem;
+            }
+            
+            /* Improved table scrolling on mobile */
+            .table-container {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            
+            /* Better modal positioning on mobile */
+            .modal-overlay {
+                padding: 1rem;
+            }
+            
+            /* Improved chart responsiveness */
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+        
+        /* Tablet improvements */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Smooth scrolling for better UX */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Better focus states for accessibility */
+        button:focus, a:focus, input:focus, select:focus, textarea:focus {
+            outline: 2px solid #3B82F6;
+            outline-offset: 2px;
+        }
+        
+        /* Improved hover states for touch devices */
+        @media (hover: none) and (pointer: coarse) {
+            .hover-lift:hover {
+                transform: none;
+            }
+        }
+    </style>
+    
     <!-- JavaScript Files -->
     <script src="js/include-admin-header.js" defer></script>
     <script src="js/include-admin-sidebar.js" defer></script>
@@ -62,108 +131,108 @@
     <div id="admin-header-container" data-page-title="Dashboard"></div>
     <!-- Main Content -->
     <main class="admin-main-content w-full bg-transparent dark:bg-transparent">
-        <div class="admin-content-container p-6">
+        <div class="admin-content-container p-3 sm:p-4 md:p-6">
             <!-- Welcome Section -->
-            <div id="welcomeSection" class="mb-8 animate-fade-in-up hidden">
-                <div class="glass rounded-2xl shadow-xl p-8 text-center">
-                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-6 animate-pulse-slow">
-                        <i class="fas fa-crown text-white text-3xl"></i>
+            <div id="welcomeSection" class="mb-4 sm:mb-6 md:mb-8 animate-fade-in-up hidden">
+                <div class="glass rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4 sm:mb-6 animate-pulse-slow">
+                        <i class="fas fa-crown text-white text-2xl sm:text-3xl"></i>
                     </div>
-                    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3 sm:mb-4">
                         Welcome back, <span id="welcomeName" class="text-gray-800 dark:text-white">Admin</span>!
                     </h1>
-                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    <p class="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
                         Here's what's happening with your platform today. Manage users, monitor applications, and track performance from your comprehensive dashboard.
                     </p>
                 </div>
             </div>
 
             <!-- Quick Stats Cards -->
-            <div id="statsSection" class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div id="statsSection" class="stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
                 <!-- Total Users Card -->
-                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.1s;">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.1s;">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalUsers">-</p>
-                            <p class="text-sm text-green-600 dark:text-green-400" id="usersGrowth">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Total Users</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalUsers">-</p>
+                            <p class="text-xs sm:text-sm text-green-600 dark:text-green-400" id="usersGrowth">
                                 <i class="fas fa-arrow-up mr-1"></i>0%
                             </p>
                         </div>
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                            <i class="fas fa-users text-2xl text-blue-600 dark:text-blue-400"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
+                            <i class="fas fa-users text-lg sm:text-2xl text-blue-600 dark:text-blue-400"></i>
                         </div>
 </div>
 </div>
 
                 <!-- Active Applications Card -->
-                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.2s;">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.2s;">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Applications</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="activeApplications">-</p>
-                            <p class="text-sm text-blue-600 dark:text-blue-400" id="applicationsGrowth">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Active Applications</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="activeApplications">-</p>
+                            <p class="text-xs sm:text-sm text-blue-600 dark:text-blue-400" id="applicationsGrowth">
                                 <i class="fas fa-arrow-up mr-1"></i>0%
                             </p>
                         </div>
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-                            <i class="fas fa-file-alt text-2xl text-green-600 dark:text-green-400"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-green-100 dark:bg-green-900/30 flex-shrink-0">
+                            <i class="fas fa-file-alt text-lg sm:text-2xl text-green-600 dark:text-green-400"></i>
 </div>
 </div>
 </div>
 
                 <!-- Scholarships Card -->
-                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.3s;">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.3s;">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Scholarships</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalScholarships">-</p>
-                            <p class="text-sm text-purple-600 dark:text-purple-400" id="scholarshipsGrowth">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Scholarships</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalScholarships">-</p>
+                            <p class="text-xs sm:text-sm text-purple-600 dark:text-purple-400" id="scholarshipsGrowth">
                                 <i class="fas fa-arrow-up mr-1"></i>0%
                             </p>
                         </div>
-                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                            <i class="fas fa-graduation-cap text-2xl text-purple-600 dark:text-purple-400"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
+                            <i class="fas fa-graduation-cap text-lg sm:text-2xl text-purple-600 dark:text-purple-400"></i>
 </div>
 </div>
 </div>
 
                 <!-- Revenue Card -->
-                <div class="glass rounded-xl shadow-lg p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.4s;">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 hover-lift animate-slide-in-left" style="animation-delay: 0.4s;">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white" id="totalRevenue">$0</p>
-                            <p class="text-sm text-yellow-600 dark:text-yellow-400" id="revenueGrowth">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Total Revenue</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white" id="totalRevenue">$0</p>
+                            <p class="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400" id="revenueGrowth">
                                 <i class="fas fa-arrow-up mr-1"></i>0%
                             </p>
                         </div>
-                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                            <i class="fas fa-dollar-sign text-2xl text-yellow-600 dark:text-yellow-400"></i>
+                        <div class="p-2 sm:p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex-shrink-0">
+                            <i class="fas fa-dollar-sign text-lg sm:text-2xl text-yellow-600 dark:text-yellow-400"></i>
 </div>
 </div>
 </div>
 </div>
 
             <!-- Charts Section -->
-            <div id="chartsSection" class="charts-container grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div id="chartsSection" class="charts-container grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-4 sm:mb-6 md:mb-8">
                 <!-- Application Trends Chart -->
-                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
-                    <div class="chart-controls flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Application Trends</h3>
-                        <div class="chart-period-buttons flex space-x-2">
-                            <button data-period="week" onclick="adminDashboard.updateChartPeriod('week')" class="chart-period-btn active px-3 py-1 rounded-md text-sm font-medium">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 h-[400px] sm:h-[450px] hover-lift">
+                    <div class="chart-controls flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Application Trends</h3>
+                        <div class="chart-period-buttons flex space-x-1 sm:space-x-2">
+                            <button data-period="week" onclick="adminDashboard.updateChartPeriod('week')" class="chart-period-btn active px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                 <i class="fas fa-calendar-week mr-1"></i><span class="hidden sm:inline">Week</span>
                             </button>
-                            <button data-period="month" onclick="adminDashboard.updateChartPeriod('month')" class="chart-period-btn px-3 py-1 rounded-md text-sm font-medium">
+                            <button data-period="month" onclick="adminDashboard.updateChartPeriod('month')" class="chart-period-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                 <i class="fas fa-calendar-alt mr-1"></i><span class="hidden sm:inline">Month</span>
                             </button>
-                            <button data-period="year" onclick="adminDashboard.updateChartPeriod('year')" class="chart-period-btn px-3 py-1 rounded-md text-sm font-medium">
+                            <button data-period="year" onclick="adminDashboard.updateChartPeriod('year')" class="chart-period-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                 <i class="fas fa-calendar mr-1"></i><span class="hidden sm:inline">Year</span>
                             </button>
                         </div>
                     </div>
-                    <div class="h-[350px] relative">
+                    <div class="h-[300px] sm:h-[350px] relative">
 <canvas id="applicationTrendsChart"></canvas>
                         <div id="chartLoading" class="absolute inset-0 flex items-center justify-center">
                             <div class="skeleton w-full h-full rounded"></div>
@@ -172,14 +241,14 @@
 </div>
 
                 <!-- User Registration Chart -->
-                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Registration</h3>
-                        <button onclick="adminDashboard.refreshUserChart()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                            <i class="fas fa-sync-alt"></i>
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 h-[400px] sm:h-[450px] hover-lift">
+                    <div class="flex items-center justify-between mb-4 sm:mb-6">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">User Registration</h3>
+                        <button onclick="adminDashboard.refreshUserChart()" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 p-1">
+                            <i class="fas fa-sync-alt text-sm sm:text-base"></i>
                         </button>
                     </div>
-                    <div class="h-[350px] relative">
+                    <div class="h-[300px] sm:h-[350px] relative">
                         <canvas id="userRegistrationChart"></canvas>
                         <div id="userChartLoading" class="absolute inset-0 flex items-center justify-center">
                             <div class="skeleton w-full h-full rounded"></div>
@@ -188,44 +257,44 @@
 </div>
 
                 <!-- Application Status Overview -->
-                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Application Status</h3>
-                    <div class="h-[350px] flex items-center justify-center">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 h-[400px] sm:h-[450px] hover-lift">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6">Application Status</h3>
+                    <div class="h-[300px] sm:h-[350px] flex items-center justify-center">
                         <canvas id="applicationStatusChart"></canvas>
 </div>
 </div>
 
                 <!-- Recent Activity -->
-                <div class="glass rounded-xl shadow-lg p-6 h-[450px] hover-lift">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Recent Activity</h3>
-                    <div id="recentActivity" class="space-y-4 h-[350px] overflow-y-auto">
+                <div class="glass rounded-xl shadow-lg p-4 sm:p-6 h-[400px] sm:h-[450px] hover-lift">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6">Recent Activity</h3>
+                    <div id="recentActivity" class="space-y-3 sm:space-y-4 h-[300px] sm:h-[350px] overflow-y-auto">
                         <!-- Activity items will be loaded here -->
                     </div>
 </div>
 </div>
 
             <!-- Recent Applications Table -->
-            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
-                <div class="flex justify-between items-center mb-6">
-<h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
-                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                        <button onclick="adminDashboard.loadApplications()" class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+            <div class="glass rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 md:mb-8 hover-lift">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Recent Applications</h3>
+                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                        <button onclick="adminDashboard.loadApplications()" class="flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                             <i class="fas fa-sync-alt mr-2"></i> <span class="hidden sm:inline">Refresh</span>
                         </button>
-                        <button onclick="adminDashboard.exportData('applications')" class="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200">
+                        <button onclick="adminDashboard.exportData('applications')" class="flex items-center justify-center px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                             <i class="fas fa-download mr-2"></i> <span class="hidden sm:inline">Export</span>
                         </button>
                     </div>
 </div>
-                    <div class="table-container overflow-x-auto">
+                    <div class="table-container overflow-x-auto -mx-4 sm:mx-0">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700/80">
 <tr>
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scholarship</th>
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applicant</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">Scholarship</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">Date</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
 </tr>
 </thead>
                             <tbody id="applicationsList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
@@ -236,38 +305,38 @@
 </div>
 
                 <!-- User Management Section -->
-            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
-                <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">User Management</h3>
-                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                        <button onclick="adminDashboard.exportUsers()" class="export-button flex items-center justify-center px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200">
+            <div class="glass rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 md:mb-8 hover-lift">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">User Management</h3>
+                    <div class="button-group flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                        <button onclick="adminDashboard.exportUsers()" class="export-button flex items-center justify-center px-3 sm:px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                             <i class="fas fa-download mr-2"></i> <span class="hidden sm:inline">Export</span>
                             </button>
-                        <button onclick="adminDashboard.loadUsers()" class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+                        <button onclick="adminDashboard.loadUsers()" class="flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                             <i class="fas fa-sync-alt mr-2"></i> <span class="hidden sm:inline">Refresh</span>
                             </button>
-                                                <a href="admin_users.html" class="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200">
+                        <a href="admin_users.html" class="flex items-center justify-center px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                             <i class="fas fa-plus mr-2"></i> <span class="hidden sm:inline">Add User</span>
                         </a>
                         </div>
                     </div>
-                    <div id="searchResultsCount" class="text-sm text-blue-600 dark:text-blue-400 mb-4 hidden"></div>
-                                    <div class="mb-6">
+                <div id="searchResultsCount" class="text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-3 sm:mb-4 hidden"></div>
+                <div class="mb-4 sm:mb-6">
                         <div class="search-container relative">
                             <input type="text" id="userSearch" placeholder="Search users..." 
-                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                               class="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base">
+                        <i class="fas fa-search absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base"></i>
                         </div>
                         </div>
-                    <div class="table-container overflow-x-auto">
+                <div class="table-container overflow-x-auto -mx-4 sm:mx-0">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700/80">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">Email</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">Status</th>
+                                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersList" class="bg-white dark:bg-gray-800/60 divide-y divide-gray-200 dark:divide-gray-700">
@@ -281,14 +350,14 @@
                 </div>
 
                 <!-- System Statistics -->
-            <div class="glass rounded-xl shadow-lg p-6 mb-8 hover-lift">
-                <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">System Statistics</h3>
-                    <button onclick="adminDashboard.loadSystemStats()" class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200">
+            <div class="glass rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 md:mb-8 hover-lift">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">System Statistics</h3>
+                    <button onclick="adminDashboard.loadSystemStats()" class="flex items-center px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base">
                         <i class="fas fa-sync-alt mr-2"></i> Refresh
                         </button>
                     </div>
-                <div id="systemStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div id="systemStats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <!-- System stats will be inserted here -->
                 </div>
 </div>
@@ -297,40 +366,40 @@
 
 
             <!-- View Application Modal -->
-            <div id="applicationDetailsModal" class="fixed inset-0 bg-black/50 hidden z-[2000]">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-auto mt-20 p-6">
-                    <div class="flex justify-between items-center mb-4">
+            <div id="applicationDetailsModal" class="fixed inset-0 bg-black/50 hidden z-[2000] flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                         <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Application Details</h4>
-                        <button data-modal-close="applicationDetailsModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                        <button data-modal-close="applicationDetailsModal" class="text-gray-500 hover:text-gray-700 p-1"><i class="fas fa-times text-lg"></i></button>
                     </div>
-                    <div id="applicationDetailsContent" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                    <div id="applicationDetailsContent" class="text-sm text-gray-700 dark:text-gray-300 p-4 sm:p-6"></div>
                 </div>
             </div>
 
             <!-- Edit Application Modal -->
-            <div id="editApplicationModal" class="fixed inset-0 bg-black/50 hidden z-[2000]">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-auto mt-24 p-6">
-                    <div class="flex justify-between items-center mb-4">
+            <div id="editApplicationModal" class="fixed inset-0 bg-black/50 hidden z-[2000] flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                         <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Application</h4>
-                        <button data-modal-close="editApplicationModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                        <button data-modal-close="editApplicationModal" class="text-gray-500 hover:text-gray-700 p-1"><i class="fas fa-times text-lg"></i></button>
                     </div>
-                    <form id="editApplicationForm">
+                    <form id="editApplicationForm" class="p-4 sm:p-6">
                         <input type="hidden" name="applicationId" />
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                            <select name="status" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                            <select name="status" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 sm:p-3">
                                 <option value="pending">Pending</option>
                                 <option value="approved">Approved</option>
                                 <option value="rejected">Rejected</option>
                             </select>
                         </div>
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-                            <textarea name="notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                            <textarea name="notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 sm:p-3"></textarea>
                         </div>
-                        <div class="flex justify-end gap-3">
-                            <button type="button" data-modal-close="editApplicationModal" class="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Cancel</button>
-                            <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white">Save</button>
+                        <div class="flex flex-col sm:flex-row justify-end gap-3">
+                            <button type="button" data-modal-close="editApplicationModal" class="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm sm:text-base">Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base">Save</button>
                         </div>
                     </form>
                 </div>
@@ -340,12 +409,12 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Edit User</h3>
-                <button onclick="adminDashboard.closeEditUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                    <i class="fas fa-times text-xl"></i>
+    <div id="editUserModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Edit User</h3>
+                <button onclick="adminDashboard.closeEditUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                    <i class="fas fa-times text-lg sm:text-xl"></i>
                 </button>
             </div>
             <form id="editUserForm" class="space-y-4">
@@ -353,17 +422,17 @@
                 <div>
                     <label for="editUserName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
                     <input type="text" id="editUserName" name="fullName" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                           class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm sm:text-base">
                 </div>
                 <div>
                     <label for="editUserEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                     <input type="email" id="editUserEmail" name="email" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                           class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm sm:text-base">
                 </div>
                 <div>
                     <label for="editUserRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
                     <select id="editUserRole" name="role"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm sm:text-base">
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                     </select>
@@ -371,18 +440,18 @@
                 <div>
                     <label for="editUserStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
                     <select id="editUserStatus" name="status"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm sm:text-base">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
-                <div class="flex justify-end space-x-3 mt-6">
+                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-4 sm:mt-6">
                     <button type="button" onclick="adminDashboard.closeEditUserModal()" 
-                            class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200">
+                            class="px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200 text-sm sm:text-base">
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                            class="px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm sm:text-base">
                         Save Changes
                     </button>
                 </div>
@@ -391,25 +460,25 @@
     </div>
 
     <!-- User Details Modal -->
-    <div id="userDetailsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-2xl w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-xl font-bold text-gray-800 dark:text-white">User Details</h3>
-                <button onclick="adminDashboard.closeUserDetailsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                    <i class="fas fa-times text-xl"></i>
+    <div id="userDetailsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+                <h3 id="modalTitle" class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">User Details</h3>
+                <button onclick="adminDashboard.closeUserDetailsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                    <i class="fas fa-times text-lg sm:text-xl"></i>
                 </button>
             </div>
-            <div id="userDetailsContent">
+            <div id="userDetailsContent" class="text-sm sm:text-base">
                 <!-- User details will be loaded here -->
             </div>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
-            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p class="text-gray-600 dark:text-gray-300">Loading...</p>
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 text-center max-w-sm w-full">
+            <div class="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Loading...</p>
 </div>
 </div>
     
@@ -417,7 +486,8 @@
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <!-- Admin Dashboard JavaScript -->
-
+    <script src="js/admin-data-refresh.js"></script>
+    <script src="js/admin-data-utils.js"></script>
     <script src="js/admin-dashboard.js?v=2"></script>
     <script src="js/include-admin-sidebar.js"></script>
 
