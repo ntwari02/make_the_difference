@@ -122,21 +122,3 @@ Thumbs.db
 *.backup
 *.old
 
-# Configuration files with sensitive data
-config/database.json
-config/secrets.json
-
-# SSL certificates
-*.pem
-*.key
-*.crt
-*.csr
-
-# Session store
-sessions/
-
-
-
-# Cache directories
-.cache/
-cache/
