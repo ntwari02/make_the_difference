@@ -4,6 +4,7 @@ import { auth, bypassAuth } from '../middleware/auth.js';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
 
@@ -113,20 +114,34 @@ const upload = multer({
   limits: { fileSize: 30 * 1024 * 1024, files: 6 },
   fileFilter: (_req, file, cb) => {
     try {
-      const allowed = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'application/pdf',
-        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/zip', 'application/x-zip-compressed'
+      // Only allow image files
+      const allowedMimeTypes = [
+        'image/jpeg', 
+        'image/png', 
+        'image/gif', 
+        'image/webp',
+        'image/bmp',
+        'image/tiff',
+        'image/svg+xml'
       ];
-      if (allowed.includes(file.mimetype)) return cb(null, true);
-      // Allow unknown but safe extensions as a fallback
+      
+      // Check MIME type first
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        return cb(null, true);
+      }
+      
+      // Fallback: check file extension
       const ext = (file.originalname.split('.').pop() || '').toLowerCase();
-      const extOk = ['jpg','jpeg','png','gif','webp','pdf','doc','docx','xls','xlsx','zip'].includes(ext);
-      return cb(null, extOk);
-    } catch {
-      return cb(null, false);
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+      
+      if (allowedExtensions.includes(ext)) {
+        return cb(null, true);
+      }
+      
+      // Reject all other files (including PDFs, documents, etc.)
+      return cb(new Error('Only image files are allowed in chat. Supported formats: JPG, PNG, GIF, WebP, BMP, TIFF, SVG'), false);
+    } catch (error) {
+      return cb(new Error('File validation error'), false);
     }
   }
 });
@@ -587,6 +602,218 @@ router.post('/groups/:id/attachments', auth, upload.array('files', 6), async (re
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Failed to upload attachments' });
+  }
+});
+
+// View chat file endpoint - Enhanced for better PDF support
+router.get('/view/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    
+    // Validate filename to prevent directory traversal
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid filename' 
+      });
+    }
+    
+    // Construct file path
+   
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'File not found' 
+      });
+    }
+    
+    // Get original filename from database if possible
+    let originalName = filename;
+    try {
+      const [rows] = await db.query(
+        'SELECT attachment_url FROM replies WHERE attachment_url = ? LIMIT 1',
+        [filename]
+      );
+      if (rows.length > 0) {
+        // Extract original name from timestamped filename
+        const parts = filename.split('_');
+        if (parts.length > 1) {
+          originalName = parts.slice(1).join('_');
+        }
+      }
+    } catch (dbError) {
+      // If database query fails, use the filename as is
+      console.warn('Could not get original filename from database:', dbError.message);
+    }
+    
+    // Determine content type based on file extension
+    const ext = path.extname(originalName).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    switch (ext) {
+      case '.pdf':
+        contentType = 'application/pdf';
+        break;
+      case '.jpg':
+      case '.jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case '.png':
+        contentType = 'image/png';
+        break;
+      case '.gif':
+        contentType = 'image/gif';
+        break;
+      case '.webp':
+        contentType = 'image/webp';
+        break;
+      case '.doc':
+        contentType = 'application/msword';
+        break;
+      case '.docx':
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+      case '.xls':
+        contentType = 'application/vnd.ms-excel';
+        break;
+      case '.xlsx':
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        break;
+      case '.zip':
+        contentType = 'application/zip';
+        break;
+    }
+    
+    // Enhanced headers for better PDF viewing support
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // For PDFs, add additional headers to help browsers display them properly
+    if (ext === '.pdf') {
+      res.setHeader('Content-Disposition', `inline; filename="${originalName}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    } else {
+      res.setHeader('Content-Disposition', `inline; filename="${originalName}"`);
+    }
+    
+    // Send file directly
+    res.sendFile(filePath);
+    
+  } catch (error) {
+    console.error('Error in view endpoint:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error' 
+      });
+    }
+  }
+});
+
+// Download chat file endpoint - Alternative to view for better compatibility
+router.get('/download/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    
+    // Validate filename to prevent directory traversal
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid filename' 
+      });
+    }
+    
+    // Construct file path
+    const filePath = path.join(process.cwd(), 'public', 'uploads', 'chat', filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'File not found' 
+      });
+    }
+    
+    // Get original filename from database if possible
+    let originalName = filename;
+    try {
+      const [rows] = await db.query(
+        'SELECT attachment_url FROM replies WHERE attachment_url = ? LIMIT 1',
+        [filename]
+      );
+      if (rows.length > 0) {
+        // Extract original name from timestamped filename
+        const parts = filename.split('_');
+        if (parts.length > 1) {
+          originalName = parts.slice(1).join('_');
+        }
+      }
+    } catch (dbError) {
+      // If database query fails, use the filename as is
+      console.warn('Could not get original filename from database:', dbError.message);
+    }
+    
+    // Determine content type based on file extension
+    const ext = path.extname(originalName).toLowerCase();
+    let contentType = 'application/octet-stream';
+    
+    switch (ext) {
+      case '.pdf':
+        contentType = 'application/pdf';
+        break;
+      case '.jpg':
+      case '.jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case '.png':
+        contentType = 'image/png';
+        break;
+      case '.gif':
+        contentType = 'image/gif';
+        break;
+      case '.webp':
+        contentType = 'image/webp';
+        break;
+      case '.doc':
+        contentType = 'application/msword';
+        break;
+      case '.docx':
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+      case '.xls':
+        contentType = 'application/vnd.ms-excel';
+        break;
+      case '.xlsx':
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        break;
+      case '.zip':
+        contentType = 'application/zip';
+        break;
+    }
+    
+    // Set headers for downloading
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // Send file directly
+    res.sendFile(filePath);
+    
+  } catch (error) {
+    console.error('Error in download endpoint:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error' 
+      });
+    }
   }
 });
 
@@ -1051,6 +1278,56 @@ router.get('/count', auth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching notification count.' });
+  }
+});
+
+// Get unified unread count (notifications + chat messages)
+router.get('/unified-count', auth, async (req, res) => {
+  try {
+    // Count unread notifications
+    const [notifResult] = await db.query(
+      'SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE',
+      [req.user.id, req.user.email]
+    );
+    
+    // Count unread conversations (conversations with unread messages)
+    const [convResult] = await db.query(`
+      SELECT COUNT(DISTINCT c.id) as count 
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN replies r ON c.id = r.conversation_id
+      WHERE (c.user_id = ? OR c.email = ?) 
+      AND (
+        (c.is_read = 0 OR c.is_read IS NULL) 
+        OR EXISTS (
+          SELECT 1 FROM replies r2 
+          WHERE r2.conversation_id = c.id 
+          AND r2.sender_type = 'admin' 
+          AND r2.created_at > COALESCE(c.last_read_at, c.created_at)
+        )
+      )
+    `, [req.user.id, req.user.email]);
+    
+    const notificationCount = notifResult[0].count || 0;
+    const conversationCount = convResult[0].count || 0;
+    const totalCount = notificationCount + conversationCount;
+    
+    res.json({ 
+      success: true,
+      totalCount,
+      notificationCount,
+      conversationCount,
+      breakdown: {
+        notifications: notificationCount,
+        conversations: conversationCount
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching unified unread count:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching unread count.' 
+    });
   }
 });
 

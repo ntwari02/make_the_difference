@@ -6678,3 +6678,166 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM users u
             WHERE u.id = ? AND u.status = 'active'
         
+2025-09-07T14:55:59.883Z [388ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T14:56:00.280Z [1683ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T14:56:00.484Z [999ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T14:56:00.671Z [1183ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:03:16.057Z [308ms] SELECT DATABASE() AS db
+2025-09-07T15:03:16.382Z [323ms] SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'general_settings' 
+                     AND COLUMN_NAME = 'maintenance_pages' LIMIT 1
+2025-09-07T15:04:41.633Z [632ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-07T15:10:25.539Z [1141ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:10:26.376Z [607ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-07T15:10:36.690Z [501ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:16:01.963Z [926ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:16:05.010Z [651ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:18:03.060Z [1626ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:18:03.679Z [332ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-07T15:18:04.208Z [474ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:18:04.211Z [463ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:18:04.591Z [381ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T15:18:06.061Z [2039ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:18:08.726Z [326ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-07T15:18:09.101Z [350ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:20:17.722Z [543ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:22:20.904Z [320ms] SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)
+2025-09-07T15:22:21.210Z [305ms] UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-07T15:22:21.824Z [306ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T15:22:21.827Z [308ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        admin.full_name as admin_name
+      FROM convers
+2025-09-07T15:22:22.132Z [302ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-07T15:22:26.942Z [696ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:25:34.062Z [990ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:25:35.841Z [631ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:27:35.476Z [346ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:27:35.783Z [305ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T15:27:47.008Z [997ms] 
+            SELECT id, attachment_url, attachment_type, created_at 
+            FROM replies 
+            WHERE attachment_url IS NOT NULL 
+            ORDER BY created_at DESC 
+            LIMIT 10
+
+2025-09-07T15:34:20.805Z [973ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:34:22.294Z [564ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T15:40:33.312Z [997ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:50:50.323Z [640ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T15:51:17.983Z [1002ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:51:18.665Z [666ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-07T15:51:20.181Z [578ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T15:51:23.686Z [1822ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        COUNT(r.id) as reply_count,
+        MAX(r.created_at) as last_reply_at
+      FROM 
+2025-09-07T15:51:26.443Z [514ms] UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-07T15:51:27.010Z [546ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T15:51:27.671Z [442ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-07T15:58:53.861Z [643ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:00:32.317Z [612ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T16:00:35.407Z [500ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-07T16:05:29.267Z [1591ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:14:15.611Z [1954ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:14:16.800Z [1182ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE
+2025-09-07T16:15:19.311Z [1066ms] SELECT attachment_url FROM replies WHERE attachment_url = ? LIMIT 1
+2025-09-07T16:16:02.440Z [954ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:16:03.783Z [552ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T16:17:06.649Z [486ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:18:06.741Z [612ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:18:27.321Z [502ms] SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)
+2025-09-07T16:18:27.923Z [600ms] UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-07T16:18:28.877Z [939ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:22:36.978Z [626ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-07T16:22:41.522Z [607ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:22:43.133Z [622ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-07T16:26:40.249Z [936ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-07T16:31:14.381Z [2015ms] SELECT id, email, full_name FROM users WHERE id = ?

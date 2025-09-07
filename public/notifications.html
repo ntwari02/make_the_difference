@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications - Make The Difference</title>
+    <title>Notifications - Reagle_x</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script>
@@ -85,8 +85,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <a href="home.html" class="flex items-center">
-                        <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-16 w-auto object-contain mr-3">
-                        <span class="text-xl font-bold dark:text-white">MBAPE GLOBAL</span>
+                        <img src="/img/logo.png" alt="Reagle_x" class="h-16 w-auto object-contain mr-3">
+                        <span class="text-xl font-bold dark:text-white">Reagle_x</span>
                     </a>
                     <div class="mt-3 text-gray-300 dark:text-gray-400 text-sm">
                         <p>Remera-Gisimenti</p>
@@ -118,7 +118,7 @@
             </div>
 
             <div class="text-center mt-6 pt-6 border-t border-gray-700 text-gray-300 dark:text-gray-400 text-sm">
-                <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">MBAPE GLOBAL</strong> <span>All Rights Reserved</span></p>
+                <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">Reagle_x</strong> <span>All Rights Reserved</span></p>
             </div>
         </div>
     </footer>
@@ -233,6 +233,9 @@
                     if (window.location.pathname.includes('notifications.html')) {
                         loadNotificationsFromAPI(localStorage.getItem('token'), false);
                     }
+                    
+                    // Trigger global event for bell icon update
+                    window.dispatchEvent(new CustomEvent('newMessage', { detail: data }));
                 });
 
                 socket.on('messageRead', (data) => {
@@ -243,6 +246,9 @@
                             setTimeout(scrollToBottom, 100);
                         });
                     }
+                    
+                    // Trigger global event for bell icon update
+                    window.dispatchEvent(new CustomEvent('messageRead', { detail: data }));
                 });
 
                 // Add heartbeat to keep connection alive
@@ -593,6 +599,9 @@
                     if (window.updateNotificationBadge) {
                         window.updateNotificationBadge();
                     }
+                    
+                    // Trigger global event for immediate bell icon update
+                    window.dispatchEvent(new CustomEvent('messageRead', { detail: { conversationId: conversation.id } }));
                 } catch (error) {
                     console.warn('Failed to mark conversation as read:', error);
                 }
@@ -703,7 +712,7 @@
                             <button type="button" id="attachUserBtn" class="px-2 sm:px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600" title="Attach files">
                                 <i class="fas fa-paperclip text-sm sm:text-base"></i>
                             </button>
-                            <input id="userFileInput" type="file" class="hidden" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip" />
+                            <input id="userFileInput" type="file" class="hidden" multiple accept="image/*" />
                             <input type="text" id="replyMessage" placeholder="Type your reply..." 
                                    class="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
                             <button type="submit" class="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
@@ -762,10 +771,10 @@
             } else {
                 return `
                     <div class="mb-2">
-                        <button onclick="downloadFile('/uploads/chat/${reply.attachment_url}', '${displayName}')" 
+                        <button onclick="openFile('/uploads/chat/${reply.attachment_url}', '${displayName}')" 
                                 class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
-                            <i class="fas fa-download"></i>
-                            <span>Download ${displayName}</span>
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>Open ${displayName}</span>
                         </button>
                     </div>
                 `;
@@ -836,10 +845,28 @@
 
                 const MAX_SIZE = 30 * 1024 * 1024; // 30MB per file
                 const filesArr = Array.from(fileInput.files);
-                const tooBig = filesArr.find(f => f.size > MAX_SIZE);
                 
+                // Check for file size
+                const tooBig = filesArr.find(f => f.size > MAX_SIZE);
                 if (tooBig) {
-                    alert(`File too large: ${tooBig.name}. Max 30MB`);
+                    showToast(`File too large: ${tooBig.name}. Max 30MB`, 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Check for image files only
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+                
+                const invalidFile = filesArr.find(f => {
+                    const isAllowedMime = allowedTypes.includes(f.type);
+                    const ext = f.name.split('.').pop()?.toLowerCase();
+                    const isAllowedExt = allowedExtensions.includes(ext);
+                    return !isAllowedMime && !isAllowedExt;
+                });
+                
+                if (invalidFile) {
+                    showToast(`Only image files are allowed in chat. ${invalidFile.name} is not supported.`, 'error');
                     fileInput.value = '';
                     return;
                 }
@@ -985,6 +1012,9 @@
                 setTimeout(scrollToBottom, 100);
                 
                 showToast('Message sent successfully');
+                
+                // Trigger global event for bell icon update (new message sent)
+                window.dispatchEvent(new CustomEvent('newMessage', { detail: { conversationId } }));
             } catch (error) {
                 console.error('Error sending reply:', error);
                 showToast('Failed to send message');
@@ -1364,68 +1394,65 @@
             }, 3000);
         }
 
-        // Download file function
-        function downloadFile(filePath, fileName) {
+        // Open file function - Enhanced with better PDF support
+        function openFile(filePath, fileName) {
             try {
-                console.log('Download attempt:', filePath, 'fileName:', fileName);
+                // Extract filename from path
+                const filename = filePath.split('/').pop();
                 
-                // Validate file path
-                if (!filePath || !filePath.startsWith('/uploads/chat/')) {
+                if (!filename) {
                     throw new Error('Invalid file path');
                 }
                 
-                // Validate filename
-                if (!fileName || fileName.trim() === '') {
-                    throw new Error('Invalid filename');
-                }
+                // Use the view endpoint to open the file
+                const fileUrl = `/api/notifications/view/${filename}`;
                 
-                // First, try to fetch the file to check if it exists
-                fetch(filePath, { method: 'HEAD' })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`File not found: ${response.status} ${response.statusText}`);
-                        }
+                // Check if it's a PDF file
+                const isPdf = filename.toLowerCase().endsWith('.pdf');
+                
+                if (isPdf) {
+                    // For PDFs, try multiple approaches for better compatibility
+                    try {
+                        // First, try to open in a new tab with specific window features
+                        const pdfWindow = window.open(fileUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
                         
-                        // File exists, proceed with download
+                        // Check if the window was blocked or failed to open
+                        if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
+                            // Fallback: create a download link
+                            const link = document.createElement('a');
+                            link.href = fileUrl;
+                            link.download = fileName || filename;
+                            link.target = '_blank';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            showToast(`PDF opened in new tab. If blank, try downloading: ${fileName || filename}`, 'info');
+                        } else {
+                            showToast(`Opening PDF: ${fileName || filename}`, 'success');
+                        }
+                    } catch (pdfError) {
+                        console.warn('PDF window.open failed, trying download:', pdfError);
+                        // Fallback to download
                         const link = document.createElement('a');
-                        link.href = filePath;
-                        link.target = '_blank'; // Open in new tab as fallback
-                        
-                        // Ensure filename has proper extension
-                        let downloadName = fileName;
-                        if (!downloadName.includes('.')) {
-                            // Try to get extension from file path
-                            const pathParts = filePath.split('.');
-                            if (pathParts.length > 1) {
-                                const extension = pathParts[pathParts.length - 1];
-                                downloadName = `${downloadName}.${extension}`;
-                            } else {
-                                downloadName = `${downloadName}.file`;
-                            }
-                        }
-                        
-                        link.download = downloadName;
-                        
-                        // Add download attributes
-                        link.setAttribute('download', downloadName);
-                        link.style.display = 'none';
-                        
-                        // Append to body, click, and remove
+                        link.href = fileUrl;
+                        link.download = fileName || filename;
+                        link.target = '_blank';
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
                         
-                        console.log('Download initiated:', filePath, 'as', downloadName);
-                        showToast(`Download started: ${downloadName}`, 'success');
-                    })
-                    .catch(error => {
-                        console.error('File check failed:', error);
-                        showToast(`File unavailable: ${error.message}`, 'error');
-                    });
-                    
+                        showToast(`PDF downloaded: ${fileName || filename}`, 'success');
+                    }
+                } else {
+                    // For non-PDF files, use standard approach
+                    window.open(fileUrl, '_blank');
+                    showToast(`Opening file: ${fileName || filename}`, 'success');
+                }
+                
             } catch (error) {
-                console.error('Download failed:', error);
-                showToast(`Download failed: ${error.message}`, 'error');
+                console.error('Open file error:', error);
+                showToast(`Failed to open file: ${error.message}`, 'error');
             }
         }
 

@@ -300,8 +300,8 @@ app.use('/api/team', teamRoutes);
 // Maintenance gate (must run BEFORE static serving)
 app.use(async (req, res, next) => {
     try {
-        // Allow API and admin routes to function during maintenance
-        if (req.path.startsWith('/api') || req.path.startsWith('/admin')) return next();
+        // Allow API, admin routes, and uploads to function during maintenance
+        if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path.startsWith('/uploads')) return next();
 
         const [rows] = await pool.query("SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1");
         const settings = rows && rows[0] ? rows[0] : {};
@@ -356,7 +356,8 @@ app.use(async (req, res, next) => {
 // Serve uploads statically so profile pictures and documents are accessible
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // Fallback to serve legacy files saved under root uploads (pre-migration)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Note: This fallback is disabled to prevent conflicts with public/uploads
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Ensure chat uploads directory exists at runtime under public/uploads/chat
 try {
     fs.mkdirSync(path.join(__dirname, 'public', 'uploads', 'chat'), { recursive: true });

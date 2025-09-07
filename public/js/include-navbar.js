@@ -512,7 +512,7 @@ function initializeNotifications(elements) {
         });
     };
 
-    // Unread badge updater
+    // Unread badge updater - Enhanced to show notifications + chat messages
     async function updateNotificationBadge() {
         try {
             if (!notificationBadge) return;
@@ -522,45 +522,96 @@ function initializeNotifications(elements) {
                 return;
             }
 
-            // Try modern endpoint first
+            // Try unified endpoint first (notifications + chat messages)
             let count = 0;
+            let breakdown = null;
             try {
-                const res = await fetch('/api/user-notifications/unread-count', {
+                const res = await fetch('/api/notifications/unified-count', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    count = Number(data.unreadCount || 0);
+                    count = Number(data.totalCount || 0);
+                    breakdown = data.breakdown;
+                    console.log('[Notifications] Unified count:', count, breakdown);
                 } else {
-                    throw new Error('Primary unread endpoint not OK');
+                    throw new Error('Unified endpoint not OK');
                 }
             } catch {
-                // Fallback to legacy endpoint
-                const res2 = await fetch('/api/notifications/count', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res2.ok) {
-                    const data2 = await res2.json();
-                    count = Number((data2.count !== undefined ? data2.count : data2.unreadCount) || 0);
+                // Fallback to user-notifications endpoint
+                try {
+                    const res = await fetch('/api/user-notifications/unread-count', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        count = Number(data.unreadCount || 0);
+                    } else {
+                        throw new Error('User notifications endpoint not OK');
+                    }
+                } catch {
+                    // Final fallback to legacy endpoint
+                    const res2 = await fetch('/api/notifications/count', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res2.ok) {
+                        const data2 = await res2.json();
+                        count = Number((data2.count !== undefined ? data2.count : data2.unreadCount) || 0);
+                    }
                 }
             }
 
+            // Update badge display
             if (count > 0) {
                 notificationBadge.textContent = count > 99 ? '99+' : String(count);
                 notificationBadge.classList.remove('hidden');
+                
+                // Add tooltip with breakdown if available
+                if (breakdown) {
+                    const tooltip = `${breakdown.notifications} notifications, ${breakdown.conversations} conversations`;
+                    notificationBadge.title = tooltip;
+                }
+                
+                // Add pulsing animation to bell icon when there are new messages
+                if (notificationBell) {
+                    notificationBell.classList.add('animate-pulse');
+                    // Remove animation after 3 seconds
+                    setTimeout(() => {
+                        notificationBell.classList.remove('animate-pulse');
+                    }, 3000);
+                }
             } else {
                 notificationBadge.classList.add('hidden');
+                notificationBadge.title = '';
+                
+                // Remove any pulsing animation when no messages
+                if (notificationBell) {
+                    notificationBell.classList.remove('animate-pulse');
+                }
             }
         } catch (err) {
             console.warn('[Notifications] Failed to update badge:', err?.message || err);
         }
     }
 
-    // Initial badge update and periodic refresh
+    // Initial badge update and more frequent refresh for real-time updates
     updateNotificationBadge();
-    setInterval(updateNotificationBadge, 60000);
+    setInterval(updateNotificationBadge, 15000); // Update every 15 seconds instead of 60
+    
+    // Listen for storage changes (login/logout)
     window.addEventListener('storage', (e) => {
         if (e.key === 'token' || e.key === 'user') updateNotificationBadge();
+    });
+    
+    // Listen for custom events for immediate updates
+    window.addEventListener('messageRead', () => {
+        console.log('[Notifications] Message read event received, updating badge');
+        updateNotificationBadge();
+    });
+    
+    window.addEventListener('newMessage', () => {
+        console.log('[Notifications] New message event received, updating badge');
+        updateNotificationBadge();
     });
     
     // Make updateNotificationBadge globally available
