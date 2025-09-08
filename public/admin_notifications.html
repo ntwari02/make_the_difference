@@ -625,6 +625,17 @@
                 } catch {}
               }
             });
+            // Also handle generic newMessage events
+            window.chatSocket.on('newMessage', async (m)=>{ 
+              try { fetchConversations(); } catch {}
+              if(String(m.conversationId)===String(conversationId)) {
+                try { 
+                  await selectConversation(conversationId);
+                  const area = document.getElementById('messagesArea');
+                  if (area) { area.scrollTop = area.scrollHeight; }
+                } catch {}
+              }
+            });
           }
           window.chatSocket.emit('joinConversation', conversationId);
         }catch{}
