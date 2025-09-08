@@ -666,9 +666,9 @@
                 return `
                     <div class="flex ${reply.sender_type === 'user' ? 'justify-end' : 'justify-start'} mb-3 sm:mb-4">
                         <div class="max-w-[85%] sm:max-w-xs lg:max-w-md group" data-reply-id="${reply.id}">
-                            <div class="rounded-lg p-2 sm:p-3 ${reply.sender_type === 'user' 
-                                ? 'bg-blue-500 text-white dark:bg-blue-600' 
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}">
+                            <div class="p-2 sm:p-3 ${reply.sender_type === 'user' 
+                                ? 'bg-blue-100 dark:bg-blue-900/30 rounded-l-lg rounded-tr-lg text-right' 
+                                : 'bg-green-100 dark:bg-green-900/30 rounded-r-lg rounded-tl-lg text-left'}">
                                 ${quoted ? `<div class="mb-2 border-l-4 border-gray-400 pl-2 text-xs text-gray-600 dark:text-gray-300">${quoted}</div>` : ''}
                                 ${reply.attachment_url ? renderAttachment(reply) : ''}
                                 ${msgHtml ? `<p class="text-xs sm:text-sm break-words">${msgHtml}</p>` : ''}
