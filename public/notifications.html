@@ -223,7 +223,7 @@
 
                 socket.on('newMessage', (data) => {
                     console.log('📨 New message received:', data);
-                    if (data.conversationId === currentConversationId) {
+                    if (String(data.conversationId) === String(currentConversationId)) {
                         loadConversationMessages(currentConversationId).then(() => {
                             // Scroll to bottom after loading new messages
                             setTimeout(scrollToBottom, 100);
@@ -246,7 +246,7 @@
                         loadNotificationsFromAPI(localStorage.getItem('token'), false);
                     }
                     // Refresh open conversation content
-                    if (data.conversationId === currentConversationId) {
+                    if (String(data.conversationId) === String(currentConversationId)) {
                         loadConversationMessages(currentConversationId).then(() => {
                             setTimeout(scrollToBottom, 100);
                         });
@@ -585,9 +585,9 @@
                 console.log('Found conversation:', conversation);
                 currentConversationId = conversation.id;
                 
-                // Join Socket.IO room
+                // Join Socket.IO room (pass id directly as server expects)
                 if (socket) {
-                    socket.emit('joinConversation', { conversationId: conversation.id });
+                    socket.emit('joinConversation', conversation.id);
                 }
 
                 // Mark conversation as read when user views it
