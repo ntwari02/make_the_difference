@@ -238,6 +238,21 @@
                     window.dispatchEvent(new CustomEvent('newMessage', { detail: data }));
                 });
 
+                // Also handle 'message' events emitted by the server for chat rooms
+                socket.on('message', (data) => {
+                    console.log('📨 Room message received:', data);
+                    if (data.conversationId === currentConversationId) {
+                        loadConversationMessages(currentConversationId).then(() => {
+                            setTimeout(scrollToBottom, 100);
+                        });
+                    }
+                    // Update notifications/badges
+                    if (window.location.pathname.includes('notifications.html')) {
+                        loadNotificationsFromAPI(localStorage.getItem('token'), false);
+                    }
+                    window.dispatchEvent(new CustomEvent('newMessage', { detail: data }));
+                });
+
                 socket.on('messageRead', (data) => {
                     console.log('👁️ Message read:', data);
                     if (data.conversationId === currentConversationId) {
@@ -765,9 +780,9 @@
             if (isImage) {
                 return `
                     <div class="mb-2">
-                        <img src="uploads/chat/${reply.attachment_url}" alt="attachment" 
+                        <img src="/api/notifications/view/${reply.attachment_url}" alt="attachment" 
                              class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                             onclick="openUserImageModal('uploads/chat/${reply.attachment_url}')" />
+                             onclick="openUserImageModal('/api/notifications/view/${reply.attachment_url}')" />
                     </div>
                 `;
             } else {

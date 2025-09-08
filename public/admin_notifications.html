@@ -537,6 +537,18 @@
           
           // Re-render conversation list to show selected state
           renderConversationList();
+          
+          // Ensure realtime updates: load socket.io client if needed and join room
+          try {
+            if (!window.io) {
+              const s = document.createElement('script');
+              s.src = '/socket.io/socket.io.js';
+              s.onload = () => { try { setupSocket(id); } catch {} };
+              document.body.appendChild(s);
+            } else {
+              setupSocket(id);
+            }
+          } catch {}
         }catch(e){ console.error(e); }
       }
       
@@ -1377,9 +1389,9 @@
         if (isImage) {
           return `
             <div class="mb-2">
-              <img src="uploads/chat/${reply.attachment_url}" alt="attachment" 
+              <img src="/api/notifications/view/${reply.attachment_url}" alt="attachment" 
                    class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                   onclick="openImageModal('uploads/chat/${reply.attachment_url}')" />
+                   onclick="openImageModal('/api/notifications/view/${reply.attachment_url}')" />
             </div>
           `;
         } else {

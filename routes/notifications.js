@@ -427,6 +427,18 @@ router.post('/conversations/:id/replies', auth, async (req, res) => {
       [conversationId]
     );
     
+    // Emit socket event to conversation room for real-time admin updates
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conv:${conversationId}`).emit('message', {
+          conversationId: Number(conversationId),
+          message: { id: result.insertId, conversation_id: Number(conversationId), sender_type: 'user', sender_id: req.user?.id || null, sender_email: req.user?.email || null, message, created_at: new Date() },
+          at: Date.now()
+        });
+      }
+    } catch {}
+
     res.status(201).json({ 
       id: result.insertId,
       message: 'Reply sent successfully!' 
@@ -459,17 +471,31 @@ router.post('/conversations/:id/attachments', auth, upload.array('files', 6), as
     }));
 
     // Store each as a reply with attachment metadata (simple approach)
+    const inserted = [];
     for (const file of files) {
-      await db.query(
+      const [ins] = await db.query(
         'INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [conversationId, 'user', req.user.id, req.user.email, '', file.path, file.mimetype, file.size]
       );
+      inserted.push({ id: ins.insertId, ...file });
     }
 
     // Update updated_at
     await db.query('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [conversationId]);
 
-    res.status(201).json({ success: true, files });
+    // Emit socket event to conversation room for attachments
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conv:${conversationId}`).emit('message', {
+          conversationId: Number(conversationId),
+          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.filename || f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'user', created_at: new Date() })),
+          at: Date.now()
+        });
+      }
+    } catch {}
+
+    res.status(201).json({ success: true, files, inserted });
   } catch (error) {
     console.error('Error uploading attachments:', error);
     res.status(500).json({ message: 'Failed to upload attachments.' });
@@ -619,7 +645,7 @@ router.get('/view/:filename', async (req, res) => {
     }
     
     // Construct file path
-   
+    const filePath = path.join(process.cwd(), 'public', 'uploads', 'chat', filename);
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
