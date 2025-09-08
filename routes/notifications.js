@@ -1076,10 +1076,10 @@ router.put('/conversations/:id/read', auth, async (req, res) => {
       return res.status(404).json({ message: 'Conversation not found or access denied.' });
     }
     
-    // Check if is_read column exists, if not, just update updated_at
+    // Mark as read and set last_read_at if column exists; fall back gracefully
     try {
       await db.query(
-        'UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE conversations SET is_read = 1, last_read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [conversationId]
       );
     } catch (columnError) {
@@ -1134,10 +1134,10 @@ router.put('/admin/conversations/:id/read', bypassAuth, async (req, res) => {
   try {
     const conversationId = req.params.id;
     
-    // Check if is_read column exists, if not, just update updated_at
+    // Mark as read and set last_read_at if column exists; fall back gracefully
     try {
       await db.query(
-        'UPDATE conversations SET is_read = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE conversations SET is_read = 1, last_read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [conversationId]
       );
     } catch (columnError) {
@@ -1290,23 +1290,40 @@ router.get('/unified-count', auth, async (req, res) => {
       [req.user.id, req.user.email]
     );
     
-    // Count unread conversations (conversations with unread messages)
-    const [convResult] = await db.query(`
-      SELECT COUNT(DISTINCT c.id) as count 
-      FROM conversations c
-      JOIN notifications n ON c.notification_id = n.id
-      LEFT JOIN replies r ON c.id = r.conversation_id
-      WHERE (c.user_id = ? OR c.email = ?) 
-      AND (
-        (c.is_read = 0 OR c.is_read IS NULL) 
-        OR EXISTS (
-          SELECT 1 FROM replies r2 
-          WHERE r2.conversation_id = c.id 
-          AND r2.sender_type = 'admin' 
-          AND r2.created_at > COALESCE(c.last_read_at, c.created_at)
+    // Count unread conversations; prefer last_read_at if present, otherwise fallback to is_read
+    let convResult;
+    try {
+      [convResult] = await db.query(`
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHERE (c.user_id = ? OR c.email = ?) 
+        AND (
+          COALESCE(c.is_read, 0) = 0
+          OR EXISTS (
+            SELECT 1 FROM replies r2 
+            WHERE r2.conversation_id = c.id 
+            AND r2.sender_type = 'admin' 
+            AND r2.created_at > COALESCE(c.last_read_at, c.created_at)
+          )
         )
-      )
-    `, [req.user.id, req.user.email]);
+      `, [req.user.id, req.user.email]);
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR') {
+        // Fallback when last_read_at column is missing
+        [convResult] = await db.query(`
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+          WHERE (c.user_id = ? OR c.email = ?) 
+          AND (c.is_read = 0 OR c.is_read IS NULL)
+        `, [req.user.id, req.user.email]);
+      } else {
+        throw err;
+      }
+    }
     
     const notificationCount = notifResult[0].count || 0;
     const conversationCount = convResult[0].count || 0;
