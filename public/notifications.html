@@ -241,14 +241,15 @@
                 // Also handle 'message' events emitted by the server for chat rooms
                 socket.on('message', (data) => {
                     console.log('📨 Room message received:', data);
+                    // Always refresh the left list and badges
+                    if (window.location.pathname.includes('notifications.html')) {
+                        loadNotificationsFromAPI(localStorage.getItem('token'), false);
+                    }
+                    // Refresh open conversation content
                     if (data.conversationId === currentConversationId) {
                         loadConversationMessages(currentConversationId).then(() => {
                             setTimeout(scrollToBottom, 100);
                         });
-                    }
-                    // Update notifications/badges
-                    if (window.location.pathname.includes('notifications.html')) {
-                        loadNotificationsFromAPI(localStorage.getItem('token'), false);
                     }
                     window.dispatchEvent(new CustomEvent('newMessage', { detail: data }));
                 });

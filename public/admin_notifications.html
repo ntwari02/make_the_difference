@@ -613,6 +613,10 @@
             window.chatSocket.on('typing', (p)=>{ if(String(p.conversationId)===String(conversationId)){ let el=document.getElementById(typingElId); if(!el){ el=document.createElement('div'); el.id=typingElId; el.className='px-6 pb-2 text-xs text-gray-500'; const area=document.getElementById('messagesArea'); area && area.parentElement.insertBefore(el, area.nextSibling); } el.textContent='typing...'; }});
             window.chatSocket.on('stopTyping', (p)=>{ if(String(p.conversationId)===String(conversationId)){ const el=document.getElementById(typingElId); if(el) el.textContent=''; }});
             window.chatSocket.on('message', async (m)=>{ 
+              try {
+                // Always refresh the conversation list so it reflects latest activity/unreads
+                fetchConversations();
+              } catch {}
               if(String(m.conversationId)===String(conversationId)) {
                 try { 
                   await selectConversation(conversationId);
