@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mbappe - Home</title>
+  <title>Reagle_X - Home</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -250,7 +250,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
         <div class="sm:col-span-2 lg:col-span-1">
           <a href="home.html" class="flex items-center justify-center sm:justify-start mb-4 sm:mb-6">
-            <img src="/img/logo.png" alt="Reagle_X Logo" class="h-12 sm:h-16 lg:h-20 w-auto object-contain mr-3">
+            <img src="img/logo.png" alt="Reagle_X Logo" class="h-12 sm:h-16 lg:h-20 w-auto object-contain mr-3">
             <span class="text-xl sm:text-2xl lg:text-3xl font-bold dark:text-white">Reagle_X</span>
           </a>
           <div class="text-center sm:text-left text-sm sm:text-base text-gray-300 dark:text-gray-400 space-y-2">
@@ -305,6 +305,11 @@
     </div>
   </footer>
 
+  <!-- Back to top button -->
+  <button id="backToTop" aria-label="Back to top" class="fixed bottom-6 right-6 hidden items-center justify-center w-12 h-12 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 transition-all">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
   <script src="js/logout-utility.js"></script>
   <script src="js/include-navbar.js"></script>
   <script src="js/advertisement-config.js"></script>
@@ -312,6 +317,16 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       includeNavbar(); // Load and initialize the navbar
+      const btn = document.getElementById('backToTop');
+      const toggle = () => {
+        if (window.scrollY > 300) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+      };
+      window.addEventListener('scroll', toggle);
+      toggle();
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     });
   </script>
 </body>

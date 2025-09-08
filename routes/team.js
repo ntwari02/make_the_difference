@@ -7,10 +7,10 @@ import { authenticateToken, bypassAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Storage for team photos
+// Storage for team photos (serve from public/uploads/team)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/team';
+    const dir = path.join('public', 'uploads', 'team');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
@@ -34,7 +34,18 @@ router.get('/', async (req, res) => {
     const [rows] = await db.query(
       'SELECT id, name, title, bio, email, phone, linkedin, twitter, image_path, display_order FROM team_members WHERE is_active = 1 ORDER BY display_order, created_at DESC'
     );
-    res.json({ success: true, team: rows });
+    const team = rows.map(r => {
+      const out = { ...r };
+      if (out.image_path) {
+        let s = String(out.image_path).replace(/\\/g, '/');
+        // If stored physical path like public/uploads/team/xxx → serve as /uploads/team/xxx
+        s = s.replace(/^public\//, '/');
+        if (!s.startsWith('/')) s = '/' + s;
+        out.image_path = s;
+      }
+      return out;
+    });
+    res.json({ success: true, team });
   } catch (e) {
     console.error('List team error:', e);
     res.status(500).json({ success: false, error: 'Failed to fetch team' });
@@ -114,9 +125,16 @@ router.post('/:id/photo', bypassAuth, upload.single('photo'), async (req, res) =
     const [exist] = await db.query('SELECT image_path FROM team_members WHERE id = ?', [id]);
     if (!exist.length) return res.status(404).json({ success: false, error: 'Not found' });
     const prev = exist[0].image_path;
-    if (prev && fs.existsSync(prev)) { try { fs.unlinkSync(prev); } catch {} }
-    await db.query('UPDATE team_members SET image_path=?, updated_at=NOW() WHERE id=?', [req.file.path, id]);
-    res.json({ success: true, image_path: req.file.path });
+    // Delete previous physical file if it exists
+    if (prev) {
+      let phys = String(prev);
+      if (phys.startsWith('/uploads')) phys = path.join('public', phys);
+      if (fs.existsSync(phys)) { try { fs.unlinkSync(phys); } catch {} }
+    }
+    // Store relative public URL path
+    const rel = `/uploads/team/${req.file.filename}`;
+    await db.query('UPDATE team_members SET image_path=?, updated_at=NOW() WHERE id=?', [rel, id]);
+    res.json({ success: true, image_path: rel });
   } catch (e) {
     console.error('Upload team photo error:', e);
     res.status(500).json({ success: false, error: 'Failed to upload photo' });

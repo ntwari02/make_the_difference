@@ -356,8 +356,8 @@ app.use(async (req, res, next) => {
 // Serve uploads statically so profile pictures and documents are accessible
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // Fallback to serve legacy files saved under root uploads (pre-migration)
-// Note: This fallback is disabled to prevent conflicts with public/uploads
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Placed after public mapping so it only serves when the file isn't in public/uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Ensure chat uploads directory exists at runtime under public/uploads/chat
 try {
     fs.mkdirSync(path.join(__dirname, 'public', 'uploads', 'chat'), { recursive: true });
@@ -368,7 +368,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-cache');
-        } else if (/(\.css|\.js|\.png|\.jpg|\.jpeg|\.gif|\.svg|\.webp|\.woff2?)$/i.test(filePath)) {
+        } else if (filePath.endsWith('.js')) {
+            // Ensure new client code is fetched; avoids stale endpoint URLs
+            res.setHeader('Cache-Control', 'no-cache');
+        } else if (/(\.css|\.png|\.jpg|\.jpeg|\.gif|\.svg|\.webp|\.woff2?)$/i.test(filePath)) {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
     }

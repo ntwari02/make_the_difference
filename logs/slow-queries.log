@@ -6841,3 +6841,449 @@ CREATE TABLE IF NOT EXISTS `replies` (
     
 2025-09-07T16:26:40.249Z [936ms] SELECT id, email, full_name FROM users WHERE id = ?
 2025-09-07T16:31:14.381Z [2015ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T05:30:32.793Z [1278ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:14.547Z [424ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:14.763Z [639ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:14.983Z [632ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:15.209Z [640ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:15.438Z [660ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:15.656Z [661ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:15.858Z [636ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:35.349Z [21249ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:39.242Z [25132ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:34:39.397Z [25279ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:35:27.234Z [312ms] SELECT * FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:09.665Z [417ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:09.668Z [419ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:09.872Z [303ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:09.882Z [311ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:10.091Z [347ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:10.342Z [1104ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:23.238Z [432ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:23.246Z [439ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:23.461Z [389ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:37:23.469Z [401ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:39:25.661Z [342ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T05:39:40.670Z [416ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:39:40.679Z [424ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:41:12.447Z [397ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:41:12.509Z [455ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:41:12.897Z [300ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:41:12.907Z [315ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:34.157Z [384ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:34.162Z [408ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:34.376Z [375ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:34.377Z [375ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:57.660Z [416ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:57.671Z [426ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:57.763Z [302ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:57.883Z [421ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:42:57.898Z [433ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:55.780Z [406ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.000Z [608ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.217Z [641ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.414Z [1076ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.424Z [1091ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.425Z [1098ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.439Z [612ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.639Z [630ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:45:56.643Z [415ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:46:01.079Z [435ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:02.797Z [1108ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T05:47:16.758Z [385ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:16.761Z [379ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:16.977Z [413ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:16.987Z [421ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:17.204Z [310ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:17.424Z [419ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:17.429Z [416ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:17.433Z [1102ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:17.465Z [1116ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:30.857Z [384ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:30.861Z [371ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:31.076Z [344ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:47:31.083Z [347ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:49:55.317Z [377ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:49:55.328Z [369ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:09.224Z [411ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:09.295Z [463ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:27.586Z [423ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:27.595Z [433ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:27.813Z [418ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:27.826Z [421ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:59.504Z [462ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:50:59.508Z [463ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:51:07.994Z [443ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:51:07.999Z [447ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:51:08.222Z [442ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:51:08.229Z [444ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:52:54.769Z [427ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:52:54.774Z [421ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:52:54.995Z [411ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:52:54.997Z [412ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:04.409Z [422ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:04.449Z [461ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:04.641Z [429ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:04.719Z [505ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:12.533Z [438ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:12.536Z [440ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:12.752Z [320ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:12.754Z [318ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:22.043Z [437ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:22.049Z [422ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:22.275Z [418ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:53:22.276Z [394ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:19.599Z [397ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:19.639Z [436ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:19.715Z [309ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:19.817Z [380ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:19.853Z [383ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:45.386Z [389ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:45.393Z [460ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:45.636Z [453ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:55:45.638Z [454ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:56:41.158Z [408ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:56:41.177Z [426ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:56:41.378Z [384ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:56:41.397Z [402ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:57:56.148Z [379ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:57:56.160Z [407ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:57:56.365Z [383ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:57:56.377Z [394ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:26.686Z [396ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:26.703Z [394ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:26.927Z [301ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:27.057Z [327ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:27.059Z [301ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:44.498Z [440ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:44.510Z [451ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:44.708Z [420ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:44.716Z [425ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:52.466Z [457ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:52.468Z [459ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:52.706Z [415ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T05:59:52.707Z [413ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:31.428Z [410ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:31.447Z [428ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:31.647Z [348ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:31.662Z [362ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:40.126Z [420ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:40.142Z [435ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:40.355Z [414ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:00:40.357Z [414ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.496Z [411ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.541Z [456ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.623Z [314ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.717Z [410ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.775Z [451ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:05:16.817Z [469ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:11.623Z [400ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:11.624Z [401ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:11.845Z [406ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:11.847Z [389ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:31.236Z [414ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:31.238Z [417ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:31.456Z [407ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:06:31.458Z [408ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:23:23.874Z [1227ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:23:24.067Z [1195ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:24:23.329Z [320ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T06:24:23.648Z [311ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:24:23.969Z [319ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T06:44:00.507Z [1116ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:44:00.709Z [1132ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:44:17.637Z [306ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:44:22.719Z [309ms] SELECT id FROM admin_users WHERE user_id = ? AND is_active = TRUE
+2025-09-08T06:44:23.359Z [326ms] SELECT profile_picture_path FROM user_profile_pictures WHERE user_id = ?
+2025-09-08T06:44:23.804Z [439ms] SELECT phone, bio FROM users WHERE id = ?
+2025-09-08T06:50:32.527Z [1106ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:50:44.709Z [1098ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T06:55:41.496Z [1118ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T06:58:27.587Z [1148ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:01:45.399Z [1092ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:04:20.784Z [1110ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:07:20.645Z [320ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:07:20.651Z [319ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:08:11.185Z [442ms] SELECT DATABASE() AS db
+2025-09-08T07:08:11.831Z [400ms] SELECT * FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:08:13.632Z [393ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:08:14.065Z [480ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:08:14.067Z [408ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:08:14.682Z [372ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:09:13.905Z [329ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:09:14.865Z [317ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:12:17.384Z [1280ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:13:14.423Z [1084ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:15:56.410Z [301ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:16:56.264Z [389ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:16:56.584Z [319ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:17:56.103Z [494ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T07:27:56.139Z [313ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:38:37.057Z [1748ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T07:40:29.056Z [402ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:29.276Z [424ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:29.913Z [1282ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:29.918Z [1284ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:29.931Z [1281ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:29.944Z [1299ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:40:31.978Z [328ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(application_date) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(application_date) = DATE_SUB(CURDATE(), INTERVAL 1 DA
+2025-09-08T07:41:37.360Z [534ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-08T07:42:08.670Z [360ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:42:09.054Z [382ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:42:37.867Z [323ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        u.email as user_email,
+        admin.full_name a
+2025-09-08T07:42:38.780Z [468ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:42:39.143Z [349ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:42:52.269Z [302ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:45:25.795Z [326ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:45:53.586Z [345ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-08T07:46:00.149Z [315ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        u.email as user_email,
+        admin.full_name a
+2025-09-08T07:46:00.465Z [312ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T07:46:26.659Z [355ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:46:26.989Z [327ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:46:53.701Z [378ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-08T07:46:56.622Z [311ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:47:53.692Z [386ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-08T07:47:54.042Z [349ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        u.email as user_email,
+        admin.full_name a
+2025-09-08T07:47:55.942Z [389ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:49:53.636Z [314ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-08T07:50:51.878Z [404ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:50:54.115Z [329ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:50:55.076Z [405ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T07:50:55.716Z [352ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T07:50:56.242Z [308ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T07:50:57.437Z [319ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:50:57.537Z [383ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:50:58.403Z [564ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T07:50:58.443Z [567ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:50:59.556Z [408ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T07:50:59.875Z [316ms] 
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date
+2025-09-08T07:51:00.517Z [394ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:51:00.525Z [303ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:51:00.558Z [306ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:51:00.836Z [312ms] 
+            SELECT COUNT(*) as count 
+            FROM scholarship_applications 
+            WHERE application_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        
+2025-09-08T07:51:01.153Z [310ms] SELECT COUNT(*) as total FROM scholarship_applications
+2025-09-08T07:51:01.260Z [405ms] SELECT COUNT(*) as total FROM users
+2025-09-08T07:51:16.155Z [501ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T07:51:27.393Z [347ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:51:27.598Z [398ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T07:52:27.874Z [304ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:53:28.336Z [302ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T07:53:58.366Z [316ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T08:13:10.404Z [1119ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T08:13:10.407Z [1133ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T08:13:10.693Z [1091ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T08:13:13.344Z [380ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T08:13:14.726Z [1602ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T08:13:14.729Z [1554ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T08:13:17.543Z [436ms] 
+            SELECT 
+                DATE_FORMAT(application_date, ?) as label,
+                COUNT(*) as value
+            FROM scholarship_applications
+            WHERE application_date >= DATE_S
+2025-09-08T08:13:25.683Z [310ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1

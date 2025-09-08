@@ -522,6 +522,17 @@
                 }
               });
             }
+            // Auto-scroll to the bottom after messages render
+            try {
+              const area = document.getElementById('messagesArea');
+              if (area) {
+                area.scrollTop = area.scrollHeight;
+                // Keep at bottom when images finish loading
+                area.querySelectorAll('img').forEach(img => {
+                  img.addEventListener('load', () => { area.scrollTop = area.scrollHeight; }, { once: true });
+                });
+              }
+            } catch {}
           }, 0);
           
           // Re-render conversation list to show selected state
@@ -589,7 +600,15 @@
             const typingElId = 'typingIndicator';
             window.chatSocket.on('typing', (p)=>{ if(String(p.conversationId)===String(conversationId)){ let el=document.getElementById(typingElId); if(!el){ el=document.createElement('div'); el.id=typingElId; el.className='px-6 pb-2 text-xs text-gray-500'; const area=document.getElementById('messagesArea'); area && area.parentElement.insertBefore(el, area.nextSibling); } el.textContent='typing...'; }});
             window.chatSocket.on('stopTyping', (p)=>{ if(String(p.conversationId)===String(conversationId)){ const el=document.getElementById(typingElId); if(el) el.textContent=''; }});
-            window.chatSocket.on('message', (m)=>{ if(String(m.conversationId)===String(conversationId)) fetchConversations(); });
+            window.chatSocket.on('message', async (m)=>{ 
+              if(String(m.conversationId)===String(conversationId)) {
+                try { 
+                  await selectConversation(conversationId);
+                  const area = document.getElementById('messagesArea');
+                  if (area) { area.scrollTop = area.scrollHeight; }
+                } catch {}
+              }
+            });
           }
           window.chatSocket.emit('joinConversation', conversationId);
         }catch{}
@@ -1278,7 +1297,7 @@
             return `
               <div class="flex ${reply.sender_type === 'admin' ? 'justify-end' : 'justify-start'} mb-3 sm:mb-4">
                 <div class="max-w-[85%] sm:max-w-xs lg:max-w-md group" data-reply-id="${reply.id}">
-                  <div class="rounded p-2 sm:p-3 ${reply.sender_type === 'admin' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-700'}">
+                  <div class="p-2 sm:p-3 ${reply.sender_type === 'admin' ? 'bg-blue-100 dark:bg-blue-900/30 rounded-l-lg rounded-tr-lg text-right' : 'bg-green-100 dark:bg-green-900/30 rounded-r-lg rounded-tl-lg text-left'}">
                     ${quoted ? `<div class="mb-2 border-l-4 border-gray-400 pl-2 text-xs text-gray-600 dark:text-gray-300">${quoted}</div>` : ''}
                     ${reply.attachment_url ? renderAdminAttachment(reply) : ''}
                     ${msgHtml ? `<p class="text-xs sm:text-sm break-words">${msgHtml}</p>` : ''}
@@ -1358,15 +1377,15 @@
         if (isImage) {
           return `
             <div class="mb-2">
-              <img src="/uploads/chat/${reply.attachment_url}" alt="attachment" 
+              <img src="uploads/chat/${reply.attachment_url}" alt="attachment" 
                    class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                   onclick="openImageModal('/uploads/chat/${reply.attachment_url}')" />
+                   onclick="openImageModal('uploads/chat/${reply.attachment_url}')" />
             </div>
           `;
         } else {
           return `
             <div class="mb-2">
-              <button onclick="openFile('/uploads/chat/${reply.attachment_url}', '${getDisplayName(reply.attachment_url)}')" 
+              <button onclick="openFile('uploads/chat/${reply.attachment_url}', '${getDisplayName(reply.attachment_url)}')" 
                       class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
                 <i class="fas fa-external-link-alt"></i>
                 <span>Open ${getDisplayName(reply.attachment_url)}</span>

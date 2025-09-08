@@ -289,9 +289,9 @@ function openProfileModal() {
     
     // Handle profile picture
     if (profilePicture) {
-        const src = profilePicture.startsWith('http') || profilePicture.startsWith('/') 
+        const src = profilePicture.startsWith('http') 
             ? profilePicture 
-            : `/${profilePicture}`;
+            : (profilePicture.startsWith('/') ? profilePicture : '/' + profilePicture);
         if (avatarEl) {
             avatarEl.src = src;
             avatarEl.classList.remove('hidden');
@@ -331,9 +331,9 @@ function updateProfilePhoto(user) {
     const fullName = user.full_name || user.fullName || 'User';
     
     if (profilePicture) {
-        const src = profilePicture.startsWith('http') || profilePicture.startsWith('/') 
+        const src = profilePicture.startsWith('http') 
             ? profilePicture 
-            : `/${profilePicture}`;
+            : (profilePicture.startsWith('/') ? profilePicture : '/' + profilePicture);
         profilePhoto.src = src;
         profilePhoto.classList.remove('hidden');
         profilePhotoFallback.classList.add('hidden');
@@ -661,8 +661,20 @@ async function updateAuthState(elements) {
             if (authButtons) authButtons.classList.add('hidden');
             if (userMenu) userMenu.classList.remove('hidden');
             
-            // Update profile photo
-            updateProfilePhoto(user);
+            // Fetch fresh profile to avoid stale avatar on refresh/logout
+            try {
+                const res = await fetch('/api/user/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const prof = await res.json();
+                    const freshUser = { ...user, ...prof.user };
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                    updateProfilePhoto(freshUser);
+                } else {
+                    updateProfilePhoto(user);
+                }
+            } catch {
+                updateProfilePhoto(user);
+            }
             
             // Handle admin dashboard button visibility
             await handleAdminDashboardVisibility(adminDashboardBtn, user);
@@ -1399,24 +1411,41 @@ async function handleSavePhoto() {
         formData.append('photo', file);
         
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/user/upload-photo', {
+        const response = await fetch('/api/user/profile/photo', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            // Update main profile photo
-            updateProfilePhoto({ profile_picture: result.profile_picture });
+        // Safely parse JSON only when content-type is JSON
+        const contentType = response.headers.get('content-type') || '';
+        let result;
+        if (contentType.includes('application/json')) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            throw new Error(`Unexpected response (${response.status}): ${text.slice(0, 120)}...`);
+        }
+
+        if (response.ok && result && result.success !== false) {
+            // Server returns fresh user and profile_picture
+            const newPath = (result && (result.profile_picture || (result.user && result.user.profile_picture))) || '';
+            const cacheBusted = newPath ? `${newPath}${newPath.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
+            const freshUser = result.user || {};
+            if (freshUser && Object.keys(freshUser).length) {
+                localStorage.setItem('user', JSON.stringify(freshUser));
+            } else if (newPath) {
+                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                const updatedUser = { ...currentUser, profile_picture: newPath };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+            updateProfilePhoto({ profile_picture: cacheBusted, full_name: (freshUser.full_name || JSON.parse(localStorage.getItem('user')||'{}').full_name) });
             
             // Close modal
             closePhotoUploadModal();
             
             showAlert('Profile photo updated successfully!', 'success');
         } else {
-            throw new Error(result.error || 'Failed to upload photo');
+            throw new Error((result && (result.error || result.message)) || 'Failed to upload photo');
         }
     } catch (error) {
         console.error('Error uploading photo:', error);
@@ -1452,9 +1481,9 @@ function updateProfileModalDisplay(user) {
     
     // Handle profile picture
     if (user.profile_picture) {
-        const src = user.profile_picture.startsWith('http') || user.profile_picture.startsWith('/') 
+        const src = user.profile_picture.startsWith('http') 
             ? user.profile_picture 
-            : `/${user.profile_picture}`;
+            : user.profile_picture.replace(/^\/+/, '');
         if (avatarEl) {
             avatarEl.src = src;
             avatarEl.classList.remove('hidden');

@@ -207,6 +207,62 @@ router.put('/profile', [
   }
 });
 
+// Auto-save partial user profile (e.g., profile_picture or single field)
+// New unified endpoint: upload + persist + return fresh user
+router.post('/profile/photo', upload.single('photo'), async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const userId = decoded.id;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    // Ensure column exists
+    try { await db.query('SELECT profile_picture FROM users LIMIT 1'); } catch (e) {
+      if (e.code === 'ER_BAD_FIELD_ERROR') {
+        return res.status(400).json({ success: false, error: 'Profile picture column missing' });
+      }
+      throw e;
+    }
+
+    // Get old picture to delete later
+    let oldPath = null;
+    try {
+      const [rows] = await db.query('SELECT profile_picture FROM users WHERE id = ?', [userId]);
+      oldPath = rows && rows[0] ? rows[0].profile_picture : null;
+    } catch {}
+
+    const newPublicPath = `/uploads/profiles/${req.file.filename}`;
+
+    await db.query('UPDATE users SET profile_picture = ?, updated_at = NOW() WHERE id = ?', [newPublicPath, userId]);
+
+    // Optional upsert into compatibility table
+    try {
+      await db.query('CREATE TABLE IF NOT EXISTS user_profile_pictures (user_id INT PRIMARY KEY, profile_picture_path VARCHAR(255), updated_at DATETIME)');
+      await db.query('REPLACE INTO user_profile_pictures (user_id, profile_picture_path, updated_at) VALUES (?, ?, NOW())', [userId, newPublicPath]);
+    } catch {}
+
+    // Delete old file if under profiles and different
+    if (oldPath && oldPath.startsWith('/uploads/profiles/') && oldPath !== newPublicPath) {
+      const disk = path.join('public', oldPath);
+      try { if (fs.existsSync(disk)) fs.unlinkSync(disk); } catch {}
+    }
+
+    // Return fresh user
+    const [users] = await db.query('SELECT id, full_name, email, phone, bio, profile_picture, created_at FROM users WHERE id = ?', [userId]);
+    return res.json({ success: true, message: 'Profile photo updated', user: users[0], profile_picture: newPublicPath });
+  } catch (error) {
+    console.error('Profile photo update error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to update profile photo' });
+  }
+});
+
 // Change password
 router.put('/change-password', [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -276,78 +332,7 @@ router.put('/change-password', [
 });
 
 // Upload profile picture
-router.post('/upload-photo', upload.single('photo'), async (req, res) => {
-  try {
-    console.log('=== PHOTO UPLOAD START ===');
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      console.log('No token provided');
-      return res.status(401).json({ success: false, error: 'No token provided' });
-    }
-
-    // Verify token and get user ID
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    const userId = decoded.id;
-    console.log('Token decoded successfully, userId:', userId);
-
-    if (!req.file) {
-      console.log('No file uploaded');
-      return res.status(400).json({
-        success: false,
-        error: 'No file uploaded'
-      });
-    }
-
-    const profilePicturePath = `/uploads/profiles/${req.file.filename}`;
-    console.log('Profile picture path:', profilePicturePath);
-
-    // Check if profile_picture column exists before updating
-    try {
-      await db.query('SELECT profile_picture FROM users LIMIT 1');
-      console.log('Profile picture column exists, updating database...');
-      
-      // Column exists, update it
-      const updateResult = await db.query(
-        'UPDATE users SET profile_picture = ? WHERE id = ?',
-        [profilePicturePath, userId]
-      );
-      console.log('Database update result:', updateResult);
-      
-      // Verify the update was successful
-      const [verifyRows] = await db.query(
-        'SELECT profile_picture FROM users WHERE id = ?',
-        [userId]
-      );
-      console.log('Verification query result:', verifyRows[0]);
-      
-    } catch (error) {
-      if (error.code === 'ER_BAD_FIELD_ERROR') {
-        console.log('⚠️ Profile picture column not found, skipping update');
-        return res.status(400).json({
-          success: false,
-          error: 'Profile picture functionality not available - database column missing'
-        });
-      } else {
-        console.error('Database error during photo update:', error);
-        throw error;
-      }
-    }
-
-    console.log('Photo upload completed successfully');
-    res.json({
-      success: true,
-      message: 'Profile picture uploaded successfully',
-      profile_picture: profilePicturePath
-    });
-
-  } catch (error) {
-    console.error('Upload photo error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to upload profile picture'
-    });
-  }
-});
+// Removed legacy /upload-photo in favor of /profile/photo
 
 // Remove profile picture
 router.delete('/remove-photo', async (req, res) => {

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>About - MBAPE Global</title>
-  <meta name="description" content="Discover scholarship opportunities to fund your education with MBAPE Global">
+  <title>About - Reagle_X</title>
+  <meta name="description" content="Discover scholarship opportunities to fund your education with Reagle_X">
   <meta name="keywords" content="scholarships, education funding, study abroad, financial aid">
 
   <link href="assets/img/favicon.png" rel="icon">
@@ -298,7 +298,7 @@
   <main class="min-h-screen">
     <section class="bg-gradient-to-r from-gray-700 to-gray-900 text-white py-24 dark:from-gray-700 dark:to-gray-900 transition-colors duration-300 pt-32 sm:pt-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-4xl md:text-6xl font-times-new-roman font-extrabold mb-6 leading-tight animate-fade-in-up">About MBAPE Global</h1>
+        <h1 class="text-4xl md:text-6xl font-times-new-roman font-extrabold mb-6 leading-tight animate-fade-in-up">About Reagle_X</h1>
         <p class="text-lg md:text-xl max-w-4xl mx-auto opacity-90 animate-fade-in-down">Empowering students worldwide to achieve their educational dreams through accessible scholarship opportunities and comprehensive support.</p>
       </div>
     </section>
@@ -309,7 +309,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div class="order-2 md:order-1">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">Our Mission</h2>
-            <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">At MBAPE Global, we believe that financial constraints should never limit educational aspirations. Our mission is to bridge the gap between talented students and educational funding opportunities, fostering a global community of learners.</p>
+            <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">At Reagle_X, we believe that financial constraints should never limit educational aspirations. Our mission is to bridge the gap between talented students and educational funding opportunities, fostering a global community of learners.</p>
             <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">We are dedicated to:</p>
             <ul class="space-y-4 text-lg">
               <li class="flex items-start text-gray-700 dark:text-gray-200">
@@ -401,8 +401,8 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
           <a href="home.html" class="flex items-center">
-            <img src="/img/logo.png" alt="MBAPE GLOBAL Logo" class="h-16 w-auto object-contain mr-3">
-            <span class="text-2xl font-bold dark:text-white">MBAPE GLOBAL</span>
+            <img src="img/logo.png" alt="Reagle_X Logo" class="h-16 w-auto object-contain mr-3">
+            <span class="text-2xl font-bold dark:text-white">Reagle_X</span>
           </a>
           <div class="mt-4 text-gray-300 dark:text-gray-400">
             <p>Remera-Gisimenti</p>
@@ -451,14 +451,15 @@
       </div>
 
       <div class="text-center mt-8 pt-8 border-t border-gray-700 text-gray-300 dark:text-gray-400">
-        <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">MBAPE GLOBAL</strong> <span>All Rights Reserved</span></p>
+        <p>© <span>Copyright</span> <strong class="px-1 dark:text-white">Reagle_X</strong> <span>All Rights Reserved</span></p>
       </div>
     </div>
   </footer>
 
-  <a href="#" id="scroll-top" class="fixed bottom-8 right-8 bg-primary-600 text-white p-3 rounded-full hover:bg-primary-700 transition-all duration-300 hidden shadow-lg">
-    <i class="bi bi-arrow-up-short"></i>
-  </a>
+  <!-- Back to top button -->
+  <button id="backToTop" aria-label="Back to top" class="fixed bottom-6 right-6 hidden items-center justify-center w-12 h-12 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 transition-all">
+    <i class="fas fa-arrow-up"></i>
+  </button>
 
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
@@ -481,10 +482,20 @@
           const res = await fetch('/api/team');
           const data = await res.json().catch(()=>({}));
           const team = data.team || [];
-          const norm = p => { if(!p) return ''; let s=String(p).replace(/\\/g,'/'); if(!s.startsWith('/')) s='/'+s; return s; };
+          const norm = p => {
+            if(!p) return '';
+            let s = String(p).replace(/\\/g,'/');
+            // If a full disk path or relative includes uploads/, trim to that
+            const idx = s.indexOf('/uploads/');
+            if (idx !== -1) s = s.slice(idx);
+            // Strip leading public/
+            s = s.replace(/^public\//,'/');
+            if(!s.startsWith('/')) s='/' + s;
+            return s;
+          };
           teamContainer.innerHTML = team.map(m => `
             <div class="team-member-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-              <img src="${m.image_path?norm(m.image_path):'./img/testimonials-1.jpg'}" alt="${m.name}" class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2">
+              <img src="${m.image_path?norm(m.image_path):'./img/testimonials-1.jpg'}" alt="${m.name}" class="w-32 h-32 object-cover object-center mx-auto mt-6 mb-2" onerror="this.onerror=null;this.src='./img/testimonials-1.jpg'">
               <div class="p-6 text-center">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">${m.name}</h3>
                 <p class="mb-4 font-semibold" style="color: var(--accent-darkblue);">${m.title||''}</p>
@@ -495,24 +506,12 @@
       }
     });
 
-    // Scroll Top Button (kept here as it's page-specific functionality)
-    const scrollTopBtn = document.getElementById("scroll-top");
-
-    window.addEventListener("scroll", () => {
-      if (window.scrollY > 200) {
-        scrollTopBtn.classList.remove("hidden");
-      } else {
-        scrollTopBtn.classList.add("hidden");
-      }
-    });
-
-    scrollTopBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    });
+    // back to top
+    const btn = document.getElementById('backToTop');
+    const toggle = () => { if (window.scrollY > 300) btn.classList.remove('hidden'); else btn.classList.add('hidden'); };
+    window.addEventListener('scroll', toggle);
+    toggle();
+    btn.addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
   </script>
 </body>
 

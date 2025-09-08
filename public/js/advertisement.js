@@ -382,9 +382,12 @@ class AdvertisementManager {
         const video = document.getElementById('ad-video');
         if (!video) return;
 
-        // Initialize video with sound enabled
+        // Prepare video for autoplay across browsers
+        // Use inline playback (iOS Safari) and attempt autoplay with graceful fallbacks
+        try { video.setAttribute('playsinline', ''); } catch {}
+        // Start muted to satisfy autoplay policies; we'll unmute if the user interacts
         video.volume = 1.0;
-        video.muted = false;
+        video.muted = true;
 
         // Pause countdown when video is paused
         video.addEventListener('pause', () => {
@@ -473,6 +476,33 @@ class AdvertisementManager {
             }
             console.error('Video error:', video.error);
         });
+
+        // Try autoplay with fallbacks (mute-first, then user gesture)
+        const attemptAutoplay = async () => {
+            try {
+                await video.play();
+                this.updatePlayPauseButton(true);
+            } catch (err1) {
+                // Ensure muted and retry
+                try {
+                    video.muted = true;
+                    this.updateVolumeButton(true);
+                    await video.play();
+                    this.updatePlayPauseButton(true);
+                } catch (err2) {
+                    // Show overlay controls and wait for user to click play
+                    const controlsOverlay = document.querySelector('.video-controls-overlay');
+                    if (controlsOverlay) controlsOverlay.style.opacity = '1';
+                    this.updatePlayPauseButton(false);
+                }
+            }
+        };
+        // Kick off autoplay once enough data is available
+        if (video.readyState >= 2) {
+            attemptAutoplay();
+        } else {
+            video.addEventListener('canplay', attemptAutoplay, { once: true });
+        }
 
         // Add custom control event listeners
         this.addCustomVideoControls(video);
