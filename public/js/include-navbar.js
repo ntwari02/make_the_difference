@@ -27,8 +27,8 @@ async function includeNavbar() {
             return;
         }
         
-        // Fetch navbar HTML
-        const response = await fetch('navbar.html');
+        // Fetch navbar HTML (absolute path + cache-buster to avoid stale SW/CDN)
+        const response = await fetch('/navbar.html?v=2', { cache: 'no-store' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -674,13 +674,15 @@ async function updateAuthState(elements) {
             
             // Fetch fresh profile to avoid stale avatar on refresh/logout
             try {
-                const res = await fetch('/api/user/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch('/api/user/profile', { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store' });
                 if (res.ok) {
                     const prof = await res.json();
                     const freshUser = { ...user, ...prof.user };
                     localStorage.setItem('user', JSON.stringify(freshUser));
                     updateProfilePhoto(freshUser);
                 } else {
+                    // Fallback: if token exists but profile fails (e.g., wrong base path), keep showing initials
+                    console.warn('[Navbar] Profile fetch failed on this origin', res.status, res.statusText);
                     updateProfilePhoto(user);
                 }
             } catch {
