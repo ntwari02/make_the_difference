@@ -329,7 +329,8 @@
     <script>
       // Basic include hooks (assuming these scripts replace containers)
       document.addEventListener('DOMContentLoaded', () => {
-        // no-op; included scripts manage header/sidebar
+        // Initialize global socket to refresh list in real time even before a conversation is opened
+        try { initAdminSocket(); } catch {}
       });
 
       const token = localStorage.getItem('token');
@@ -638,6 +639,24 @@
             });
           }
           window.chatSocket.emit('joinConversation', conversationId);
+        }catch{}
+      }
+
+      // Initialize a base socket listener to refresh the conversations list globally
+      function initAdminSocket(){
+        try{
+          if (window.chatSocketInitialized) return;
+          const start = () => {
+            try{
+              const userId = (user && (user.id || user.userId)) || 'admin';
+              if (!window.chatSocket){ window.chatSocket = window.io('/', { auth:{ userId } }); }
+              // Global message handlers (do not depend on a selected room)
+              window.chatSocket.on('message', ()=>{ try{ fetchConversations(); }catch{} });
+              window.chatSocket.on('newMessage', ()=>{ try{ fetchConversations(); }catch{} });
+              window.chatSocketInitialized = true;
+            }catch{}
+          };
+          if (!window.io){ const s=document.createElement('script'); s.src='/socket.io/socket.io.js'; s.onload=start; document.body.appendChild(s); } else { start(); }
         }catch{}
       }
 
@@ -1404,9 +1423,9 @@
         if (isImage) {
           return `
             <div class="mb-2">
-              <img src="/api/notifications/view/${reply.attachment_url}" alt="attachment" 
+              <img src="/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}" alt="attachment" 
                    class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                   onclick="openImageModal('/api/notifications/view/${reply.attachment_url}')" />
+                   onclick="openImageModal('/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}')" />
             </div>
           `;
         } else {
@@ -1451,7 +1470,7 @@
           }
           
           // Use the view endpoint to open the file
-          const fileUrl = `/api/notifications/view/${filename}`;
+          const fileUrl = `/api/notifications/view?file=${encodeURIComponent(filename)}`;
           
           // Check if it's a PDF file
           const isPdf = filename.toLowerCase().endsWith('.pdf');

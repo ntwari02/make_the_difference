@@ -45,9 +45,14 @@
                                 </div>
                             </div>
                             <!-- Mobile Toggle Button -->
-                            <button id="mobileToggle" class="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                                <i class="fas fa-bars text-xl"></i>
-                            </button>
+                            <div class="lg:hidden flex items-center gap-2">
+                                <button id="mobileToggleList" class="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Show list">
+                                    <i class="fas fa-list text-xl"></i>
+                                </button>
+                                <button id="mobileToggleChat" class="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Show chat">
+                                    <i class="fas fa-comment-dots text-xl"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -66,7 +71,7 @@
                         </div>
 
                         <!-- Right Side - Chat Area -->
-                        <div class="flex-1 flex flex-col min-h-0">
+                        <div id="chatPane" class="flex-1 flex flex-col min-h-0">
                             <div id="chatArea" class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
                                 <div class="text-center p-4">
                                     <i class="fas fa-comments text-3xl sm:text-4xl mb-4"></i>
@@ -180,6 +185,37 @@
         let notifications = [];
         let userReplyIndex = {};
 
+        // Mobile-only layout helpers
+        function showChatOnlyOnMobile() {
+            const sidebar = document.getElementById('notificationsSidebar');
+            const chat = document.getElementById('chatPane');
+            if (!sidebar || !chat) return;
+            if (window.matchMedia('(max-width: 1023px)').matches) { // < lg
+                sidebar.classList.add('hidden');
+                chat.classList.remove('hidden');
+            }
+        }
+
+        function showListOnlyOnMobile() {
+            const sidebar = document.getElementById('notificationsSidebar');
+            const chat = document.getElementById('chatPane');
+            if (!sidebar || !chat) return;
+            if (window.matchMedia('(max-width: 1023px)').matches) { // < lg
+                sidebar.classList.remove('hidden');
+                chat.classList.add('hidden');
+            }
+        }
+
+        function showSplitOnDesktop() {
+            const sidebar = document.getElementById('notificationsSidebar');
+            const chat = document.getElementById('chatPane');
+            if (!sidebar || !chat) return;
+            if (window.matchMedia('(min-width: 1024px)').matches) { // lg+
+                sidebar.classList.remove('hidden');
+                chat.classList.remove('hidden');
+            }
+        }
+
         // Initialize Socket.IO with connection management
         function initSocket() {
             try {
@@ -279,6 +315,19 @@
                 updateConnectionStatus('error');
             }
         }
+
+        // Bind mobile toggle buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnList = document.getElementById('mobileToggleList');
+            const btnChat = document.getElementById('mobileToggleChat');
+            btnList?.addEventListener('click', (e) => { e.preventDefault(); showListOnlyOnMobile(); });
+            btnChat?.addEventListener('click', (e) => { e.preventDefault(); showChatOnlyOnMobile(); });
+            // Ensure desktop shows split panes
+            const mq = window.matchMedia('(min-width: 1024px)');
+            const handle = () => mq.matches ? showSplitOnDesktop() : showListOnlyOnMobile();
+            try { mq.addEventListener('change', handle); } catch { /* Safari */ mq.addListener(handle); }
+            handle();
+        });
 
         // Update connection status indicator
         function updateConnectionStatus(status) {
@@ -583,6 +632,8 @@
             }
 
                 console.log('Found conversation:', conversation);
+                // On mobile, switch to chat-only view for more space
+                showChatOnlyOnMobile();
                 currentConversationId = conversation.id;
                 
                 // Join Socket.IO room (pass id directly as server expects)
@@ -781,9 +832,9 @@
             if (isImage) {
                 return `
                     <div class="mb-2">
-                        <img src="/api/notifications/view/${reply.attachment_url}" alt="attachment" 
+                        <img src="/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}" alt="attachment" 
                              class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                             onclick="openUserImageModal('/api/notifications/view/${reply.attachment_url}')" />
+                             onclick="openUserImageModal('/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}')" />
                     </div>
                 `;
             } else {
@@ -1423,7 +1474,7 @@
                 }
                 
                 // Use the view endpoint to open the file
-                const fileUrl = `/api/notifications/view/${filename}`;
+                const fileUrl = `/api/notifications/view?file=${encodeURIComponent(filename)}`;
                 
                 // Check if it's a PDF file
                 const isPdf = filename.toLowerCase().endsWith('.pdf');
@@ -1478,10 +1529,12 @@
         function initMobileToggle() {
             const mobileToggle = document.getElementById('mobileToggle');
             const notificationsSidebar = document.getElementById('notificationsSidebar');
+            const chatPane = document.getElementById('chatPane');
             
-            if (mobileToggle && notificationsSidebar) {
+            if (mobileToggle && notificationsSidebar && chatPane) {
                 mobileToggle.addEventListener('click', () => {
                     notificationsSidebar.classList.toggle('hidden');
+                    chatPane.classList.toggle('hidden');
                     const icon = mobileToggle.querySelector('i');
                     if (notificationsSidebar.classList.contains('hidden')) {
                         icon.className = 'fas fa-bars text-xl';

@@ -7534,3 +7534,1100 @@ CREATE TABLE IF NOT EXISTS `replies` (
       SELECT COUNT(*) as unread_count FROM user_notifications 
       WHERE user_id = ? AND is_read = 0
     
+2025-09-08T12:12:34.109Z [995ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:19:53.553Z [1086ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:28:55.859Z [451ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:28:55.862Z [368ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T12:29:55.819Z [440ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:29:55.824Z [428ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:41:47.959Z [324ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:41:48.030Z [388ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:41:55.760Z [471ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:41:57.056Z [1736ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T12:43:40.788Z [488ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:47:25.186Z [2349ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:47:27.323Z [980ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:47:27.347Z [1187ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:47:42.890Z [934ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:49:23.522Z [1032ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:49:23.531Z [1030ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:51:00.931Z [942ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:51:22.902Z [909ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:51:26.442Z [952ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T12:51:26.531Z [912ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:51:42.418Z [1973ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:51:43.537Z [1114ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE
+2025-09-08T12:51:43.792Z [1140ms] SELECT profile_picture FROM users LIMIT 1
+2025-09-08T12:51:44.589Z [793ms] SELECT profile_picture FROM users WHERE id = ?
+2025-09-08T12:51:44.594Z [1056ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T12:52:02.112Z [1933ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:52:59.285Z [325ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0
+2025-09-08T12:54:42.011Z [944ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:54:45.834Z [1364ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:54:45.871Z [1367ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:54:48.877Z [2999ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE
+2025-09-08T12:54:52.146Z [3268ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T12:54:54.580Z [2431ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0
+2025-09-08T12:54:56.753Z [12236ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T12:54:57.361Z [2779ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T12:54:59.506Z [2752ms] SELECT id, full_name, email, created_at, phone, bio, profile_picture FROM users WHERE id = ?
+2025-09-08T12:54:59.911Z [2538ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:55:00.918Z [2270ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:55:02.869Z [2953ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE
+2025-09-08T12:55:03.964Z [3043ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T12:55:05.546Z [2670ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T12:55:07.844Z [2286ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0
+2025-09-08T12:55:08.054Z [9342ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:55:09.707Z [560ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:55:38.584Z [1231ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-08T12:55:39.739Z [321ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:55:42.615Z [340ms] SELECT id, full_name, email, created_at, phone, bio, profile_picture FROM users WHERE id = ?
+2025-09-08T12:55:42.659Z [383ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE
+2025-09-08T12:55:42.725Z [446ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:56:36.273Z [961ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:56:41.719Z [1025ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:57:01.343Z [953ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:58:02.879Z [417ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T12:58:24.337Z [1123ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:58:24.349Z [1128ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T12:58:25.848Z [990ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T12:58:26.163Z [308ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-08T12:59:59.222Z [412ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T12:59:59.529Z [303ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:00:18.630Z [1487ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:00:18.640Z [1500ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:00:19.380Z [492ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:00:22.797Z [1001ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T13:00:52.711Z [896ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:00:53.813Z [1097ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:00:54.356Z [541ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:00:55.053Z [691ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:00:55.643Z [586ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:01:08.030Z [490ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:01:23.597Z [484ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:01:43.378Z [1536ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:01:43.691Z [310ms] 
+      SELECT COUNT(*) as unread_count FROM user_notifications 
+      WHERE user_id = ? AND is_read = 0
+    
+2025-09-08T13:02:01.311Z [1411ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:02:01.316Z [1409ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:02:01.320Z [1394ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:02:01.801Z [300ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:02:02.412Z [414ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-08T13:02:05.178Z [585ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:02:05.181Z [416ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:02:05.195Z [589ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T13:03:07.728Z [1144ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:03:19.750Z [1141ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:03:19.770Z [1153ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:03:19.777Z [1190ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:05:53.689Z [398ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:05:53.717Z [326ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T13:05:53.784Z [391ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:05:53.887Z [305ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:06:00.160Z [330ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:06:00.182Z [347ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:09:39.091Z [957ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T13:09:39.273Z [948ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:09:53.650Z [509ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:09:54.352Z [430ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:10:00.150Z [438ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:10:00.159Z [443ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:10:00.866Z [448ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:10:00.933Z [461ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:01.311Z [439ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:01.336Z [401ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        COUNT(r.id) as reply_count,
+        MAX(r.created_at) as last_reply_at
+      FROM 
+2025-09-08T13:10:01.920Z [607ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:01.935Z [580ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:01.948Z [582ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:02.449Z [528ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:10:02.485Z [547ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        COUNT(r.id) as reply_count,
+        MAX(r.created_at) as last_reply_at
+      FROM 
+2025-09-08T13:10:02.507Z [553ms] SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)
+2025-09-08T13:10:02.909Z [459ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:02.945Z [442ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:03.029Z [520ms] UPDATE conversations SET is_read = 1, last_read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-08T13:10:04.260Z [1191ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:04.769Z [1818ms] SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)
+2025-09-08T13:10:04.771Z [1860ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:10:05.084Z [822ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        admin.full_name as admin_name
+      FROM convers
+2025-09-08T13:10:05.514Z [744ms] UPDATE conversations SET is_read = 1, last_read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-08T13:10:05.783Z [1003ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:06.103Z [1018ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:10:06.280Z [379ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:06.614Z [2999ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:10:07.784Z [541ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:10:07.821Z [561ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:08.600Z [766ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:10:08.807Z [674ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:09.124Z [523ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:09.263Z [455ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:10.040Z [351ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:10:38.836Z [556ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:10:39.431Z [306ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:10:39.738Z [306ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:10:53.710Z [361ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:11:08.737Z [438ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:11:24.497Z [1196ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:11:25.333Z [833ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:11:25.929Z [593ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:11:26.551Z [621ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:11:27.662Z [1086ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:12:00.374Z [987ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:14:09.958Z [1785ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:14:27.160Z [993ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:14:39.453Z [527ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:14:49.065Z [413ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:14:50.056Z [941ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:14:50.094Z [961ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:14:59.766Z [704ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:15:08.600Z [620ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-08T13:15:12.214Z [505ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:15:12.741Z [604ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-08T13:15:12.978Z [338ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:15:12.995Z [352ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:15:16.240Z [376ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:15:38.432Z [378ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:15:38.604Z [523ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:15:42.573Z [606ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:18:35.321Z [970ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:18:42.659Z [912ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:18:46.562Z [380ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:19:05.026Z [369ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:19:05.077Z [380ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:19:05.385Z [320ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:20:02.666Z [369ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:25:56.661Z [494ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:29:11.582Z [368ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:29:11.992Z [395ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:29:42.334Z [303ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:29:42.379Z [326ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:42.518Z [318ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:42.564Z [326ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:42.698Z [315ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:29:42.878Z [308ms] SHOW TABLES LIKE "user_notifications"
+2025-09-08T13:29:42.928Z [496ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:29:43.063Z [363ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:43.116Z [311ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:43.188Z [564ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:29:43.253Z [374ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-08T13:29:43.553Z [1573ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-08T13:30:10.050Z [378ms] 
+      SELECT 
+        r.*,
+        u.full_name as sender_name
+      FROM replies r
+      LEFT JOIN users u ON r.sender_id = u.id
+      WHERE r.conversation_id = ?
+      ORDER BY r.created_at ASC
+    
+2025-09-08T13:30:10.510Z [497ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:30:10.539Z [483ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-08T13:30:45.084Z [492ms] UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-08T13:30:50.400Z [326ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:30:59.646Z [386ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:31:02.276Z [339ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:31:02.450Z [300ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T13:32:33.790Z [551ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:32:34.779Z [474ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:32:36.295Z [314ms] SELECT 
+            s.id,
+            s.name,
+            s.description,
+            s.eligibility_criteria,
+            s.application_deadline,
+            s.award_amount,
+            s.is_recurring,
+2025-09-08T13:32:36.300Z [317ms] SELECT COUNT(*) as total FROM scholarship_applications sa 
+             LEFT JOIN scholarships s ON sa.scholarship_id = s.id 
+             WHERE 1=1
+2025-09-08T13:32:36.636Z [333ms] 
+            SELECT 
+                sa.application_id as id,
+                sa.status,
+                sa.application_date as created_at,
+                s.award_amount as amount,
+                sa
+2025-09-08T13:33:41.835Z [538ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:33:43.370Z [1530ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:38:41.529Z [925ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:38:42.138Z [592ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:39:41.613Z [763ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:40:11.278Z [972ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:40:11.288Z [1001ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:40:11.308Z [1011ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:40:16.500Z [430ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:40:16.630Z [320ms] SELECT id, email, role, status FROM users WHERE id = ? AND status = 'active'
+2025-09-08T13:40:17.081Z [324ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T13:40:17.123Z [360ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:40:17.170Z [380ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-09-08T13:40:17.246Z [404ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T13:41:17.903Z [579ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:41:17.907Z [562ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:42:25.716Z [313ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:42:27.522Z [2189ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:42:27.541Z [2205ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:42:27.639Z [2313ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:42:29.770Z [339ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-08T13:42:30.158Z [586ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-09-08T13:42:30.377Z [711ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T13:42:31.877Z [321ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T13:44:00.485Z [375ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:44:00.503Z [402ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:46:56.267Z [949ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:47:35.840Z [504ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T13:48:32.690Z [961ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:48:33.044Z [1215ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:48:33.471Z [304ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:48:33.664Z [485ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:48:33.739Z [554ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:48:33.754Z [303ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:48:33.866Z [373ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:48:34.298Z [1135ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:49:14.500Z [459ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:49:14.806Z [304ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1 AND (u.full_name LIKE ? OR u.email LIKE ?)
+        
+2025-09-08T13:49:15.114Z [307ms] 
+            SELECT u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login
+            FROM users u
+            WHERE 1=1 AND (u.full_name LIKE ? OR u.email LIKE ?)
+            ORDER
+2025-09-08T13:55:07.303Z [319ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.413Z [409ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.583Z [509ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.649Z [551ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.666Z [533ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.670Z [376ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:07.772Z [361ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T13:55:08.035Z [352ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T13:55:08.225Z [351ms] 
+            SELECT 
+                'application_submitted' as type,
+                CONCAT('New application submitted by ', full_name) as description,
+                application_date as created_at
+
+2025-09-08T13:55:08.329Z [335ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T13:55:08.400Z [331ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T14:17:02.913Z [317ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:17:03.424Z [1411ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:17:03.591Z [1493ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:17:04.459Z [1749ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:17:06.495Z [483ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T14:17:11.977Z [370ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:17:12.176Z [523ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T14:17:13.086Z [1373ms] 
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+ 
+2025-09-08T14:17:13.818Z [2022ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T14:17:13.943Z [1066ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:17:14.484Z [2887ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:17:14.696Z [400ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:17:14.880Z [442ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:17:15.395Z [704ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-09-08T14:17:15.640Z [388ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:17:15.759Z [458ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:17:16.212Z [455ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:17:16.461Z [604ms] 
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date
+2025-09-08T14:17:17.138Z [314ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:17:17.846Z [983ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:17:18.277Z [1182ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:17:18.592Z [747ms] 
+            SELECT COUNT(*) as count 
+            FROM scholarship_applications 
+            WHERE application_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        
+2025-09-08T14:17:18.776Z [517ms] 
+            SELECT COUNT(*) as count 
+            FROM users 
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        
+2025-09-08T14:17:18.906Z [410ms] 
+            SELECT 
+                status,
+                COUNT(*) as value
+            FROM scholarship_applications
+            GROUP BY status
+        
+2025-09-08T14:17:19.640Z [567ms] 
+            SELECT 
+                DATE_FORMAT(application_date, ?) as label,
+                COUNT(*) as value
+            FROM scholarship_applications
+            WHERE application_date >= DATE_S
+2025-09-08T14:17:20.175Z [979ms] 
+            SELECT 
+                DATE_FORMAT(created_at, '%Y-%m-%d') as label,
+                COUNT(*) as value
+            FROM users
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 
+2025-09-08T14:18:46.325Z [311ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:18:46.661Z [331ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:20:19.360Z [1064ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:28.542Z [649ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:29.180Z [598ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:24:29.898Z [662ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:30.589Z [663ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:24:32.901Z [951ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:24:33.556Z [1195ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:24:35.125Z [1191ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:36.715Z [1577ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T14:24:38.508Z [1752ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:24:39.559Z [376ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:24:40.064Z [1244ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:24:40.253Z [1167ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-08T14:24:40.827Z [335ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:40.882Z [380ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:41.019Z [326ms] 
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+ 
+2025-09-08T14:24:41.076Z [1785ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:24:41.173Z [473ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T14:24:41.306Z [382ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-09-08T14:24:41.349Z [423ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:24:41.471Z [301ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:24:41.559Z [319ms] 
+            SELECT u.id, u.full_name, u.email, u.role, u.status, u.created_at, u.last_login
+            FROM users u
+            WHERE 1=1
+            ORDER BY u.created_at DESC
+            LIMIT ? O
+2025-09-08T14:24:41.822Z [351ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T14:25:09.774Z [511ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:25:39.601Z [316ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:25:39.939Z [333ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:25:42.227Z [1377ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:25:54.203Z [11970ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:26:12.136Z [2726ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:26:12.149Z [2830ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:26:17.241Z [678ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:26:17.262Z [718ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:26:17.328Z [831ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:26:20.113Z [1359ms] SELECT 
+          s.id,
+          s.name,
+          s.description,
+          s.eligibility_criteria,
+          s.application_deadline,
+          s.award_amount,
+          s.is_recurring,
+          s.n
+2025-09-08T14:27:26.890Z [1685ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:29:32.626Z [467ms] SELECT * FROM scholarship_applications WHERE scholarship_id = ?
+2025-09-08T14:32:56.611Z [518ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:33:02.696Z [334ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:33:02.906Z [533ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:33:03.296Z [453ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:33:13.986Z [474ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:14.585Z [407ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:14.783Z [550ms] 
+            SELECT 
+                'user_registered' as type,
+                CONCAT('New user registered: ', full_name) as description,
+                created_at
+            FROM users 
+          
+2025-09-08T14:33:14.985Z [590ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:33:15.082Z [1370ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:15.105Z [1253ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:15.186Z [1377ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:15.259Z [649ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:33:15.279Z [484ms] 
+            SELECT 
+                'application_submitted' as type,
+                CONCAT('New application submitted by ', full_name) as description,
+                application_date as created_at
+
+2025-09-08T14:33:24.876Z [322ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:33:26.818Z [2045ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:33:26.823Z [1948ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:27.336Z [519ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-08T14:33:27.831Z [619ms] 
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date
+2025-09-08T14:33:27.842Z [593ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:33:28.265Z [333ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:33:53.546Z [615ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:34:55.861Z [582ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:25.638Z [382ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:26.101Z [463ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:26.426Z [332ms] SELECT COUNT(*) as total FROM users WHERE status = "active"
+2025-09-08T14:35:26.789Z [1278ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:26.893Z [1298ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:26.920Z [1312ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:26.959Z [318ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:35:27.125Z [483ms] 
+            SELECT 
+                'application_submitted' as type,
+                CONCAT('New application submitted by ', full_name) as description,
+                application_date as created_at
+
+2025-09-08T14:35:27.689Z [770ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-08T14:35:27.728Z [605ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:35:27.762Z [870ms] 
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+ 
+2025-09-08T14:35:27.806Z [684ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T14:35:28.238Z [360ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-08T14:35:28.375Z [354ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:35:32.459Z [398ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:32.861Z [783ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-08T14:35:33.111Z [654ms] 
+            SELECT COUNT(*) as count 
+            FROM scholarship_applications 
+            WHERE application_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        
+2025-09-08T14:35:33.245Z [385ms] 
+            SELECT COUNT(*) as count 
+            FROM users 
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        
+2025-09-08T14:36:37.076Z [927ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:36:37.212Z [1018ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:36:37.234Z [971ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-08T14:36:38.360Z [560ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:36:39.366Z [541ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
+2025-09-08T14:36:39.912Z [531ms] 
+            SELECT 
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today,
+                COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 EN
+2025-09-08T14:36:42.635Z [318ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-08T14:36:42.678Z [300ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-08T14:36:43.181Z [518ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-08T14:36:45.785Z [358ms] 
+            SELECT 
+                DATE_FORMAT(application_date, ?) as label,
+                COUNT(*) as value
+            FROM scholarship_applications
+            WHERE application_date >= DATE_S
+2025-09-08T14:36:45.852Z [319ms] 
+            SELECT 
+                DATE_FORMAT(created_at, '%Y-%m-%d') as label,
+                COUNT(*) as value
+            FROM users
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 
+2025-09-08T14:38:18.724Z [1001ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        

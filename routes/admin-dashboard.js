@@ -385,6 +385,51 @@ router.get('/activity/recent', adminAuth, async (req, res) => {
     }
 });
 
+// Get recent applicants (latest scholarship applications)
+router.get('/applicants/recent', adminAuth, async (req, res) => {
+    try {
+        // Parse and clamp limit for safety
+        const rawLimit = parseInt(req.query.limit, 10);
+        const limit = Math.min(Math.max(isNaN(rawLimit) ? 10 : rawLimit, 1), 50);
+
+        // Fetch the most recent applications with applicant + scholarship info
+        const [rows] = await db.query(`
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+                sa.full_name                     AS applicant_name,
+                sa.email_address                 AS applicant_email,
+                s.name                           AS scholarship_title,
+                s.award_amount                   AS amount,
+                u.id                              AS user_id,
+                u.full_name                       AS user_full_name
+            FROM scholarship_applications sa
+            LEFT JOIN scholarships s ON sa.scholarship_id = s.id
+            LEFT JOIN users u ON LOWER(TRIM(u.email)) = LOWER(TRIM(sa.email_address))
+            ORDER BY sa.application_date DESC
+            LIMIT ?
+        `, [limit]);
+
+        // Normalize shape and add convenient fields
+        const data = rows.map(r => ({
+            id: r.id,
+            created_at: r.created_at,
+            status: r.status || 'pending',
+            applicant_name: r.applicant_name || r.user_full_name || 'Unknown Applicant',
+            applicant_email: r.applicant_email || '',
+            scholarship_title: r.scholarship_title || 'Unknown',
+            amount: r.amount || 0,
+            user_id: r.user_id || null
+        }));
+
+        return res.json({ success: true, data });
+    } catch (error) {
+        console.error('recent applicants error:', error);
+        return res.status(500).json({ success: false, message: 'Error fetching recent applicants' });
+    }
+});
+
 // Get chart data for applications
 router.get('/charts/applications', adminAuth, async (req, res) => {
     try {

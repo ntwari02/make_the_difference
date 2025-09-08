@@ -440,8 +440,9 @@ function initializeNotifications(elements) {
         console.log('[Notifications] Unable to measure bell:', e?.message || e);
     }
 
-    // Navigate to notifications page on click with preloading
-    notificationBell.addEventListener('click', async (e) => {
+    // Common handler for activating the bell (click/touch)
+    let bellNavigated = false;
+    async function onBellActivate(e) {
         console.log('[Notifications] Bell click detected', {
             target: e.target && (e.target.id || e.target.tagName),
             time: new Date().toISOString()
@@ -458,38 +459,48 @@ function initializeNotifications(elements) {
             </svg>
         `;
         notificationBell.disabled = true;
-        
-        try {
-            // Preload notifications data
-            const token = localStorage.getItem('token');
-            if (token) {
-                const response = await fetch('/api/notifications', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const notifications = await response.json();
-                    // Store in sessionStorage for instant loading
-                    sessionStorage.setItem('notifications_cache', JSON.stringify(notifications));
-                    sessionStorage.setItem('notifications_timestamp', Date.now().toString());
+
+        // Fire-and-forget preload with timeout; do not block navigation (better on mobile)
+        const token = localStorage.getItem('token');
+        const preload = (async () => {
+            try {
+                if (token) {
+                    const controller = new AbortController();
+                    const t = setTimeout(() => controller.abort(), 1500);
+                    const response = await fetch('/api/notifications', {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        signal: controller.signal
+                    });
+                    clearTimeout(t);
+                    if (response.ok) {
+                        const notifications = await response.json();
+                        sessionStorage.setItem('notifications_cache', JSON.stringify(notifications));
+                        sessionStorage.setItem('notifications_timestamp', Date.now().toString());
+                    }
                 }
-            }
-            
-            // Navigate to notifications page
+            } catch {}
+        })();
+
+        // Navigate immediately (improves reliability on small/touch devices)
+        if (!bellNavigated) {
+            bellNavigated = true;
             const dest = 'notifications.html';
             console.log('[Notifications] Navigating to', dest);
             window.location.href = dest;
-        } catch (error) {
-            console.error('[Notifications] Preload failed:', error);
-            // Still navigate even if preload fails
-            window.location.href = 'notifications.html';
-        } finally {
-            // Restore original state if navigation fails
-            setTimeout(() => {
+        }
+
+        // Restore original state if navigation fails (e.g., SPA env)
+        setTimeout(() => {
+            try {
                 notificationBell.innerHTML = originalContent;
                 notificationBell.disabled = false;
-            }, 1000);
-        }
-    });
+            } catch {}
+        }, 1200);
+    }
+
+    // Navigate to notifications page on click/touch with preloading
+    notificationBell.addEventListener('click', onBellActivate, { passive: true });
+    notificationBell.addEventListener('touchend', onBellActivate, { passive: true });
 
     // Expose a small debugger
     window.debugNotificationBell = function() {
@@ -1263,6 +1274,8 @@ function initializePhotoUploadModal() {
     const removeBtn = document.getElementById('removePhotoBtn');
     const saveBtn = document.getElementById('savePhotoBtn');
     const fileInput = document.getElementById('photoFileInput');
+    const previewImg = document.getElementById('photoPreview');
+    const previewFallback = document.getElementById('photoPreviewFallback');
     
     if (!modal) return;
     
@@ -1273,6 +1286,13 @@ function initializePhotoUploadModal() {
     // Select photo button
     if (selectBtn && fileInput) {
         selectBtn.addEventListener('click', () => fileInput.click());
+    }
+
+    // Make the preview area tappable to open the picker (mobile-friendly)
+    if (fileInput && (previewImg || previewFallback)) {
+        const openPicker = () => fileInput.click();
+        previewImg?.addEventListener('click', openPicker, { passive: true });
+        previewFallback?.addEventListener('click', openPicker, { passive: true });
     }
     
     // File input change
@@ -1344,17 +1364,40 @@ function handlePhotoSelect(e) {
         return;
     }
     
-    // Preview image
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    // Preview image using object URL (more reliable on mobile)
+    try {
         const previewImg = document.getElementById('photoPreview');
         const previewFallback = document.getElementById('photoPreviewFallback');
-        
-        previewImg.src = e.target.result;
-        previewImg.classList.remove('hidden');
-        previewFallback.classList.add('hidden');
-    };
-    reader.readAsDataURL(file);
+        if (previewImg) {
+            // Revoke any previous object URL to avoid memory leaks
+            if (previewImg.dataset.objurl) {
+                try { URL.revokeObjectURL(previewImg.dataset.objurl); } catch {}
+                previewImg.dataset.objurl = '';
+            }
+            const objUrl = URL.createObjectURL(file);
+            previewImg.src = objUrl;
+            previewImg.dataset.objurl = objUrl;
+            previewImg.onload = () => {
+                try { URL.revokeObjectURL(objUrl); } catch {}
+                previewImg.dataset.objurl = '';
+            };
+            previewImg.classList.remove('hidden');
+        }
+        if (previewFallback) previewFallback.classList.add('hidden');
+    } catch {
+        // Fallback to FileReader if object URL fails
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const previewImg2 = document.getElementById('photoPreview');
+            const previewFallback2 = document.getElementById('photoPreviewFallback');
+            if (previewImg2) {
+                previewImg2.src = ev.target.result;
+                previewImg2.classList.remove('hidden');
+            }
+            if (previewFallback2) previewFallback2.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 async function handleRemovePhoto() {
@@ -1481,9 +1524,9 @@ function updateProfileModalDisplay(user) {
     
     // Handle profile picture
     if (user.profile_picture) {
-        const src = user.profile_picture.startsWith('http') 
-            ? user.profile_picture 
-            : user.profile_picture.replace(/^\/+/, '');
+        const src = user.profile_picture.startsWith('http')
+            ? user.profile_picture
+            : (user.profile_picture.startsWith('/') ? user.profile_picture : '/' + user.profile_picture);
         if (avatarEl) {
             avatarEl.src = src;
             avatarEl.classList.remove('hidden');

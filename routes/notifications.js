@@ -8,6 +8,43 @@ import fs from 'fs';
 
 const router = express.Router();
 
+// Ensure expected upload directories exist to avoid missing-folder issues
+const uploadRoots = [
+  path.join(process.cwd(), 'public', 'uploads'),
+  path.join(process.cwd(), 'uploads')
+];
+const uploadSubfolders = [
+  'chat',
+  '',
+  'ads',
+  'documents',
+  'partner-profiles',
+  'partners',
+  'profile_pictures',
+  'services',
+  'team',
+  'scholarship-documents'
+];
+
+function ensureUploadDirectoriesExist() {
+  try {
+    for (const root of uploadRoots) {
+      if (!fs.existsSync(root)) {
+        fs.mkdirSync(root, { recursive: true });
+      }
+      for (const sub of uploadSubfolders) {
+        if (!sub) continue;
+        const dir = path.join(root, sub);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+      }
+    }
+  } catch {}
+}
+
+ensureUploadDirectoriesExist();
+
 // Search users endpoint for admin
 router.get('/admin/users/search', auth, async (req, res) => {
   try {
@@ -99,7 +136,15 @@ router.post('/admin/conversations/new', auth, async (req, res) => {
 // Multer setup for chat attachments
 const storage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    cb(null, path.join(process.cwd(), 'public', 'uploads', 'chat'));
+    const dir = path.join(process.cwd(), 'public', 'uploads', 'chat');
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (e) {
+      // If directory creation fails, still attempt to proceed; multer will error on write
+    }
+    cb(null, dir);
   },
   filename: function (_req, file, cb) {
     const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -644,15 +689,33 @@ router.get('/view/:filename', async (req, res) => {
       });
     }
     
-    // Construct file path
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'chat', filename);
-    
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'File not found' 
-      });
+    // Construct candidate file paths (support legacy locations and common subfolders)
+    const uploadRoots = [
+      path.join(process.cwd(), 'public', 'uploads'),
+      path.join(process.cwd(), 'uploads')
+    ];
+    const subfolders = uploadSubfolders;
+    const candidates = [];
+    for (const root of uploadRoots) {
+      for (const sub of subfolders) {
+        candidates.push(sub ? path.join(root, sub, filename) : path.join(root, filename));
+      }
+    }
+
+    // Pick the first existing path
+    let filePath = null;
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) { filePath = candidate; break; }
+    }
+
+    if (!filePath) {
+      console.warn('[view] File not found for', filename, 'checked paths:', candidates);
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">\n  <rect width="100%" height="100%" fill="#f3f4f6"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280">Attachment not available</text>\n</svg>`;
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      return res.status(200).send(svg);
     }
     
     // Get original filename from database if possible
@@ -737,6 +800,80 @@ router.get('/view/:filename', async (req, res) => {
         success: false, 
         error: 'Internal server error' 
       });
+    }
+  }
+});
+
+// Safer view endpoint using query param: /api/notifications/view?file=<relative-path-or-filename>
+router.get('/view', async (req, res) => {
+  try {
+    let requested = String(req.query.file || '').trim();
+    if (!requested) {
+      return res.status(400).json({ success: false, error: 'Missing file parameter' });
+    }
+
+    // Normalize and strip attempts at traversal
+    requested = requested.replace(/^\/+/, '');
+    requested = requested.replace(/\\/g, '/');
+    if (requested.includes('..')) {
+      return res.status(400).json({ success: false, error: 'Invalid file path' });
+    }
+
+    // If path includes directories, keep only the last segment to prevent subdir injection
+    const parts = requested.split('/');
+    const filename = parts[parts.length - 1];
+
+    // Re-use the same candidate resolution logic
+    const uploadRoots = [
+      path.join(process.cwd(), 'public', 'uploads'),
+      path.join(process.cwd(), 'uploads')
+    ];
+    const subfolders = uploadSubfolders;
+    const candidates = [];
+    for (const root of uploadRoots) {
+      for (const sub of subfolders) {
+        candidates.push(sub ? path.join(root, sub, filename) : path.join(root, filename));
+      }
+    }
+
+    let filePath = null;
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) { filePath = candidate; break; }
+    }
+
+    if (!filePath) {
+      console.warn('[view?file] File not found for', filename, 'checked paths:', candidates);
+      const svg = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">\n  <rect width=\"100%\" height=\"100%\" fill=\"#f3f4f6\"/>\n  <text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"18\" fill=\"#6b7280\">Attachment not available</text>\n  <text x=\"50%\" y=\"60%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#9ca3af\">${filename}</text>\n</svg>`;
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      return res.status(200).send(svg);
+    }
+
+    // Determine content type
+    const ext = path.extname(filename).toLowerCase();
+    let contentType = 'application/octet-stream';
+    switch (ext) {
+      case '.pdf': contentType = 'application/pdf'; break;
+      case '.jpg':
+      case '.jpeg': contentType = 'image/jpeg'; break;
+      case '.png': contentType = 'image/png'; break;
+      case '.gif': contentType = 'image/gif'; break;
+      case '.webp': contentType = 'image/webp'; break;
+      case '.svg': contentType = 'image/svg+xml'; break;
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error('Error in view?file endpoint:', error);
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
 });
@@ -1312,9 +1449,24 @@ router.get('/unified-count', auth, async (req, res) => {
   try {
     // Count unread notifications
     const [notifResult] = await db.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND is_read = FALSE',
+      'SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0',
       [req.user.id, req.user.email]
     );
+
+    // Also count unread from user_notifications table if it exists (compatibility)
+    let userNotifCount = 0;
+    try {
+      const [exists] = await db.query('SHOW TABLES LIKE "user_notifications"');
+      if (Array.isArray(exists) && exists.length > 0) {
+        const [userNotifRows] = await db.query(
+          'SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0',
+          [req.user.id]
+        );
+        userNotifCount = Number(userNotifRows?.[0]?.count || 0);
+      }
+    } catch (compatErr) {
+      // If table doesn't exist or other schema issues, ignore silently
+    }
     
     // Count unread conversations; prefer last_read_at if present, otherwise fallback to is_read
     let convResult;
@@ -1351,7 +1503,7 @@ router.get('/unified-count', auth, async (req, res) => {
       }
     }
     
-    const notificationCount = notifResult[0].count || 0;
+    const notificationCount = (notifResult[0].count || 0) + userNotifCount;
     const conversationCount = convResult[0].count || 0;
     const totalCount = notificationCount + conversationCount;
     

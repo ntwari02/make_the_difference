@@ -103,6 +103,22 @@
         html {
             scroll-behavior: smooth;
         }
+        /* Prevent horizontal overflow */
+        html, body, .admin-main-content, .admin-content-container {
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+        @media (max-width: 640px) {
+            .admin-main-content, .admin-content-container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            .glass { padding: 12px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .charts-container { grid-template-columns: 1fr; }
+            .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            canvas { max-width: 100% !important; height: auto !important; }
+        }
         
         /* Better focus states for accessibility */
         button:focus, a:focus, input:focus, select:focus, textarea:focus {

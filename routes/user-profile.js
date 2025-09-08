@@ -240,7 +240,96 @@ router.post('/profile/photo', upload.single('photo'), async (req, res) => {
 
     const newPublicPath = `/uploads/profiles/${req.file.filename}`;
 
-    await db.query('UPDATE users SET profile_picture = ?, updated_at = NOW() WHERE id = ?', [newPublicPath, userId]);
+    // Update user record, tolerate missing updated_at column
+    try {
+      await db.query('UPDATE users SET profile_picture = ?, updated_at = NOW() WHERE id = ?', [newPublicPath, userId]);
+    } catch (e) {
+      if (e.code === 'ER_BAD_FIELD_ERROR') {
+        await db.query('UPDATE users SET profile_picture = ? WHERE id = ?', [newPublicPath, userId]);
+      } else {
+        throw e;
+      }
+    }
+
+    // Optional upsert into compatibility table
+    try {
+      await db.query('CREATE TABLE IF NOT EXISTS user_profile_pictures (user_id INT PRIMARY KEY, profile_picture_path VARCHAR(255), updated_at DATETIME)');
+      await db.query('REPLACE INTO user_profile_pictures (user_id, profile_picture_path, updated_at) VALUES (?, ?, NOW())', [userId, newPublicPath]);
+    } catch {}
+
+    // Delete old file if under profiles and different
+    if (oldPath && oldPath.startsWith('/uploads/profiles/') && oldPath !== newPublicPath) {
+      const disk = path.join('public', oldPath);
+      try { if (fs.existsSync(disk)) fs.unlinkSync(disk); } catch {}
+    }
+
+    // Return fresh user (select optional columns only if they exist)
+    let selectFields = 'id, full_name, email, created_at';
+    try {
+      await db.query('SELECT phone, bio, profile_picture FROM users LIMIT 1');
+      selectFields += ', phone, bio, profile_picture';
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR') {
+        // Ensure profile_picture is included even if phone/bio are missing
+        try {
+          await db.query('SELECT profile_picture FROM users LIMIT 1');
+          selectFields += ', profile_picture';
+        } catch {}
+      } else {
+        throw err;
+      }
+    }
+
+    const [users] = await db.query(`SELECT ${selectFields} FROM users WHERE id = ?`, [userId]);
+    return res.json({ success: true, message: 'Profile photo updated', user: users[0], profile_picture: newPublicPath });
+  } catch (error) {
+    console.error('Profile photo update error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to update profile photo' });
+  }
+});
+
+// Backwards compatibility: legacy upload-photo endpoint
+router.post('/upload-photo', upload.single('photo'), async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const userId = decoded.id;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    // Ensure column exists
+    try { await db.query('SELECT profile_picture FROM users LIMIT 1'); } catch (e) {
+      if (e.code === 'ER_BAD_FIELD_ERROR') {
+        return res.status(400).json({ success: false, error: 'Profile picture column missing' });
+      }
+      throw e;
+    }
+
+    // Get old picture to delete later
+    let oldPath = null;
+    try {
+      const [rows] = await db.query('SELECT profile_picture FROM users WHERE id = ?', [userId]);
+      oldPath = rows && rows[0] ? rows[0].profile_picture : null;
+    } catch {}
+
+    const newPublicPath = `/uploads/profiles/${req.file.filename}`;
+
+    // Update user record, tolerate missing updated_at column (legacy endpoint)
+    try {
+      await db.query('UPDATE users SET profile_picture = ?, updated_at = NOW() WHERE id = ?', [newPublicPath, userId]);
+    } catch (e) {
+      if (e.code === 'ER_BAD_FIELD_ERROR') {
+        await db.query('UPDATE users SET profile_picture = ? WHERE id = ?', [newPublicPath, userId]);
+      } else {
+        throw e;
+      }
+    }
 
     // Optional upsert into compatibility table
     try {
@@ -258,7 +347,7 @@ router.post('/profile/photo', upload.single('photo'), async (req, res) => {
     const [users] = await db.query('SELECT id, full_name, email, phone, bio, profile_picture, created_at FROM users WHERE id = ?', [userId]);
     return res.json({ success: true, message: 'Profile photo updated', user: users[0], profile_picture: newPublicPath });
   } catch (error) {
-    console.error('Profile photo update error:', error);
+    console.error('Legacy profile photo update error:', error);
     return res.status(500).json({ success: false, error: 'Failed to update profile photo' });
   }
 });
