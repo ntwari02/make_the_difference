@@ -1468,38 +1468,55 @@ router.get('/unified-count', auth, async (req, res) => {
       // If table doesn't exist or other schema issues, ignore silently
     }
     
-    // Count unread conversations; prefer last_read_at if present, otherwise fallback to is_read
+    // Count conversations based on mode
+    const mode = String(req.query.mode || 'unread').toLowerCase();
     let convResult;
-    try {
+    if (mode === 'any-admin-reply') {
+      // Count any conversation that has at least one admin reply
       [convResult] = await db.query(`
-        SELECT COUNT(DISTINCT c.id) as count 
+        SELECT COUNT(DISTINCT c.id) as count
         FROM conversations c
         JOIN notifications n ON c.notification_id = n.id
-        LEFT JOIN replies r ON c.id = r.conversation_id
-        WHERE (c.user_id = ? OR c.email = ?) 
-        AND (
-          COALESCE(c.is_read, 0) = 0
-          OR EXISTS (
-            SELECT 1 FROM replies r2 
-            WHERE r2.conversation_id = c.id 
-            AND r2.sender_type = 'admin' 
-            AND r2.created_at > COALESCE(c.last_read_at, c.created_at)
-          )
+        WHERE (c.user_id = ? OR c.email = ?)
+        AND EXISTS (
+          SELECT 1 FROM replies r2
+          WHERE r2.conversation_id = c.id
+          AND r2.sender_type = 'admin'
         )
       `, [req.user.id, req.user.email]);
-    } catch (err) {
-      if (err.code === 'ER_BAD_FIELD_ERROR') {
-        // Fallback when last_read_at column is missing
+    } else {
+      // Default: only unread since last read
+      try {
         [convResult] = await db.query(`
           SELECT COUNT(DISTINCT c.id) as count 
           FROM conversations c
           JOIN notifications n ON c.notification_id = n.id
           LEFT JOIN replies r ON c.id = r.conversation_id
           WHERE (c.user_id = ? OR c.email = ?) 
-          AND (c.is_read = 0 OR c.is_read IS NULL)
+          AND (
+            COALESCE(c.is_read, 0) = 0
+            OR EXISTS (
+              SELECT 1 FROM replies r2 
+              WHERE r2.conversation_id = c.id 
+              AND r2.sender_type = 'admin' 
+              AND r2.created_at > COALESCE(c.last_read_at, c.created_at)
+            )
+          )
         `, [req.user.id, req.user.email]);
-      } else {
-        throw err;
+      } catch (err) {
+        if (err.code === 'ER_BAD_FIELD_ERROR') {
+          // Fallback when last_read_at column is missing
+          [convResult] = await db.query(`
+            SELECT COUNT(DISTINCT c.id) as count 
+            FROM conversations c
+            JOIN notifications n ON c.notification_id = n.id
+            LEFT JOIN replies r ON c.id = r.conversation_id
+            WHERE (c.user_id = ? OR c.email = ?) 
+            AND (c.is_read = 0 OR c.is_read IS NULL)
+          `, [req.user.id, req.user.email]);
+        } else {
+          throw err;
+        }
       }
     }
     

@@ -9314,3 +9314,44 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM users u
             WHERE u.id = ? AND u.status = 'active'
         
+2025-09-09T08:14:40.474Z [389ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T08:14:40.484Z [395ms] 
+            SELECT 
+                hr.id,
+                hr.email,
+                hr.pain_point,
+                hr.subject,
+                hr.message,
+                hr.status,
+                
+2025-09-09T08:14:41.343Z [520ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T08:16:43.311Z [430ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T08:16:43.878Z [339ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T09:14:53.494Z [648ms] SELECT id, full_name, email, created_at, phone, bio, profile_picture FROM users WHERE id = ?
+2025-09-09T09:14:54.012Z [1346ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-09T09:14:54.054Z [1364ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T09:14:54.180Z [1496ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-09T09:15:22.860Z [308ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-09T09:15:24.077Z [922ms] SHOW TABLES LIKE "user_notifications"
+2025-09-09T09:15:24.693Z [308ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
