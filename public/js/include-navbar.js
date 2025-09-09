@@ -66,8 +66,7 @@ async function includeNavbar() {
             console.log('⚠️ Navbar container not found, skipping navbar inclusion');
             return;
         }
-        // Hide navbar until fully initialized
-        hideNavbarContainer();
+        // Do not hide the navbar; we will render the profile area progressively for fastest paint
         
         // Fetch navbar HTML (absolute path + cache-buster to avoid stale SW/CDN)
         const response = await fetch('/navbar.html?v=2', { cache: 'no-store' });
@@ -85,13 +84,12 @@ async function includeNavbar() {
         // Wait for DOM to be ready, then initialize
         await waitForDOMReady();
         await initializeNavbar();
-        // Wait for avatar/admin to resolve, then reveal
-        await waitForAvatarReady();
-        showNavbarContainer();
         
     } catch (error) {
         console.error('❌ Error loading navbar:', error);
         handleNavbarError(error);
+        // Ensure navbar is not stuck hidden if initialization fails
+        try { showNavbarContainer(); } catch {}
     }
 }
 
@@ -763,9 +761,24 @@ async function updateAuthState(elements) {
                 if (res.ok) {
                     const prof = await res.json();
                     const profUser = (prof && (prof.user || prof)) || {};
-                    const freshUser = { ...user, ...profUser };
-                    localStorage.setItem('user', JSON.stringify(freshUser));
-                    updateProfilePhoto(freshUser);
+                    // Safe merge: do not lose an existing avatar if the API omits it
+                    const mergedUser = { ...user, ...profUser };
+                    const profPic = (
+                        profUser.profile_picture ||
+                        profUser.profile_picture_path ||
+                        profUser.profile_picture_url ||
+                        profUser.avatar ||
+                        profUser.avatar_url ||
+                        user.profile_picture ||
+                        user.profile_picture_path ||
+                        user.profile_picture_url ||
+                        user.avatar ||
+                        user.avatar_url ||
+                        ''
+                    );
+                    if (profPic) mergedUser.profile_picture = profPic;
+                    localStorage.setItem('user', JSON.stringify(mergedUser));
+                    updateProfilePhoto(mergedUser);
                 } else {
                     // Fallback: if token exists but profile fails (e.g., wrong base path), keep showing initials
                     console.warn('[Navbar] Profile fetch failed on this origin', res.status, res.statusText);
@@ -1418,6 +1431,17 @@ async function loadCurrentPhoto() {
         if (response.ok) {
             const data = await response.json();
             const user = (data && (data.user || data)) || {};
+            // Normalize any absolute disk-like paths into public URLs
+            ['profile_picture','profile_picture_path','profile_picture_url','avatar','avatar_url','image_path'].forEach(k => {
+                let v = user[k];
+                if (!v) return;
+                v = String(v).replace(/\\/g,'/');
+                const idx = v.indexOf('/uploads/');
+                if (idx !== -1) v = v.slice(idx);
+                v = v.replace(/^public\//,'/');
+                if (!v.startsWith('/')) v = '/' + v;
+                user[k] = v;
+            });
             
             const previewImg = document.getElementById('photoPreview');
             const previewFallback = document.getElementById('photoPreviewFallback');
