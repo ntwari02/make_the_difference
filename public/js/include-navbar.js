@@ -822,8 +822,8 @@ async function updateAuthState(elements) {
             if (authButtons) {
                 authButtons.classList.remove('hidden');
                 authButtons.innerHTML = `
-                    <a href="login.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
-                    <a href="signup.html" class="bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
+                    <a href="login.html" class="hidden sm:inline-block text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">Login</a>
+                    <a href="signup.html" class="hidden sm:inline-block bg-blue-500 text-white font-semibold px-6 py-2.5 rounded hover:bg-blue-600 transition-all duration-300 text-sm">Sign Up</a>
                 `;
             }
             
@@ -837,17 +837,17 @@ async function updateAuthState(elements) {
             
             // Update mobile auth buttons
             if (mobileAuthButtons) {
-                    mobileAuthButtons.innerHTML = `
-                        <div class="flex flex-col space-y-2">
-                            <a href="login.html" class="block w-full text-center bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors">
-                                Login
-                            </a>
-                            <a href="signup.html" class="block w-full text-center border border-blue-500 text-blue-500 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
-                                Sign Up
-                            </a>
-                        </div>
-                    `;
-                }
+                mobileAuthButtons.innerHTML = `
+                    <div class="flex flex-col space-y-2 p-3">
+                        <a href="login.html" class="block w-full text-center bg-blue-600 text-white py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition-colors">
+                            Login
+                        </a>
+                        <a href="signup.html" class="block w-full text-center border border-blue-600 text-blue-600 py-3 rounded-lg text-base font-medium hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                            Sign Up
+                        </a>
+                    </div>
+                `;
+            }
             }
 
     } catch (error) {
