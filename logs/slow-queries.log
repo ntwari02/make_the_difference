@@ -9429,3 +9429,22 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM scholarship_applications sa
             JOIN scholarships s ON sa.scholarship_id = s.id
             WHERE sa.status = 'a
+2025-09-09T10:44:53.473Z [1135ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:44:53.483Z [1161ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:44:53.708Z [1133ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:44:56.328Z [414ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T10:44:56.428Z [315ms] 
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+ 
+2025-09-09T10:44:56.448Z [327ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
