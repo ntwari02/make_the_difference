@@ -469,6 +469,7 @@
       let conversations = [];
       let filtered = [];
       let selectedId = null;
+      window.currentConversationId = null;
       let page = 1;
       const pageSize = 20;
 
@@ -570,6 +571,7 @@
           console.log('Selecting conversation:', id);
           // Update selected conversation
           selectedId = id;
+          window.currentConversationId = id;
           
           // Mark conversation as read
           try {
@@ -782,13 +784,29 @@
               const userId = (user && (user.id || user.userId)) || 'admin';
               if (!window.chatSocket){ window.chatSocket = window.io('/', { auth:{ userId } }); }
               // Global message handlers (do not depend on a selected room)
-              window.chatSocket.on('message', (m)=>{ 
+              window.chatSocket.on('message', async (m)=>{ 
                 try{ fetchConversations(); }catch{} 
+                // Auto-refresh current conversation if it matches the new message
+                if (window.currentConversationId && String(m.conversationId) === String(window.currentConversationId)) {
+                  try {
+                    await selectConversation(window.currentConversationId);
+                    const area = document.getElementById('messagesArea');
+                    if (area) { area.scrollTop = area.scrollHeight; }
+                  } catch {}
+                }
                 // Notify navbar badge immediately
                 try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
               });
-              window.chatSocket.on('newMessage', (m)=>{ 
+              window.chatSocket.on('newMessage', async (m)=>{ 
                 try{ fetchConversations(); }catch{} 
+                // Auto-refresh current conversation if it matches the new message
+                if (window.currentConversationId && String(m.conversationId) === String(window.currentConversationId)) {
+                  try {
+                    await selectConversation(window.currentConversationId);
+                    const area = document.getElementById('messagesArea');
+                    if (area) { area.scrollTop = area.scrollHeight; }
+                  } catch {}
+                }
                 // Notify navbar badge immediately
                 try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
               });
@@ -1280,6 +1298,7 @@
           // Clear selected conversation if it was deleted
           if (selectedId === conversationId) {
             selectedId = null;
+            window.currentConversationId = null;
             document.getElementById('conversationDetails').innerHTML = '<div class="p-4 text-center text-gray-500">Select a conversation to view messages</div>';
           }
           
