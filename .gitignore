@@ -142,6 +142,9 @@ uploads/services/**
 public/uploads/**
 !public/uploads/.gitkeep
 
+public/documents/**
+!public/documents/.gitkeep
+
 storage/**
 !storage/.gitkeep
 public/storage/**
