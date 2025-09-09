@@ -8879,3 +8879,18 @@ CREATE TABLE IF NOT EXISTS `replies` (
                 application_date as created_at
 
 2025-09-09T06:56:24.147Z [395ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-09T06:59:26.231Z [1149ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T07:00:40.827Z [1085ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-09T07:00:40.863Z [1099ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-09T07:00:41.171Z [1090ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T07:02:44.990Z [346ms] SHOW TABLES LIKE "user_notifications"
+2025-09-09T07:02:45.606Z [307ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE

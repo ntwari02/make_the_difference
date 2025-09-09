@@ -80,6 +80,15 @@ async function includeNavbar() {
         navbarContainer.innerHTML = html;
         navbarState.isLoaded = true;
         console.log('✅ Navbar HTML injected successfully');
+        // Immediately hide admin dashboard button to prevent flicker for non-admins
+        try {
+            const btn = document.getElementById('adminDashboardBtn');
+            if (btn) {
+                btn.classList.add('hidden');
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
+            }
+        } catch {}
         
         // Wait for DOM to be ready, then initialize
         await waitForDOMReady();
@@ -788,7 +797,14 @@ async function updateAuthState(elements) {
                 updateProfilePhoto(user);
             }
             
-            // Handle admin dashboard button visibility
+            // Handle admin dashboard button visibility (defensive: default hidden)
+            try {
+                if (adminDashboardBtn) {
+                    adminDashboardBtn.classList.add('hidden');
+                    adminDashboardBtn.style.opacity = '0';
+                    adminDashboardBtn.style.pointerEvents = 'none';
+                }
+            } catch {}
             await handleAdminDashboardVisibility(adminDashboardBtn, user);
             
             // Log final admin dashboard button visibility state
@@ -880,12 +896,11 @@ async function handleAdminDashboardVisibility(adminDashboardBtn, user) {
         console.log('❌ Regular user - hiding admin dashboard button');
         console.log('🚫 Admin dashboard button will NOT be visible for this user');
         
-        if (adminDashboardBtn) {
-            adminDashboardBtn.classList.add('hidden');
-            adminDashboardBtn.style.opacity = '0';
-            adminDashboardBtn.style.pointerEvents = 'none';
-            console.log('✅ Admin dashboard button hidden successfully');
-        }
+        // Always hide; never briefly show
+        adminDashboardBtn.classList.add('hidden');
+        adminDashboardBtn.style.opacity = '0';
+        adminDashboardBtn.style.pointerEvents = 'none';
+        console.log('✅ Admin dashboard button hidden successfully');
     }
 }
 
