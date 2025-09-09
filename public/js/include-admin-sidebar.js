@@ -146,9 +146,12 @@ function initializeSidebar() {
                 const data = await response.json();
                 const badge = document.getElementById('help-badge');
                 if (badge && data.success) {
-                    const activeRequests = data.stats.active_requests || 0;
-                    if (activeRequests > 0) {
-                        badge.textContent = activeRequests;
+                    // Count unresolved: pending + active (not resolved)
+                    const pending = Number(data.stats.pending_requests || 0);
+                    const active = Number(data.stats.active_requests || 0);
+                    const unresolved = (Number.isFinite(pending) ? pending : 0) + (Number.isFinite(active) ? active : 0);
+                    if (unresolved > 0) {
+                        badge.textContent = unresolved;
                         badge.classList.remove('hidden');
                     } else {
                         badge.classList.add('hidden');
