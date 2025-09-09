@@ -114,3 +114,47 @@ Thumbs.db
 *.backup
 *.old
 
+
+# SQL dumps and queries (prevent accidental deploy of database files)
+# Allow versioned migrations while ignoring all other .sql
+*.sql
+**/*.sql
+!migrations/*.sql
+sql/
+db/
+database/
+dumps/
+dump/
+backups/
+backup/
+
+# Uploaded media and storage (do not track user-uploaded files)
+# Ignore contents but allow keeping the directories via .gitkeep
+uploads/**
+!uploads/.gitkeep
+uploads/profile_pictures/**
+!uploads/profile_pictures/.gitkeep
+uploads/documents/**
+!uploads/documents/.gitkeep
+uploads/services/**
+!uploads/services/.gitkeep
+
+public/uploads/**
+!public/uploads/.gitkeep
+
+storage/**
+!storage/.gitkeep
+public/storage/**
+!public/storage/.gitkeep
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.pfx
+*.cer
+keys/
+private/
+
+# OS-specific junk (macOS)
+.DS_Store

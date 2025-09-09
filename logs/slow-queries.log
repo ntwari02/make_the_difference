@@ -9419,3 +9419,13 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM scholarship_applications sa
             JOIN scholarships s ON sa.scholarship_id = s.id
             WHERE sa.status = 'a
+2025-09-09T10:20:45.798Z [1093ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T10:25:55.270Z [539ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
