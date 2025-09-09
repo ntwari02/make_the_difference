@@ -454,6 +454,9 @@
         </main>
     </div>
 
+    <!-- Socket.IO Script -->
+    <script src="/socket.io/socket.io.js"></script>
+
     <script>
       // Admin authentication check
       const token = localStorage.getItem('token');
@@ -477,7 +480,11 @@
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionAttempts: 5,
-            maxReconnectionAttempts: 5
+            maxReconnectionAttempts: 5,
+            auth: {
+              token: token,
+              userId: user?.id || user?.userId || 'admin'
+            }
           });
           
           socket.on('connect', () => {
@@ -492,6 +499,7 @@
 
           socket.on('connect_error', (error) => {
             console.error('❌ Admin connection error:', error);
+            console.error('Connection error details:', error.message, error.description, error.context);
             updateConnectionStatus('error');
           });
 
@@ -596,18 +604,32 @@
           const sort = encodeURIComponent(document.getElementById('filterSort')?.value||'updated_desc');
           const url = `/api/notifications/admin/conversations?q=${q}&from=${from}&to=${to}&replies=${replies}&sort=${sort}`;
           
+          console.log('Fetching conversations from:', url);
+          console.log('Using token:', token ? 'present' : 'missing');
+          
           const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
 
-          if (response.status === 401 || response.status === 403) {
+          console.log('Response status:', response.status);
+
+          if (response.status === 401) {
+            console.error('Authentication failed - token expired');
             localStorage.removeItem('token');
             window.location.href = '/login';
             return;
           }
 
+          if (response.status === 403) {
+            console.error('Authorization failed - insufficient permissions');
+            showErrorState('Access denied. You do not have permission to view conversations.');
+            return;
+          }
+
           if (!response.ok) {
-            throw new Error('Failed to load conversations');
+            const errorText = await response.text();
+            console.error('API Error:', response.status, errorText);
+            throw new Error(`Failed to load conversations: ${response.status} ${errorText}`);
           }
 
           const data = await response.json();
@@ -615,7 +637,7 @@
           renderConversations();
         } catch (error) {
           console.error('Error loading conversations:', error);
-          showErrorState('Failed to load conversations');
+          showErrorState(`Failed to load conversations: ${error.message}`);
         }
       }
 
@@ -675,11 +697,6 @@
           
           // On mobile, switch to chat-only view
           showChatOnlyOnMobile();
-          
-          // Join Socket.IO room
-          if (socket) {
-            socket.emit('joinConversation', conversationId);
-          }
           
           // Update UI
           renderConversations(); // Re-render to update selected state
@@ -753,6 +770,11 @@
           // Scroll to bottom
           setTimeout(scrollToBottom, 100);
           
+          // Add event listeners for message action buttons
+          setTimeout(() => {
+            addMessageActionListeners();
+          }, 100);
+          
         } catch (error) {
           console.error('Error loading conversation messages:', error);
           showToast('Failed to load messages', 'error');
@@ -777,16 +799,16 @@
                   ${messageText ? `<p class="text-xs sm:text-sm break-words">${messageText}</p>` : ''}
                   <div class="message-actions mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <div class="flex flex-row items-center gap-2 flex-nowrap">
-                      <button onclick="copyMessage('${messageText.replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-600 rounded" title="Copy">
+                      <button class="copy-btn p-1 text-gray-500 hover:text-blue-600 rounded" title="Copy" data-message="${messageText.replace(/"/g, '&quot;')}">
                         <i class="fas fa-copy text-xs"></i>
                       </button>
-                      <button onclick="replyToMessage(${reply.id}, '${(reply.sender_name || reply.sender_email || reply.sender_type || '').replace(/'/g, "\\'")}', '${messageText.substring(0, 50).replace(/'/g, "\\'")}...')" class="p-1 text-gray-500 hover:text-green-600 rounded" title="Reply">
+                      <button class="reply-btn p-1 text-gray-500 hover:text-green-600 rounded" title="Reply" data-message-id="${reply.id}" data-sender="${(reply.sender_name || reply.sender_email || reply.sender_type || '').replace(/"/g, '&quot;')}" data-message="${messageText.replace(/"/g, '&quot;')}">
                         <i class="fas fa-reply text-xs"></i>
                       </button>
-                      <button onclick="forwardMessage(${reply.id})" class="p-1 text-gray-500 hover:text-purple-600 rounded" title="Forward">
+                      <button class="forward-btn p-1 text-gray-500 hover:text-purple-600 rounded" title="Forward" data-message-id="${reply.id}">
                         <i class="fas fa-share text-xs"></i>
                       </button>
-                      <button onclick="deleteMessage(${reply.id})" class="p-1 text-gray-500 hover:text-red-600 rounded" title="Delete">
+                      <button class="delete-btn p-1 text-gray-500 hover:text-red-600 rounded" title="Delete" data-message-id="${reply.id}">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </div>
@@ -807,7 +829,7 @@
         }).join('');
       }
 
-      // Send message (matching user notifications structure)
+      // Send message (using correct admin API endpoint)
       async function sendMessage(event, conversationId) {
         event.preventDefault();
         const input = document.getElementById('messageInput');
@@ -816,7 +838,7 @@
         if (!message) return;
         
         try {
-          const response = await fetch(`/api/notifications/admin/conversations/${conversationId}/reply`, {
+          const response = await fetch(`/api/notifications/admin/conversations/${conversationId}/replies`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -829,6 +851,8 @@
             input.value = '';
             // Reload conversation messages
             await loadConversationMessages(conversationId);
+            // Trigger global event for bell icon update
+            window.dispatchEvent(new CustomEvent('newMessage', { detail: { conversationId } }));
           } else {
             throw new Error('Failed to send message');
           }
@@ -921,6 +945,48 @@
         }, 3000);
       }
 
+      // Add event listeners for message action buttons
+      function addMessageActionListeners() {
+        // Copy button listeners
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const message = btn.getAttribute('data-message');
+            copyMessage(message);
+          });
+        });
+
+        // Reply button listeners
+        document.querySelectorAll('.reply-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const messageId = btn.getAttribute('data-message-id');
+            const sender = btn.getAttribute('data-sender');
+            const message = btn.getAttribute('data-message');
+            console.log('Reply button clicked with data:', { messageId, sender, message });
+            replyToMessage(messageId, sender, message);
+          });
+        });
+
+        // Forward button listeners
+        document.querySelectorAll('.forward-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const messageId = btn.getAttribute('data-message-id');
+            forwardMessage(messageId);
+          });
+        });
+
+        // Delete button listeners
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const messageId = btn.getAttribute('data-message-id');
+            deleteMessage(messageId);
+          });
+        });
+      }
+
       // Message action functions
       function copyMessage(text) {
         navigator.clipboard.writeText(text).then(() => {
@@ -929,170 +995,193 @@
       }
 
       function replyToMessage(messageId, sender, message) {
+        console.log('Reply clicked:', { messageId, sender, message });
         const input = document.getElementById('messageInput');
         if (input) {
           input.value = `@${sender}: ${message}`;
           input.focus();
+          showToast('Reply mode activated', 'info');
+        } else {
+          console.error('Message input not found');
+          showToast('Message input not found', 'error');
         }
       }
 
       function forwardMessage(messageId) {
-        showToast('Forward functionality not implemented yet', 'info');
+        console.log('Forward clicked for message ID:', messageId);
+        
+        // Find the message in the current conversation
+        const messageElement = document.querySelector(`[data-reply-id="${messageId}"]`);
+        console.log('Message element found:', messageElement);
+        
+        if (!messageElement) {
+          showToast('Message not found', 'error');
+          return;
+        }
+
+        // Get message text - try multiple selectors
+        let messageText = '';
+        const textElement = messageElement.querySelector('p');
+        if (textElement) {
+          messageText = textElement.textContent || textElement.innerText || '';
+        } else {
+          // Fallback: get text from the entire message bubble
+          messageText = messageElement.textContent || messageElement.innerText || '';
+          // Clean up the text (remove action buttons text)
+          messageText = messageText.replace(/Copy|Reply|Forward|Delete/g, '').trim();
+        }
+        
+        console.log('Message text extracted:', messageText);
+        
+        if (!messageText) {
+          showToast('Could not extract message text', 'error');
+          return;
+        }
+        
+        // Create forward modal
+        const modal = document.createElement('div');
+        modal.id = 'forwardModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Forward Message</h3>
+            <div class="space-y-4">
+              <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                <div class="font-semibold text-gray-700 dark:text-gray-300 mb-1">Original message:</div>
+                <div class="text-gray-600 dark:text-gray-400">${messageText}</div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Forward to conversation:</label>
+                <select id="forwardConversationSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
+                  <option value="">Select a conversation...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a note (optional):</label>
+                <textarea id="forwardNote" placeholder="Add a message..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+              <button id="cancelForwardBtn" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+              <button id="confirmForwardBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" data-message-id="${messageId}">Forward</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Add event listeners for modal buttons
+        document.getElementById('cancelForwardBtn').addEventListener('click', closeForwardModal);
+        document.getElementById('confirmForwardBtn').addEventListener('click', (e) => {
+          const messageId = e.target.getAttribute('data-message-id');
+          sendForwardMessage(messageId);
+        });
+        
+        loadConversationsForForward();
       }
 
-      function deleteMessage(messageId) {
-        if (confirm('Are you sure you want to delete this message?')) {
-          showToast('Delete functionality not implemented yet', 'info');
+      function closeForwardModal() {
+        const modal = document.getElementById('forwardModal');
+        if (modal) {
+          modal.remove();
+        }
+      }
+
+      async function loadConversationsForForward() {
+        try {
+          const response = await fetch('/api/notifications/admin/conversations', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load conversations');
+          }
+
+          const data = await response.json();
+          const conversations = data.conversations || [];
+          const select = document.getElementById('forwardConversationSelect');
+          
+          select.innerHTML = '<option value="">Select a conversation...</option>';
+          conversations.forEach(conv => {
+            if (conv.id !== selectedId) {
+              select.innerHTML += `<option value="${conv.id}">${conv.subject || 'Conversation'} - ${conv.user_email || 'Unknown'}</option>`;
+            }
+          });
+        } catch (error) {
+          console.error('Error loading conversations:', error);
+          showToast('Failed to load conversations', 'error');
+        }
+      }
+
+      async function sendForwardMessage(messageId) {
+        const targetConversationId = document.getElementById('forwardConversationSelect').value;
+        const note = document.getElementById('forwardNote').value.trim();
+
+        if (!targetConversationId) {
+          showToast('Please select a conversation', 'error');
+          return;
+        }
+
+        try {
+          // Get original message text
+          const messageElement = document.querySelector(`[data-reply-id="${messageId}"]`);
+          const originalMessage = messageElement?.querySelector('p')?.textContent || '';
+          
+          // Prepare forward message
+          const forwardMessage = `Forwarded message: ${originalMessage}${note ? `\n\nNote: ${note}` : ''}`;
+
+          const response = await fetch(`/api/notifications/admin/conversations/${targetConversationId}/replies`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ message: forwardMessage })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to forward message');
+          }
+
+          showToast('Message forwarded successfully', 'success');
+          closeForwardModal();
+
+        } catch (error) {
+          console.error('Error forwarding message:', error);
+          showToast('Failed to forward message', 'error');
+        }
+      }
+
+      async function deleteMessage(messageId) {
+        if (!confirm('Are you sure you want to delete this message?')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/notifications/admin/replies/${messageId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+            showToast('Message deleted successfully', 'success');
+            // Refresh the current conversation
+            if (selectedId) {
+              await loadConversationMessages(selectedId);
+            }
+          } else {
+            showToast('Failed to delete message', 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting message:', error);
+          showToast('Failed to delete message', 'error');
         }
       }
 
       // Make selectConversation available globally
       window.selectConversation = selectConversation;
 
-      async function sendAdminReply(e, conversationId) {
-        e.preventDefault();
-        const input = document.getElementById('adminReplyInput');
-        const message = (input?.value||'').trim();
-        const fi = document.getElementById('fileInput');
-        const preview = document.getElementById('dmPreview');
-        if (!message && (!fi || !fi.files || fi.files.length===0)) return false;
-        try{
-          // Send message if there is one
-          if (message) {
-            // encode quoted reply marker if set
-            let payloadMsg = message;
-            if (window.__adminReplyToId){ payloadMsg = `__REPLY__:${window.__adminReplyToId}__||` + message; }
-            const res = await fetch(`/api/notifications/admin/conversations/${conversationId}/replies`, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: payloadMsg }) });
-            if (!res.ok) throw new Error('Failed to send message');
-          }
-          
-          // Send files if any
-          if (fi && fi.files && fi.files.length > 0) {
-            const formData = new FormData();
-            Array.from(fi.files).forEach(file => {
-              formData.append('files', file);
-            });
-            
-            const uploadRes = await fetch(`/api/notifications/admin/conversations/${conversationId}/attachments`, { 
-              method:'POST', 
-              headers:{ 'Authorization': `Bearer ${token}` }, 
-              body: formData 
-            });
-            if (!uploadRes.ok) throw new Error('Failed to upload files');
-            fi.value = ''; // Clear file input
-          }
-          
-          // Clear form and refresh
-          input.value=''; 
-          window.__adminReplyToId=null; 
-          if(preview){ preview.classList.add('hidden'); preview.innerHTML=''; } 
-          await selectConversation(conversationId);
-          
-          // Trigger global event for bell icon update (new message sent)
-          window.dispatchEvent(new CustomEvent('newMessage', { detail: { conversationId } }));
-        }catch(err){ 
-          console.error(err); 
-          alert('Failed to send message: ' + err.message);
-        }
-        return false;
-      }
 
-      // Socket setup for typing/read indicators
-      function setupSocket(conversationId){
-        try{
-          if (!window.chatSocket) {
-            const userId = (user && (user.id || user.userId)) || 'admin';
-            window.chatSocket = window.io('/', { auth: { userId } });
-            const typingElId = 'typingIndicator';
-            window.chatSocket.on('typing', (p)=>{ if(String(p.conversationId)===String(conversationId)){ let el=document.getElementById(typingElId); if(!el){ el=document.createElement('div'); el.id=typingElId; el.className='px-6 pb-2 text-xs text-gray-500'; const area=document.getElementById('messagesArea'); area && area.parentElement.insertBefore(el, area.nextSibling); } el.textContent='typing...'; }});
-            window.chatSocket.on('stopTyping', (p)=>{ if(String(p.conversationId)===String(conversationId)){ const el=document.getElementById(typingElId); if(el) el.textContent=''; }});
-            window.chatSocket.on('message', async (m)=>{ 
-              try {
-                // Always refresh the conversation list so it reflects latest activity/unreads
-                fetchConversations();
-              } catch {}
-              if(String(m.conversationId)===String(conversationId)) {
-                try { 
-                  await selectConversation(conversationId);
-                  const area = document.getElementById('messagesArea');
-                  if (area) { area.scrollTop = area.scrollHeight; }
-                } catch {}
-              }
-              // Trigger global event so navbar badge updates immediately
-              try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
-            });
-            // Also handle generic newMessage events
-            window.chatSocket.on('newMessage', async (m)=>{ 
-              try { fetchConversations(); } catch {}
-              if(String(m.conversationId)===String(conversationId)) {
-                try { 
-                  await selectConversation(conversationId);
-                  const area = document.getElementById('messagesArea');
-                  if (area) { area.scrollTop = area.scrollHeight; }
-                } catch {}
-              }
-              // Trigger global event so navbar badge updates immediately
-              try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
-            });
-          }
-          window.chatSocket.emit('joinConversation', conversationId);
-        }catch{}
-      }
-
-      // Initialize a base socket listener to refresh the conversations list globally
-      function initAdminSocket(){
-        try{
-          if (window.chatSocketInitialized) return;
-          const start = () => {
-            try{
-              const userId = (user && (user.id || user.userId)) || 'admin';
-              if (!window.chatSocket){ window.chatSocket = window.io('/', { auth:{ userId } }); }
-              // Global message handlers (do not depend on a selected room)
-              window.chatSocket.on('message', async (m)=>{ 
-                try{ fetchConversations(); }catch{} 
-                // Auto-refresh current conversation if it matches the new message
-                if (window.currentConversationId && String(m.conversationId) === String(window.currentConversationId)) {
-                  try {
-                    await selectConversation(window.currentConversationId);
-                    const area = document.getElementById('messagesArea');
-                    if (area) { area.scrollTop = area.scrollHeight; }
-                  } catch {}
-                }
-                // Notify navbar badge immediately
-                try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
-              });
-              window.chatSocket.on('newMessage', async (m)=>{ 
-                try{ fetchConversations(); }catch{} 
-                // Auto-refresh current conversation if it matches the new message
-                if (window.currentConversationId && String(m.conversationId) === String(window.currentConversationId)) {
-                  try {
-                    await selectConversation(window.currentConversationId);
-                    const area = document.getElementById('messagesArea');
-                    if (area) { area.scrollTop = area.scrollHeight; }
-                  } catch {}
-                }
-                // Notify navbar badge immediately
-                try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
-              });
-              // Add heartbeat to keep connection alive (like user notifications)
-              setInterval(() => {
-                if (window.chatSocket && window.chatSocket.connected) {
-                  window.chatSocket.emit('ping');
-                }
-              }, 30000);
-              // Handle connection errors
-              window.chatSocket.on('connect_error', (error) => {
-                console.warn('Admin socket connection error:', error);
-              });
-              window.chatSocket.on('disconnect', (reason) => {
-                console.warn('Admin socket disconnected:', reason);
-              });
-              window.chatSocketInitialized = true;
-            }catch{}
-          };
-          if (!window.io){ const s=document.createElement('script'); s.src='/socket.io/socket.io.js'; s.onload=start; document.body.appendChild(s); } else { start(); }
-        }catch{}
-      }
 
       // Announcement modal controls
       const modal = document.getElementById('announcementModal');
@@ -1319,7 +1408,20 @@
       // Initialize on page load (matching user notifications exactly)
       document.addEventListener('DOMContentLoaded', () => {
         console.log('Admin notifications page loaded');
-        initSocket();
+        
+        // Wait for Socket.IO to load, then initialize
+        if (typeof io !== 'undefined') {
+          initSocket();
+        } else {
+          // Wait for Socket.IO to load
+          const checkIO = setInterval(() => {
+            if (typeof io !== 'undefined') {
+              clearInterval(checkIO);
+              initSocket();
+            }
+          }, 100);
+        }
+        
         loadConversations();
         
         // Mobile toggle buttons
