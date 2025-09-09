@@ -9,13 +9,20 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// Configure multer for file uploads (supports Render Disk via env)
+// UPLOADS_DIR: absolute or relative server path where files are stored
+// UPLOADS_PUBLIC_PATH: public URL prefix used in responses (default '/uploads/profiles')
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join('public', 'uploads', 'profiles');
+const UPLOADS_PUBLIC_PATH = process.env.UPLOADS_PUBLIC_PATH || '/uploads/profiles';
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'public/uploads/profiles';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const uploadDir = UPLOADS_DIR;
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch {}
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -238,7 +245,7 @@ router.post('/profile/photo', upload.single('photo'), async (req, res) => {
       oldPath = rows && rows[0] ? rows[0].profile_picture : null;
     } catch {}
 
-    const newPublicPath = `/uploads/profiles/${req.file.filename}`;
+    const newPublicPath = `${UPLOADS_PUBLIC_PATH}/${req.file.filename}`;
 
     // Update user record, tolerate missing updated_at column
     try {
@@ -338,7 +345,7 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
     } catch {}
 
     // Delete old file if under profiles and different
-    if (oldPath && oldPath.startsWith('/uploads/profiles/') && oldPath !== newPublicPath) {
+    if (oldPath && oldPath.startsWith(UPLOADS_PUBLIC_PATH) && oldPath !== newPublicPath) {
       const disk = path.join('public', oldPath);
       try { if (fs.existsSync(disk)) fs.unlinkSync(disk); } catch {}
     }
