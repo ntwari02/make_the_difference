@@ -9477,3 +9477,58 @@ CREATE TABLE IF NOT EXISTS `replies` (
             WHERE u.id = ? AND u.status = 'active'
         
 2025-09-09T10:56:09.700Z [420ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:57:55.361Z [307ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T10:58:25.169Z [341ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T10:58:25.477Z [306ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T10:58:26.092Z [308ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T11:03:38.215Z [351ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T11:28:13.336Z [424ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T11:28:14.010Z [1111ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T11:28:14.097Z [1254ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T11:28:14.107Z [1268ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T11:28:16.150Z [393ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T11:28:16.888Z [435ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T11:30:46.379Z [545ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T11:30:47.300Z [558ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T11:35:44.487Z [303ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T11:35:44.944Z [442ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T

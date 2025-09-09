@@ -25,6 +25,21 @@
     <link rel="stylesheet" href="css/admin-dashboard.css">
     <link rel="stylesheet" href="css/admin-sidebar-fix.css">
     <script>
+      // Silence console and unhandled errors on production deploys (unless debug=1)
+      (function(){
+        try{
+          var host=String(location.hostname||'').toLowerCase();
+          var isLocal=/(localhost|127\.0\.0\.1|::1)/.test(host);
+          var debugParam=/[?&]debug=1(?!\d)/.test(location.search);
+          var debugFlag=(localStorage.getItem('debug')==='1');
+          if(!isLocal && !debugParam && !debugFlag){
+            var noop=function(){};
+            ['log','info','warn','error','debug','trace','table','group','groupCollapsed','groupEnd'].forEach(function(m){ try{ console[m]=noop; }catch(e){} });
+            window.addEventListener('error', function(e){ try{ e.preventDefault(); }catch(_){} }, true);
+            window.addEventListener('unhandledrejection', function(e){ try{ e.preventDefault(); }catch(_){} }, true);
+          }
+        }catch(e){}
+      })();
       (function(){
         try {
           const theme = localStorage.getItem('color-theme');
