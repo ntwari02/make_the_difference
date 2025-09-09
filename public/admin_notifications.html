@@ -453,6 +453,11 @@
       document.addEventListener('DOMContentLoaded', () => {
         // Initialize global socket to refresh list in real time even before a conversation is opened
         try { initAdminSocket(); } catch {}
+        
+        // Fallback: periodic refresh every 15 seconds (like user notifications)
+        setInterval(() => {
+          try { fetchConversations(); } catch {}
+        }, 15000);
       });
 
       const token = localStorage.getItem('token');
@@ -786,6 +791,19 @@
                 try{ fetchConversations(); }catch{} 
                 // Notify navbar badge immediately
                 try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
+              });
+              // Add heartbeat to keep connection alive (like user notifications)
+              setInterval(() => {
+                if (window.chatSocket && window.chatSocket.connected) {
+                  window.chatSocket.emit('ping');
+                }
+              }, 30000);
+              // Handle connection errors
+              window.chatSocket.on('connect_error', (error) => {
+                console.warn('Admin socket connection error:', error);
+              });
+              window.chatSocket.on('disconnect', (reason) => {
+                console.warn('Admin socket disconnected:', reason);
               });
               window.chatSocketInitialized = true;
             }catch{}
@@ -1482,7 +1500,7 @@
                     ${reply.attachment_url ? renderAdminAttachment(reply) : ''}
                     ${msgHtml ? `<p class="text-xs sm:text-sm break-words">${msgHtml}</p>` : ''}
                     <div class="message-actions mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div class="flex gap-1 flex-wrap">
+                      <div class="flex flex-row items-center gap-2 flex-nowrap">
                         <button onclick="copyMessage('${(reply.message || '').replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-600 rounded" title="Copy">
                           <i class="fas fa-copy text-xs"></i>
                         </button>
