@@ -9448,3 +9448,32 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM users u 
             WHERE 1=1
         
+2025-09-09T10:54:43.920Z [360ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T10:55:02.102Z [414ms] 
+            SELECT 
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date) = CURDATE() THEN s.award_amount END), 0) as today,
+                COALESCE(SUM(CASE WHEN DATE(sa.application_date
+2025-09-09T10:55:36.498Z [1075ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:55:36.501Z [1087ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:55:36.567Z [1127ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:55:39.544Z [343ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-09T10:55:39.988Z [302ms] 
+            SELECT COUNT(*) as total 
+            FROM users u 
+            WHERE 1=1
+        
+2025-09-09T10:55:52.929Z [416ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T10:55:55.569Z [435ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T10:56:09.700Z [420ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
