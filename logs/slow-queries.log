@@ -8631,3 +8631,25 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM users u
             WHERE u.id = ? AND u.status = 'active'
         
+2025-09-09T04:08:05.330Z [328ms] SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'general_settings' 
+                     AND COLUMN_NAME = 'maintenance_pages' LIMIT 1
+2025-09-09T04:08:07.881Z [358ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-09T04:08:09.158Z [722ms] SELECT id, full_name, email, created_at, phone, bio, profile_picture FROM users WHERE id = ?
+2025-09-09T04:08:09.480Z [1913ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-09T04:08:09.532Z [1977ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-09T04:08:09.540Z [2007ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-09T04:08:10.437Z [317ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-09T04:08:11.399Z [389ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-09T04:08:12.039Z [319ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-09T04:08:12.359Z [318ms] 
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM conversations c
+        JOIN notifications n ON c.notification_id = n.id
+        LEFT JOIN replies r ON c.id = r.conversation_id
+        WHE
+2025-09-09T04:08:22.919Z [319ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-09T04:08:23.556Z [536ms] SHOW TABLES LIKE "user_notifications"
+2025-09-09T04:08:23.880Z [323ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-09T04:08:37.877Z [524ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-09T04:08:38.856Z [508ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0

@@ -264,7 +264,13 @@ function openProfileModal() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const fullName = user.full_name || user.fullName || 'User';
     const email = user.email || 'user@example.com';
-    const profilePicture = user.profile_picture || user.profile_picture_path || '';
+    const profilePicture =
+        user.profile_picture ||
+        user.profile_picture_path ||
+        user.profile_picture_url ||
+        user.avatar ||
+        user.avatar_url ||
+        '';
     const role = user.isAdmin ? 'Admin' : 'User';
     const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown';
     
@@ -293,6 +299,10 @@ function openProfileModal() {
             ? profilePicture 
             : (profilePicture.startsWith('/') ? profilePicture : '/' + profilePicture);
         if (avatarEl) {
+            avatarEl.onerror = () => {
+                if (fallbackEl) fallbackEl.classList.remove('hidden');
+                avatarEl.classList.add('hidden');
+            };
             avatarEl.src = src;
             avatarEl.classList.remove('hidden');
         }
@@ -327,13 +337,25 @@ function updateProfilePhoto(user) {
     
     if (!profilePhoto || !profilePhotoFallback) return;
     
-    const profilePicture = user.profile_picture || user.profile_picture_path || '';
+    const profilePicture =
+        user.profile_picture ||
+        user.profile_picture_path ||
+        user.profile_picture_url ||
+        user.avatar ||
+        user.avatar_url ||
+        '';
     const fullName = user.full_name || user.fullName || 'User';
     
     if (profilePicture) {
         const src = profilePicture.startsWith('http') 
             ? profilePicture 
             : (profilePicture.startsWith('/') ? profilePicture : '/' + profilePicture);
+        profilePhoto.onerror = () => {
+            const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+            profilePhotoFallback.textContent = initials || 'U';
+            profilePhotoFallback.classList.remove('hidden');
+            profilePhoto.classList.add('hidden');
+        };
         profilePhoto.src = src;
         profilePhoto.classList.remove('hidden');
         profilePhotoFallback.classList.add('hidden');
@@ -1525,11 +1547,22 @@ function updateProfileModalDisplay(user) {
     if (joinDateEl) joinDateEl.textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown';
     
     // Handle profile picture
-    if (user.profile_picture) {
-        const src = user.profile_picture.startsWith('http')
-            ? user.profile_picture
-            : (user.profile_picture.startsWith('/') ? user.profile_picture : '/' + user.profile_picture);
+    const modalPicture =
+        user.profile_picture ||
+        user.profile_picture_path ||
+        user.profile_picture_url ||
+        user.avatar ||
+        user.avatar_url ||
+        '';
+    if (modalPicture) {
+        const src = modalPicture.startsWith('http')
+            ? modalPicture
+            : (modalPicture.startsWith('/') ? modalPicture : '/' + modalPicture);
         if (avatarEl) {
+            avatarEl.onerror = () => {
+                if (fallbackEl) fallbackEl.classList.remove('hidden');
+                avatarEl.classList.add('hidden');
+            };
             avatarEl.src = src;
             avatarEl.classList.remove('hidden');
         }
