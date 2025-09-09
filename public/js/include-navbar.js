@@ -15,6 +15,46 @@ let navbarState = {
     maxRetries: 3
 };
 
+// Helper: hide/show navbar container cleanly
+function hideNavbarContainer() {
+    const container = document.getElementById('navbar-container');
+    if (!container) return;
+    // Smooth fade support
+    container.style.transition = container.style.transition || 'opacity 200ms ease';
+    container.style.willChange = 'opacity';
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+}
+
+function showNavbarContainer() {
+    const container = document.getElementById('navbar-container');
+    if (!container) return;
+    container.style.transition = container.style.transition || 'opacity 200ms ease';
+    container.style.willChange = 'opacity';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+    container.style.pointerEvents = 'auto';
+}
+
+// Wait until profile avatar is ready (image loaded or fallback initials visible), or timeout
+function waitForAvatarReady(timeoutMs = 800) {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        const tick = () => {
+            const img = document.getElementById('profilePhoto');
+            const fallback = document.getElementById('profilePhotoFallback');
+            const imgVisible = img && !img.classList.contains('hidden');
+            const fallbackVisible = fallback && !fallback.classList.contains('hidden');
+            if (imgVisible || fallbackVisible || (Date.now() - start) > timeoutMs) {
+                return resolve();
+            }
+            setTimeout(tick, 40);
+        };
+        tick();
+    });
+}
+
 // Main navbar inclusion function
 async function includeNavbar() {
     try {
@@ -26,6 +66,8 @@ async function includeNavbar() {
             console.log('⚠️ Navbar container not found, skipping navbar inclusion');
             return;
         }
+        // Hide navbar until fully initialized
+        hideNavbarContainer();
         
         // Fetch navbar HTML (absolute path + cache-buster to avoid stale SW/CDN)
         const response = await fetch('/navbar.html?v=2', { cache: 'no-store' });
@@ -43,6 +85,9 @@ async function includeNavbar() {
         // Wait for DOM to be ready, then initialize
         await waitForDOMReady();
         await initializeNavbar();
+        // Wait for avatar/admin to resolve, then reveal
+        await waitForAvatarReady();
+        showNavbarContainer();
         
     } catch (error) {
         console.error('❌ Error loading navbar:', error);
