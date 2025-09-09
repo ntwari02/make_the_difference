@@ -1115,4 +1115,46 @@ router.post('/users', adminAuth, [
     }
 });
 
+// Delete user by ID
+router.delete('/users/:id', adminAuth, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id, 10);
+        if (!Number.isFinite(userId)) {
+            return res.status(400).json({ success: false, message: 'Invalid user id' });
+        }
+
+        // Prevent self-delete for safety
+        if (userId === req.user.id) {
+            return res.status(400).json({ success: false, message: 'You cannot delete your own admin account' });
+        }
+
+        // Check existence
+        const [rows] = await db.query('SELECT id FROM users WHERE id = ? LIMIT 1', [userId]);
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Delete user-related optional records first (best-effort; ignore missing tables)
+        try { await db.query('DELETE FROM user_profile_pictures WHERE user_id = ?', [userId]); } catch {}
+        try { await db.query('DELETE FROM scholarship_applications WHERE user_id = ?', [userId]); } catch {}
+        try { await db.query('DELETE FROM notifications WHERE user_id = ?', [userId]); } catch {}
+
+        // Delete user
+        await db.query('DELETE FROM users WHERE id = ?', [userId]);
+
+        // Log admin action (optional)
+        try {
+            await db.query(
+                'INSERT INTO admin_actions (admin_id, action_type, target_user_id, details, created_at) VALUES (?, ?, ?, ?, NOW())',
+                [req.user.id, 'user_deleted', userId, `Deleted user id ${userId}`]
+            );
+        } catch {}
+
+        return res.json({ success: true, message: 'User deleted' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        return res.status(500).json({ success: false, message: 'Error deleting user' });
+    }
+});
+
 export default router;
