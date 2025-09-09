@@ -350,15 +350,30 @@ function updateProfilePhoto(user) {
         const src = profilePicture.startsWith('http') 
             ? profilePicture 
             : (profilePicture.startsWith('/') ? profilePicture : '/' + profilePicture);
-        profilePhoto.onerror = () => {
-            const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-            profilePhotoFallback.textContent = initials || 'U';
-            profilePhotoFallback.classList.remove('hidden');
-            profilePhoto.classList.add('hidden');
+
+        // Keep initials visible until the image is fully loaded to avoid flicker
+        const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        profilePhotoFallback.textContent = initials || 'U';
+        profilePhotoFallback.classList.remove('hidden');
+        profilePhoto.classList.add('hidden');
+
+        // If the same src is already applied and visible, don't re-load
+        if (profilePhoto.dataset.currentSrc === src && !profilePhoto.classList.contains('hidden')) {
+            return;
+        }
+
+        const preloader = new Image();
+        preloader.onload = () => {
+            profilePhoto.src = src;
+            profilePhoto.dataset.currentSrc = src;
+            profilePhoto.classList.remove('hidden');
+            profilePhotoFallback.classList.add('hidden');
         };
-        profilePhoto.src = src;
-        profilePhoto.classList.remove('hidden');
-        profilePhotoFallback.classList.add('hidden');
+        preloader.onerror = () => {
+            profilePhoto.classList.add('hidden');
+            profilePhotoFallback.classList.remove('hidden');
+        };
+        preloader.src = src;
     } else {
         // Show initials
         const initials = fullName.trim().split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -693,13 +708,17 @@ async function updateAuthState(elements) {
             // Show user menu, hide auth buttons
             if (authButtons) authButtons.classList.add('hidden');
             if (userMenu) userMenu.classList.remove('hidden');
-            
+
+            // Immediately render current (cached) avatar to avoid flicker while fetching
+            updateProfilePhoto(user);
+
             // Fetch fresh profile to avoid stale avatar on refresh/logout
             try {
                 const res = await fetch('/api/user/profile', { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store' });
                 if (res.ok) {
                     const prof = await res.json();
-                    const freshUser = { ...user, ...prof.user };
+                    const profUser = (prof && (prof.user || prof)) || {};
+                    const freshUser = { ...user, ...profUser };
                     localStorage.setItem('user', JSON.stringify(freshUser));
                     updateProfilePhoto(freshUser);
                 } else {
@@ -1353,18 +1372,32 @@ async function loadCurrentPhoto() {
         
         if (response.ok) {
             const data = await response.json();
-            const user = data.user;
+            const user = (data && (data.user || data)) || {};
             
             const previewImg = document.getElementById('photoPreview');
             const previewFallback = document.getElementById('photoPreviewFallback');
             
-            if (user.profile_picture) {
-                previewImg.src = user.profile_picture;
+            const picture =
+                user.profile_picture ||
+                user.profile_picture_path ||
+                user.profile_picture_url ||
+                user.avatar ||
+                user.avatar_url ||
+                user.image_path ||
+                '';
+            
+            if (picture && previewImg) {
+                const src = picture.startsWith('http') ? picture : (picture.startsWith('/') ? picture : '/' + picture);
+                previewImg.onerror = () => {
+                    previewImg.classList.add('hidden');
+                    previewFallback?.classList.remove('hidden');
+                };
+                previewImg.src = src;
                 previewImg.classList.remove('hidden');
-                previewFallback.classList.add('hidden');
+                previewFallback?.classList.add('hidden');
             } else {
-                previewImg.classList.add('hidden');
-                previewFallback.classList.remove('hidden');
+                if (previewImg) previewImg.classList.add('hidden');
+                if (previewFallback) previewFallback.classList.remove('hidden');
             }
         }
     } catch (error) {
@@ -1494,8 +1527,16 @@ async function handleSavePhoto() {
         }
 
         if (response.ok && result && result.success !== false) {
-            // Server returns fresh user and profile_picture
-            const newPath = (result && (result.profile_picture || (result.user && result.user.profile_picture))) || '';
+            // Extract new path from various possible keys
+            const newPath = (result && (
+                result.profile_picture ||
+                result.profile_picture_path ||
+                result.profile_picture_url ||
+                result.avatar ||
+                result.avatar_url ||
+                result.image_path ||
+                (result.user && (result.user.profile_picture || result.user.profile_picture_path || result.user.profile_picture_url || result.user.avatar || result.user.avatar_url || result.user.image_path))
+            )) || '';
             const cacheBusted = newPath ? `${newPath}${newPath.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
             const freshUser = result.user || {};
             if (freshUser && Object.keys(freshUser).length) {
@@ -1506,6 +1547,19 @@ async function handleSavePhoto() {
                 localStorage.setItem('user', JSON.stringify(updatedUser));
             }
             updateProfilePhoto({ profile_picture: cacheBusted, full_name: (freshUser.full_name || JSON.parse(localStorage.getItem('user')||'{}').full_name) });
+            
+            // Confirm persistence by fetching latest profile
+            try {
+                const verifyRes = await fetch('/api/user/profile', { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store' });
+                if (verifyRes.ok) {
+                    const verifyData = await verifyRes.json();
+                    const verifiedUser = (verifyData && (verifyData.user || verifyData)) || null;
+                    if (verifiedUser) {
+                        localStorage.setItem('user', JSON.stringify(verifiedUser));
+                        updateProfilePhoto(verifiedUser);
+                    }
+                }
+            } catch {}
             
             // Close modal
             closePhotoUploadModal();
