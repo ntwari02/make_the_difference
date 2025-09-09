@@ -694,6 +694,8 @@
                   if (area) { area.scrollTop = area.scrollHeight; }
                 } catch {}
               }
+              // Trigger global event so navbar badge updates immediately
+              try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
             });
             // Also handle generic newMessage events
             window.chatSocket.on('newMessage', async (m)=>{ 
@@ -705,6 +707,8 @@
                   if (area) { area.scrollTop = area.scrollHeight; }
                 } catch {}
               }
+              // Trigger global event so navbar badge updates immediately
+              try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
             });
           }
           window.chatSocket.emit('joinConversation', conversationId);
@@ -720,8 +724,16 @@
               const userId = (user && (user.id || user.userId)) || 'admin';
               if (!window.chatSocket){ window.chatSocket = window.io('/', { auth:{ userId } }); }
               // Global message handlers (do not depend on a selected room)
-              window.chatSocket.on('message', ()=>{ try{ fetchConversations(); }catch{} });
-              window.chatSocket.on('newMessage', ()=>{ try{ fetchConversations(); }catch{} });
+              window.chatSocket.on('message', (m)=>{ 
+                try{ fetchConversations(); }catch{} 
+                // Notify navbar badge immediately
+                try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
+              });
+              window.chatSocket.on('newMessage', (m)=>{ 
+                try{ fetchConversations(); }catch{} 
+                // Notify navbar badge immediately
+                try { window.dispatchEvent(new CustomEvent('newMessage', { detail: m })); } catch {}
+              });
               window.chatSocketInitialized = true;
             }catch{}
           };

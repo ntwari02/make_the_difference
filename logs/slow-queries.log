@@ -9403,3 +9403,19 @@ CREATE TABLE IF NOT EXISTS `replies` (
             FROM users u
             WHERE u.id = ? AND u.status = 'active'
         
+2025-09-09T10:15:44.356Z [1508ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-09T10:15:54.778Z [485ms] 
+            SELECT COUNT(*) as total 
+            FROM scholarship_applications 
+            WHERE status IN ('pending', 'approved')
+        
+2025-09-09T10:15:55.406Z [430ms] SELECT COUNT(*) as total FROM scholarships WHERE status = "active"
+2025-09-09T10:15:56.020Z [569ms] 
+            SELECT COALESCE(SUM(s.award_amount), 0) as total 
+            FROM scholarship_applications sa
+            JOIN scholarships s ON sa.scholarship_id = s.id
+            WHERE sa.status = 'a
