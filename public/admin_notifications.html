@@ -506,6 +506,17 @@
           socket.on('reconnect', (attemptNumber) => {
             console.log('🔄 Admin reconnected after', attemptNumber, 'attempts');
             updateConnectionStatus('reconnected');
+            // Re-join known conversation rooms after reconnect
+            try {
+              if (Array.isArray(conversations) && conversations.length > 0) {
+                conversations.forEach(conv => {
+                  try { socket.emit('joinConversation', conv.id); } catch {}
+                });
+              }
+              if (currentConversationId) {
+                try { socket.emit('joinConversation', currentConversationId); } catch {}
+              }
+            } catch {}
           });
 
           socket.on('reconnect_error', (error) => {
@@ -635,6 +646,14 @@
           const data = await response.json();
           conversations = data.conversations || [];
           renderConversations();
+          // Join all conversation rooms so we receive real-time updates
+          try {
+            if (socket && Array.isArray(conversations)) {
+              conversations.forEach(conv => {
+                try { socket.emit('joinConversation', conv.id); } catch {}
+              });
+            }
+          } catch {}
         } catch (error) {
           console.error('Error loading conversations:', error);
           showErrorState(`Failed to load conversations: ${error.message}`);
@@ -680,6 +699,8 @@
           console.log('Selecting conversation:', conversationId);
           selectedId = conversationId;
           currentConversationId = conversationId;
+          // Join Socket.IO room for this conversation to receive updates
+          try { if (socket) { socket.emit('joinConversation', conversationId); } } catch {}
           
           // Mark conversation as read
           try {
