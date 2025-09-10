@@ -452,9 +452,10 @@ router.get('/conversations/:id', auth, async (req, res) => {
     const [replies] = await db.query(`
       SELECT 
         r.*,
-        u.full_name as sender_name
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
       FROM replies r
-      LEFT JOIN users u ON r.sender_id = u.id
+      LEFT JOIN users u_user ON (r.sender_type = 'user' AND r.sender_id = u_user.id)
+      LEFT JOIN users u_admin ON (r.sender_type = 'admin' AND r.sender_id = u_admin.id)
       WHERE r.conversation_id = ?
       ORDER BY r.created_at ASC
     `, [conversationId]);
@@ -1233,9 +1234,10 @@ router.get('/admin/conversations/:id', bypassAuth, async (req, res) => {
     const [replies] = await db.query(`
       SELECT 
         r.*,
-        u.full_name as sender_name
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
       FROM replies r
-      LEFT JOIN users u ON r.sender_id = u.id
+      LEFT JOIN users u_user ON (r.sender_type = 'user' AND r.sender_id = u_user.id)
+      LEFT JOIN users u_admin ON (r.sender_type = 'admin' AND r.sender_id = u_admin.id)
       WHERE r.conversation_id = ?
       ORDER BY r.created_at ASC
     `, [conversationId]);
