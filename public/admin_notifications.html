@@ -751,6 +751,12 @@
           const conversation = data.conversation;
           const replies = data.replies || [];
           
+          // Build reply index for quoting functionality
+          try {
+            window.__adminReplyIndex = {};
+            replies.forEach(r => { window.__adminReplyIndex[r.id] = r; });
+          } catch {}
+          
           // Update chat area
           const chatArea = document.getElementById('conversationDetails');
           if (chatArea) {
@@ -776,7 +782,12 @@
                 
                 <!-- Message Input -->
                 <div class="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                  <form onsubmit="sendMessage(event, ${conversationId})" class="flex gap-2">
+                  <div id="adminPreview" class="mb-2 hidden max-h-24 overflow-y-auto"></div>
+                  <form onsubmit="sendMessage(event, ${conversationId})" class="flex gap-2 items-center">
+                    <button type="button" id="attachAdminBtn" class="px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600" title="Attach images">
+                      <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input id="adminFileInput" type="file" class="hidden" multiple accept="image/*" />
                     <input type="text" id="messageInput" placeholder="Type your message..." 
                            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
                     <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
@@ -791,9 +802,10 @@
           // Scroll to bottom
           setTimeout(scrollToBottom, 100);
           
-          // Add event listeners for message action buttons
+          // Add event listeners for message action buttons and file upload
           setTimeout(() => {
             addMessageActionListeners();
+            wireAdminFileUpload();
           }, 100);
           
         } catch (error) {
@@ -850,33 +862,61 @@
         }).join('');
       }
 
-      // Send message (using correct admin API endpoint)
+      // Send message (using correct admin API endpoint) with optional quoting and attachments
       async function sendMessage(event, conversationId) {
         event.preventDefault();
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
+        const files = window.__adminPendingFiles || [];
         
-        if (!message) return;
+        if (!message && files.length === 0) return;
         
         try {
-          const response = await fetch(`/api/notifications/admin/conversations/${conversationId}/replies`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ message })
-          });
-          
-          if (response.ok) {
-            input.value = '';
-            // Reload conversation messages
-            await loadConversationMessages(conversationId);
-            // Trigger global event for bell icon update
-            window.dispatchEvent(new CustomEvent('newMessage', { detail: { conversationId } }));
-          } else {
-            throw new Error('Failed to send message');
+          // 1) Send text message if present
+          if (message) {
+            let payloadMsg = message;
+            if (window.__adminReplyToId) {
+              payloadMsg = `__REPLY__:${window.__adminReplyToId}__||` + message;
+            }
+            const response = await fetch(`/api/notifications/admin/conversations/${conversationId}/replies`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ message: payloadMsg })
+            });
+            if (!response.ok) {
+              throw new Error('Failed to send message');
+            }
           }
+
+          // 2) Send attachments if any
+          if (files.length > 0) {
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            const uploadRes = await fetch(`/api/notifications/admin/conversations/${conversationId}/attachments`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            if (!uploadRes.ok) {
+              throw new Error('Failed to upload files');
+            }
+          }
+
+          // Clear state
+          input.value = '';
+          const fileInput = document.getElementById('adminFileInput');
+          if (fileInput) fileInput.value = '';
+          window.__adminPendingFiles = [];
+          window.__adminReplyToId = null;
+          const preview = document.getElementById('adminPreview');
+          if (preview) { preview.classList.add('hidden'); preview.innerHTML = ''; }
+
+          // Reload conversation messages and notify
+          await loadConversationMessages(conversationId);
+          window.dispatchEvent(new CustomEvent('newMessage', { detail: { conversationId } }));
         } catch (error) {
           console.error('Error sending message:', error);
           showToast('Failed to send message', 'error');
@@ -1018,14 +1058,104 @@
       function replyToMessage(messageId, sender, message) {
         console.log('Reply clicked:', { messageId, sender, message });
         const input = document.getElementById('messageInput');
-        if (input) {
-          input.value = `@${sender}: ${message}`;
-          input.focus();
+        const preview = document.getElementById('adminPreview');
+        try {
+          window.__adminReplyToId = Number(messageId);
+          if (preview) {
+            const source = (window.__adminReplyIndex && window.__adminReplyIndex[messageId]) ? (window.__adminReplyIndex[messageId].message || '') : (message || '');
+            preview.classList.remove('hidden');
+            preview.innerHTML = `
+              <div class="text-xs p-2 border-l-4 border-gray-400 bg-gray-50 dark:bg-gray-700 mb-2 rounded">
+                <div class="font-semibold mb-1">Replying to ${sender || 'message'}</div>
+                <div>${(source || '').toString().substring(0, 500)}</div>
+              </div>
+            `;
+          }
+          if (input) { input.focus(); }
           showToast('Reply mode activated', 'info');
-        } else {
-          console.error('Message input not found');
-          showToast('Message input not found', 'error');
+        } catch (e) {
+          console.warn('Failed to enter reply mode:', e);
         }
+      }
+
+      // File upload wiring for admin chat
+      function wireAdminFileUpload() {
+        const btn = document.getElementById('attachAdminBtn');
+        const input = document.getElementById('adminFileInput');
+        const preview = document.getElementById('adminPreview');
+        if (!btn || !input || !preview) return;
+        window.__adminPendingFiles = window.__adminPendingFiles || [];
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+          if (!input.files || input.files.length === 0) {
+            preview.classList.add('hidden');
+            preview.innerHTML = '';
+            return;
+          }
+          const MAX_SIZE = 30 * 1024 * 1024;
+          const filesArr = Array.from(input.files);
+          const tooBig = filesArr.find(f => f.size > MAX_SIZE);
+          if (tooBig) {
+            showToast(`File too large: ${tooBig.name}. Max 30MB`, 'error');
+            input.value = '';
+            return;
+          }
+          const allowedTypes = ['image/jpeg','image/png','image/gif','image/webp','image/bmp','image/tiff','image/svg+xml'];
+          const allowedExt = ['jpg','jpeg','png','gif','webp','bmp','tiff','svg'];
+          const invalid = filesArr.find(f => !allowedTypes.includes(f.type) && !allowedExt.includes((f.name.split('.').pop()||'').toLowerCase()));
+          if (invalid) {
+            showToast(`Only image files are allowed. ${invalid.name} not supported.`, 'error');
+            input.value = '';
+            return;
+          }
+          window.__adminPendingFiles = filesArr;
+          renderAdminFilePreviews();
+        });
+      }
+
+      function renderAdminFilePreviews() {
+        const preview = document.getElementById('adminPreview');
+        const files = window.__adminPendingFiles || [];
+        if (!preview) return;
+        const items = files.map((f, idx) => {
+          const isImg = /^image\//.test(f.type || '');
+          if (isImg) {
+            const url = URL.createObjectURL(f);
+            return `
+              <div class="inline-flex items-center gap-2 p-2 border rounded mr-2 mb-2 bg-gray-50 dark:bg-gray-700">
+                <img src="${url}" class="h-12 w-12 object-cover rounded" alt="preview" />
+                <span class="text-xs truncate max-w-[10rem]">${f.name}</span>
+                <button type="button" data-remove="${idx}" class="text-red-600 hover:text-red-800"><i class="fas fa-times"></i></button>
+              </div>
+            `;
+          }
+          return `
+            <div class="inline-flex items-center gap-2 p-2 border rounded mr-2 mb-2 bg-gray-50 dark:bg-gray-700">
+              <i class="fas fa-file"></i>
+              <span class="text-xs truncate max-w-[12rem]">${f.name}</span>
+              <button type="button" data-remove="${idx}" class="text-red-600 hover:text-red-800"><i class="fas fa-times"></i></button>
+            </div>
+          `;
+        }).join('');
+        preview.innerHTML = `
+          <div class="text-xs text-gray-500 mb-1">Attachments ready to send:</div>
+          <div class="flex flex-wrap">${items}</div>
+        `;
+        preview.classList.remove('hidden');
+        preview.querySelectorAll('[data-remove]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const i = parseInt(e.currentTarget.getAttribute('data-remove'), 10);
+            window.__adminPendingFiles.splice(i, 1);
+            const input = document.getElementById('adminFileInput');
+            if (input) input.value = '';
+            if (window.__adminPendingFiles.length === 0) {
+              preview.classList.add('hidden');
+              preview.innerHTML = '';
+            } else {
+              renderAdminFilePreviews();
+            }
+          });
+        });
       }
 
       function forwardMessage(messageId) {
