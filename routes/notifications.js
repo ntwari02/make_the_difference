@@ -709,7 +709,6 @@ router.get('/view/:filename', async (req, res) => {
     }
 
     if (!filePath) {
-      console.warn('[view] File not found for', filename, 'checked paths:', candidates);
       const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">\n  <rect width="100%" height="100%" fill="#f3f4f6"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280">Attachment not available</text>\n</svg>`;
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -842,7 +841,6 @@ router.get('/view', async (req, res) => {
     }
 
     if (!filePath) {
-      console.warn('[view?file] File not found for', filename, 'checked paths:', candidates);
       const svg = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">\n  <rect width=\"100%\" height=\"100%\" fill=\"#f3f4f6\"/>\n  <text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"18\" fill=\"#6b7280\">Attachment not available</text>\n  <text x=\"50%\" y=\"60%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#9ca3af\">${filename}</text>\n</svg>`;
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
