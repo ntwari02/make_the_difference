@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../config/database.js';
 import { auth, bypassAuth } from '../middleware/auth.js';
 import nodemailer from 'nodemailer';
+// Using local disk storage for chat attachments (no external provider)
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -9,10 +10,34 @@ import fs from 'fs';
 const router = express.Router();
 
 // Ensure expected upload directories exist to avoid missing-folder issues
-const uploadRoots = [
-  path.join(process.cwd(), 'public', 'uploads'),
-  path.join(process.cwd(), 'uploads')
-];
+function getConfiguredUploadRoots() {
+  const defaults = [
+    path.join(process.cwd(), 'public', 'uploads'),
+    path.join(process.cwd(), 'uploads')
+  ];
+  const extra = String(process.env.UPLOAD_ROOTS || '')
+    .split(/[,;]/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(p => path.isAbsolute(p) ? p : path.join(process.cwd(), p));
+  // De-duplicate while preserving order
+  const seen = new Set();
+  return [...defaults, ...extra].filter(p => {
+    if (seen.has(p)) return false; seen.add(p); return true;
+  });
+}
+
+const uploadRoots = getConfiguredUploadRoots();
+
+function getWriteRoot() {
+  const explicit = String(process.env.UPLOAD_WRITE_ROOT || '').trim();
+  if (explicit) {
+    return path.isAbsolute(explicit) ? explicit : path.join(process.cwd(), explicit);
+  }
+  // Default to first search root
+  return uploadRoots[0];
+}
+
 const uploadSubfolders = [
   'chat',
   '',
@@ -24,6 +49,11 @@ const uploadSubfolders = [
   'services',
   'team',
   'scholarship-documents'
+  // Extra subfolders can be provided via env, e.g. "custom1,custom2"
+  ,...String(process.env.UPLOAD_SUBFOLDERS_EXTRA || '')
+    .split(/[,;]/)
+    .map(s => s.trim())
+    .filter(Boolean)
 ];
 
 function ensureUploadDirectoriesExist() {
@@ -136,7 +166,7 @@ router.post('/admin/conversations/new', auth, async (req, res) => {
 // Multer setup for chat attachments
 const storage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    const dir = path.join(process.cwd(), 'public', 'uploads', 'chat');
+    const dir = path.join(getWriteRoot(), 'chat');
     try {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -428,11 +458,15 @@ router.get('/conversations/:id', auth, async (req, res) => {
       WHERE r.conversation_id = ?
       ORDER BY r.created_at ASC
     `, [conversationId]);
+    const repliesWithView = (replies || []).map(r => ({
+      ...r,
+      attachment_view_url: r.attachment_url ? `/api/notifications/view?file=${r.attachment_url}` : null
+    }));
     
-    console.log('[API] /api/notifications/conversations/:id replies:', replies?.length || 0);
+    console.log('[API] /api/notifications/conversations/:id replies:', repliesWithView?.length || 0);
     res.json({
       conversation: conversations[0],
-      replies: replies
+      replies: repliesWithView
     });
   } catch (error) {
     console.error(error);
@@ -510,12 +544,10 @@ router.post('/conversations/:id/attachments', auth, upload.array('files', 6), as
     const files = (req.files || []).map(f => ({
       originalName: f.originalname,
       filename: f.filename,
-      path: f.filename, // Store just filename, reconstruct full path in frontend
+      path: f.filename, // store filename only
       size: f.size,
       mimetype: f.mimetype
     }));
-
-    // Store each as a reply with attachment metadata (simple approach)
     const inserted = [];
     for (const file of files) {
       const [ins] = await db.query(
@@ -534,13 +566,13 @@ router.post('/conversations/:id/attachments', auth, upload.array('files', 6), as
       if (io) {
         io.to(`conv:${conversationId}`).emit('message', {
           conversationId: Number(conversationId),
-          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.filename || f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'user', created_at: new Date() })),
+          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.filename || f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'user', created_at: new Date(), attachment_view_url: `/api/notifications/view?file=${f.filename || f.path}` })),
           at: Date.now()
         });
       }
     } catch {}
 
-    res.status(201).json({ success: true, files, inserted });
+    res.status(201).json({ success: true, files: inserted });
   } catch (error) {
     console.error('Error uploading attachments:', error);
     res.status(500).json({ message: 'Failed to upload attachments.' });
@@ -560,11 +592,10 @@ router.post('/admin/conversations/:id/attachments', bypassAuth, upload.array('fi
     const files = (req.files || []).map(f => ({
       originalName: f.originalname,
       filename: f.filename,
-      path: f.filename, // Store just filename, reconstruct full path in frontend
+      path: f.filename,
       size: f.size,
       mimetype: f.mimetype
     }));
-
     const inserted = [];
     for (const file of files) {
       const [ins] = await db.query(
@@ -582,13 +613,13 @@ router.post('/admin/conversations/:id/attachments', bypassAuth, upload.array('fi
       if (io) {
         io.to(`conv:${conversationId}`).emit('message', {
           conversationId,
-          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'admin', created_at: new Date() })),
+          attachments: inserted.map(f => ({ id: f.id, conversation_id: Number(conversationId), attachment_url: f.filename || f.path, attachment_type: f.mimetype, attachment_size: f.size, sender_type: 'admin', created_at: new Date(), attachment_view_url: `/api/notifications/view?file=${f.filename || f.path}` })),
           at: Date.now()
         });
       }
     } catch {}
 
-    res.status(201).json({ success: true, files, inserted });
+    res.status(201).json({ success: true, files: inserted });
   } catch (error) {
     console.error('Error uploading admin attachments:', error);
     res.status(500).json({ message: 'Failed to upload attachments.' });
@@ -689,11 +720,8 @@ router.get('/view/:filename', async (req, res) => {
       });
     }
     
-    // Construct candidate file paths (support legacy locations and common subfolders)
-    const uploadRoots = [
-      path.join(process.cwd(), 'public', 'uploads'),
-      path.join(process.cwd(), 'uploads')
-    ];
+    // Construct candidate file paths (support legacy locations, common subfolders, and env-configured roots)
+    const uploadRoots = getConfiguredUploadRoots();
     const subfolders = uploadSubfolders;
     const candidates = [];
     for (const root of uploadRoots) {
@@ -709,6 +737,8 @@ router.get('/view/:filename', async (req, res) => {
     }
 
     if (!filePath) {
+      // Light debug to help trace missing files without spamming logs
+      try { console.warn(`[view/:filename] File not found: ${filename}. Checked ${candidates.length} paths. Roots=`, uploadRoots); } catch {}
       const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">\n  <rect width="100%" height="100%" fill="#f3f4f6"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280">Attachment not available</text>\n</svg>`;
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -822,11 +852,8 @@ router.get('/view', async (req, res) => {
     const parts = requested.split('/');
     const filename = parts[parts.length - 1];
 
-    // Re-use the same candidate resolution logic
-    const uploadRoots = [
-      path.join(process.cwd(), 'public', 'uploads'),
-      path.join(process.cwd(), 'uploads')
-    ];
+    // Re-use the same candidate resolution logic, honoring env-configured roots
+    const uploadRoots = getConfiguredUploadRoots();
     const subfolders = uploadSubfolders;
     const candidates = [];
     for (const root of uploadRoots) {
@@ -841,6 +868,7 @@ router.get('/view', async (req, res) => {
     }
 
     if (!filePath) {
+      try { console.warn(`[view?file] File not found: ${filename}. Checked ${candidates.length} paths. Roots=`, uploadRoots); } catch {}
       const svg = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">\n  <rect width=\"100%\" height=\"100%\" fill=\"#f3f4f6\"/>\n  <text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"18\" fill=\"#6b7280\">Attachment not available</text>\n  <text x=\"50%\" y=\"60%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#9ca3af\">${filename}</text>\n</svg>`;
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -1211,10 +1239,14 @@ router.get('/admin/conversations/:id', bypassAuth, async (req, res) => {
       WHERE r.conversation_id = ?
       ORDER BY r.created_at ASC
     `, [conversationId]);
+    const repliesWithView = (replies || []).map(r => ({
+      ...r,
+      attachment_view_url: r.attachment_url ? `/api/notifications/view?file=${r.attachment_url}` : null
+    }));
     
     res.json({
       conversation: conversations[0],
-      replies: replies
+      replies: repliesWithView
     });
   } catch (error) {
     console.error(error);

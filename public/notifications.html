@@ -813,42 +813,83 @@
         function renderAttachment(reply) {
             if (!reply.attachment_url) return '';
             
-            const isImage = /^image\//.test(reply.attachment_type || '');
-            
-            // Extract filename from attachment_url (remove timestamp prefix)
-            const getDisplayName = (url) => {
-                if (!url) return 'attachment';
-                // Remove timestamp prefix (e.g., "1757074461089_" from "1757074461089_Sure_driving_licence_1_.pdf")
-                const parts = url.split('_');
-                if (parts.length > 1) {
-                    // Remove the first part (timestamp) and join the rest
-                    return parts.slice(1).join('_');
+            // Normalize to just filename in case older rows include subpaths
+            // Prefer server-provided view URL if available
+            if (reply.attachment_view_url) {
+                const view = String(reply.attachment_view_url);
+                const isImageType = /^image\//.test(reply.attachment_type || '');
+                const isImageExt = /\.(jpg|jpeg|png|gif|webp|bmp|tiff|svg)$/i.test(view);
+                const isImage = isImageType || isImageExt;
+                if (isImage) {
+                    return `
+                        <div class="mb-2">
+                            <img src="${view}" alt="attachment" class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" onclick="openUserImageModal('${view}')">
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="mb-2">
+                            <a href="${view}" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>Open attachment</span>
+                            </a>
+                        </div>
+                    `;
                 }
-                return url;
-            };
+            }
+            let url = String(reply.attachment_url || '');
+            url = url.replace(/\\/g, '/');
+            if (url.includes('/')) {
+                const parts = url.split('/');
+                url = parts[parts.length - 1];
+            }
+            const isImageType = /^image\//.test(reply.attachment_type || '');
+            const isImageExt = /\.(jpg|jpeg|png|gif|webp|bmp|tiff|svg)$/i.test(url);
+            const isImage = isImageType || isImageExt;
+            const encoded = encodeURIComponent(url);
+            const primary = `/uploads/chat/${encoded}`;
+            const fallback1 = `/uploads/${encoded}`;
+            const fallback2 = `/api/notifications/view?file=${encoded}`;
             
-            const displayName = getDisplayName(reply.attachment_url);
+            // Extract filename for non-image display
+            const getDisplayName = (u) => {
+                if (!u) return 'attachment';
+                const parts = u.split('_');
+                return parts.length > 1 ? parts.slice(1).join('_') : u;
+            };
+            const displayName = getDisplayName(url);
             
             if (isImage) {
                 return `
                     <div class="mb-2">
-                        <img src="/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}" alt="attachment" 
-                             class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity" 
-                             onclick="openUserImageModal('/api/notifications/view?file=${encodeURIComponent(reply.attachment_url)}')" />
+                        <img src="${primary}" alt="attachment"
+                             class="max-h-48 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                             onclick="openUserImageModal('${primary}')"
+                             onerror="
+                               if(!this.dataset.f1){
+                                 this.dataset.f1=1; this.src='${fallback1}'; this.setAttribute('onclick','openUserImageModal(\'${fallback1}\')');
+                               } else if(!this.dataset.f2){
+                                 this.dataset.f2=1; this.src='${fallback2}'; this.setAttribute('onclick','openUserImageModal(\'${fallback2}\')');
+                               } else {
+                                 this.onerror=null; this.parentNode.innerHTML='\
+                                   <a href=\'${fallback2}\' target=\'_blank\' class=\'inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline\'>\
+                                     <i class=\'fas fa-external-link-alt\'></i><span>Open ${displayName}</span>\
+                                   </a>';
+                               }
+                             ">
                     </div>
                 `;
             } else {
                 return `
                     <div class="mb-2">
-                        <button onclick="openFile('uploads/chat/${reply.attachment_url}', '${displayName}')" 
-                                class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer">
+                        <a href="${primary}" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline transition-colors">
                             <i class="fas fa-external-link-alt"></i>
                             <span>Open ${displayName}</span>
-                        </button>
+                        </a>
                     </div>
                 `;
-                    }
-                }
+            }
+        }
 
         // Parse reply message for quoted replies
         function parseReply(message) {
