@@ -1409,7 +1409,8 @@
           }
           modal.classList.add('hidden');
           document.getElementById('announcementForm').reset();
-          fetchConversations();
+          // Use existing function name
+          loadConversations();
         } catch (e) { console.error(e); }
       });
 
@@ -1516,7 +1517,7 @@
                 
                 // Refresh conversations and open the new/existing conversation
                 console.log('Refreshing conversations...');
-                await fetchConversations();
+                await loadConversations();
                 console.log('Selecting conversation:', data.conversationId);
                 await selectConversation(data.conversationId);
                 
@@ -1906,7 +1907,7 @@
           }
           
           // Reload the entire conversation list from server
-          await fetchConversations();
+          await loadConversations();
           
         } catch (error) {
           console.error('Error deleting conversation:', error);
