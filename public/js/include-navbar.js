@@ -514,20 +514,20 @@ function initializeNotifications(elements) {
         console.warn('[Notifications] notificationDropdown not found (navigation mode will still work)');
     }
 
-    // Initial diagnostics
+    // Hide bell entirely for admin users; they have it on dashboard
     try {
-        const rect = notificationBell.getBoundingClientRect();
-        console.log('[Notifications] Bell ready', {
-            exists: !!notificationBell,
-            classes: notificationBell.className,
-            rect: { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) },
-            computedDisplay: window.getComputedStyle(notificationBell).display,
-            computedVisibility: window.getComputedStyle(notificationBell).visibility,
-            computedPointerEvents: window.getComputedStyle(notificationBell).pointerEvents
-        });
-    } catch (e) {
-        console.log('[Notifications] Unable to measure bell:', e?.message || e);
-    }
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isAdmin = user && (user.isAdmin === true || user.isAdmin === 1 || user.isAdmin === '1' || user.isAdmin === 'true');
+        if (isAdmin && notificationBell) {
+            notificationBell.classList.add('hidden');
+            notificationBell.style.display = 'none';
+            notificationBell.style.pointerEvents = 'none';
+            // Also hide dropdown/badge if present
+            notificationDropdown?.classList.add('hidden');
+            notificationBadge?.classList.add('hidden');
+            return; // Skip initializing notification handlers for admin
+        }
+    } catch {}
 
     // Common handler for activating the bell (click/touch)
     let bellNavigated = false;
