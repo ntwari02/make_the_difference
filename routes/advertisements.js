@@ -3,6 +3,7 @@ import pool from '../config/database.js';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 
 const router = express.Router();
 // Ensure weight column exists for weighted selection
@@ -57,16 +58,87 @@ router.post('/upload-image', upload.single('image'), async (req, res) => {
     }
 });
 
+// Strict file filter for videos only
+function videoFileFilter(_req, file, cb) {
+    try {
+        const allowed = [
+            'video/mp4',
+            'video/webm',
+            'video/ogg',
+            'video/quicktime'
+        ];
+        if (allowed.includes(file.mimetype)) return cb(null, true);
+        const ext = (file.originalname || '').split('.').pop()?.toLowerCase();
+        const allowedExt = ['mp4', 'webm', 'ogg', 'mov'];
+        if (allowedExt.includes(ext)) return cb(null, true);
+        return cb(new Error('Invalid video format. Allowed: MP4, WebM, Ogg, MOV'));
+    } catch (e) {
+        return cb(new Error('Video validation failed'), false);
+    }
+}
+
 // Upload endpoint for videos (optional, larger limit)
 const uploadVideo = multer({
     storage,
-    limits: { fileSize: 100 * 1024 * 1024 } // 100MB
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+    fileFilter: videoFileFilter
 });
+
+// Probe a video file using ffprobe if available
+function ffprobeExists() {
+    try {
+        const probe = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe';
+        // Try to spawn with -version to see if accessible via PATH
+        const child = spawn(probe, ['-version']);
+        child.on('error', () => {});
+        // If it spawns, assume available
+        return true;
+    } catch { return false; }
+}
+
+function probeVideo(filePath) {
+    return new Promise((resolve) => {
+        const probe = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe';
+        const args = ['-v', 'error', '-show_streams', '-of', 'json', filePath];
+        try {
+            const child = spawn(probe, args);
+            let out = '';
+            let err = '';
+            child.stdout.on('data', d => { out += d.toString(); });
+            child.stderr.on('data', d => { err += d.toString(); });
+            child.on('close', () => {
+                try {
+                    const json = JSON.parse(out || '{}');
+                    const streams = Array.isArray(json.streams) ? json.streams : [];
+                    const hasVideo = streams.some(s => s.codec_type === 'video');
+                    const hasAudio = streams.some(s => s.codec_type === 'audio');
+                    resolve({ ok: true, hasVideo, hasAudio, streams });
+                } catch (e) {
+                    resolve({ ok: false, error: 'ParseError', details: e?.message || String(e) });
+                }
+            });
+            child.on('error', (e) => resolve({ ok: false, error: 'SpawnError', details: e?.message || String(e) }));
+        } catch (e) {
+            resolve({ ok: false, error: 'ExecError', details: e?.message || String(e) });
+        }
+    });
+}
 
 router.post('/upload-video', uploadVideo.single('video'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'No video provided' });
+        }
+        const absolutePath = path.join(adsUploadDir, req.file.filename);
+        // Optional deep validation with ffprobe when available
+        let requiresAudio = String(process.env.AD_VIDEO_REQUIRE_AUDIO || 'true').toLowerCase() === 'true';
+        if (ffprobeExists()) {
+            const result = await probeVideo(absolutePath);
+            if (!result.ok || !result.hasVideo || (requiresAudio && !result.hasAudio)) {
+                try { fs.unlinkSync(absolutePath); } catch {}
+                const reason = !result.ok ? 'Could not validate video' : (!result.hasVideo ? 'No video stream found' : 'No audio track found');
+                return res.status(400).json({ success: false, message: `Invalid video: ${reason}` });
+            }
         }
         const relativePath = `uploads/ads/${req.file.filename}`.replace(/\\/g, '/');
         return res.json({ success: true, url: relativePath });
