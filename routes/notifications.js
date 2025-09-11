@@ -9,6 +9,16 @@ import fs from 'fs';
 
 const router = express.Router();
 
+// Storage mode: 'disk' (default) or 'db' (store in MySQL BLOB)
+const ATTACHMENTS_STORAGE = String(process.env.ATTACHMENTS_STORAGE || 'disk').toLowerCase();
+
+// Helper: sanitize original filename and add timestamp
+function generateSafeTimestampedFilename(originalName = 'file') {
+  const base = String(originalName).replace(/[^a-zA-Z0-9._-]/g, '_') || 'file';
+  const ts = Date.now();
+  return `${ts}_${base}`;
+}
+
 // Ensure expected upload directories exist to avoid missing-folder issues
 function getConfiguredUploadRoots() {
   const defaults = [
@@ -183,11 +193,7 @@ const storage = multer.diskStorage({
     cb(null, unique);
   }
 });
-const upload = multer({
-  storage,
-  // Increase per-file limit to 30MB and keep total files at 6
-  limits: { fileSize: 30 * 1024 * 1024, files: 6 },
-  fileFilter: (_req, file, cb) => {
+const commonFileFilter = (_req, file, cb) => {
     try {
       // Only allow image files
       const allowedMimeTypes = [
@@ -218,8 +224,33 @@ const upload = multer({
     } catch (error) {
       return cb(new Error('File validation error'), false);
     }
-  }
+};
+
+const diskUpload = multer({
+  storage,
+  limits: { fileSize: 30 * 1024 * 1024, files: 6 },
+  fileFilter: commonFileFilter
 });
+
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024, files: 6 },
+  fileFilter: commonFileFilter
+});
+
+const upload = ATTACHMENTS_STORAGE === 'db' ? memoryUpload : diskUpload;
+
+async function saveAttachmentBufferToDb(filename, mimetype, size, buffer) {
+  try {
+    await db.query(
+      'INSERT INTO attachments (filename, mimetype, size, data) VALUES (?, ?, ?, ?)',
+      [filename, mimetype, size, buffer]
+    );
+  } catch (e) {
+    // If duplicate (rare since timestamped), ignore; otherwise log
+    try { console.warn('saveAttachmentBufferToDb error:', e.message); } catch {}
+  }
+}
 
 
 
@@ -542,13 +573,27 @@ router.post('/conversations/:id/attachments', auth, upload.array('files', 6), as
       return res.status(404).json({ message: 'Conversation not found.' });
     }
 
-    const files = (req.files || []).map(f => ({
-      originalName: f.originalname,
-      filename: f.filename,
-      path: f.filename, // store filename only
-      size: f.size,
-      mimetype: f.mimetype
-    }));
+    let files = [];
+    if (ATTACHMENTS_STORAGE === 'db') {
+      // Memory mode: assign safe filenames and persist buffers to DB
+      for (const f of (req.files || [])) {
+        const assigned = generateSafeTimestampedFilename(f.originalname);
+        files.push({ originalName: f.originalname, filename: assigned, path: assigned, size: f.size, mimetype: f.mimetype, _buffer: f.buffer });
+      }
+      for (const f of files) {
+        await saveAttachmentBufferToDb(f.filename, f.mimetype, f.size, f._buffer);
+        delete f._buffer;
+      }
+    } else {
+      // Disk mode (existing behavior)
+      files = (req.files || []).map(f => ({
+        originalName: f.originalname,
+        filename: f.filename,
+        path: f.filename, // store filename only
+        size: f.size,
+        mimetype: f.mimetype
+      }));
+    }
     const inserted = [];
     for (const file of files) {
       const [ins] = await db.query(
@@ -590,13 +635,25 @@ router.post('/admin/conversations/:id/attachments', bypassAuth, upload.array('fi
       return res.status(404).json({ message: 'Conversation not found.' });
     }
 
-    const files = (req.files || []).map(f => ({
-      originalName: f.originalname,
-      filename: f.filename,
-      path: f.filename,
-      size: f.size,
-      mimetype: f.mimetype
-    }));
+    let files = [];
+    if (ATTACHMENTS_STORAGE === 'db') {
+      for (const f of (req.files || [])) {
+        const assigned = generateSafeTimestampedFilename(f.originalname);
+        files.push({ originalName: f.originalname, filename: assigned, path: assigned, size: f.size, mimetype: f.mimetype, _buffer: f.buffer });
+      }
+      for (const f of files) {
+        await saveAttachmentBufferToDb(f.filename, f.mimetype, f.size, f._buffer);
+        delete f._buffer;
+      }
+    } else {
+      files = (req.files || []).map(f => ({
+        originalName: f.originalname,
+        filename: f.filename,
+        path: f.filename,
+        size: f.size,
+        mimetype: f.mimetype
+      }));
+    }
     const inserted = [];
     for (const file of files) {
       const [ins] = await db.query(
@@ -869,6 +926,22 @@ router.get('/view', async (req, res) => {
     }
 
     if (!filePath) {
+      // If disk file not found and storage mode is DB, try streaming from DB
+      if (ATTACHMENTS_STORAGE === 'db') {
+        try {
+          const [rows] = await db.query('SELECT mimetype, data FROM attachments WHERE filename = ? LIMIT 1', [filename]);
+          if (rows && rows.length > 0) {
+            const row = rows[0];
+            res.setHeader('Content-Type', row.mimetype || 'application/octet-stream');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            return res.status(200).end(row.data);
+          }
+        } catch (dbErr) {
+          try { console.warn('DB fetch for attachment failed:', dbErr.message); } catch {}
+        }
+      }
       try { console.warn(`[view?file] File not found: ${filename}. Checked ${candidates.length} paths. Roots=`, uploadRoots); } catch {}
       const svg = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">\n  <rect width=\"100%\" height=\"100%\" fill=\"#f3f4f6\"/>\n  <text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"18\" fill=\"#6b7280\">Attachment not available</text>\n  <text x=\"50%\" y=\"60%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#9ca3af\">${filename}</text>\n</svg>`;
       res.setHeader('Content-Type', 'image/svg+xml');

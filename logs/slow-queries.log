@@ -11954,3 +11954,360 @@ CREATE TABLE IF NOT EXISTS `replies` (
 2025-09-10T12:27:08.946Z [374ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
 2025-09-10T12:28:56.363Z [544ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
 2025-09-10T12:29:10.626Z [463ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:38:52.695Z [532ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:38:53.299Z [537ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:38:53.920Z [323ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:38:54.455Z [442ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:39:00.904Z [8100ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:39:04.464Z [307ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-11T05:39:04.514Z [335ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:39:05.647Z [1087ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:39:05.758Z [1430ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-11T05:40:33.133Z [355ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:40:34.054Z [306ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:40:34.365Z [306ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:40:34.976Z [434ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:42:33.342Z [338ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:42:48.118Z [911ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:42:48.776Z [649ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:42:49.433Z [649ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:42:49.917Z [456ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:42:50.787Z [865ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:42:51.358Z [551ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:42:52.661Z [1296ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:42:53.465Z [802ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:42:53.824Z [342ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:42:54.278Z [446ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:43:02.563Z [428ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:43:03.793Z [1228ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:04.302Z [508ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:43:04.782Z [476ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:05.348Z [555ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:43:05.828Z [463ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:43:06.413Z [583ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:06.743Z [328ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:43:07.399Z [360ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:43:17.565Z [396ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:43:34.018Z [421ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:43:34.434Z [353ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:34.759Z [311ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:43:35.152Z [389ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:35.541Z [387ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:43:36.301Z [746ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:43:37.071Z [527ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:43:37.478Z [374ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:43:37.983Z [324ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:46:48.787Z [1518ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:46:49.298Z [500ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:46:50.243Z [908ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:46:50.977Z [723ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:46:51.538Z [558ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:46:52.157Z [602ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:46:52.547Z [400ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:46:52.602Z [438ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:46:52.618Z [347ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:46:52.972Z [371ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-11T05:46:53.020Z [402ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:46:53.477Z [458ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-11T05:46:53.501Z [464ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T05:46:54.051Z [615ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:46:54.224Z [708ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T05:46:54.230Z [704ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:46:54.699Z [454ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-11T05:46:55.143Z [442ms] 
+      SELECT COUNT(*) as total 
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+      
+    
+2025-09-11T05:46:57.617Z [447ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-11T05:46:57.670Z [486ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T05:46:58.166Z [497ms] SELECT id, full_name, email, created_at, phone, bio, profile_picture FROM users WHERE id = ?
+2025-09-11T05:46:58.252Z [517ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T05:46:58.270Z [534ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T05:46:58.599Z [330ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T05:46:59.373Z [535ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T08:06:47.938Z [2111ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:06:48.392Z [321ms] 
+      SELECT 
+        id, 
+        title, 
+        message, 
+        is_read, 
+        created_at,
+        user_id,
+        email
+      FROM notifications 
+      WHERE (user_id = ? OR email = ?)
+    
+2025-09-11T08:06:48.741Z [498ms] SELECT phone, bio, profile_picture FROM users LIMIT 1
+2025-09-11T08:06:49.794Z [1428ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:06:49.998Z [1261ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T08:06:52.366Z [419ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:06:52.647Z [309ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T08:06:54.130Z [482ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:06:54.657Z [382ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T08:07:01.931Z [432ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:07:02.744Z [502ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        admin.full_name as admin_name
+      FROM convers
+2025-09-11T08:07:03.195Z [443ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:07:04.240Z [335ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T08:07:39.289Z [436ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:07:39.681Z [417ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T08:07:39.691Z [365ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:40.302Z [309ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:07:46.232Z [437ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:46.539Z [303ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        COUNT(r.id) as reply_count,
+        MAX(r.created_at) as last_reply_at
+      FROM 
+2025-09-11T08:07:47.152Z [306ms] SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR email = ?)
+2025-09-11T08:07:47.460Z [306ms] UPDATE conversations SET is_read = 1, last_read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-11T08:07:48.074Z [416ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:48.077Z [424ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:48.508Z [382ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:48.752Z [435ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:07:49.195Z [610ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T08:07:49.204Z [459ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:07:50.543Z [435ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:08:20.149Z [389ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T08:09:37.003Z [807ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:09:52.975Z [490ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T08:09:53.955Z [544ms] 
+          SELECT COUNT(DISTINCT c.id) as count 
+          FROM conversations c
+          JOIN notifications n ON c.notification_id = n.id
+          LEFT JOIN replies r ON c.id = r.conversation_id
+   
+2025-09-11T08:10:22.396Z [1180ms] SELECT id, email, full_name FROM users WHERE id = ?
+2025-09-11T08:10:25.250Z [1557ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T08:10:36.984Z [348ms] SHOW TABLES LIKE "user_notifications"
+2025-09-11T08:10:37.695Z [709ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T08:10:51.858Z [450ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T08:11:13.635Z [429ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:11:14.478Z [387ms] SELECT COUNT(*) as count FROM notifications WHERE (user_id = ? OR email = ?) AND COALESCE(is_read, 0) = 0
+2025-09-11T08:12:15.853Z [368ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-11T08:12:15.866Z [379ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-11T08:12:16.084Z [378ms] 
+            SELECT 
+                sa.application_id               AS id,
+                sa.application_date             AS created_at,
+                sa.status                        AS status,
+ 
+2025-09-11T08:12:16.316Z [353ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-11T08:12:50.044Z [2367ms] 
+            SELECT u.id, u.email, u.full_name, u.role, u.status, u.last_login
+            FROM users u
+            WHERE u.id = ? AND u.status = 'active'
+        
+2025-09-11T08:12:53.113Z [5589ms] SELECT * FROM admin_account_settings WHERE user_id = ?
+2025-09-11T08:12:54.957Z [1848ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-11T08:12:58.324Z [426ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:15:18.857Z [437ms] 
+            SELECT 
+                COUNT(*) as total_requests,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
+                COUNT(CASE WHEN status = 'active' T
+2025-09-11T08:15:59.786Z [954ms] SELECT id FROM conversations WHERE id = ? LIMIT 1
+2025-09-11T08:16:01.650Z [1831ms] INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+2025-09-11T08:16:02.272Z [529ms] 
+      SELECT 
+        c.*,
+        n.title as notification_title,
+        n.message as notification_message,
+        u.full_name as user_name,
+        u.email as user_email,
+        admin.full_name a
+2025-09-11T08:16:02.652Z [379ms] 
+      SELECT 
+        r.*,
+        COALESCE(u_user.full_name, u_admin.full_name, r.sender_email, r.sender_type) AS sender_name
+      FROM replies r
+      LEFT JOIN users u_user ON (r.sender_type = 'u
+2025-09-11T08:16:25.820Z [303ms] UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
+2025-09-11T08:16:27.164Z [366ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T08:16:27.174Z [303ms] SELECT maintenance_mode, maintenance_pages FROM general_settings ORDER BY id DESC LIMIT 1
+2025-09-11T08:16:28.116Z [477ms] 
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM conversations c
+      JOIN notifications n ON c.notification_id = n.id
+      LEFT JOIN users u ON c.user_id = u.id
+      
+    
+2025-09-11T08:16:54.487Z [574ms] SELECT id FROM admin_users WHERE user_id = ? AND is_active = TRUE
+2025-09-11T08:17:10.441Z [385ms] SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+                     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'general_settings' 
+                     AND COLUMN_NAME = 'maintenance_pages' LIMIT 1
+2025-09-11T08:17:11.683Z [369ms] SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND COALESCE(is_read, 0) = 0
+2025-09-11T08:20:30.858Z [409ms] CREATE TABLE IF NOT EXISTS schema_migrations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL UNIQUE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+2025-09-11T08:20:31.395Z [534ms] SELECT filename FROM schema_migrations
+2025-09-11T08:21:24.296Z [367ms] ALTER TABLE conversations ADD COLUMN last_read_at TIMESTAMP NULL DEFAULT NULL
+2025-09-11T08:21:46.363Z [536ms] CREATE INDEX idx_conversations_last_read ON conversations (last_read_at)
+2025-09-11T08:21:46.798Z [430ms] CREATE INDEX idx_conversations_is_read ON conversations (is_read)
