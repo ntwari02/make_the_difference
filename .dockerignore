@@ -1,0 +1,25 @@
+node_modules
+npm-debug.log
+Dockerfile*
+.dockerignore
+.git
+.gitignore
+.env
+.env.*
+logs
+public/uploads
+uploads
+*.sqlite
+*.db
+*.log
+coverage
+build
+.cache
+**/.DS_Store
+**/Thumbs.db
+
+# Exclude local dev artifacts
+.vscode
+.idea
+
+
