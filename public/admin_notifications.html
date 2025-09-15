@@ -677,6 +677,7 @@
 
         container.innerHTML = conversations.map(conv => `
           <div class="conv-item p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${selectedId === conv.id ? 'bg-blue-100 dark:bg-blue-900/30' : ''}" 
+               data-id="${conv.id}"
                onclick="selectConversation(${conv.id})">
             <div class="flex items-start justify-between">
               <div class="flex-1 min-w-0">
@@ -687,6 +688,9 @@
               <div class="flex flex-col items-end ml-2">
                 <span class="text-xs text-gray-500 dark:text-gray-500">${new Date(conv.updated_at || conv.created_at).toLocaleDateString()}</span>
                 ${conv.unread_count > 0 ? `<span class="bg-red-500 text-white text-xs rounded-full px-2 py-1 mt-1">${conv.unread_count}</span>` : ''}
+                <button class="mt-2 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" title="Delete conversation" onclick="event.stopPropagation(); deleteAdminConversation(${conv.id})">
+                  <i class="fas fa-trash"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -1899,16 +1903,30 @@
           const result = await response.json();
           console.log('Delete successful:', result);
           showToast('Conversation deleted successfully', 'success');
-          
+
+          // Remove from local array
+          try {
+            conversations = (conversations || []).filter(c => String(c.id) !== String(conversationId));
+          } catch {}
+
           // Clear selected conversation if it was deleted
           if (selectedId === conversationId) {
             selectedId = null;
             window.currentConversationId = null;
             document.getElementById('conversationDetails').innerHTML = '<div class="p-4 text-center text-gray-500">Select a conversation to view messages</div>';
           }
-          
-          // Reload the entire conversation list from server
-          await loadConversations();
+
+          // Remove DOM item without full reload
+          try {
+            const el = document.querySelector(`.conv-item[data-id="${conversationId}"]`);
+            if (el && el.parentElement) {
+              el.parentElement.removeChild(el);
+            }
+            // If list becomes empty, re-render to show empty state
+            if ((document.getElementById('conversationList')?.children.length || 0) === 0) {
+              renderConversations();
+            }
+          } catch {}
           
         } catch (error) {
           console.error('Error deleting conversation:', error);
