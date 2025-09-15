@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS attachments (
   mimetype VARCHAR(100) NOT NULL,
   size INT NOT NULL,
   data LONGBLOB NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_attachments_filename (filename)
 );
-
-CREATE INDEX IF NOT EXISTS idx_attachments_filename ON attachments (filename);
 

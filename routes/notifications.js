@@ -600,6 +600,26 @@ router.post('/conversations/:id/attachments', auth, upload.array('files', 6), as
         'INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [conversationId, 'user', req.user.id, req.user.email, '', file.path, file.mimetype, file.size]
       );
+      // Persist metadata into chat_attachments
+      try {
+        const storageMode = ATTACHMENTS_STORAGE === 'db' ? 'db' : 'disk';
+        let attachmentsId = null;
+        if (ATTACHMENTS_STORAGE === 'db') {
+          // Try to link to attachments table if exists
+          try {
+            const [att] = await db.query('SELECT id FROM attachments WHERE filename = ? LIMIT 1', [file.filename || file.path]);
+            if (Array.isArray(att) && att.length > 0) {
+              attachmentsId = att[0].id;
+            }
+          } catch {}
+        }
+        await db.query(
+          'INSERT INTO chat_attachments (conversation_id, reply_id, uploader_user_id, uploader_email, filename, mimetype, size, storage, attachments_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [conversationId, ins.insertId, req.user.id || null, req.user.email || null, (file.filename || file.path), file.mimetype, file.size, storageMode, attachmentsId]
+        );
+      } catch (metaErr) {
+        try { console.warn('Failed to insert chat_attachments:', metaErr.message); } catch {}
+      }
       inserted.push({ id: ins.insertId, ...file });
     }
 
@@ -660,6 +680,25 @@ router.post('/admin/conversations/:id/attachments', bypassAuth, upload.array('fi
         'INSERT INTO replies (conversation_id, sender_type, sender_id, sender_email, message, attachment_url, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [conversationId, 'admin', req.user?.id || null, req.user?.email || null, '', file.path, file.mimetype, file.size]
       );
+      // Persist metadata into chat_attachments
+      try {
+        const storageMode = ATTACHMENTS_STORAGE === 'db' ? 'db' : 'disk';
+        let attachmentsId = null;
+        if (ATTACHMENTS_STORAGE === 'db') {
+          try {
+            const [att] = await db.query('SELECT id FROM attachments WHERE filename = ? LIMIT 1', [file.filename || file.path]);
+            if (Array.isArray(att) && att.length > 0) {
+              attachmentsId = att[0].id;
+            }
+          } catch {}
+        }
+        await db.query(
+          'INSERT INTO chat_attachments (conversation_id, reply_id, uploader_user_id, uploader_email, filename, mimetype, size, storage, attachments_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [conversationId, ins.insertId, req.user?.id || null, req.user?.email || null, (file.filename || file.path), file.mimetype, file.size, storageMode, attachmentsId]
+        );
+      } catch (metaErr) {
+        try { console.warn('Failed to insert chat_attachments:', metaErr.message); } catch {}
+      }
       inserted.push({ id: ins.insertId, ...file });
     }
 
