@@ -1,0 +1,152 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { executeQuery } = require('../config/database');
+
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev_access_secret';
+const REFRESH_TTL_SECONDS = Number(process.env.JWT_REFRESH_TTL_SECONDS || 60 * 60 * 24 * 30);
+const ACCESS_TTL_SECONDS = Number(process.env.JWT_ACCESS_TTL_SECONDS || 60 * 15);
+
+function generateRandomToken(bytes = 64) {
+  return crypto.randomBytes(bytes).toString('hex');
+}
+
+function sha256Hex(input) {
+  return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function signAccessToken(user) {
+  const payload = { sub: user.id, role: user.role };
+  const token = jwt.sign(payload, ACCESS_SECRET, {
+    expiresIn: ACCESS_TTL_SECONDS
+  });
+  return { token, expiresIn: ACCESS_TTL_SECONDS };
+}
+
+async function createRefreshSession(userId) {
+  const refreshToken = generateRandomToken(48);
+  const tokenHash = sha256Hex(refreshToken);
+  await executeQuery(
+    'INSERT INTO user_sessions (id, user_id, token_hash, expires_at, created_at) VALUES (UUID(), ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), NOW())',
+    [userId, tokenHash, REFRESH_TTL_SECONDS]
+  );
+  return {
+    refreshToken,
+    refreshExpiresIn: REFRESH_TTL_SECONDS
+  };
+}
+
+async function deleteRefreshSessionByToken(refreshToken) {
+  const tokenHash = sha256Hex(String(refreshToken));
+  await executeQuery('DELETE FROM user_sessions WHERE token_hash = ? LIMIT 1', [tokenHash]);
+}
+
+async function findUserByIdentifier(identifier) {
+  const rows = await executeQuery(
+    'SELECT id, email, password, first_name, last_name, phone, role, is_verified, is_active FROM users WHERE email = ? OR phone = ? LIMIT 1',
+    [identifier, identifier]
+  );
+  return rows && rows[0] ? rows[0] : null;
+}
+
+async function logLoginAttempt({ userId = null, identifier, success, failureReason = null, ipAddress = null, userAgent = null }) {
+  try {
+    await executeQuery(
+      'INSERT INTO auth_login_attempts (id, user_id, identifier, success, failure_reason, ip_address, user_agent, created_at) VALUES (UUID(), ?, ?, ?, ?, ?, ?, NOW())',
+      [userId, identifier, !!success, failureReason, ipAddress, userAgent]
+    );
+  } catch (_) {
+    // do not block auth flow on logging failure
+  }
+}
+
+module.exports = {
+  async registerUser({ email, password, firstName, lastName, phone }) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    await executeQuery(
+      'INSERT INTO users (id, email, password, first_name, last_name, phone, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
+      [email, passwordHash, firstName, lastName, phone]
+    );
+    const users = await executeQuery('SELECT id, email, is_verified FROM users WHERE email = ? LIMIT 1', [email]);
+    return users[0];
+  },
+
+  async authenticateUser(identifier, password) {
+    const user = await findUserByIdentifier(identifier);
+    if (!user) {
+      await logLoginAttempt({ identifier, success: false, failureReason: 'invalid_credentials' });
+      return { success: false, error: 'Invalid credentials', status: 401 };
+    }
+    if (!user.is_active) {
+      await logLoginAttempt({ userId: user.id, identifier, success: false, failureReason: 'blocked' });
+      return { success: false, error: 'Account disabled', status: 403 };
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      await logLoginAttempt({ userId: user.id, identifier, success: false, failureReason: 'invalid_credentials' });
+      return { success: false, error: 'Invalid credentials', status: 401 };
+    }
+
+    // Success
+    await logLoginAttempt({ userId: user.id, identifier, success: true });
+    await executeQuery('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+
+    const { token: accessToken, expiresIn: accessExpiresIn } = signAccessToken(user);
+    const { refreshToken, refreshExpiresIn } = await createRefreshSession(user.id);
+
+    return {
+      success: true,
+      user: { id: user.id, email: user.email, role: user.role },
+      tokens: {
+        accessToken,
+        accessExpiresIn,
+        refreshToken,
+        refreshExpiresIn
+      }
+    };
+  },
+
+  async refreshAccessToken(refreshToken) {
+    if (!refreshToken) return null;
+    const tokenHash = sha256Hex(String(refreshToken));
+    const sessions = await executeQuery(
+      'SELECT user_id, expires_at FROM user_sessions WHERE token_hash = ? LIMIT 1',
+      [tokenHash]
+    );
+    if (!sessions[0]) return null;
+
+    const session = sessions[0];
+    const expired = new Date(session.expires_at).getTime() < Date.now();
+    if (expired) {
+      await executeQuery('DELETE FROM user_sessions WHERE token_hash = ? LIMIT 1', [tokenHash]);
+      return null;
+    }
+
+    const users = await executeQuery('SELECT id, email, role, is_active FROM users WHERE id = ? LIMIT 1', [session.user_id]);
+    const user = users[0];
+    if (!user || !user.is_active) {
+      await executeQuery('DELETE FROM user_sessions WHERE token_hash = ? LIMIT 1', [tokenHash]);
+      return null;
+    }
+
+    // Rotate refresh token: delete old and create new
+    await executeQuery('DELETE FROM user_sessions WHERE token_hash = ? LIMIT 1', [tokenHash]);
+    const { token: accessToken, expiresIn: accessExpiresIn } = signAccessToken(user);
+    const { refreshToken: newRefreshToken, refreshExpiresIn } = await createRefreshSession(user.id);
+
+    return {
+      access_token: accessToken,
+      access_expires_in: accessExpiresIn,
+      refresh_token: newRefreshToken,
+      refresh_expires_in: refreshExpiresIn
+    };
+  },
+
+  async revokeRefreshToken(refreshToken) {
+    if (!refreshToken) return;
+    await deleteRefreshSessionByToken(refreshToken);
+  }
+};
+
+
