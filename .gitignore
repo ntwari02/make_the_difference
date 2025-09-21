@@ -5,11 +5,7 @@ dist/
 build/
 .cache/
 
-# Environment files
-.env
-**/.env
-**/.env.*
-!**/.env.example
+
 
 # Logs
 npm-debug.log*
