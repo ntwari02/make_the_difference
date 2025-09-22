@@ -146,6 +146,36 @@ module.exports = {
   async revokeRefreshToken(refreshToken) {
     if (!refreshToken) return;
     await deleteRefreshSessionByToken(refreshToken);
+  },
+
+  async getUserProfile(userId) {
+    const rows = await executeQuery(
+      'SELECT id, email, first_name, last_name, phone, role, is_verified, created_at FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    return rows && rows[0] ? rows[0] : null;
+  },
+
+  async updateUserProfile(userId, updateData) {
+    const fields = [];
+    const values = [];
+
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        fields.push(`${key} = ?`);
+        values.push(updateData[key]);
+      }
+    });
+
+    if (fields.length === 0) return null;
+
+    values.push(userId);
+    const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
+    
+    await executeQuery(query, values);
+    
+    // Return updated user
+    return await this.getUserProfile(userId);
   }
 };
 

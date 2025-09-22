@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
     "verify:schema": "node scripts/verifyAuthSchema.js",
     "migrate:auth": "node scripts/runSqlFile.js db/migrations/2025_09_20_auth_extensions.sql",
     "migrate:all": "node scripts/runSqlFile.js db/schema/reaglex_database_schema.sql",

@@ -88,6 +88,73 @@ module.exports = {
       console.error('Logout error', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
+  },
+
+  async getProfile(req, res) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await AuthService.getUserProfile(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone,
+        role: user.role,
+        is_verified: user.is_verified,
+        created_at: user.created_at
+      });
+    } catch (error) {
+      console.error('Get profile error', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  async updateProfile(req, res) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { first_name, last_name, phone } = req.body || {};
+      const updateData = {};
+
+      if (first_name) updateData.first_name = sanitizeName(first_name);
+      if (last_name) updateData.last_name = sanitizeName(last_name);
+      if (phone !== undefined) updateData.phone = phone ? String(phone).trim() : null;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+
+      const updatedUser = await AuthService.updateUserProfile(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        first_name: updatedUser.first_name,
+        last_name: updatedUser.last_name,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        is_verified: updatedUser.is_verified,
+        updated_at: updatedUser.updated_at
+      });
+    } catch (error) {
+      console.error('Update profile error', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };
 
