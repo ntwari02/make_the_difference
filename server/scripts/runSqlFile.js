@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 async function run() {
   const fileArg = process.argv[2];
@@ -14,7 +15,17 @@ async function run() {
     process.exit(1);
   }
 
-  const sql = fs.readFileSync(sqlPath, 'utf8');
+  let sql = fs.readFileSync(sqlPath, 'utf8');
+
+  // Handle MySQL client-only DELIMITER directives for triggers by converting to standard semicolons
+  // Remove CR for consistency
+  sql = sql.replace(/\r/g, '');
+  // Remove any DELIMITER lines
+  sql = sql.replace(/^DELIMITER\s+.+$/gm, '');
+  // Replace trailing // used to end trigger bodies with ;
+  sql = sql.replace(/\n\s*\/\/\s*\n/g, '\n;\n');
+
+  // Replace IF NOT EXISTS syntax for older MySQL variants if needed (no-op here)
 
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,

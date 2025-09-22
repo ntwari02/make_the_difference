@@ -5,7 +5,7 @@ dist/
 build/
 .cache/
 
-
+.env 
 
 # Logs
 npm-debug.log*

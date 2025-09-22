@@ -30,6 +30,8 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/orgs', require('./elearning/routes/org.routes'));
+app.use('/api/elearning', require('./elearning/routes/elearning.routes'));
 
 // Start server after DB check
 (async () => {

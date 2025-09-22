@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node index.js",
     "verify:schema": "node scripts/verifyAuthSchema.js",
-    "migrate:auth": "node scripts/runSqlFile.js db/migrations/2025_09_20_auth_extensions.sql"
+    "migrate:auth": "node scripts/runSqlFile.js db/migrations/2025_09_20_auth_extensions.sql",
+    "migrate:all": "node scripts/runSqlFile.js db/schema/reaglex_database_schema.sql",
+    "migrate:tenant": "node scripts/runSqlFile.js db/migrations/2025_09_22_elearning_multitenant.sql",
+    "smoke:elearning": "node scripts/smokeElearning.js",
+    "checklist:elearning": "node scripts/checklistElearning.js"
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.2.1",
