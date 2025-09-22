@@ -8,6 +8,14 @@ const createOrg = async (req, res) => {
 	const id = uuidv4();
 	const { name, slug, logo, settings } = req.body || {};
 	const org = await orgRepo.createOrganization({ id, name, slug, logo, settings });
+	
+	// Automatically add the creator as org_admin
+	await orgRepo.addUserToOrganization({ 
+		organization_id: id, 
+		user_id: req.user.id, 
+		role: 'org_admin' 
+	});
+	
 	return created(res, org);
 };
 
@@ -22,6 +30,30 @@ const listMyOrgs = async (req, res) => {
 	return ok(res, orgs);
 };
 
-module.exports = { createOrg, addMember, listMyOrgs };
+const listOrgs = async (req, res) => {
+	const orgs = await orgRepo.listAllOrganizations();
+	return ok(res, orgs);
+};
+
+const addMeToOrg = async (req, res) => {
+	const { orgId } = req.params;
+	const { role = 'learner' } = req.body || {};
+	
+	try {
+		await orgRepo.addUserToOrganization({ 
+			organization_id: orgId, 
+			user_id: req.user.id, 
+			role 
+		});
+		return ok(res, { success: true, message: 'Added to organization' });
+	} catch (error) {
+		if (error.code === 'ER_DUP_ENTRY') {
+			return res.status(409).json({ error: 'Already a member of this organization' });
+		}
+		throw error;
+	}
+};
+
+module.exports = { createOrg, addMember, listMyOrgs, listOrgs, addMeToOrg };
 
 

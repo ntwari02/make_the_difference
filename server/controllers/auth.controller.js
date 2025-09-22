@@ -88,6 +88,70 @@ module.exports = {
       console.error('Logout error', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
+  },
+
+  async getProfile(req, res) {
+    try {
+      const userId = req.user.id;
+      const user = await AuthService.getUserProfile(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          role: user.role,
+          is_verified: user.is_verified,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }
+      });
+    } catch (error) {
+      console.error('Get profile error', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  async updateProfile(req, res) {
+    try {
+      const userId = req.user.id;
+      const { first_name, last_name, phone, bio } = req.body || {};
+
+      const updateData = {};
+      if (first_name) updateData.firstName = sanitizeName(first_name);
+      if (last_name) updateData.lastName = sanitizeName(last_name);
+      if (phone) updateData.phone = String(phone).trim();
+      if (bio) updateData.bio = String(bio).trim();
+
+      const user = await AuthService.updateUserProfile(userId, updateData);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({
+        message: 'Profile updated successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          bio: user.bio,
+          role: user.role,
+          updated_at: user.updated_at
+        }
+      });
+    } catch (error) {
+      console.error('Update profile error', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };
 

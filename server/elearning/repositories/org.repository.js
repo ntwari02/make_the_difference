@@ -15,4 +15,8 @@ const listOrganizationsForUser = async (userId) => {
 	return executeQuery(`SELECT o.* FROM organization_users ou JOIN organizations o ON o.id = ou.organization_id WHERE ou.user_id = ?`, [userId]);
 };
 
-module.exports = { createOrganization, addUserToOrganization, listOrganizationsForUser };
+const listAllOrganizations = async () => {
+	return executeQuery(`SELECT * FROM organizations ORDER BY created_at DESC`);
+};
+
+module.exports = { createOrganization, addUserToOrganization, listOrganizationsForUser, listAllOrganizations };

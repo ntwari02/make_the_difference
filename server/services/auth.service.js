@@ -146,6 +146,50 @@ module.exports = {
   async revokeRefreshToken(refreshToken) {
     if (!refreshToken) return;
     await deleteRefreshSessionByToken(refreshToken);
+  },
+
+  async getUserProfile(userId) {
+    const users = await executeQuery(
+      'SELECT id, email, first_name, last_name, phone, role, is_verified, created_at, updated_at FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    return users[0] || null;
+  },
+
+  async updateUserProfile(userId, updateData) {
+    const fields = [];
+    const values = [];
+
+    if (updateData.firstName) {
+      fields.push('first_name = ?');
+      values.push(updateData.firstName);
+    }
+    if (updateData.lastName) {
+      fields.push('last_name = ?');
+      values.push(updateData.lastName);
+    }
+    if (updateData.phone !== undefined) {
+      fields.push('phone = ?');
+      values.push(updateData.phone);
+    }
+    if (updateData.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(updateData.bio);
+    }
+
+    if (fields.length === 0) {
+      return await this.getUserProfile(userId);
+    }
+
+    fields.push('updated_at = NOW()');
+    values.push(userId);
+
+    await executeQuery(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    return await this.getUserProfile(userId);
   }
 };
 

@@ -3,11 +3,14 @@ require('dotenv').config();
 
 // Railway MySQL Database Configuration
 const dbConfig = {
-  host: process.env.DB_HOST || '',
+  host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
   port: process.env.DB_PORT || 54880,
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || 'XOCwwEyAzulQupJJEmbKgiZFdsalhAaf',
   database: process.env.DB_NAME || 'railway',
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

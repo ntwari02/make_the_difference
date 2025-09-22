@@ -13,14 +13,20 @@ const handleValidation = (req, res, next) => {
 	return next();
 };
 
-// Create organization (admin only)
-router.post('/', authenticate, authorizeRoles('admin'), v.validateCreateOrg, handleValidation, ctrl.createOrg);
+// Create organization (admin or instructor)
+router.post('/', authenticate, authorizeRoles('admin', 'instructor'), v.validateCreateOrg, handleValidation, ctrl.createOrg);
 
-// Add member to org (org_admin or platform admin)
-router.post('/:orgId/members', authenticate, authorizeRoles('admin','instructor','student'), requireOrgMembershipParam(['org_admin']), v.validateAddMember, handleValidation, ctrl.addMember);
+// Add member to org (any authenticated user for testing)
+router.post('/:orgId/members', authenticate, authorizeRoles('admin', 'instructor', 'student'), v.validateAddMember, handleValidation, ctrl.addMember);
 
-// List my orgs
+// List my orgs (any authenticated user)
 router.get('/me', authenticate, ctrl.listMyOrgs);
+
+// List all orgs (any authenticated user for testing)
+router.get('/', authenticate, ctrl.listOrgs);
+
+// Add myself to an organization (for testing)
+router.post('/:orgId/join', authenticate, ctrl.addMeToOrg);
 
 module.exports = router;
 

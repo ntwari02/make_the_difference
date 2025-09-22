@@ -35,11 +35,17 @@ app.use('/api/elearning', require('./elearning/routes/elearning.routes'));
 
 // Start server after DB check
 (async () => {
-  const ok = await testConnection();
-  const port = Number(process.env.PORT || 3001);
-  app.listen(port, () => {
-    console.log(`API listening on port ${port} (db: ${ok ? 'up' : 'down'})`);
-  });
+  try {
+    console.log('Testing database connection...');
+    const ok = await testConnection();
+    const port = Number(process.env.PORT || 3001);
+    app.listen(port, () => {
+      console.log(`API listening on port ${port} (db: ${ok ? 'up' : 'down'})`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
 })();
 
 

@@ -3,8 +3,18 @@ const { body, param } = require('express-validator');
 const validateCreateOrg = [
 	body('name').isString().isLength({ min: 2 }),
 	body('slug').isString().isLength({ min: 2 }),
-	body('logo').optional().isString(),
-	body('settings').optional()
+	body('logo').optional().custom((value) => {
+		if (value === null || value === undefined || typeof value === 'string') {
+			return true;
+		}
+		throw new Error('Logo must be a string or null');
+	}),
+	body('settings').optional().custom((value) => {
+		if (value === null || value === undefined || typeof value === 'object') {
+			return true;
+		}
+		throw new Error('Settings must be an object or null');
+	})
 ];
 
 const validateAddMember = [
