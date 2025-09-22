@@ -26,7 +26,7 @@ router.get('/me', authenticate, ctrl.listMyOrgs);
 router.get('/', authenticate, ctrl.listOrgs);
 
 // Add myself to an organization (for testing)
-router.post('/:orgId/join', authenticate, ctrl.addMeToOrg);
+router.post('/:orgId/join', authenticate, v.validateJoinOrg, handleValidation, ctrl.addMeToOrg);
 
 module.exports = router;
 

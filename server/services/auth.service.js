@@ -61,13 +61,13 @@ async function logLoginAttempt({ userId = null, identifier, success, failureReas
 }
 
 module.exports = {
-  async registerUser({ email, password, firstName, lastName, phone }) {
+  async registerUser({ email, password, firstName, lastName, phone, role = 'student' }) {
     const passwordHash = await bcrypt.hash(password, 10);
     await executeQuery(
-      'INSERT INTO users (id, email, password, first_name, last_name, phone, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
-      [email, passwordHash, firstName, lastName, phone]
+      'INSERT INTO users (id, email, password, first_name, last_name, phone, role, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
+      [email, passwordHash, firstName, lastName, phone, role]
     );
-    const users = await executeQuery('SELECT id, email, is_verified FROM users WHERE email = ? LIMIT 1', [email]);
+    const users = await executeQuery('SELECT id, email, role, is_verified FROM users WHERE email = ? LIMIT 1', [email]);
     return users[0];
   },
 
@@ -190,6 +190,63 @@ module.exports = {
     );
 
     return await this.getUserProfile(userId);
+  },
+
+  // Admin-only: List users with pagination and filtering
+  async listUsers({ page = 1, limit = 10, role, search }) {
+    const offset = (page - 1) * limit;
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (role) {
+      whereClause += ' AND role = ?';
+      params.push(role);
+    }
+
+    if (search) {
+      whereClause += ' AND (first_name LIKE ? OR last_name LIKE ? OR email LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Get total count
+    const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
+    const countResult = await executeQuery(countQuery, params);
+    const total = countResult[0].total;
+
+    // Get users
+    const usersQuery = `
+      SELECT id, email, first_name, last_name, phone, role, is_verified, is_active, created_at, updated_at 
+      FROM users ${whereClause} 
+      ORDER BY created_at DESC 
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    const users = await executeQuery(usersQuery, params);
+
+    return {
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  },
+
+  // Admin-only: Update user role
+  async updateUserRole(userId, role) {
+    await executeQuery(
+      'UPDATE users SET role = ?, updated_at = NOW() WHERE id = ?',
+      [role, userId]
+    );
+    return await this.getUserProfile(userId);
+  },
+
+  // Admin-only: Delete user
+  async deleteUser(userId) {
+    const result = await executeQuery('DELETE FROM users WHERE id = ?', [userId]);
+    return result.affectedRows > 0;
   }
 };
 

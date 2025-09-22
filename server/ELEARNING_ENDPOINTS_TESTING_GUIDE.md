@@ -5,6 +5,13 @@
 - **Database**: ✅ Connected and working
 - **Status**: All endpoints ready for testing
 
+## 👑 Admin Universal Access
+**Important**: Admin users have been granted **universal access** to ALL endpoints in the system, regardless of role restrictions. Admin users can:
+- Access any endpoint that requires specific roles (instructor, student, etc.)
+- Bypass all organization membership requirements
+- Perform any action in the system
+- Use their admin JWT token for all API calls
+
 ---
 
 ## 🔐 Authentication Endpoints
@@ -107,6 +114,230 @@ curl -X PUT http://localhost:3001/api/auth/profile \
   }
 }
 ```
+
+---
+
+## 👑 Admin User Management & Universal Access
+
+**Important**: Admin users have been granted **universal access** to ALL endpoints in the system, regardless of role restrictions. This section demonstrates admin capabilities.
+
+### 5. Create Admin User
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "AdminPassword123!",
+    "first_name": "Admin",
+    "last_name": "User",
+    "phone": "+1234567890",
+    "role": "admin"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "id": "admin-uuid",
+  "email": "admin@example.com",
+  "first_name": "Admin",
+  "last_name": "User",
+  "role": "admin",
+  "is_verified": false
+}
+```
+
+### 6. Admin Login
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identifier": "admin@example.com",
+    "password": "AdminPassword123!"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "access_token": "admin-jwt-token-here",
+  "access_expires_in": 900,
+  "refresh_token": "admin-refresh-token-here",
+  "refresh_expires_in": 2592000,
+  "user": {
+    "id": "admin-uuid",
+    "email": "admin@example.com",
+    "role": "admin"
+  }
+}
+```
+
+### 7. Create User (Admin Only)
+```bash
+curl -X POST http://localhost:3001/api/auth/users \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newuser@example.com",
+    "password": "UserPassword123!",
+    "first_name": "New",
+    "last_name": "User",
+    "phone": "+1234567891",
+    "role": "instructor"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "id": "user-uuid",
+  "email": "newuser@example.com",
+  "first_name": "New",
+  "last_name": "User",
+  "role": "instructor",
+  "is_verified": false,
+  "created_by": "admin-uuid"
+}
+```
+
+### 8. List All Users (Admin Only)
+```bash
+curl -X GET "http://localhost:3001/api/auth/users?page=1&limit=10&role=instructor&search=john" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+**Expected Response:**
+```json
+{
+  "users": [
+    {
+      "id": "user-uuid",
+      "email": "instructor@example.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "phone": "+1234567890",
+      "role": "instructor",
+      "is_verified": false,
+      "is_active": true,
+      "created_at": "2025-01-22T10:00:00.000Z",
+      "updated_at": "2025-01-22T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "pages": 3
+  }
+}
+```
+
+### 9. Update User Role (Admin Only)
+```bash
+curl -X PUT http://localhost:3001/api/auth/users/USER_ID/role \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "admin"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "message": "User role updated successfully",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "admin",
+    "updated_at": "2025-01-22T10:30:00.000Z"
+  }
+}
+```
+
+### 10. Delete User (Admin Only)
+```bash
+curl -X DELETE http://localhost:3001/api/auth/users/USER_ID \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+**Expected Response:**
+```json
+{
+  "message": "User deleted successfully"
+}
+```
+
+### 11. Admin Universal Access Examples
+
+**Admins can access ALL endpoints regardless of role restrictions:**
+
+#### Access Instructor-Only Endpoints
+```bash
+# Create course (normally instructor only)
+curl -X POST http://localhost:3001/api/elearning/courses \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "X-Org-Id: ORG_ID" \
+  -d '{
+    "title": "Admin Created Course",
+    "description": "Course created by admin",
+    "price": 99.99,
+    "category": "programming"
+  }'
+
+# View instructor analytics (normally instructor only)
+curl -X GET http://localhost:3001/api/elearning/me/instructor/analytics \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+#### Access Student-Only Endpoints
+```bash
+# Enroll in course (normally student only)
+curl -X POST http://localhost:3001/api/elearning/courses/COURSE_ID/enroll \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+
+# Add course review (normally student only)
+curl -X POST http://localhost:3001/api/elearning/courses/COURSE_ID/reviews \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rating": 5,
+    "comment": "Great course!"
+  }'
+```
+
+#### Access Organization Management
+```bash
+# Create organization (normally admin/instructor only)
+curl -X POST http://localhost:3001/api/elearning/org \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Admin University",
+    "description": "University created by admin",
+    "website": "https://admin-university.com"
+  }'
+
+# Add member to organization (normally admin/instructor/student only)
+curl -X POST http://localhost:3001/api/elearning/org/ORG_ID/members \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "USER_ID",
+    "role": "instructor"
+  }'
+```
+
+**Note**: Admin users bypass ALL role restrictions and can access any endpoint in the system. This includes:
+- All authentication endpoints
+- All e-learning endpoints
+- All organization management
+- All analytics and reporting
+- All course creation and management
+- All student-specific actions
 
 ---
 
@@ -375,9 +606,11 @@ curl -X PATCH http://localhost:3001/api/elearning/courses/COURSE_ID \
 ```
 
 ### 14. Publish/Unpublish Course (Admin Only)
+**Note**: Admin users can access this endpoint with their admin token.
+
 ```bash
 curl -X POST http://localhost:3001/api/elearning/courses/COURSE_ID/status \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "is_published": true,
@@ -784,27 +1017,35 @@ curl -X GET http://localhost:3001/api/elearning/favorites \
 ## 📊 Analytics & Reports
 
 ### 38. Get Platform Analytics (Admin Only)
+**Note**: Admin users can access this endpoint with their admin token.
+
 ```bash
-curl -X GET http://localhost:3001/api/elearning/analytics/overview \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+curl -X GET http://localhost:3001/api/elearning/admin/analytics/overview \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
 ### 39. Get Course Analytics (Instructor Only)
+**Note**: Admin users can access this endpoint with their admin token.
+
 ```bash
 curl -X GET http://localhost:3001/api/elearning/courses/COURSE_ID/analytics \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
 ### 40. Get Instructor Analytics
+**Note**: Admin users can access this endpoint with their admin token.
+
 ```bash
-curl -X GET http://localhost:3001/api/elearning/instructor/analytics \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+curl -X GET http://localhost:3001/api/elearning/me/instructor/analytics \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
 ### 41. List Students (Admin/Instructor Only)
+**Note**: Admin users can access this endpoint with their admin token.
+
 ```bash
 curl -X GET http://localhost:3001/api/elearning/students \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
 ---
