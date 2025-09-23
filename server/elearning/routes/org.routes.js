@@ -16,14 +16,20 @@ const handleValidation = (req, res, next) => {
 // Create organization (admin or instructor)
 router.post('/', authenticate, authorizeRoles('admin', 'instructor'), v.validateCreateOrg, handleValidation, ctrl.createOrg);
 
-// Add member to org (any authenticated user for testing)
-router.post('/:orgId/members', authenticate, authorizeRoles('admin', 'instructor', 'student'), v.validateAddMember, handleValidation, ctrl.addMember);
-
-// List my orgs (any authenticated user)
+// List my orgs (any authenticated user) - MUST be before /:orgId routes
 router.get('/me', authenticate, ctrl.listMyOrgs);
 
 // List all orgs (any authenticated user for testing)
 router.get('/', authenticate, ctrl.listOrgs);
+
+// Add member to org (any authenticated user for testing)
+router.post('/:orgId/members', authenticate, authorizeRoles('admin', 'instructor', 'student'), v.validateAddMember, handleValidation, ctrl.addMember);
+
+// Get members of an organization (any authenticated user)
+router.get('/:orgId/members', authenticate, v.validateGetMembers, handleValidation, ctrl.getMembers);
+
+// Remove member from organization (admin or instructor)
+router.delete('/:orgId/members/:userId', authenticate, authorizeRoles('admin', 'instructor'), v.validateRemoveMember, handleValidation, ctrl.removeMember);
 
 // Add myself to an organization (for testing)
 router.post('/:orgId/join', authenticate, v.validateJoinOrg, handleValidation, ctrl.addMeToOrg);

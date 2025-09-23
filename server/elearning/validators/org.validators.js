@@ -28,6 +28,15 @@ const validateJoinOrg = [
 	body('role').optional().isIn(['org_admin','instructor','learner','student'])
 ];
 
-module.exports = { validateCreateOrg, validateAddMember, validateJoinOrg };
+const validateGetMembers = [
+	param('orgId').isString().isLength({ min: 10 })
+];
+
+const validateRemoveMember = [
+	param('orgId').isString().isLength({ min: 10 }),
+	param('userId').isString().isLength({ min: 10 })
+];
+
+module.exports = { validateCreateOrg, validateAddMember, validateJoinOrg, validateGetMembers, validateRemoveMember };
 
 

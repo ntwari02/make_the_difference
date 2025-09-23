@@ -21,9 +21,10 @@ router.get('/courses', setOrgContext, optionalAuthenticate, ctrl.listCourses);
 router.get('/courses/:courseId', setOrgContext, optionalAuthenticate, ctrl.getCourse);
 router.get('/courses-recommended', optionalAuthenticate, ctrl.recommend);
 
-// Instructor: create/update courses
+// Instructor: create/update/delete courses
 router.post('/courses', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgMembershipHeader(['org_admin','instructor']), v.validateCreateCourse, handleValidation, ctrl.createCourse);
 router.patch('/courses/:courseId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForCourseParam(['org_admin','instructor']), ctrl.updateCourse);
+router.delete('/courses/:courseId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForCourseParam(['org_admin','instructor']), ctrl.deleteCourse);
 router.post('/courses/:courseId/status', setOrgContext, authenticate, authorizeRoles('admin'), requireOrgForCourseParam(['org_admin']), v.validateUpdateCourseStatus, handleValidation, ctrl.setCourseStatus);
 
 // Modules
@@ -34,15 +35,20 @@ router.delete('/modules/:moduleId', setOrgContext, authenticate, authorizeRoles(
 
 // Lessons
 router.get('/modules/:moduleId/lessons', setOrgContext, optionalAuthenticate, ctrl.listLessons);
+router.get('/lessons/:lessonId', setOrgContext, optionalAuthenticate, ctrl.getLesson);
 router.post('/modules/:moduleId/lessons', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForModuleParam(['org_admin','instructor']), v.validateCreateLesson, handleValidation, ctrl.createLesson);
 router.patch('/lessons/:lessonId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForLessonParam(['org_admin','instructor']), ctrl.updateLesson);
+router.put('/lessons/:lessonId/progress', authenticate, authorizeRoles('student','admin','instructor'), v.validateUpdateLessonProgress, handleValidation, ctrl.updateLessonProgress);
 router.delete('/lessons/:lessonId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForLessonParam(['org_admin','instructor']), ctrl.deleteLesson);
 
 // Enrollment & Progress
 router.post('/courses/:courseId/enroll', authenticate, authorizeRoles('student','admin','instructor'), ctrl.enroll);
 router.get('/courses/:courseId/enrollment', authenticate, ctrl.getEnrollment);
-router.post('/progress', authenticate, v.validateUpsertProgress, handleValidation, ctrl.upsertProgress);
+router.get('/enrollments', authenticate, ctrl.getUserEnrollments);
+router.get('/progress', authenticate, ctrl.getUserProgressSummary);
+router.get('/courses/:courseId/progress', authenticate, ctrl.getCourseProgress);
 router.get('/enrollments/:enrollmentId/progress', authenticate, ctrl.getProgress);
+router.post('/progress', authenticate, v.validateUpsertProgress, handleValidation, ctrl.upsertProgress);
 router.post('/courses/:courseId/complete', authenticate, ctrl.completeCourse);
 
 // Reviews
@@ -57,6 +63,11 @@ router.get('/me/favorites', authenticate, ctrl.listFavorites);
 // Analytics
 router.get('/me/instructor/analytics', authenticate, authorizeRoles('instructor','admin'), analyticsCtrl.instructorOverview);
 router.get('/admin/analytics/overview', authenticate, authorizeRoles('admin'), analyticsCtrl.adminOverview);
+
+// Transactions
+router.post('/transactions', authenticate, v.validateCreateTransaction, handleValidation, ctrl.createTransaction);
+router.get('/transactions', authenticate, ctrl.getUserTransactions);
+router.get('/transactions/:transactionId', authenticate, ctrl.getTransaction);
 
 module.exports = router;
 

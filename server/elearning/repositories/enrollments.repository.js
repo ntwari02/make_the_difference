@@ -24,10 +24,23 @@ const updateEnrollment = async (enrollmentId, updates) => {
 	return rows[0] || null;
 };
 
+const getUserEnrollments = async (userId) => {
+	const rows = await executeQuery(
+		`SELECT ce.*, c.title as course_title, c.price, c.currency, c.thumbnail, c.instructor_id
+		 FROM course_enrollments ce
+		 JOIN courses c ON ce.course_id = c.id
+		 WHERE ce.user_id = ?
+		 ORDER BY ce.enrollment_date DESC`,
+		[userId]
+	);
+	return rows;
+};
+
 module.exports = {
 	enroll,
 	getEnrollment,
-	updateEnrollment
+	updateEnrollment,
+	getUserEnrollments
 };
 
 

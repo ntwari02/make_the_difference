@@ -41,10 +41,32 @@ const validateUpsertProgress = [
 	body('last_position_seconds').optional().isInt({ min: 0 })
 ];
 
+const validateUpdateLessonProgress = [
+	param('lessonId').isString().isLength({ min: 10 }),
+	body('completed').optional().isBoolean(),
+	body('time_spent').optional().isInt({ min: 0 }),
+	body('progress_percentage').optional().isFloat({ min: 0, max: 100 }),
+	body('notes').optional().isString().isLength({ max: 1000 }),
+	body('quiz_score').optional().isFloat({ min: 0, max: 100 }),
+	body('last_position').optional().isInt({ min: 0 })
+];
+
 // Reviews
 const validateAddReview = [
 	body('rating').isInt({ min: 1, max: 5 }),
 	body('comment').optional().isString()
+];
+
+// Transactions
+const validateCreateTransaction = [
+	body('type').isIn(['course_purchase', 'car_purchase', 'scholarship_application', 'visa_application', 'ad_spend', 'refund', 'withdrawal']),
+	body('amount').isFloat({ min: 0 }),
+	body('currency').optional().isString().isLength({ min: 3, max: 3 }),
+	body('status').optional().isIn(['pending', 'completed', 'failed', 'cancelled', 'refunded']),
+	body('payment_method_id').optional().isString(),
+	body('external_transaction_id').optional().isString(),
+	body('description').optional().isString(),
+	body('metadata').optional().isObject()
 ];
 
 module.exports = {
@@ -53,7 +75,9 @@ module.exports = {
 	validateCreateModule,
 	validateCreateLesson,
 	validateUpsertProgress,
-	validateAddReview
+	validateUpdateLessonProgress,
+	validateAddReview,
+	validateCreateTransaction
 };
 
 

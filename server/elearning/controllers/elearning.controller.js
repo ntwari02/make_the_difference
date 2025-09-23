@@ -29,6 +29,11 @@ const updateCourse = async (req, res) => {
 	return ok(res, data);
 };
 
+const deleteCourse = async (req, res) => {
+	const data = await service.deleteCourse(req.params.courseId);
+	return ok(res, data);
+};
+
 const setCourseStatus = async (req, res) => {
 	const { status } = req.body;
 	const data = await service.setCourseStatus(req.params.courseId, status);
@@ -43,6 +48,7 @@ const deleteModule = async (req, res) => ok(res, await service.deleteModule(req.
 
 // Lessons
 const listLessons = async (req, res) => ok(res, await service.listLessons(req.params.moduleId, req.org?.id || null));
+const getLesson = async (req, res) => ok(res, await service.getLesson(req.params.lessonId, req.org?.id || null));
 const createLesson = async (req, res) => created(res, await service.createLesson(req.params.moduleId, req.body));
 const updateLesson = async (req, res) => ok(res, await service.updateLesson(req.params.lessonId, req.body));
 const deleteLesson = async (req, res) => ok(res, await service.deleteLesson(req.params.lessonId));
@@ -54,7 +60,33 @@ const getEnrollment = async (req, res) => {
 	if (!data) return notFound(res);
 	return ok(res, data);
 };
+const getUserEnrollments = async (req, res) => ok(res, await service.getUserEnrollments(req.user.id));
 const upsertProgress = async (req, res) => ok(res, await service.upsertProgress(req.body));
+const updateLessonProgress = async (req, res) => {
+	try {
+		const result = await service.updateLessonProgress(req.user.id, req.params.lessonId, req.body);
+		return ok(res, {
+			message: "Progress updated successfully",
+			progress: {
+				id: result.id,
+				user_id: req.user.id,
+				lesson_id: req.params.lessonId,
+				completed: result.is_completed,
+				time_spent: result.time_spent_minutes,
+				progress_percentage: result.progress_percentage,
+				notes: result.notes,
+				quiz_score: result.quiz_score,
+				last_position: result.last_position_seconds,
+				completed_at: result.completed_at,
+				updated_at: result.updated_at
+			}
+		});
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+const getUserProgressSummary = async (req, res) => ok(res, await service.getUserProgressSummary(req.user.id));
+const getCourseProgress = async (req, res) => ok(res, await service.getCourseProgress(req.user.id, req.params.courseId));
 const getProgress = async (req, res) => ok(res, await service.getProgress(req.params.enrollmentId));
 const completeCourse = async (req, res) => ok(res, await service.markEnrollmentComplete(req.params.courseId, req.user.id));
 
@@ -68,23 +100,38 @@ const removeFavorite = async (req, res) => ok(res, await service.removeFavorite(
 const listFavorites = async (req, res) => ok(res, await service.listFavorites(req.user.id));
 const recommend = async (req, res) => ok(res, await service.recommendCoursesForUser(req.user?.id, { ...req.query, organization_id: req.org?.id || null }));
 
+// Transactions
+const createTransaction = async (req, res) => created(res, await service.createTransaction(req.user.id, req.body));
+const getTransaction = async (req, res) => {
+	const data = await service.getTransaction(req.params.transactionId);
+	if (!data) return notFound(res);
+	return ok(res, data);
+};
+const getUserTransactions = async (req, res) => ok(res, await service.getUserTransactions(req.user.id));
+
 module.exports = {
 	listCourses,
 	getCourse,
 	createCourse,
 	updateCourse,
+	deleteCourse,
 	setCourseStatus,
 	listModules,
 	createModule,
 	updateModule,
 	deleteModule,
 	listLessons,
+	getLesson,
 	createLesson,
 	updateLesson,
 	deleteLesson,
 	enroll,
 	getEnrollment,
+	getUserEnrollments,
 	upsertProgress,
+	updateLessonProgress,
+	getUserProgressSummary,
+	getCourseProgress,
 	getProgress,
 	completeCourse,
 	addReview,
@@ -92,7 +139,10 @@ module.exports = {
 	addFavorite,
 	removeFavorite,
 	listFavorites,
-	recommend
+	recommend,
+	createTransaction,
+	getTransaction,
+	getUserTransactions
 };
 
 

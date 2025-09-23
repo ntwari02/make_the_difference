@@ -54,6 +54,23 @@ const addMeToOrg = async (req, res) => {
 	}
 };
 
-module.exports = { createOrg, addMember, listMyOrgs, listOrgs, addMeToOrg };
+const getMembers = async (req, res) => {
+	const { orgId } = req.params;
+	const members = await orgRepo.getMembersForOrganization(orgId);
+	return ok(res, members);
+};
+
+const removeMember = async (req, res) => {
+	const { orgId, userId } = req.params;
+	const result = await orgRepo.removeUserFromOrganization({ organizationId: orgId, userId });
+	
+	if (!result.success) {
+		return res.status(404).json({ error: 'Member not found in organization' });
+	}
+	
+	return ok(res, { success: true, message: 'Member removed from organization' });
+};
+
+module.exports = { createOrg, addMember, listMyOrgs, listOrgs, addMeToOrg, getMembers, removeMember };
 
 

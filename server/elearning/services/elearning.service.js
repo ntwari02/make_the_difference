@@ -59,6 +59,7 @@ const updateCourse = (courseId, payload) => {
 	return coursesRepo.updateCourse(courseId, updates);
 };
 
+const deleteCourse = (courseId) => coursesRepo.deleteCourse(courseId);
 const setCourseStatus = (courseId, status) => coursesRepo.publishWorkflow(courseId, status);
 
 // Modules
@@ -82,6 +83,7 @@ const deleteModule = (moduleId) => modulesRepo.deleteModule(moduleId);
 
 // Lessons
 const listLessons = (moduleId, orgId = null) => lessonsRepo.getLessonsByModule(moduleId, orgId);
+const getLesson = (lessonId, orgId = null) => lessonsRepo.getLessonById(lessonId, orgId);
 
 const createLesson = async (moduleId, payload) => {
 	const id = uuidv4();
@@ -98,7 +100,18 @@ const createLesson = async (moduleId, payload) => {
 	});
 };
 
-const updateLesson = (lessonId, payload) => lessonsRepo.updateLesson(lessonId, payload);
+const updateLesson = (lessonId, payload) => {
+	const mappedPayload = {
+		title: payload.title,
+		content_type: payload.content_type,
+		content_url: payload.content_url,
+		content_text: payload.content || payload.content_text, // Map 'content' to 'content_text'
+		duration_minutes: payload.duration_minutes,
+		order_index: payload.order_index,
+		is_preview: payload.is_preview
+	};
+	return lessonsRepo.updateLesson(lessonId, mappedPayload);
+};
 const deleteLesson = (lessonId) => lessonsRepo.deleteLesson(lessonId);
 
 // Enrollment & Progress
@@ -117,8 +130,13 @@ const enrollInCourse = async (courseId, userId) => {
 
 const getEnrollment = (courseId, userId) => enrollmentsRepo.getEnrollment(courseId, userId);
 
+const getUserEnrollments = (userId) => enrollmentsRepo.getUserEnrollments(userId);
+
 const upsertProgress = (payload) => progressRepo.upsertProgress(payload);
 const getProgress = (enrollmentId) => progressRepo.getProgressForEnrollment(enrollmentId);
+const updateLessonProgress = (userId, lessonId, progressData) => progressRepo.updateLessonProgress(userId, lessonId, progressData);
+const getUserProgressSummary = (userId) => progressRepo.getUserProgressSummary(userId);
+const getCourseProgress = (userId, courseId) => progressRepo.getCourseProgress(userId, courseId);
 
 const tryIssueCertificate = async (course, enrollment) => {
 	if (!course.completion_certificate) return null;
@@ -162,31 +180,61 @@ const recommendCoursesForUser = async (userId, { limit = 10, organization_id = n
 	return executeQuery(sql, params);
 };
 
+// Transactions
+const createTransaction = async (userId, payload) => {
+	const { v4: uuidv4 } = require('uuid');
+	const transaction = {
+		id: uuidv4(),
+		user_id: userId,
+		type: payload.type,
+		amount: payload.amount,
+		currency: payload.currency || 'USD',
+		status: payload.status || 'pending',
+		payment_method_id: payload.payment_method_id || null,
+		external_transaction_id: payload.external_transaction_id || null,
+		description: payload.description || null,
+		metadata: payload.metadata || {}
+	};
+	return transactionsRepo.createTransaction(transaction);
+};
+
+const getTransaction = (transactionId) => transactionsRepo.getTransactionById(transactionId);
+const getUserTransactions = (userId) => transactionsRepo.getUserTransactions(userId);
+
 module.exports = {
 	listCourses,
 	getCourse,
 	createCourse,
 	updateCourse,
+	deleteCourse,
 	setCourseStatus,
 	listModules,
 	createModule,
 	updateModule,
 	deleteModule,
 	listLessons,
+	getLesson,
 	createLesson,
 	updateLesson,
 	deleteLesson,
 	enrollInCourse,
 	getEnrollment,
+	getUserEnrollments,
 	upsertProgress,
 	getProgress,
+	updateLessonProgress,
+	getUserProgressSummary,
+	getCourseProgress,
 	markEnrollmentComplete,
 	addReview,
 	listReviews,
 	addFavorite,
 	removeFavorite,
 	listFavorites,
-	recommendCoursesForUser
+	recommendCoursesForUser,
+	createTransaction,
+	getTransaction,
+	getUserTransactions
 };
 
 
