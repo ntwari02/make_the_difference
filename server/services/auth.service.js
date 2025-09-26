@@ -61,7 +61,7 @@ async function logLoginAttempt({ userId = null, identifier, success, failureReas
 }
 
 module.exports = {
-  async registerUser({ email, password, firstName, lastName, phone, role = 'learner' }) {
+  async registerUser({ email, password, firstName, lastName, phone, role = 'student' }) {
     const passwordHash = await bcrypt.hash(password, 10);
     await executeQuery(
       'INSERT INTO users (id, email, password, first_name, last_name, phone, role, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
