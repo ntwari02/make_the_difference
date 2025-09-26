@@ -16,7 +16,7 @@ const findCourses = async ({ q, category, level, language, minPrice, maxPrice, i
 	if (maxPrice != null) { where.push('c.price <= ?'); params.push(maxPrice); }
 	if (isFeatured != null) { where.push('c.is_featured = ?'); params.push(!!isFeatured); }
 	if (isPublished != null) { where.push('c.is_published = ?'); params.push(!!isPublished); }
-	if (organization_id) { where.push('(c.organization_id = ? OR c.organization_id IS NULL)'); params.push(organization_id); } else { where.push('c.organization_id IS NULL'); }
+	// Note: organization_id filtering removed as courses table does not have this column
 	const order = ['title', 'price', 'rating', 'created_at', 'student_count'].includes(sortBy) ? sortBy : 'created_at';
 	const dir = (sortDir || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 	const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -33,7 +33,7 @@ const getCourseById = async (courseId) => {
 
 const createCourse = async (course) => {
 	const fields = [
-		'id','title','description','short_description','price','currency','category','subcategory','level','language','duration_hours','thumbnail','preview_video','syllabus','requirements','learning_outcomes','tags','is_published','is_featured','status','instructor_id','completion_certificate','has_live_classes','live_class_schedule','organization_id'
+		'id','title','description','short_description','price','currency','category','subcategory','level','language','duration_hours','thumbnail','preview_video','syllabus','requirements','learning_outcomes','tags','is_published','is_featured','status','instructor_id','completion_certificate','has_live_classes','live_class_schedule'
 	];
 	const placeholders = fields.map(() => '?').join(',');
 	const values = fields.map((f) => course[f] ?? null);
@@ -72,12 +72,7 @@ const getTrendingCourses = async ({ limit = 20, offset = 0, organization_id = nu
 	where.push('c.is_published = 1');
 	where.push('c.status = "published"');
 	
-	if (organization_id) {
-		where.push('(c.organization_id = ? OR c.organization_id IS NULL)');
-		params.push(organization_id);
-	} else {
-		where.push('c.organization_id IS NULL');
-	}
+	// Note: organization_id filtering removed as courses table does not have this column
 	
 	const whereSql = `WHERE ${where.join(' AND ')}`;
 	const safeLimit = Number.isFinite(Number(limit)) ? Math.max(0, parseInt(limit, 10)) : 20;
@@ -130,12 +125,7 @@ const searchCourses = async (query, { limit = 20, offset = 0, organization_id = 
 	where.push('c.is_published = 1');
 	where.push('c.status = "published"');
 	
-	if (organization_id) {
-		where.push('(c.organization_id = ? OR c.organization_id IS NULL)');
-		params.push(organization_id);
-	} else {
-		where.push('c.organization_id IS NULL');
-	}
+	// Note: organization_id filtering removed as courses table does not have this column
 	
 	const whereSql = `WHERE ${where.join(' AND ')}`;
 	const safeLimit = Number.isFinite(Number(limit)) ? Math.max(0, parseInt(limit, 10)) : 20;

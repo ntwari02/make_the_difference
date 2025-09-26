@@ -23,7 +23,7 @@ router.get('/me', authenticate, ctrl.listMyOrgs);
 router.get('/', authenticate, ctrl.listOrgs);
 
 // Add member to org (any authenticated user for testing)
-router.post('/:orgId/members', authenticate, authorizeRoles('admin', 'instructor', 'learner'), v.validateAddMember, handleValidation, ctrl.addMember);
+router.post('/:orgId/members', authenticate, authorizeRoles('admin', 'instructor', 'student'), v.validateAddMember, handleValidation, ctrl.addMember);
 
 // Get members of an organization (any authenticated user)
 router.get('/:orgId/members', authenticate, v.validateGetMembers, handleValidation, ctrl.getMembers);

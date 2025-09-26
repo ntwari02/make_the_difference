@@ -19,11 +19,11 @@ router.get('/verify/:verificationCode', ctrl.verifyCertificate);
 router.use(authenticate);
 
 // Certificate management routes
-router.get('/my-certificates', authorizeRoles('learner', 'instructor', 'admin'), ctrl.getUserCertificates);
-router.get('/:certificateId', authorizeRoles('learner', 'instructor', 'admin'), ctrl.getCertificate);
-router.get('/:certificateId/download', authorizeRoles('learner', 'instructor', 'admin'), ctrl.downloadCertificate);
-router.get('/:certificateId/analytics', authorizeRoles('learner', 'instructor', 'admin'), ctrl.getCertificateAnalytics);
-router.post('/:certificateId/share', authorizeRoles('learner', 'instructor', 'admin'), v.validateShareCertificate, handleValidation, ctrl.shareCertificate);
+router.get('/my-certificates', authorizeRoles('student', 'instructor', 'admin'), ctrl.getUserCertificates);
+router.get('/:certificateId', authorizeRoles('student', 'instructor', 'admin'), ctrl.getCertificate);
+router.get('/:certificateId/download', authorizeRoles('student', 'instructor', 'admin'), ctrl.downloadCertificate);
+router.get('/:certificateId/analytics', authorizeRoles('student', 'instructor', 'admin'), ctrl.getCertificateAnalytics);
+router.post('/:certificateId/share', authorizeRoles('student', 'instructor', 'admin'), v.validateShareCertificate, handleValidation, ctrl.shareCertificate);
 
 // Certificate creation (admin/instructor only)
 router.post('/enrollment/:enrollmentId', authorizeRoles('instructor', 'admin'), v.validateCreateCertificate, handleValidation, ctrl.createCertificate);

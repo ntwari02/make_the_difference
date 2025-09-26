@@ -1643,7 +1643,7 @@ curl -X GET http://localhost:3000/api/recommendations/trending
 ### Step 1: Environment Setup
 ```bash
 # Set your base URL
-export BASE_URL="http://localhost:3000"
+export BASE_URL="http://localhost:3001"
 
 # Register and get tokens for different roles
 # Student token

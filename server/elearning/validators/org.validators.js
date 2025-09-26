@@ -20,12 +20,12 @@ const validateCreateOrg = [
 const validateAddMember = [
 	param('orgId').isString().isLength({ min: 10 }),
 	body('user_id').isString().isLength({ min: 10 }),
-	body('role').isIn(['org_admin','instructor','learner'])
+	body('role').isIn(['org_admin','instructor','student'])
 ];
 
 const validateJoinOrg = [
 	param('orgId').isString().isLength({ min: 10 }),
-	body('role').optional().isIn(['org_admin','instructor','learner'])
+	body('role').optional().isIn(['org_admin','instructor','student'])
 ];
 
 const validateGetMembers = [

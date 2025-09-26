@@ -4,7 +4,7 @@ const { body, query, param } = require('express-validator');
 const validateUserFilters = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-  query('role').optional().isIn(['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
+  query('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   query('status').optional().isIn(['active', 'inactive', 'all']).withMessage('Invalid status'),
   query('search').optional().isLength({ min: 1, max: 100 }).withMessage('Search term must be between 1 and 100 characters'),
   query('sort_by').optional().isIn(['created_at', 'email', 'first_name', 'last_name', 'role']).withMessage('Invalid sort field'),
@@ -17,7 +17,7 @@ const validateCreateUser = [
   body('first_name').isLength({ min: 1, max: 100 }).withMessage('First name is required and must be less than 100 characters'),
   body('last_name').isLength({ min: 1, max: 100 }).withMessage('Last name is required and must be less than 100 characters'),
   body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
-  body('role').optional().isIn(['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
+  body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
 ];
@@ -28,7 +28,7 @@ const validateUpdateUser = [
   body('first_name').optional().isLength({ min: 1, max: 100 }).withMessage('First name must be less than 100 characters'),
   body('last_name').optional().isLength({ min: 1, max: 100 }).withMessage('Last name must be less than 100 characters'),
   body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
-  body('role').optional().isIn(['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
+  body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
 ];
@@ -127,7 +127,7 @@ const validateBulkContentModeration = [
 const validateBulkNotification = [
   body('user_ids').optional().isArray({ min: 1, max: 1000 }).withMessage('User IDs must be an array with 1-1000 items'),
   body('user_ids.*').optional().isUUID().withMessage('Each user ID must be a valid UUID'),
-  body('role').optional().isIn(['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
+  body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('title').isLength({ min: 1, max: 200 }).withMessage('Title is required and must be less than 200 characters'),
   body('message').isLength({ min: 1, max: 1000 }).withMessage('Message is required and must be less than 1000 characters'),
   body('type').isIn(['info', 'warning', 'error', 'success']).withMessage('Type must be info, warning, error, or success'),

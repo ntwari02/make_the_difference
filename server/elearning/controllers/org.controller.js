@@ -37,7 +37,7 @@ const listOrgs = async (req, res) => {
 
 const addMeToOrg = async (req, res) => {
 	const { orgId } = req.params;
-	const { role = 'learner' } = req.body || {};
+	const { role = 'student' } = req.body || {};
 	
 	try {
 		await orgRepo.addUserToOrganization({ 

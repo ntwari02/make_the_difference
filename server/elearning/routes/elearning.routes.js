@@ -45,11 +45,11 @@ router.get('/modules/:moduleId/lessons', setOrgContext, optionalAuthenticate, ct
 router.get('/lessons/:lessonId', setOrgContext, optionalAuthenticate, ctrl.getLesson);
 router.post('/modules/:moduleId/lessons', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForModuleParam(['org_admin','instructor']), v.validateCreateLesson, handleValidation, ctrl.createLesson);
 router.patch('/lessons/:lessonId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForLessonParam(['org_admin','instructor']), ctrl.updateLesson);
-router.put('/lessons/:lessonId/progress', authenticate, authorizeRoles('learner','admin','instructor'), v.validateUpdateLessonProgress, handleValidation, ctrl.updateLessonProgress);
+router.put('/lessons/:lessonId/progress', authenticate, authorizeRoles('student','admin','instructor'), v.validateUpdateLessonProgress, handleValidation, ctrl.updateLessonProgress);
 router.delete('/lessons/:lessonId', setOrgContext, authenticate, authorizeRoles('instructor','admin'), requireOrgForLessonParam(['org_admin','instructor']), ctrl.deleteLesson);
 
 // Enrollment & Progress
-router.post('/courses/:courseId/enroll', authenticate, authorizeRoles('learner','admin','instructor'), ctrl.enroll);
+router.post('/courses/:courseId/enroll', authenticate, authorizeRoles('student','admin','instructor'), ctrl.enroll);
 router.get('/courses/:courseId/enrollment', authenticate, ctrl.getEnrollment);
 router.get('/enrollments', authenticate, ctrl.getUserEnrollments);
 router.get('/progress', authenticate, ctrl.getUserProgressSummary);
@@ -59,12 +59,12 @@ router.post('/progress', authenticate, v.validateUpsertProgress, handleValidatio
 router.post('/courses/:courseId/complete', authenticate, ctrl.completeCourse);
 
 // Reviews
-router.post('/courses/:courseId/reviews', authenticate, authorizeRoles('learner','admin','instructor'), v.validateAddReview, handleValidation, ctrl.addReview);
+router.post('/courses/:courseId/reviews', authenticate, authorizeRoles('student','admin','instructor'), v.validateAddReview, handleValidation, ctrl.addReview);
 router.get('/courses/:courseId/reviews', optionalAuthenticate, ctrl.listReviews);
 
 // Favorites
-router.post('/courses/:courseId/favorite', authenticate, authorizeRoles('learner','admin','instructor'), ctrl.addFavorite);
-router.delete('/courses/:courseId/favorite', authenticate, authorizeRoles('learner','admin','instructor'), ctrl.removeFavorite);
+router.post('/courses/:courseId/favorite', authenticate, authorizeRoles('student','admin','instructor'), ctrl.addFavorite);
+router.delete('/courses/:courseId/favorite', authenticate, authorizeRoles('student','admin','instructor'), ctrl.removeFavorite);
 router.get('/me/favorites', authenticate, ctrl.listFavorites);
 
 // Analytics

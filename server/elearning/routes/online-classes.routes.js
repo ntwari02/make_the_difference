@@ -19,8 +19,8 @@ router.get('/live', ctrl.getLiveClasses);
 router.use(authenticate);
 
 // Specific routes (must come before parameterized routes)
-router.get('/upcoming/my-classes', authorizeRoles('learner', 'instructor', 'admin'), ctrl.getUpcomingClasses);
-router.get('/my-enrollments', authorizeRoles('learner', 'instructor', 'admin'), ctrl.getUserClassEnrollments);
+router.get('/upcoming/my-classes', authorizeRoles('student', 'instructor', 'admin'), ctrl.getUpcomingClasses);
+router.get('/my-enrollments', authorizeRoles('student', 'instructor', 'admin'), ctrl.getUserClassEnrollments);
 
 // Instructor/Admin routes
 router.post('/', authorizeRoles('instructor', 'admin'), v.validateCreateOnlineClass, handleValidation, ctrl.createOnlineClass);
@@ -38,10 +38,10 @@ router.get('/:classId/attendance', authorizeRoles('instructor', 'admin'), v.vali
 router.post('/:classId/materials', authorizeRoles('instructor', 'admin'), v.validateAddClassMaterial, handleValidation, ctrl.addClassMaterial);
 router.get('/:classId/materials', v.validateClassId, handleValidation, ctrl.getClassMaterials);
 router.get('/:classId/chat', v.validateChatFilters, handleValidation, ctrl.getClassChatMessages);
-router.post('/:classId/enroll', authorizeRoles('learner', 'admin'), v.validateEnrollInClass, handleValidation, ctrl.enrollInClass);
+router.post('/:classId/enroll', authorizeRoles('student', 'admin'), v.validateEnrollInClass, handleValidation, ctrl.enrollInClass);
 router.get('/:classId/enrollments', authorizeRoles('instructor', 'admin'), v.validateClassId, handleValidation, ctrl.getClassEnrollments);
-router.post('/:classId/join', authorizeRoles('learner', 'instructor', 'admin'), v.validateClassId, handleValidation, ctrl.joinClass);
-router.post('/:classId/leave', authorizeRoles('learner', 'instructor', 'admin'), v.validateClassId, handleValidation, ctrl.leaveClass);
-router.post('/:classId/chat', authorizeRoles('learner', 'instructor', 'admin'), v.validateAddChatMessage, handleValidation, ctrl.addChatMessage);
+router.post('/:classId/join', authorizeRoles('student', 'instructor', 'admin'), v.validateClassId, handleValidation, ctrl.joinClass);
+router.post('/:classId/leave', authorizeRoles('student', 'instructor', 'admin'), v.validateClassId, handleValidation, ctrl.leaveClass);
+router.post('/:classId/chat', authorizeRoles('student', 'instructor', 'admin'), v.validateAddChatMessage, handleValidation, ctrl.addChatMessage);
 
 module.exports = router;

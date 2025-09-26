@@ -6,7 +6,7 @@ const createOrganization = async ({ id, name, slug, logo = null, settings = null
 	return rows[0] || null;
 };
 
-const addUserToOrganization = async ({ organization_id, user_id, role = 'learner' }) => {
+const addUserToOrganization = async ({ organization_id, user_id, role = 'student' }) => {
 	await executeQuery(`INSERT INTO organization_users (id, organization_id, user_id, role) VALUES (UUID(), ?, ?, ?)`, [organization_id, user_id, role]);
 	return { success: true };
 };

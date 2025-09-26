@@ -45,8 +45,8 @@ const createCourse = async (instructorId, payload, orgId = null) => {
 		instructor_id: instructorId,
 		completion_certificate: payload.completion_certificate == null ? 1 : (payload.completion_certificate ? 1 : 0),
 		has_live_classes: payload.has_live_classes ? 1 : 0,
-		live_class_schedule: stringifyIfObject(payload.live_class_schedule),
-		organization_id: orgId || null
+		live_class_schedule: stringifyIfObject(payload.live_class_schedule)
+		// Note: organization_id removed as courses table does not have this column
 	};
 	return coursesRepo.createCourse(course);
 };

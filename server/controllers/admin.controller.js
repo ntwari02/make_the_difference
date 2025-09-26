@@ -208,7 +208,7 @@ class AdminController {
         first_name,
         last_name,
         phone,
-        role = 'learner',
+        role = 'student',
         is_active = true,
         is_verified = false
       } = req.body;
@@ -1158,7 +1158,7 @@ class AdminController {
         COUNT(*) as total,
         COUNT(CASE WHEN is_active = 1 THEN 1 END) as active,
         COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_this_period,
-        COUNT(CASE WHEN role = 'learner' THEN 1 END) as learners,
+        COUNT(CASE WHEN role = 'student' THEN 1 END) as students,
         COUNT(CASE WHEN role = 'instructor' THEN 1 END) as instructors,
         COUNT(CASE WHEN role = 'seller' THEN 1 END) as sellers,
         COUNT(CASE WHEN role = 'buyer' THEN 1 END) as buyers,
