@@ -551,7 +551,7 @@ class PerformanceMonitor {
         }
         
         dashboardData.services[result.service_name].metrics[result.metric_type] = 
-          JSON.parse(result.metric_value);
+          typeof result.metric_value === 'string' ? JSON.parse(result.metric_value) : result.metric_value;
       });
       
       return dashboardData;

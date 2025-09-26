@@ -73,6 +73,7 @@ router.get('/admin/analytics/overview', authenticate, authorizeRoles('admin'), a
 
 // Transactions
 router.post('/transactions', authenticate, v.validateCreateTransaction, handleValidation, ctrl.createTransaction);
+router.post('/courses/:courseId/test-transaction', authenticate, ctrl.createTestTransaction);
 router.get('/transactions', authenticate, ctrl.getUserTransactions);
 router.get('/transactions/:transactionId', authenticate, ctrl.getTransaction);
 

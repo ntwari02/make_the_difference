@@ -109,6 +109,28 @@ const getTransaction = async (req, res) => {
 };
 const getUserTransactions = async (req, res) => ok(res, await service.getUserTransactions(req.user.id));
 
+// Test transaction creation for development/testing
+const createTestTransaction = async (req, res) => {
+	const { courseId } = req.params;
+	const userId = req.user.id;
+	
+	// Create a test transaction for the course
+	const transactionData = {
+		type: 'course_purchase',
+		amount: 0, // Free for testing
+		currency: 'USD',
+		status: 'completed',
+		description: `Test purchase for course ${courseId}`,
+		metadata: {
+			course_id: courseId,
+			test_transaction: true
+		}
+	};
+	
+	const transaction = await service.createTransaction(userId, transactionData);
+	return created(res, transaction);
+};
+
 // Additional endpoints
 const getStudents = async (req, res) => ok(res, await service.getStudents({ ...req.query, organization_id: req.org?.id || null }));
 const getTrendingCourses = async (req, res) => ok(res, await service.getTrendingCourses({ ...req.query, organization_id: req.org?.id || null }));
@@ -154,6 +176,7 @@ module.exports = {
 	createTransaction,
 	getTransaction,
 	getUserTransactions,
+	createTestTransaction,
 	getStudents,
 	getTrendingCourses,
 	getCategories,
