@@ -1,18 +1,11 @@
 const { executeQuery } = require('../../config/database');
 
 const getModulesByCourse = async (courseId, organizationId = null) => {
-	if (organizationId) {
-		return executeQuery(
-			`SELECT m.* FROM course_modules m JOIN courses c ON c.id = m.course_id
-			 WHERE m.course_id = ? AND (c.organization_id = ? OR c.organization_id IS NULL)
-			 ORDER BY m.order_index ASC`,
-			[courseId, organizationId]
-		);
-	}
-	// If no org provided, only show global modules
+	// Note: courses table does not have organization_id column, so all courses are global
+	// Organization filtering is not applicable for modules
 	return executeQuery(
 		`SELECT m.* FROM course_modules m JOIN courses c ON c.id = m.course_id
-		 WHERE m.course_id = ? AND c.organization_id IS NULL
+		 WHERE m.course_id = ?
 		 ORDER BY m.order_index ASC`,
 		[courseId]
 	);
