@@ -20,7 +20,7 @@ CREATE TABLE users (
     gender ENUM('male', 'female', 'other', 'prefer_not_to_say'),
     nationality VARCHAR(100),
     profile_image VARCHAR(500),
-    role ENUM('student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser') NOT NULL DEFAULT 'student',
+    role ENUM('learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser') NOT NULL DEFAULT 'learner',
     is_verified BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     last_login TIMESTAMP NULL,
@@ -120,6 +120,11 @@ CREATE TABLE cars (
     longitude DECIMAL(11,8),
     images JSON,
     features JSON,
+    model_3d_url VARCHAR(500),
+    model_3d_format ENUM('gltf', 'glb', 'obj', 'fbx', 'dae') DEFAULT 'gltf',
+    model_3d_size_mb DECIMAL(8,2),
+    model_3d_preview_image VARCHAR(500),
+    has_3d_model BOOLEAN DEFAULT FALSE,
     status ENUM('active', 'sold', 'pending', 'draft') DEFAULT 'active',
     is_featured BOOLEAN DEFAULT FALSE,
     views_count INT DEFAULT 0,
@@ -135,7 +140,8 @@ CREATE TABLE cars (
     INDEX idx_year (year),
     INDEX idx_location (location),
     INDEX idx_status (status),
-    INDEX idx_seller_id (seller_id)
+    INDEX idx_seller_id (seller_id),
+    INDEX idx_has_3d_model (has_3d_model)
 );
 
 -- Car reviews
@@ -734,7 +740,7 @@ CREATE TABLE platform_analytics (
     
     INDEX idx_metric_name (metric_name),
     INDEX idx_date (date),
-    UNIQUE KEY unique_metric_date_dimensions (metric_name, date, dimensions(100))
+    INDEX idx_metric_date (metric_name, date)
 );
 
 -- =====================================================
@@ -744,7 +750,7 @@ CREATE TABLE platform_analytics (
 -- System settings
 CREATE TABLE system_settings (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    key_name VARCHAR(100) UNIQUE NOT NULL,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
     value TEXT NOT NULL,
     data_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
     description TEXT,
@@ -752,7 +758,7 @@ CREATE TABLE system_settings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    INDEX idx_key_name (key_name),
+    INDEX idx_setting_key (setting_key),
     INDEX idx_public (is_public)
 );
 
@@ -770,7 +776,7 @@ INSERT INTO ad_placements (id, name, description, placement_type, position, dime
 (UUID(), 'Scholarship Page Banner', 'Banner on scholarship pages', 'scholarship_page', 'top', '728x90', 300000, '["banner"]');
 
 -- Insert default system settings
-INSERT INTO system_settings (id, key_name, value, data_type, description, is_public) VALUES
+INSERT INTO system_settings (id, setting_key, value, data_type, description, is_public) VALUES
 (UUID(), 'platform_name', 'Reaglex', 'string', 'Platform name', TRUE),
 (UUID(), 'platform_description', 'Unified Platform for E-commerce, E-learning, and Scholarships & Visa Services', 'string', 'Platform description', TRUE),
 (UUID(), 'default_currency', 'USD', 'string', 'Default currency', TRUE),
@@ -781,7 +787,334 @@ INSERT INTO system_settings (id, key_name, value, data_type, description, is_pub
 (UUID(), 'maintenance_mode', 'false', 'boolean', 'Platform maintenance mode', TRUE);
 
 -- =====================================================
--- 12. CREATE TRIGGERS FOR AUTOMATIC UPDATES
+-- 12. ADMIN MANAGEMENT TABLES
+-- =====================================================
+
+-- Admin Actions Logging Table
+CREATE TABLE IF NOT EXISTS admin_actions (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    admin_id VARCHAR(36) NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    details JSON,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_action (action),
+    INDEX idx_created_at (created_at)
+);
+
+-- System Settings Table
+CREATE TABLE IF NOT EXISTS system_settings (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    setting_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
+    description TEXT,
+    is_public BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_setting_key (setting_key),
+    INDEX idx_is_public (is_public)
+);
+
+-- Feature Flags Table
+CREATE TABLE IF NOT EXISTS feature_flags (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    flag_name VARCHAR(100) UNIQUE NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    rollout_percentage INT DEFAULT 0,
+    description TEXT,
+    target_roles JSON,
+    target_users JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_flag_name (flag_name),
+    INDEX idx_enabled (enabled)
+);
+
+-- Content Flags Table
+CREATE TABLE IF NOT EXISTS content_flags (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    content_type ENUM('car', 'course', 'review', 'message', 'user') NOT NULL,
+    content_id VARCHAR(36) NOT NULL,
+    flagged_by VARCHAR(36) NOT NULL,
+    reason ENUM('inappropriate', 'spam', 'fraud', 'copyright', 'other') NOT NULL,
+    description TEXT,
+    status ENUM('pending', 'reviewed', 'resolved', 'dismissed') DEFAULT 'pending',
+    reviewed_by VARCHAR(36),
+    reviewed_at TIMESTAMP NULL,
+    admin_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (flagged_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_content_type_id (content_type, content_id),
+    INDEX idx_status (status),
+    INDEX idx_flagged_by (flagged_by)
+);
+
+-- System Events Table
+CREATE TABLE IF NOT EXISTS system_events (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    event_type VARCHAR(100) NOT NULL,
+    severity ENUM('info', 'warning', 'error', 'critical') DEFAULT 'info',
+    message TEXT NOT NULL,
+    details JSON,
+    user_id VARCHAR(36),
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_event_type (event_type),
+    INDEX idx_severity (severity),
+    INDEX idx_created_at (created_at),
+    INDEX idx_user_id (user_id)
+);
+
+-- Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    type ENUM('info', 'warning', 'error', 'success') DEFAULT 'info',
+    priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP NULL,
+    action_url VARCHAR(500),
+    metadata JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_read (is_read),
+    INDEX idx_type (type),
+    INDEX idx_priority (priority),
+    INDEX idx_created_at (created_at)
+);
+
+-- =====================================================
+-- 13. AI-POWERED E-COMMERCE TABLES
+-- =====================================================
+
+-- AI Conversations table
+CREATE TABLE IF NOT EXISTS ai_conversations (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    session_id VARCHAR(36) NOT NULL,
+    message TEXT NOT NULL,
+    sender ENUM('user', 'bot') NOT NULL,
+    intent VARCHAR(100),
+    entities JSON,
+    confidence DECIMAL(3,2),
+    response_time_ms INT DEFAULT 0,
+    user_satisfaction_rating DECIMAL(3,2) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_session (user_id, session_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_intent (intent),
+    INDEX idx_response_time (response_time_ms),
+    INDEX idx_satisfaction (user_satisfaction_rating)
+);
+
+-- AI User Profiles table
+CREATE TABLE IF NOT EXISTS ai_user_profiles (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    profile_data JSON NOT NULL,
+    personalization_score DECIMAL(3,2) DEFAULT 0,
+    confidence_level DECIMAL(3,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_profile (user_id),
+    INDEX idx_personalization_score (personalization_score)
+);
+
+-- AI Pricing Calculations table
+CREATE TABLE IF NOT EXISTS ai_pricing_calculations (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    car_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36),
+    base_price DECIMAL(12,2) NOT NULL,
+    dynamic_price DECIMAL(12,2) NOT NULL,
+    factors JSON,
+    confidence_score DECIMAL(3,2),
+    calculation_time_ms INT DEFAULT 0,
+    price_adjustment_percentage DECIMAL(5,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_car_id (car_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_calculation_time (calculation_time_ms)
+);
+
+-- AI Pricing A/B Tests table
+CREATE TABLE IF NOT EXISTS ai_pricing_ab_tests (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    car_id VARCHAR(36) NOT NULL,
+    strategy_a JSON NOT NULL,
+    strategy_b JSON NOT NULL,
+    traffic_split DECIMAL(3,2) DEFAULT 0.5,
+    status ENUM('active', 'completed', 'paused') DEFAULT 'active',
+    results JSON,
+    conversion_rate DECIMAL(5,4) DEFAULT 0.0000,
+    revenue_impact DECIMAL(12,2) DEFAULT 0.00,
+    calculation_time_ms INT DEFAULT 0,
+    price_adjustment_percentage DECIMAL(5,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    INDEX idx_car_id (car_id),
+    INDEX idx_status (status),
+    INDEX idx_conversion_rate (conversion_rate),
+    INDEX idx_revenue_impact (revenue_impact)
+);
+
+-- AI Analytics Events table
+CREATE TABLE IF NOT EXISTS ai_analytics_events (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36),
+    event_type VARCHAR(100) NOT NULL,
+    event_data JSON,
+    session_id VARCHAR(36),
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    processing_time_ms INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_event_type (event_type),
+    INDEX idx_created_at (created_at),
+    INDEX idx_processing_time (processing_time_ms)
+);
+
+-- AI Model Performance table
+CREATE TABLE IF NOT EXISTS ai_model_performance (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    model_name VARCHAR(100) NOT NULL,
+    model_version VARCHAR(20) NOT NULL,
+    accuracy_score DECIMAL(5,4),
+    precision_score DECIMAL(5,4),
+    recall_score DECIMAL(5,4),
+    f1_score DECIMAL(5,4),
+    training_samples INT,
+    test_samples INT,
+    performance_data JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_model_name (model_name),
+    INDEX idx_model_version (model_version),
+    INDEX idx_created_at (created_at)
+);
+
+-- AI Recommendations table
+CREATE TABLE IF NOT EXISTS ai_recommendations (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    car_id VARCHAR(36) NOT NULL,
+    recommendation_type ENUM('collaborative', 'content_based', 'behavioral', 'hybrid') NOT NULL,
+    score DECIMAL(5,4) NOT NULL,
+    factors JSON,
+    clicked BOOLEAN DEFAULT FALSE,
+    clicked_at TIMESTAMP NULL,
+    click_through_rate DECIMAL(5,4) DEFAULT 0.0000,
+    conversion_rate DECIMAL(5,4) DEFAULT 0.0000,
+    processing_time_ms INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id (car_id),
+    INDEX idx_recommendation_type (recommendation_type),
+    INDEX idx_score (score),
+    INDEX idx_ctr (click_through_rate),
+    INDEX idx_conversion_rate (conversion_rate)
+);
+
+-- AI Personalization Settings table
+CREATE TABLE IF NOT EXISTS ai_personalization_settings (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    setting_key VARCHAR(100) NOT NULL,
+    setting_value JSON NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_setting (user_id, setting_key),
+    INDEX idx_user_id (user_id),
+    INDEX idx_setting_key (setting_key)
+);
+
+-- AI Chatbot Training Data table
+CREATE TABLE IF NOT EXISTS ai_chatbot_training_data (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    text TEXT NOT NULL,
+    intent VARCHAR(100) NOT NULL,
+    entities JSON,
+    confidence DECIMAL(3,2),
+    source ENUM('manual', 'generated', 'imported') DEFAULT 'manual',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_intent (intent),
+    INDEX idx_source (source),
+    INDEX idx_created_at (created_at)
+);
+
+-- AI System Metrics table
+CREATE TABLE IF NOT EXISTS ai_system_metrics (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    service_name VARCHAR(100) NOT NULL DEFAULT 'system',
+    metric_type VARCHAR(100) NOT NULL DEFAULT 'general',
+    metric_name VARCHAR(100) NULL,
+    metric_value DECIMAL(10,4) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metric_unit VARCHAR(20),
+    metadata JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_service_name (service_name),
+    INDEX idx_metric_type (metric_type),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_service_metric (service_name, metric_type),
+    INDEX idx_service_timestamp (service_name, timestamp)
+);
+
+-- AI Feature Flags table
+CREATE TABLE IF NOT EXISTS ai_feature_flags (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    flag_name VARCHAR(100) UNIQUE NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    rollout_percentage INT DEFAULT 0,
+    target_users JSON,
+    target_roles JSON,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_flag_name (flag_name),
+    INDEX idx_enabled (enabled)
+);
+
+-- =====================================================
+-- 14. CREATE TRIGGERS FOR AUTOMATIC UPDATES
 -- =====================================================
 
 -- Trigger to update car rating when review is added/updated
@@ -884,6 +1217,50 @@ BEGIN
 END//
 
 DELIMITER ;
+
+-- =====================================================
+-- 15. SEED DATA AND DEFAULTS
+-- =====================================================
+
+-- Insert default AI feature flags
+INSERT INTO ai_feature_flags (flag_name, enabled, rollout_percentage, description) VALUES
+('ai_chatbot', true, 100, 'Enable AI-powered chatbot assistant'),
+('dynamic_pricing', true, 100, 'Enable AI-powered dynamic pricing'),
+('personalization', true, 100, 'Enable AI-powered personalization'),
+('predictive_analytics', true, 100, 'Enable AI-powered predictive analytics'),
+('anomaly_detection', true, 100, 'Enable AI-powered anomaly detection'),
+('voice_search', false, 0, 'Enable AI-powered voice search'),
+('image_recognition', false, 0, 'Enable AI-powered image recognition'),
+('sentiment_analysis', true, 100, 'Enable AI-powered sentiment analysis'),
+('fraud_detection', true, 100, 'Enable AI-powered fraud detection'),
+('recommendation_engine', true, 100, 'Enable AI-powered recommendation engine')
+ON DUPLICATE KEY UPDATE enabled = VALUES(enabled);
+
+-- Insert default chatbot training data
+INSERT INTO ai_chatbot_training_data (text, intent, entities, confidence) VALUES
+('Hello', 'greeting', '{}', 1.0),
+('Hi there', 'greeting', '{}', 1.0),
+('Good morning', 'greeting', '{}', 1.0),
+('Find me a car', 'search_car', '{}', 1.0),
+('I need a vehicle', 'search_car', '{}', 1.0),
+('Show me cars', 'search_car', '{}', 1.0),
+('What cars do you have', 'search_car', '{}', 1.0),
+('How much does it cost', 'price_inquiry', '{}', 1.0),
+('What is the price', 'price_inquiry', '{}', 1.0),
+('Is it expensive', 'price_inquiry', '{}', 1.0),
+('What features does it have', 'feature_inquiry', '{}', 1.0),
+('Tell me about the car', 'feature_inquiry', '{}', 1.0),
+('What are the specifications', 'feature_inquiry', '{}', 1.0),
+('Can I get financing', 'financing_inquiry', '{}', 1.0),
+('Payment options', 'financing_inquiry', '{}', 1.0),
+('Loan options', 'financing_inquiry', '{}', 1.0),
+('I need help', 'support_request', '{}', 1.0),
+('How can you help me', 'support_request', '{}', 1.0),
+('I have a problem', 'support_request', '{}', 1.0)
+ON DUPLICATE KEY UPDATE text = VALUES(text);
+
+-- Update any existing 'student' records to 'learner'
+UPDATE users SET role = 'learner' WHERE role = 'student';
 
 -- =====================================================
 -- END OF SCHEMA

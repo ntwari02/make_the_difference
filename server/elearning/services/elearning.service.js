@@ -201,6 +201,31 @@ const createTransaction = async (userId, payload) => {
 const getTransaction = (transactionId) => transactionsRepo.getTransactionById(transactionId);
 const getUserTransactions = (userId) => transactionsRepo.getUserTransactions(userId);
 
+// Additional endpoints
+const getStudents = async (filters = {}) => {
+	// Get all enrolled students with their progress
+	const students = await enrollmentsRepo.getStudentsWithProgress(filters);
+	return students;
+};
+
+const getTrendingCourses = async (filters = {}) => {
+	// Get trending courses based on enrollments and reviews
+	const courses = await coursesRepo.getTrendingCourses(filters);
+	return courses;
+};
+
+const getCategories = async () => {
+	// Get all course categories
+	const categories = await coursesRepo.getCategories();
+	return categories;
+};
+
+const searchCourses = async (query, filters = {}) => {
+	// Search courses by title, description, tags
+	const courses = await coursesRepo.searchCourses(query, filters);
+	return courses;
+};
+
 module.exports = {
 	listCourses,
 	getCourse,
@@ -234,7 +259,11 @@ module.exports = {
 	recommendCoursesForUser,
 	createTransaction,
 	getTransaction,
-	getUserTransactions
+	getUserTransactions,
+	getStudents,
+	getTrendingCourses,
+	getCategories,
+	searchCourses
 };
 
 

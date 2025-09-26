@@ -4,6 +4,10 @@
 -- This SQL file drops existing tables and creates fresh ones
 
 -- Drop all existing tables (in reverse order of dependencies)
+-- Disable foreign key checks to avoid constraint errors
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Drop tables in reverse dependency order to avoid foreign key constraint errors
 DROP TABLE IF EXISTS platform_analytics;
 DROP TABLE IF EXISTS user_activity_logs;
 DROP TABLE IF EXISTS notifications;
@@ -24,17 +28,48 @@ DROP TABLE IF EXISTS scholarships;
 DROP TABLE IF EXISTS course_favorites;
 DROP TABLE IF EXISTS course_reviews;
 DROP TABLE IF EXISTS course_progress;
+
+-- Drop certificate-related tables (they reference course_enrollments)
+DROP TABLE IF EXISTS certificate_shares;
+DROP TABLE IF EXISTS certificate_analytics;
+DROP TABLE IF EXISTS certificate_endorsements;
+DROP TABLE IF EXISTS certificate_verifications;
+DROP TABLE IF EXISTS course_certificate_partners;
+DROP TABLE IF EXISTS certificates;
+DROP TABLE IF EXISTS certificate_templates;
+DROP TABLE IF EXISTS certificate_partners;
 DROP TABLE IF EXISTS course_enrollments;
+
+-- Drop class-related tables
+DROP TABLE IF EXISTS class_chat_messages;
+DROP TABLE IF EXISTS class_materials;
+DROP TABLE IF EXISTS class_attendance;
+DROP TABLE IF EXISTS class_enrollments;
+DROP TABLE IF EXISTS online_classes;
 DROP TABLE IF EXISTS course_lessons;
 DROP TABLE IF EXISTS course_modules;
 DROP TABLE IF EXISTS courses;
+
+-- Drop user behavior and car-related tables
+DROP TABLE IF EXISTS user_behavior_tracking;
+DROP TABLE IF EXISTS car_recommendations;
 DROP TABLE IF EXISTS car_favorites;
 DROP TABLE IF EXISTS car_reviews;
+DROP TABLE IF EXISTS car_views;
+DROP TABLE IF EXISTS search_analytics;
+
+-- Drop any AI pricing calculations table that might exist
+DROP TABLE IF EXISTS ai_pricing_calculations;
+
+-- Drop core tables
 DROP TABLE IF EXISTS cars;
 DROP TABLE IF EXISTS dealers;
 DROP TABLE IF EXISTS user_sessions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS system_settings;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
 -- 1. CORE USER MANAGEMENT TABLES
@@ -186,6 +221,26 @@ CREATE TABLE car_reviews (
     INDEX idx_user_id (user_id)
 );
 
+-- Car views (track when users view car listings)
+CREATE TABLE car_views (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    car_id VARCHAR(36) NOT NULL,
+    metadata JSON,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    referrer_url VARCHAR(500),
+    session_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id (car_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_session_id (session_id)
+);
+
 -- Car favorites/wishlist
 CREATE TABLE car_favorites (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -198,6 +253,53 @@ CREATE TABLE car_favorites (
     UNIQUE KEY unique_user_car_favorite (user_id, car_id),
     INDEX idx_user_id (user_id),
     INDEX idx_car_id (car_id)
+);
+
+-- Car recommendations (AI-powered car recommendations for users)
+CREATE TABLE car_recommendations (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    car_id VARCHAR(36) NOT NULL,
+    recommendation_score DECIMAL(5,4) NOT NULL,
+    recommendation_reason TEXT,
+    recommendation_type ENUM('price_match', 'preference_match', 'similar_cars', 'trending', 'ai_suggested') NOT NULL,
+    is_viewed BOOLEAN DEFAULT FALSE,
+    is_interested BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id (car_id),
+    INDEX idx_recommendation_score (recommendation_score DESC),
+    INDEX idx_recommendation_type (recommendation_type),
+    INDEX idx_created_at (created_at)
+);
+
+-- User behavior tracking (track user interactions across the platform)
+CREATE TABLE user_behavior_tracking (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id VARCHAR(36) NOT NULL,
+    entity_type ENUM('car', 'course', 'scholarship', 'dealer', 'instructor') NOT NULL,
+    entity_id VARCHAR(36) NOT NULL,
+    action_type ENUM('view', 'click', 'search', 'favorite', 'share', 'download', 'enroll', 'apply') NOT NULL,
+    action_data JSON,
+    session_id VARCHAR(255),
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    referrer_url VARCHAR(500),
+    page_url VARCHAR(500),
+    device_type ENUM('desktop', 'mobile', 'tablet') DEFAULT 'desktop',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_entity_type (entity_type),
+    INDEX idx_entity_id (entity_id),
+    INDEX idx_action_type (action_type),
+    INDEX idx_created_at (created_at),
+    INDEX idx_session_id (session_id)
 );
 
 -- =====================================================
@@ -292,15 +394,19 @@ CREATE TABLE course_enrollments (
     completion_percentage DECIMAL(5,2) DEFAULT 0.00,
     is_completed BOOLEAN DEFAULT FALSE,
     completed_at TIMESTAMP NULL,
+    certificate_id VARCHAR(36),
     certificate_issued BOOLEAN DEFAULT FALSE,
     certificate_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_course_user_enrollment (course_id, user_id),
     INDEX idx_course_id (course_id),
     INDEX idx_user_id (user_id),
-    INDEX idx_completed (is_completed)
+    INDEX idx_completed (is_completed),
+    INDEX idx_certificate_id (certificate_id)
 );
 
 -- Course progress tracking
@@ -348,6 +454,297 @@ CREATE TABLE course_favorites (
     UNIQUE KEY unique_user_course_favorite (user_id, course_id),
     INDEX idx_user_id (user_id),
     INDEX idx_course_id (course_id)
+);
+
+-- =====================================================
+-- CERTIFICATE MANAGEMENT TABLES
+-- =====================================================
+
+-- Certificate templates
+CREATE TABLE certificate_templates (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    template_type ENUM('course_completion', 'achievement', 'participation', 'custom') DEFAULT 'course_completion',
+    organization_id VARCHAR(36),
+    template_data JSON NOT NULL,
+    background_image_url VARCHAR(500),
+    logo_url VARCHAR(500),
+    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (organization_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_template_type (template_type),
+    INDEX idx_is_default (is_default),
+    INDEX idx_is_active (is_active)
+);
+
+-- Certificate partners (organizations that endorse certificates)
+CREATE TABLE certificate_partners (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    logo_url VARCHAR(500),
+    website_url VARCHAR(500),
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(50),
+    partnership_type ENUM('educational', 'corporate', 'government', 'non_profit') DEFAULT 'educational',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_partnership_type (partnership_type),
+    INDEX idx_is_active (is_active)
+);
+
+-- Main certificates table
+CREATE TABLE certificates (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    enrollment_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36) NOT NULL,
+    template_id VARCHAR(36),
+    certificate_number VARCHAR(100) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    issued_to_name VARCHAR(255) NOT NULL,
+    issued_to_email VARCHAR(255) NOT NULL,
+    course_title VARCHAR(255) NOT NULL,
+    completion_date TIMESTAMP,
+    issue_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expiry_date TIMESTAMP NULL,
+    grade VARCHAR(10),
+    score DECIMAL(5,2),
+    duration_hours INT,
+    certificate_type ENUM('completion', 'achievement', 'participation', 'custom') DEFAULT 'completion',
+    status ENUM('issued', 'revoked', 'expired', 'pending') DEFAULT 'issued',
+    verification_code VARCHAR(32) UNIQUE NOT NULL,
+    pdf_url VARCHAR(500),
+    metadata JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (template_id) REFERENCES certificate_templates(id) ON DELETE SET NULL,
+    INDEX idx_enrollment_id (enrollment_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_course_id (course_id),
+    INDEX idx_certificate_number (certificate_number),
+    INDEX idx_verification_code (verification_code),
+    INDEX idx_status (status),
+    INDEX idx_issue_date (issue_date)
+);
+
+-- Foreign key constraint from certificates to course_enrollments is already defined in the table creation
+
+-- Certificate verifications (track who verified certificates)
+CREATE TABLE certificate_verifications (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    certificate_id VARCHAR(36) NOT NULL,
+    verification_code VARCHAR(32) NOT NULL,
+    verified_by_ip VARCHAR(45),
+    verified_by_user_agent TEXT,
+    verification_result ENUM('valid', 'invalid', 'expired', 'revoked') NOT NULL,
+    verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE,
+    INDEX idx_certificate_id (certificate_id),
+    INDEX idx_verification_code (verification_code),
+    INDEX idx_verified_at (verified_at)
+);
+
+-- Certificate endorsements (partner endorsements)
+CREATE TABLE certificate_endorsements (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    certificate_id VARCHAR(36) NOT NULL,
+    partner_id VARCHAR(36) NOT NULL,
+    endorsement_type ENUM('official', 'recommended', 'verified') DEFAULT 'official',
+    endorsement_text TEXT,
+    endorsed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE,
+    FOREIGN KEY (partner_id) REFERENCES certificate_partners(id) ON DELETE CASCADE,
+    INDEX idx_certificate_id (certificate_id),
+    INDEX idx_partner_id (partner_id)
+);
+
+-- Certificate analytics (track certificate events)
+CREATE TABLE certificate_analytics (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    certificate_id VARCHAR(36) NOT NULL,
+    event_type ENUM('viewed', 'downloaded', 'shared', 'verified', 'revoked') NOT NULL,
+    event_data JSON,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE,
+    INDEX idx_certificate_id (certificate_id),
+    INDEX idx_event_type (event_type),
+    INDEX idx_created_at (created_at)
+);
+
+-- Course certificate partners (associate courses with partners)
+CREATE TABLE course_certificate_partners (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    course_id VARCHAR(36) NOT NULL,
+    partner_id VARCHAR(36) NOT NULL,
+    is_primary_partner BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (partner_id) REFERENCES certificate_partners(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_course_partner (course_id, partner_id),
+    INDEX idx_course_id (course_id),
+    INDEX idx_partner_id (partner_id),
+    INDEX idx_display_order (display_order)
+);
+
+-- Certificate shares (track when certificates are shared)
+CREATE TABLE certificate_shares (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    certificate_id VARCHAR(36) NOT NULL,
+    shared_by_user_id VARCHAR(36),
+    platform ENUM('facebook', 'twitter', 'linkedin', 'email', 'whatsapp', 'other') NOT NULL,
+    share_url VARCHAR(500),
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE,
+    FOREIGN KEY (shared_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_certificate_id (certificate_id),
+    INDEX idx_shared_by_user_id (shared_by_user_id),
+    INDEX idx_platform (platform),
+    INDEX idx_shared_at (shared_at)
+);
+
+-- =====================================================
+-- ONLINE CLASSES TABLES
+-- =====================================================
+
+-- Online classes (live classes associated with courses)
+CREATE TABLE online_classes (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    course_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    instructor_id VARCHAR(36) NOT NULL,
+    class_type ENUM('live', 'recorded', 'hybrid') DEFAULT 'live',
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    duration_minutes INT NOT NULL,
+    max_participants INT DEFAULT 50,
+    current_participants INT DEFAULT 0,
+    meeting_url VARCHAR(500),
+    meeting_id VARCHAR(100),
+    meeting_password VARCHAR(100),
+    recording_url VARCHAR(500),
+    status ENUM('scheduled', 'live', 'completed', 'cancelled') DEFAULT 'scheduled',
+    is_recurring BOOLEAN DEFAULT FALSE,
+    recurrence_pattern JSON,
+    materials JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_course_id (course_id),
+    INDEX idx_instructor_id (instructor_id),
+    INDEX idx_start_time (start_time),
+    INDEX idx_status (status)
+);
+
+-- Class enrollments (students enrolled in online classes)
+CREATE TABLE class_enrollments (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    class_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    attendance_status ENUM('enrolled', 'attended', 'absent', 'late') DEFAULT 'enrolled',
+    joined_at TIMESTAMP NULL,
+    left_at TIMESTAMP NULL,
+    attendance_duration_minutes INT DEFAULT 0,
+    notes TEXT,
+    
+    FOREIGN KEY (class_id) REFERENCES online_classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_class_user_enrollment (class_id, user_id),
+    INDEX idx_class_id (class_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_attendance_status (attendance_status)
+);
+
+-- Class attendance (detailed attendance tracking for each class session)
+CREATE TABLE class_attendance (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    class_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    attendance_date DATE NOT NULL,
+    joined_at TIMESTAMP NULL,
+    left_at TIMESTAMP NULL,
+    duration_minutes INT DEFAULT 0,
+    attendance_status ENUM('present', 'absent', 'late', 'left_early') DEFAULT 'present',
+    participation_score DECIMAL(3,2) DEFAULT 0.00,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (class_id) REFERENCES online_classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_class_user_date (class_id, user_id, attendance_date),
+    INDEX idx_class_id (class_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_attendance_date (attendance_date),
+    INDEX idx_attendance_status (attendance_status)
+);
+
+-- Class materials (files and resources for online classes)
+CREATE TABLE class_materials (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    class_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    material_type ENUM('document', 'video', 'audio', 'image', 'link', 'presentation', 'other') NOT NULL,
+    file_url VARCHAR(500),
+    file_name VARCHAR(255),
+    file_size INT,
+    mime_type VARCHAR(100),
+    is_required BOOLEAN DEFAULT FALSE,
+    download_count INT DEFAULT 0,
+    uploaded_by VARCHAR(36) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (class_id) REFERENCES online_classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_class_id (class_id),
+    INDEX idx_material_type (material_type),
+    INDEX idx_uploaded_by (uploaded_by),
+    INDEX idx_uploaded_at (uploaded_at)
+);
+
+-- Class chat messages (real-time chat during online classes)
+CREATE TABLE class_chat_messages (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    class_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    message TEXT NOT NULL,
+    message_type ENUM('text', 'image', 'file', 'system') DEFAULT 'text',
+    file_url VARCHAR(500),
+    file_name VARCHAR(255),
+    is_private BOOLEAN DEFAULT FALSE,
+    reply_to_message_id VARCHAR(36),
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (class_id) REFERENCES online_classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reply_to_message_id) REFERENCES class_chat_messages(id) ON DELETE SET NULL,
+    INDEX idx_class_id (class_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_sent_at (sent_at),
+    INDEX idx_message_type (message_type)
 );
 
 -- =====================================================
@@ -766,7 +1163,7 @@ CREATE TABLE platform_analytics (
     
     INDEX idx_metric_name (metric_name),
     INDEX idx_date (date),
-    UNIQUE KEY unique_metric_date_dimensions (metric_name, date, dimensions(100))
+    INDEX idx_metric_date (metric_name, date)
 );
 
 -- =====================================================
@@ -776,7 +1173,7 @@ CREATE TABLE platform_analytics (
 -- System settings
 CREATE TABLE system_settings (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    key_name VARCHAR(100) UNIQUE NOT NULL,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
     value TEXT NOT NULL,
     data_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
     description TEXT,
@@ -784,7 +1181,7 @@ CREATE TABLE system_settings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    INDEX idx_key_name (key_name),
+    INDEX idx_setting_key (setting_key),
     INDEX idx_public (is_public)
 );
 
@@ -802,7 +1199,7 @@ INSERT INTO ad_placements (id, name, description, placement_type, position, dime
 (UUID(), 'Scholarship Page Banner', 'Banner on scholarship pages', 'scholarship_page', 'top', '728x90', 300000, '["banner"]');
 
 -- Insert default system settings
-INSERT INTO system_settings (id, key_name, value, data_type, description, is_public) VALUES
+INSERT INTO system_settings (id, setting_key, value, data_type, description, is_public) VALUES
 (UUID(), 'platform_name', 'Reaglex', 'string', 'Platform name', TRUE),
 (UUID(), 'platform_description', 'Unified Platform for E-commerce, E-learning, and Scholarships & Visa Services', 'string', 'Platform description', TRUE),
 (UUID(), 'default_currency', 'USD', 'string', 'Default currency', TRUE),
@@ -811,6 +1208,9 @@ INSERT INTO system_settings (id, key_name, value, data_type, description, is_pub
 (UUID(), 'ad_revenue_share', '0.30', 'number', 'Platform revenue share from ads (30%)', FALSE),
 (UUID(), 'course_revenue_share', '0.20', 'number', 'Platform revenue share from courses (20%)', FALSE),
 (UUID(), 'maintenance_mode', 'false', 'boolean', 'Platform maintenance mode', TRUE);
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
 -- END OF SCHEMA

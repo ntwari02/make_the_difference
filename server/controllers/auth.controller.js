@@ -4,7 +4,7 @@ const { validateEmail, validatePasswordStrength, sanitizeName } = require('../ut
 module.exports = {
   async register(req, res) {
     try {
-      const { email, password, first_name, last_name, phone, role = 'student' } = req.body || {};
+      const { email, password, first_name, last_name, phone, role = 'learner' } = req.body || {};
 
       if (!validateEmail(email)) {
         return res.status(400).json({ error: 'Invalid email' });
@@ -17,7 +17,7 @@ module.exports = {
       }
 
       // Validate role
-      const validRoles = ['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
+      const validRoles = ['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Valid roles: ' + validRoles.join(', ') });
       }
@@ -169,7 +169,7 @@ module.exports = {
   // Admin-only: Create user with specific role
   async createUser(req, res) {
     try {
-      const { email, password, first_name, last_name, phone, role = 'student' } = req.body || {};
+      const { email, password, first_name, last_name, phone, role = 'learner' } = req.body || {};
 
       if (!validateEmail(email)) {
         return res.status(400).json({ error: 'Invalid email' });
@@ -182,7 +182,7 @@ module.exports = {
       }
 
       // Validate role
-      const validRoles = ['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
+      const validRoles = ['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Valid roles: ' + validRoles.join(', ') });
       }
@@ -238,7 +238,7 @@ module.exports = {
       const { userId } = req.params;
       const { role } = req.body;
 
-      const validRoles = ['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
+      const validRoles = ['learner', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser'];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Valid roles: ' + validRoles.join(', ') });
       }

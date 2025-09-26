@@ -1,0 +1,239 @@
+const { ok, created, notFound, badRequest } = require('../../utils/response');
+const service = require('../services/cars.service');
+
+// Public routes
+const listCars = async (req, res) => {
+	try {
+		const cars = await service.listCars(req.query);
+		return ok(res, cars);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const searchCars = async (req, res) => {
+	try {
+		const cars = await service.searchCars(req.query);
+		return ok(res, cars);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getCar = async (req, res) => {
+	try {
+		const car = await service.getCarById(req.params.id);
+		if (!car) return notFound(res, 'Car not found');
+		return ok(res, car);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getCarReviews = async (req, res) => {
+	try {
+		const reviews = await service.getCarReviews(req.params.id, req.query);
+		return ok(res, reviews);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+// Seller routes
+const createCar = async (req, res) => {
+	try {
+		const car = await service.createCar(req.user.id, req.body);
+		return created(res, car);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const updateCar = async (req, res) => {
+	try {
+		const car = await service.updateCar(req.params.id, req.user.id, req.body);
+		if (!car) return notFound(res, 'Car not found or unauthorized');
+		return ok(res, car);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const deleteCar = async (req, res) => {
+	try {
+		const result = await service.deleteCar(req.params.id, req.user.id);
+		if (!result) return notFound(res, 'Car not found or unauthorized');
+		return ok(res, { message: 'Car deleted successfully' });
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const getMyCars = async (req, res) => {
+	try {
+		const cars = await service.getCarsBySeller(req.user.id, req.query);
+		return ok(res, cars);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+// Buyer routes
+const addToFavorites = async (req, res) => {
+	try {
+		const favorite = await service.addToFavorites(req.user.id, req.params.id);
+		return created(res, favorite);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const removeFromFavorites = async (req, res) => {
+	try {
+		const result = await service.removeFromFavorites(req.user.id, req.params.id);
+		if (!result) return notFound(res, 'Favorite not found');
+		return ok(res, { message: 'Removed from favorites' });
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const getFavorites = async (req, res) => {
+	try {
+		const favorites = await service.getUserFavorites(req.user.id, req.query);
+		return ok(res, favorites);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const createReview = async (req, res) => {
+	try {
+		const review = await service.createReview(req.user.id, req.params.id, req.body);
+		return created(res, review);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+// Admin routes
+const updateCarStatus = async (req, res) => {
+	try {
+		const car = await service.updateCarStatus(req.params.id, req.body.status, req.body.reason);
+		if (!car) return notFound(res, 'Car not found');
+		return ok(res, car);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const getPendingCars = async (req, res) => {
+	try {
+		const cars = await service.getPendingCars(req.query);
+		return ok(res, cars);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+// Admin-only routes - Full e-commerce management
+const getAllCars = async (req, res) => {
+	try {
+		const cars = await service.getAllCars(req.query);
+		return ok(res, cars);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getAllSellers = async (req, res) => {
+	try {
+		const sellers = await service.getAllSellers(req.query);
+		return ok(res, sellers);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getAllBuyers = async (req, res) => {
+	try {
+		const buyers = await service.getAllBuyers(req.query);
+		return ok(res, buyers);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getEcommerceAnalytics = async (req, res) => {
+	try {
+		const analytics = await service.getEcommerceAnalytics(req.query);
+		return ok(res, analytics);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const forceUpdateCar = async (req, res) => {
+	try {
+		const car = await service.forceUpdateCar(req.params.id, req.body);
+		if (!car) return notFound(res, 'Car not found');
+		return ok(res, car);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const forceDeleteCar = async (req, res) => {
+	try {
+		const result = await service.forceDeleteCar(req.params.id);
+		if (!result) return notFound(res, 'Car not found');
+		return ok(res, { message: 'Car force deleted successfully' });
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const getAllReviews = async (req, res) => {
+	try {
+		const reviews = await service.getAllReviews(req.query);
+		return ok(res, reviews);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const updateReviewStatus = async (req, res) => {
+	try {
+		const review = await service.updateReviewStatus(req.params.reviewId, req.body.status, req.body.reason);
+		if (!review) return notFound(res, 'Review not found');
+		return ok(res, review);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+module.exports = {
+	listCars,
+	searchCars,
+	getCar,
+	getCarReviews,
+	createCar,
+	updateCar,
+	deleteCar,
+	getMyCars,
+	addToFavorites,
+	removeFromFavorites,
+	getFavorites,
+	createReview,
+	updateCarStatus,
+	getPendingCars,
+	// Admin methods
+	getAllCars,
+	getAllSellers,
+	getAllBuyers,
+	getEcommerceAnalytics,
+	forceUpdateCar,
+	forceDeleteCar,
+	getAllReviews,
+	updateReviewStatus
+};

@@ -109,6 +109,17 @@ const getTransaction = async (req, res) => {
 };
 const getUserTransactions = async (req, res) => ok(res, await service.getUserTransactions(req.user.id));
 
+// Additional endpoints
+const getStudents = async (req, res) => ok(res, await service.getStudents({ ...req.query, organization_id: req.org?.id || null }));
+const getTrendingCourses = async (req, res) => ok(res, await service.getTrendingCourses({ ...req.query, organization_id: req.org?.id || null }));
+const getCategories = async (req, res) => ok(res, await service.getCategories());
+const searchCourses = async (req, res) => {
+	const { q } = req.query;
+	if (!q) return bad(res, 'Search query is required');
+	const data = await service.searchCourses(q, { ...req.query, organization_id: req.org?.id || null });
+	return ok(res, data);
+};
+
 module.exports = {
 	listCourses,
 	getCourse,
@@ -142,7 +153,11 @@ module.exports = {
 	recommend,
 	createTransaction,
 	getTransaction,
-	getUserTransactions
+	getUserTransactions,
+	getStudents,
+	getTrendingCourses,
+	getCategories,
+	searchCourses
 };
 
 
