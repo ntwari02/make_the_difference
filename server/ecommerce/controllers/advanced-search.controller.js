@@ -234,6 +234,21 @@ const getSearchFilterOptions = async (req, res) => {
   try {
     const { executeQuery } = require('../../config/database');
 
+    // Helper function to execute query with timeout and fallback
+    const executeQueryWithTimeout = async (query, timeout = 5000) => {
+      try {
+        return await Promise.race([
+          executeQuery(query),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Query timeout')), timeout)
+          )
+        ]);
+      } catch (error) {
+        console.warn(`Query failed: ${error.message}`);
+        return []; // Return empty array as fallback
+      }
+    };
+
     // Get all available brands
     const brandsQuery = `
       SELECT DISTINCT brand, COUNT(*) as count
@@ -241,6 +256,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY brand
       ORDER BY brand ASC
+      LIMIT 50
     `;
 
     // Get all available models
@@ -250,6 +266,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY model
       ORDER BY model ASC
+      LIMIT 50
     `;
 
     // Get price range
@@ -278,6 +295,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY fuel_type
       ORDER BY count DESC
+      LIMIT 20
     `;
 
     // Get transmissions
@@ -287,6 +305,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY transmission
       ORDER BY count DESC
+      LIMIT 20
     `;
 
     // Get body types
@@ -296,6 +315,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY body_type
       ORDER BY count DESC
+      LIMIT 20
     `;
 
     // Get car conditions
@@ -305,6 +325,7 @@ const getSearchFilterOptions = async (req, res) => {
       WHERE status = 'active'
       GROUP BY car_condition
       ORDER BY count DESC
+      LIMIT 20
     `;
 
     // Get colors
@@ -317,6 +338,7 @@ const getSearchFilterOptions = async (req, res) => {
       LIMIT 20
     `;
 
+    // Execute queries with individual timeouts and error handling
     const [
       brands,
       models,
@@ -327,30 +349,35 @@ const getSearchFilterOptions = async (req, res) => {
       bodyTypes,
       conditions,
       colors
-    ] = await Promise.all([
-      executeQuery(brandsQuery),
-      executeQuery(modelsQuery),
-      executeQuery(priceRangeQuery),
-      executeQuery(yearRangeQuery),
-      executeQuery(fuelTypesQuery),
-      executeQuery(transmissionsQuery),
-      executeQuery(bodyTypesQuery),
-      executeQuery(conditionsQuery),
-      executeQuery(colorsQuery)
+    ] = await Promise.allSettled([
+      executeQueryWithTimeout(brandsQuery),
+      executeQueryWithTimeout(modelsQuery),
+      executeQueryWithTimeout(priceRangeQuery),
+      executeQueryWithTimeout(yearRangeQuery),
+      executeQueryWithTimeout(fuelTypesQuery),
+      executeQueryWithTimeout(transmissionsQuery),
+      executeQueryWithTimeout(bodyTypesQuery),
+      executeQueryWithTimeout(conditionsQuery),
+      executeQueryWithTimeout(colorsQuery)
     ]);
 
+    // Extract results, using fallback values for failed queries
+    const getResult = (result) => result.status === 'fulfilled' ? result.value : [];
+    const getFirstResult = (result) => result.status === 'fulfilled' && result.value.length > 0 ? result.value[0] : {};
+
     return ok(res, {
-      brands,
-      models,
-      price_range: priceRange[0],
-      year_range: yearRange[0],
-      fuel_types: fuelTypes,
-      transmissions,
-      body_types: bodyTypes,
-      car_conditions: conditions,
-      colors
+      brands: getResult(brands),
+      models: getResult(models),
+      price_range: getFirstResult(priceRange),
+      year_range: getFirstResult(yearRange),
+      fuel_types: getResult(fuelTypes),
+      transmissions: getResult(transmissions),
+      body_types: getResult(bodyTypes),
+      car_conditions: getResult(conditions),
+      colors: getResult(colors)
     });
   } catch (error) {
+    console.error('Error in getSearchFilterOptions:', error);
     return res.status(500).json({ error: error.message });
   }
 };

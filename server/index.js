@@ -42,6 +42,7 @@ app.use('/api/recommendations', require('./ecommerce/routes/recommendations.rout
 app.use('/api/search', require('./ecommerce/routes/advanced-search.routes'));
 app.use('/api/payments', require('./ecommerce/routes/payment.routes'));
 app.use('/api/enhanced-payments', require('./ecommerce/routes/enhanced-payment.routes'));
+app.use('/api/spare-parts', require('./ecommerce/routes/spare-parts.routes'));
 app.use('/api/scholarships', require('./routes/scholarship.routes'));
 app.use('/api/visa', require('./routes/visa.routes'));
 app.use('/api/service-fees', require('./routes/service-fee.routes'));
