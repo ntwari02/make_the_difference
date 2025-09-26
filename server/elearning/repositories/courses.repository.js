@@ -80,9 +80,9 @@ const getTrendingCourses = async ({ limit = 20, offset = 0, organization_id = nu
 	
 	const sql = `
 		SELECT c.*, 
-			COALESCE(enrollment_count, 0) as enrollment_count,
-			COALESCE(avg_rating, 0) as avg_rating,
-			COALESCE(review_count, 0) as review_count
+			COALESCE(e.enrollment_count, 0) as enrollment_count,
+			COALESCE(r.avg_rating, 0) as avg_rating,
+			COALESCE(r.review_count, 0) as review_count
 		FROM courses c
 		LEFT JOIN (
 			SELECT course_id, COUNT(*) as enrollment_count
@@ -95,7 +95,7 @@ const getTrendingCourses = async ({ limit = 20, offset = 0, organization_id = nu
 			GROUP BY course_id
 		) r ON c.id = r.course_id
 		${whereSql}
-		ORDER BY (enrollment_count * 0.4 + avg_rating * 0.3 + review_count * 0.3) DESC, c.created_at DESC
+		ORDER BY (e.enrollment_count * 0.4 + r.avg_rating * 0.3 + r.review_count * 0.3) DESC, c.created_at DESC
 		LIMIT ${safeLimit} OFFSET ${safeOffset}
 	`;
 	
