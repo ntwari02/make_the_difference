@@ -26,7 +26,14 @@ const validateCreateModule = [
 
 // Lessons
 const validateCreateLesson = [
-	param('moduleId').isString().isLength({ min: 10 }),
+	param('moduleId').isString().isLength({ min: 10 }).custom(async (value) => {
+		const modulesRepo = require('../repositories/modules.repository');
+		const module = await modulesRepo.getModuleById(value);
+		if (!module) {
+			throw new Error('Module not found');
+		}
+		return true;
+	}),
 	body('title').isString().isLength({ min: 3 }),
 	body('content_type').isIn(['video','text','quiz','assignment','live']),
 	body('order_index').isInt({ min: 0 })

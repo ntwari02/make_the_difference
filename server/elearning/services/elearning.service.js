@@ -86,6 +86,13 @@ const listLessons = (moduleId, orgId = null) => lessonsRepo.getLessonsByModule(m
 const getLesson = (lessonId, orgId = null) => lessonsRepo.getLessonById(lessonId, orgId);
 
 const createLesson = async (moduleId, payload) => {
+	// Verify module exists before creating lesson
+	const modulesRepo = require('../repositories/modules.repository');
+	const module = await modulesRepo.getModuleById(moduleId);
+	if (!module) {
+		throw new Error(`Module with ID ${moduleId} not found`);
+	}
+	
 	const id = uuidv4();
 	return lessonsRepo.createLesson({
 		id,

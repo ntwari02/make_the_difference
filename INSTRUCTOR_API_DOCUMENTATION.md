@@ -166,24 +166,14 @@ X-Org-Id: <organization-id>
 ### Create Lesson
 Create a new lesson within a module.
 
-**Endpoint:** `POST /modules/:moduleId/lessons`
-
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-X-Org-Id: <organization-id>
-```
-
-**Request Body:**
-```json
-{
-  "title": "Understanding Variables",
-  "content_type": "video",
-  "order_index": 1,
-  "content": "https://example.com/video.mp4",
-  "duration_minutes": 15
-}
+   POST http://localhost:3000/api/elearning/modules/{validModuleId}/lessons
+   {
+     "title": "Understanding Variables",
+     "content_type": "video",
+     "order_index": 1,
+     "content": "https://example.com/video.mp4",
+     "duration_minutes": 15
+   }
 ```
 
 **Content Types:** `video`, `text`, `quiz`, `assignment`, `live`

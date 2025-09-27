@@ -71,6 +71,17 @@ router.get('/me/favorites', authenticate, ctrl.listFavorites);
 router.get('/me/instructor/analytics', authenticate, authorizeRoles('instructor','admin'), analyticsCtrl.instructorOverview);
 router.get('/admin/analytics/overview', authenticate, authorizeRoles('admin'), analyticsCtrl.adminOverview);
 
+// Quiz Routes (moved from separate quiz router for convenience)
+const quizCtrl = require('../controllers/quiz.controller');
+const quizValidators = require('../validators/quiz.validators');
+
+// Quiz Questions for Lessons
+router.post('/lessons/:lessonId/questions', authenticate, authorizeRoles('instructor','admin'), quizValidators.validateCreateQuizQuestions, handleValidation, quizCtrl.createQuizQuestions);
+router.get('/lessons/:lessonId/questions', authenticate, authorizeRoles('student','admin','instructor'), quizValidators.validateStartQuiz, handleValidation, quizCtrl.getQuizQuestions);
+
+// Quiz Statistics for Lessons
+router.get('/lessons/:lessonId/statistics', authenticate, authorizeRoles('instructor','admin'), quizValidators.validateGetQuizStatistics, handleValidation, quizCtrl.getQuizStatistics);
+
 // Transactions
 router.post('/transactions', authenticate, v.validateCreateTransaction, handleValidation, ctrl.createTransaction);
 router.post('/courses/:courseId/test-transaction', authenticate, ctrl.createTestTransaction);

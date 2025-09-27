@@ -45,12 +45,8 @@ const getStudentsWithProgress = async ({ limit = 20, offset = 0, organization_id
 	const where = [];
 	const params = [];
 	
-	if (organization_id) {
-		where.push('(c.organization_id = ? OR c.organization_id IS NULL)');
-		params.push(organization_id);
-	} else {
-		where.push('c.organization_id IS NULL');
-	}
+	// Note: courses table doesn't have organization_id column, so we'll ignore organization filtering for now
+	// This can be implemented later when organization support is added to courses
 	
 	const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 	const safeLimit = Number.isFinite(Number(limit)) ? Math.max(0, parseInt(limit, 10)) : 20;
@@ -62,8 +58,8 @@ const getStudentsWithProgress = async ({ limit = 20, offset = 0, organization_id
 			ce.user_id,
 			ce.course_id,
 			ce.enrollment_date,
-			ce.completion_date,
-			ce.status as enrollment_status,
+			ce.completed_at,
+			ce.is_completed as enrollment_status,
 			c.title as course_title,
 			c.category,
 			c.level,
@@ -87,7 +83,7 @@ const getStudentsWithProgress = async ({ limit = 20, offset = 0, organization_id
 				SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed_lessons,
 				ROUND((SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 2) as progress_percentage,
 				SUM(time_spent_minutes) as total_time_spent
-			FROM lesson_progress lp
+			FROM course_progress cp
 			GROUP BY enrollment_id
 		) progress_summary ON ce.id = progress_summary.enrollment_id
 		${whereSql}
