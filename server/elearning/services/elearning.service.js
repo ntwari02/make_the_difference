@@ -142,7 +142,20 @@ const getEnrollment = (courseId, userId) => enrollmentsRepo.getEnrollment(course
 
 const getUserEnrollments = (userId) => enrollmentsRepo.getUserEnrollments(userId);
 
-const upsertProgress = (payload) => progressRepo.upsertProgress(payload);
+const upsertProgress = async (payload, userId = null) => {
+	// If userId is provided, verify that the enrollment belongs to this user
+	if (userId) {
+		const enrollmentCheck = await enrollmentsRepo.getEnrollmentById(payload.enrollment_id);
+		if (!enrollmentCheck) {
+			throw new Error(`Enrollment with ID ${payload.enrollment_id} does not exist`);
+		}
+		if (enrollmentCheck.user_id !== userId) {
+			throw new Error('You can only update progress for your own enrollments');
+		}
+	}
+	
+	return progressRepo.upsertProgress(payload);
+};
 const getProgress = (enrollmentId) => progressRepo.getProgressForEnrollment(enrollmentId);
 const updateLessonProgress = (userId, lessonId, progressData) => progressRepo.updateLessonProgress(userId, lessonId, progressData);
 const getUserProgressSummary = (userId) => progressRepo.getUserProgressSummary(userId);
@@ -193,6 +206,27 @@ const recommendCoursesForUser = async (userId, { limit = 10, organization_id = n
 // Transactions
 const createTransaction = async (userId, payload) => {
 	const { v4: uuidv4 } = require('uuid');
+	
+	// Validate payment_method_id if provided
+	if (payload.payment_method_id) {
+		const { executeQuery } = require('../../config/database');
+		try {
+			const paymentMethod = await executeQuery(
+				'SELECT id FROM payment_methods WHERE id = ? AND user_id = ? AND is_active = 1',
+				[payload.payment_method_id, userId]
+			);
+			
+			if (paymentMethod.length === 0) {
+				// If payment method doesn't exist, set it to null instead of throwing error
+				console.warn(`Payment method ${payload.payment_method_id} not found for user ${userId}, setting to null`);
+				payload.payment_method_id = null;
+			}
+		} catch (error) {
+			console.warn(`Error validating payment method: ${error.message}, setting to null`);
+			payload.payment_method_id = null;
+		}
+	}
+	
 	const transaction = {
 		id: uuidv4(),
 		user_id: userId,

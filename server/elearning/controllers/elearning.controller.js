@@ -61,7 +61,18 @@ const getEnrollment = async (req, res) => {
 	return ok(res, data);
 };
 const getUserEnrollments = async (req, res) => ok(res, await service.getUserEnrollments(req.user.id));
-const upsertProgress = async (req, res) => ok(res, await service.upsertProgress(req.body));
+const upsertProgress = async (req, res) => {
+	try {
+		const result = await service.upsertProgress(req.body, req.user.id);
+		return ok(res, result);
+	} catch (error) {
+		console.error('Error in upsertProgress:', error.message);
+		return res.status(400).json({ 
+			error: error.message,
+			message: 'Failed to update progress'
+		});
+	}
+};
 const updateLessonProgress = async (req, res) => {
 	try {
 		const result = await service.updateLessonProgress(req.user.id, req.params.lessonId, req.body);
@@ -131,6 +142,77 @@ const createTestTransaction = async (req, res) => {
 	return created(res, transaction);
 };
 
+// Create test payment method for development/testing
+const createTestPaymentMethod = async (req, res) => {
+	try {
+		const userId = req.user.id;
+		const { executeQuery } = require('../../config/database');
+		
+		// Create a test payment method
+		const { v4: uuidv4 } = require('uuid');
+		const paymentMethodId = uuidv4();
+		
+		const query = `
+			INSERT INTO payment_methods 
+			(id, user_id, type, provider, account_details, is_default, is_active, created_at)
+			VALUES (?, ?, 'stripe', 'test_provider', ?, 1, 1, NOW())
+		`;
+		
+		const accountDetails = {
+			card_number: "4242424242424242",
+			expiry_month: 12,
+			expiry_year: 2025,
+			cvc: "123",
+			test_mode: true
+		};
+		
+		await executeQuery(query, [
+			paymentMethodId,
+			userId,
+			JSON.stringify(accountDetails)
+		]);
+		
+		// Get the created payment method
+		const paymentMethod = await executeQuery(
+			'SELECT * FROM payment_methods WHERE id = ?',
+			[paymentMethodId]
+		);
+		
+		return created(res, {
+			message: 'Test payment method created successfully',
+			payment_method: paymentMethod[0],
+			payment_method_id: paymentMethod[0].id,
+			instructions: {
+				step1: 'Use the payment_method_id above in your transaction requests',
+				step2: 'Example transaction request:',
+				example: {
+					url: 'POST http://localhost:3001/api/elearning/transactions',
+					headers: {
+						'Authorization': 'Bearer YOUR_JWT_TOKEN',
+						'Content-Type': 'application/json'
+					},
+					body: {
+						type: 'course_purchase',
+						amount: 99.99,
+						currency: 'USD',
+						payment_method_id: paymentMethod[0].id,
+						description: 'Course purchase with valid payment method',
+						metadata: {
+							course_id: 'course-123'
+						}
+					}
+				}
+			}
+		});
+	} catch (error) {
+		console.error('Error creating test payment method:', error);
+		return res.status(500).json({ 
+			error: error.message,
+			message: 'Failed to create test payment method. You can still create transactions without payment_method_id.'
+		});
+	}
+};
+
 // Additional endpoints
 const getStudents = async (req, res) => ok(res, await service.getStudents({ ...req.query, organization_id: req.org?.id || null }));
 const getTrendingCourses = async (req, res) => ok(res, await service.getTrendingCourses({ ...req.query, organization_id: req.org?.id || null }));
@@ -177,6 +259,7 @@ module.exports = {
 	getTransaction,
 	getUserTransactions,
 	createTestTransaction,
+	createTestPaymentMethod,
 	getStudents,
 	getTrendingCourses,
 	getCategories,

@@ -1,6 +1,18 @@
 const { executeQuery } = require('../../config/database');
 
-const upsertProgress = async ({ enrollment_id, lesson_id, is_completed, time_spent_minutes, last_position_seconds, notes, quiz_score, progress_percentage }) => {
+const upsertProgress = async ({ enrollment_id, lesson_id, is_completed, time_spent_minutes, last_position_seconds }) => {
+	// First, verify that the enrollment exists
+	const enrollmentCheck = await executeQuery(`SELECT id FROM course_enrollments WHERE id = ?`, [enrollment_id]);
+	if (enrollmentCheck.length === 0) {
+		throw new Error(`Enrollment with ID ${enrollment_id} does not exist`);
+	}
+
+	// Verify that the lesson exists
+	const lessonCheck = await executeQuery(`SELECT id FROM course_lessons WHERE id = ?`, [lesson_id]);
+	if (lessonCheck.length === 0) {
+		throw new Error(`Lesson with ID ${lesson_id} does not exist`);
+	}
+
 	const existing = await executeQuery(`SELECT id FROM course_progress WHERE enrollment_id = ? AND lesson_id = ?`, [enrollment_id, lesson_id]);
 	if (existing.length) {
 		const id = existing[0].id;
@@ -9,21 +21,17 @@ const upsertProgress = async ({ enrollment_id, lesson_id, is_completed, time_spe
 				is_completed = ?, 
 				time_spent_minutes = ?, 
 				last_position_seconds = ?, 
-				notes = ?,
-				quiz_score = ?,
-				progress_percentage = ?,
-				completed_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE completed_at END,
-				updated_at = CURRENT_TIMESTAMP
+				completed_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE completed_at END
 			 WHERE id = ?`,
-			[is_completed ? 1 : 0, time_spent_minutes ?? 0, last_position_seconds ?? 0, notes || null, quiz_score || null, progress_percentage || 0, is_completed ? 1 : 0, id]
+			[is_completed ? 1 : 0, time_spent_minutes ?? 0, last_position_seconds ?? 0, is_completed ? 1 : 0, id]
 		);
 		const rows = await executeQuery(`SELECT * FROM course_progress WHERE id = ?`, [id]);
 		return rows[0] || null;
 	}
 	await executeQuery(
-		`INSERT INTO course_progress (id, enrollment_id, lesson_id, is_completed, time_spent_minutes, last_position_seconds, notes, quiz_score, progress_percentage, completed_at) 
-		 VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END)`,
-		[enrollment_id, lesson_id, is_completed ? 1 : 0, time_spent_minutes ?? 0, last_position_seconds ?? 0, notes || null, quiz_score || null, progress_percentage || 0, is_completed ? 1 : 0]
+		`INSERT INTO course_progress (id, enrollment_id, lesson_id, is_completed, time_spent_minutes, last_position_seconds, completed_at) 
+		 VALUES (UUID(), ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END)`,
+		[enrollment_id, lesson_id, is_completed ? 1 : 0, time_spent_minutes ?? 0, last_position_seconds ?? 0, is_completed ? 1 : 0]
 	);
 	const rows = await executeQuery(`SELECT * FROM course_progress WHERE enrollment_id = ? AND lesson_id = ?`, [enrollment_id, lesson_id]);
 	return rows[0] || null;
@@ -51,9 +59,6 @@ const updateLessonProgress = async (userId, lessonId, progressData) => {
 	const {
 		completed = false,
 		time_spent = 0,
-		progress_percentage = 0,
-		notes = null,
-		quiz_score = null,
 		last_position = 0
 	} = progressData;
 	
@@ -62,9 +67,6 @@ const updateLessonProgress = async (userId, lessonId, progressData) => {
 		lesson_id: lessonId,
 		is_completed: completed,
 		time_spent_minutes: time_spent,
-		progress_percentage: progress_percentage,
-		notes: notes,
-		quiz_score: quiz_score,
 		last_position_seconds: last_position
 	});
 };
@@ -89,7 +91,7 @@ const getUserProgressSummary = async (userId) => {
 		JOIN courses c ON cm.course_id = c.id
 		JOIN course_enrollments ce ON cp.enrollment_id = ce.id
 		WHERE ce.user_id = ?
-		ORDER BY cp.updated_at DESC
+		ORDER BY cp.completed_at DESC, cp.id DESC
 	`, [userId]);
 	return rows;
 };

@@ -510,17 +510,12 @@ Authorization: Bearer <token>
 
 #### Predict User Behavior
 ```http
-POST /api/ai/personalization/predict-behavior
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "action": "course_enrollment",
-  "context": {
-    "course_category": "programming",
-    "course_level": "intermediate"
-  }
-}
+curl -X POST "http://localhost:3001/api/ai/personalization/predict-behavior" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "behaviorType": "purchase"
+  }'
 ```
 
 #### Get Business Insights

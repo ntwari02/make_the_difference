@@ -34,11 +34,11 @@ const validateCreateLesson = [
 
 // Enrollment & Progress
 const validateUpsertProgress = [
-	body('enrollment_id').isString().isLength({ min: 10 }),
-	body('lesson_id').isString().isLength({ min: 10 }),
-	body('is_completed').optional().isBoolean(),
-	body('time_spent_minutes').optional().isInt({ min: 0 }),
-	body('last_position_seconds').optional().isInt({ min: 0 })
+	body('enrollment_id').isString().isLength({ min: 10 }).withMessage('Valid enrollment ID is required'),
+	body('lesson_id').isString().isLength({ min: 10 }).withMessage('Valid lesson ID is required'),
+	body('is_completed').optional().isBoolean().withMessage('is_completed must be a boolean'),
+	body('time_spent_minutes').optional().isInt({ min: 0 }).withMessage('time_spent_minutes must be a non-negative integer'),
+	body('last_position_seconds').optional().isInt({ min: 0 }).withMessage('last_position_seconds must be a non-negative integer')
 ];
 
 const validateUpdateLessonProgress = [

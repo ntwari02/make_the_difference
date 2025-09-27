@@ -3,7 +3,16 @@ const { body, param, query } = require('express-validator');
 const scholarshipValidators = {
   // Validate scholarship ID parameter
   validateScholarshipId: [
-    param('id').isUUID().withMessage('Invalid scholarship ID format')
+    param('id').custom((value) => {
+      // Accept UUID format or custom scholarship ID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const customIdRegex = /^scholarship-\d+$/;
+      
+      if (uuidRegex.test(value) || customIdRegex.test(value)) {
+        return true;
+      }
+      throw new Error('Invalid scholarship ID format. Must be UUID or scholarship-{number} format');
+    })
   ],
 
   // Validate application ID parameter
@@ -100,16 +109,37 @@ const scholarshipValidators = {
 
   // Validate application data
   validateApplicationData: [
-    body('scholarship_id').isUUID().withMessage('Invalid scholarship ID format'),
+    param('id').custom((value) => {
+      // Accept UUID format or custom scholarship ID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const customIdRegex = /^scholarship-\d+$/;
+      
+      if (uuidRegex.test(value) || customIdRegex.test(value)) {
+        return true;
+      }
+      throw new Error('Invalid scholarship ID format. Must be UUID or scholarship-{number} format');
+    }),
     body('application_data').isObject().withMessage('Application data must be an object'),
-    body('documents').optional().isObject().withMessage('Documents must be an object'),
+    body('documents').optional().custom((value) => {
+      // Accept both object and array formats for documents
+      if (typeof value === 'object' && (Array.isArray(value) || !Array.isArray(value))) {
+        return true;
+      }
+      throw new Error('Documents must be an object or array');
+    }),
     body('status').optional().isIn(['draft', 'submitted']).withMessage('Invalid application status')
   ],
 
   // Validate application update data
   validateApplicationUpdate: [
     body('application_data').optional().isObject().withMessage('Application data must be an object'),
-    body('documents').optional().isObject().withMessage('Documents must be an object'),
+    body('documents').optional().custom((value) => {
+      // Accept both object and array formats for documents
+      if (typeof value === 'object' && (Array.isArray(value) || !Array.isArray(value))) {
+        return true;
+      }
+      throw new Error('Documents must be an object or array');
+    }),
     body('status').optional().isIn(['draft', 'submitted']).withMessage('Invalid application status')
   ],
 

@@ -256,7 +256,15 @@ class ScholarshipController {
   async createApplication(req, res) {
     try {
       const userId = req.user.id;
-      const applicationId = await scholarshipApplicationService.createApplication(req.body, userId);
+      const { id: scholarshipId } = req.params;
+      
+      // Combine URL parameter with request body
+      const applicationData = {
+        ...req.body,
+        scholarship_id: scholarshipId
+      };
+      
+      const applicationId = await scholarshipApplicationService.createApplication(applicationData, userId);
 
       res.status(201).json({
         success: true,

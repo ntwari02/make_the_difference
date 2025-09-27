@@ -136,6 +136,8 @@ const getPersonalizedContent = async (req, res) => {
   try {
     const userId = req.user.id;
     const { contentType = 'homepage' } = req.query;
+    
+    console.log('DEBUG: Controller received contentType:', contentType);
 
     const result = await personalizationService.getPersonalizedContent(userId, contentType);
 

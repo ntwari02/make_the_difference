@@ -7,6 +7,17 @@ class ScholarshipService {
     this.applicationTableName = 'scholarship_applications';
   }
 
+  // Helper method to safely parse JSON fields
+  parseJSONField(field, defaultValue) {
+    if (!field) return defaultValue;
+    try {
+      return JSON.parse(field);
+    } catch (error) {
+      console.warn('Failed to parse JSON field:', field, error.message);
+      return defaultValue;
+    }
+  }
+
   // Get all scholarships with filters
   async getScholarships(filters = {}) {
     try {
@@ -67,6 +78,11 @@ class ScholarshipService {
         params.push(filters.deadline_before);
       }
 
+      if (filters.provider_id) {
+        conditions.push('s.provider_id = ?');
+        params.push(filters.provider_id);
+      }
+
       if (conditions.length > 0) {
         query += ' AND ' + conditions.join(' AND ');
       }
@@ -96,14 +112,11 @@ class ScholarshipService {
       }
 
       // Add pagination
-      if (filters.limit) {
-        query += ' LIMIT ?';
-        params.push(filters.limit);
-        
-        if (filters.offset) {
-          query += ' OFFSET ?';
-          params.push(filters.offset);
-        }
+      const limit = filters.limit && !isNaN(filters.limit) ? parseInt(filters.limit) : 20;
+      query += ` LIMIT ${limit}`;
+      
+      if (filters.offset && !isNaN(filters.offset)) {
+        query += ` OFFSET ${parseInt(filters.offset)}`;
       }
 
       const scholarships = await executeQuery(query, params);
@@ -111,12 +124,12 @@ class ScholarshipService {
       // Process scholarships data
       return scholarships.map(scholarship => ({
         ...scholarship,
-        field_of_study: JSON.parse(scholarship.field_of_study || '[]'),
-        eligibility_criteria: JSON.parse(scholarship.eligibility_criteria || '{}'),
-        required_documents: JSON.parse(scholarship.required_documents || '[]'),
-        language_requirements: JSON.parse(scholarship.language_requirements || '{}'),
-        nationality_restrictions: JSON.parse(scholarship.nationality_restrictions || '[]'),
-        tags: JSON.parse(scholarship.tags || '[]')
+        field_of_study: this.parseJSONField(scholarship.field_of_study, []),
+        eligibility_criteria: this.parseJSONField(scholarship.eligibility_criteria, {}),
+        required_documents: this.parseJSONField(scholarship.required_documents, []),
+        language_requirements: this.parseJSONField(scholarship.language_requirements, {}),
+        nationality_restrictions: this.parseJSONField(scholarship.nationality_restrictions, []),
+        tags: this.parseJSONField(scholarship.tags, [])
       }));
     } catch (error) {
       console.error('Error fetching scholarships:', error);
@@ -152,12 +165,12 @@ class ScholarshipService {
       
       return {
         ...scholarship,
-        field_of_study: JSON.parse(scholarship.field_of_study || '[]'),
-        eligibility_criteria: JSON.parse(scholarship.eligibility_criteria || '{}'),
-        required_documents: JSON.parse(scholarship.required_documents || '[]'),
-        language_requirements: JSON.parse(scholarship.language_requirements || '{}'),
-        nationality_restrictions: JSON.parse(scholarship.nationality_restrictions || '[]'),
-        tags: JSON.parse(scholarship.tags || '[]')
+        field_of_study: this.parseJSONField(scholarship.field_of_study, []),
+        eligibility_criteria: this.parseJSONField(scholarship.eligibility_criteria, {}),
+        required_documents: this.parseJSONField(scholarship.required_documents, []),
+        language_requirements: this.parseJSONField(scholarship.language_requirements, {}),
+        nationality_restrictions: this.parseJSONField(scholarship.nationality_restrictions, []),
+        tags: this.parseJSONField(scholarship.tags, [])
       };
     } catch (error) {
       console.error('Error fetching scholarship:', error);
@@ -377,27 +390,30 @@ class ScholarshipService {
         params.push(filters.degree_level);
       }
 
+      if (filters.provider_id) {
+        conditions.push('s.provider_id = ?');
+        params.push(filters.provider_id);
+      }
+
       if (conditions.length > 0) {
         query += ' AND ' + conditions.join(' AND ');
       }
 
       query += ' GROUP BY s.id ORDER BY s.is_featured DESC, s.created_at DESC';
 
-      if (filters.limit) {
-        query += ' LIMIT ?';
-        params.push(filters.limit);
-      }
+      const limit = filters.limit && !isNaN(filters.limit) ? parseInt(filters.limit) : 20;
+      query += ` LIMIT ${limit}`;
 
       const scholarships = await executeQuery(query, params);
       
       return scholarships.map(scholarship => ({
         ...scholarship,
-        field_of_study: JSON.parse(scholarship.field_of_study || '[]'),
-        eligibility_criteria: JSON.parse(scholarship.eligibility_criteria || '{}'),
-        required_documents: JSON.parse(scholarship.required_documents || '[]'),
-        language_requirements: JSON.parse(scholarship.language_requirements || '{}'),
-        nationality_restrictions: JSON.parse(scholarship.nationality_restrictions || '[]'),
-        tags: JSON.parse(scholarship.tags || '[]')
+        field_of_study: this.parseJSONField(scholarship.field_of_study, []),
+        eligibility_criteria: this.parseJSONField(scholarship.eligibility_criteria, {}),
+        required_documents: this.parseJSONField(scholarship.required_documents, []),
+        language_requirements: this.parseJSONField(scholarship.language_requirements, {}),
+        nationality_restrictions: this.parseJSONField(scholarship.nationality_restrictions, []),
+        tags: this.parseJSONField(scholarship.tags, [])
       }));
     } catch (error) {
       console.error('Error searching scholarships:', error);
@@ -568,10 +584,9 @@ class ScholarshipService {
 
       query += ' ORDER BY sa.created_at DESC';
 
-      if (filters.limit) {
-        query += ' LIMIT ?';
-        params.push(filters.limit);
-      }
+      const limit = filters.limit && !isNaN(filters.limit) ? filters.limit : 20;
+      query += ' LIMIT ?';
+      params.push(limit);
 
       const applications = await executeQuery(query, params);
       

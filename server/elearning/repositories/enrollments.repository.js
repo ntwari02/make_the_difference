@@ -14,6 +14,11 @@ const getEnrollment = async (courseId, userId) => {
 	return rows[0] || null;
 };
 
+const getEnrollmentById = async (enrollmentId) => {
+	const rows = await executeQuery(`SELECT * FROM course_enrollments WHERE id = ?`, [enrollmentId]);
+	return rows[0] || null;
+};
+
 const updateEnrollment = async (enrollmentId, updates) => {
 	const set = [];
 	const params = [];
@@ -96,6 +101,7 @@ const getStudentsWithProgress = async ({ limit = 20, offset = 0, organization_id
 module.exports = {
 	enroll,
 	getEnrollment,
+	getEnrollmentById,
 	updateEnrollment,
 	getUserEnrollments,
 	getStudentsWithProgress

@@ -92,6 +92,7 @@ class AIPersonalizationService {
   // Get personalized content
   async getPersonalizedContent(userId, contentType = 'homepage') {
     try {
+      console.log('DEBUG: getPersonalizedContent called with contentType:', contentType);
       const userProfile = await this.getUserProfile(userId);
       
       let content = {};
@@ -108,6 +109,9 @@ class AIPersonalizationService {
           break;
         case 'email':
           content = await this.getPersonalizedEmailContent(userProfile);
+          break;
+        case 'courses':
+          content = await this.getPersonalizedCourses(userProfile);
           break;
         default:
           content = await this.getPersonalizedHomepage(userProfile);
@@ -442,11 +446,60 @@ class AIPersonalizationService {
     return {};
   }
 
+  async getPersonalizedCourses(userProfile) {
+    // Generate personalized course recommendations
+    try {
+      const { executeQuery } = require('../../config/database');
+      
+      // Get courses based on user profile
+      const query = `
+        SELECT 
+          c.*,
+          AVG(cr.rating) as avg_rating,
+          COUNT(cr.id) as review_count,
+          COUNT(ce.id) as enrollment_count
+        FROM courses c
+        LEFT JOIN course_reviews cr ON c.id = cr.course_id
+        LEFT JOIN course_enrollments ce ON c.id = ce.course_id
+        WHERE c.is_published = 1
+        GROUP BY c.id
+        ORDER BY 
+          CASE WHEN ? = 'browser' THEN c.student_count END DESC,
+          CASE WHEN ? = 'researcher' THEN avg_rating END DESC,
+          CASE WHEN ? = 'decisive' THEN c.created_at END DESC,
+          CASE WHEN ? = 'collector' THEN c.rating END DESC,
+          c.student_count DESC
+        LIMIT 10
+      `;
+      
+      const shoppingStyle = userProfile.personality_insights?.shopping_style || 'decisive';
+      const courses = await executeQuery(query, [shoppingStyle, shoppingStyle, shoppingStyle, shoppingStyle]);
+      
+      return {
+        recommended_courses: courses,
+        personalization_reason: `Based on your ${shoppingStyle} learning style`,
+        total_courses: courses.length,
+        filters_applied: {
+          shopping_style: shoppingStyle,
+          price_sensitivity: userProfile.personality_insights?.price_sensitivity || 0.5
+        }
+      };
+    } catch (error) {
+      console.error('Error getting personalized courses:', error);
+      return {
+        recommended_courses: [],
+        personalization_reason: 'Unable to personalize courses at this time',
+        total_courses: 0,
+        filters_applied: {}
+      };
+    }
+  }
+
   getPersonalizationFactors(userProfile) {
     return {
-      behavior_score: userProfile.personalization_score,
-      confidence_level: userProfile.confidence_level,
-      shopping_style: userProfile.personality_insights.shopping_style
+      behavior_score: userProfile.personalization_score || 0,
+      confidence_level: userProfile.confidence_level || 0,
+      shopping_style: userProfile.personality_insights?.shopping_style || 'unknown'
     };
   }
 
