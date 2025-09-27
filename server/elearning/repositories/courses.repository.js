@@ -16,7 +16,7 @@ const findCourses = async ({ q, category, level, language, minPrice, maxPrice, i
 	if (maxPrice != null) { where.push('c.price <= ?'); params.push(maxPrice); }
 	if (isFeatured != null) { where.push('c.is_featured = ?'); params.push(!!isFeatured); }
 	if (isPublished != null) { where.push('c.is_published = ?'); params.push(!!isPublished); }
-	if (organization_id) { where.push('(c.organization_id = ? OR c.organization_id IS NULL)'); params.push(organization_id); } else { where.push('c.organization_id IS NULL'); }
+	// Note: organization_id filtering removed as courses table does not have this column
 	const order = ['title', 'price', 'rating', 'created_at', 'student_count'].includes(sortBy) ? sortBy : 'created_at';
 	const dir = (sortDir || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 	const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -33,7 +33,7 @@ const getCourseById = async (courseId) => {
 
 const createCourse = async (course) => {
 	const fields = [
-		'id','title','description','short_description','price','currency','category','subcategory','level','language','duration_hours','thumbnail','preview_video','syllabus','requirements','learning_outcomes','tags','is_published','is_featured','status','instructor_id','completion_certificate','has_live_classes','live_class_schedule','organization_id'
+		'id','title','description','short_description','price','currency','category','subcategory','level','language','duration_hours','thumbnail','preview_video','syllabus','requirements','learning_outcomes','tags','is_published','is_featured','status','instructor_id','completion_certificate','has_live_classes','live_class_schedule'
 	];
 	const placeholders = fields.map(() => '?').join(',');
 	const values = fields.map((f) => course[f] ?? null);
@@ -65,13 +65,86 @@ const publishWorkflow = async (courseId, status) => {
 	return getCourseById(courseId);
 };
 
+const getTrendingCourses = async ({ limit = 20, offset = 0, organization_id = null }) => {
+	const where = [];
+	const params = [];
+	
+	where.push('c.is_published = 1');
+	where.push('c.status = "published"');
+	
+	// Note: organization_id filtering removed as courses table does not have this column
+	
+	const whereSql = `WHERE ${where.join(' AND ')}`;
+	const safeLimit = Number.isFinite(Number(limit)) ? Math.max(0, parseInt(limit, 10)) : 20;
+	const safeOffset = Number.isFinite(Number(offset)) ? Math.max(0, parseInt(offset, 10)) : 0;
+	
+	const sql = `
+		SELECT c.*, 
+			COALESCE(e.enrollment_count, 0) as enrollment_count,
+			COALESCE(r.avg_rating, 0) as avg_rating,
+			COALESCE(r.review_count, 0) as review_count
+		FROM courses c
+		LEFT JOIN (
+			SELECT course_id, COUNT(*) as enrollment_count
+			FROM course_enrollments 
+			GROUP BY course_id
+		) e ON c.id = e.course_id
+		LEFT JOIN (
+			SELECT course_id, AVG(rating) as avg_rating, COUNT(*) as review_count
+			FROM course_reviews 
+			GROUP BY course_id
+		) r ON c.id = r.course_id
+		${whereSql}
+		ORDER BY (e.enrollment_count * 0.4 + r.avg_rating * 0.3 + r.review_count * 0.3) DESC, c.created_at DESC
+		LIMIT ${safeLimit} OFFSET ${safeOffset}
+	`;
+	
+	return executeQuery(sql, params);
+};
+
+const getCategories = async () => {
+	const sql = `
+		SELECT DISTINCT category, COUNT(*) as course_count
+		FROM courses 
+		WHERE is_published = 1 AND status = 'published'
+		GROUP BY category
+		ORDER BY course_count DESC, category ASC
+	`;
+	return executeQuery(sql);
+};
+
+const searchCourses = async (query, { limit = 20, offset = 0, organization_id = null }) => {
+	const where = [];
+	const params = [];
+	
+	// Search in title, description, and tags
+	where.push('(c.title LIKE ? OR c.description LIKE ? OR c.tags LIKE ?)');
+	const searchTerm = `%${query}%`;
+	params.push(searchTerm, searchTerm, searchTerm);
+	
+	where.push('c.is_published = 1');
+	where.push('c.status = "published"');
+	
+	// Note: organization_id filtering removed as courses table does not have this column
+	
+	const whereSql = `WHERE ${where.join(' AND ')}`;
+	const safeLimit = Number.isFinite(Number(limit)) ? Math.max(0, parseInt(limit, 10)) : 20;
+	const safeOffset = Number.isFinite(Number(offset)) ? Math.max(0, parseInt(offset, 10)) : 0;
+	
+	const sql = `${selectCourseBase} ${whereSql} ORDER BY c.created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`;
+	return executeQuery(sql, params);
+};
+
 module.exports = {
 	findCourses,
 	getCourseById,
 	createCourse,
 	updateCourse,
 	deleteCourse,
-	publishWorkflow
+	publishWorkflow,
+	getTrendingCourses,
+	getCategories,
+	searchCourses
 };
 
 

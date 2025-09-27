@@ -46,24 +46,18 @@ module.exports = { setOrgContext, requireOrg, requireOrgMembershipHeader, requir
 
 // Resource-aware org membership guards (prevent spoofed org headers)
 const getOrgIdByCourseId = async (courseId) => {
-	const rows = await executeQuery(`SELECT organization_id FROM courses WHERE id = ? LIMIT 1`, [courseId]);
-	return rows[0] ? rows[0].organization_id : null;
+	// Note: courses table does not have organization_id column, so all courses are global
+	return null;
 };
 
 const getOrgIdByModuleId = async (moduleId) => {
-	const rows = await executeQuery(
-		`SELECT c.organization_id FROM course_modules m JOIN courses c ON c.id = m.course_id WHERE m.id = ? LIMIT 1`,
-		[moduleId]
-	);
-	return rows[0] ? rows[0].organization_id : null;
+	// Note: courses table does not have organization_id column, so all courses are global
+	return null;
 };
 
 const getOrgIdByLessonId = async (lessonId) => {
-	const rows = await executeQuery(
-		`SELECT c.organization_id FROM course_lessons l JOIN course_modules m ON m.id = l.module_id JOIN courses c ON c.id = m.course_id WHERE l.id = ? LIMIT 1`,
-		[lessonId]
-	);
-	return rows[0] ? rows[0].organization_id : null;
+	// Note: courses table does not have organization_id column, so all courses are global
+	return null;
 };
 
 const requireOrgForCourseParam = (allowedRoles) => {

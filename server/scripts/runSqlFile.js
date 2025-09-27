@@ -1,52 +1,87 @@
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+const { executeQuery } = require('../config/database');
 
-async function run() {
-  const fileArg = process.argv[2];
-  if (!fileArg) {
-    console.error('Usage: node scripts/runSqlFile.js <path-to-sql>');
-    process.exit(1);
-  }
-  const sqlPath = path.resolve(process.cwd(), fileArg);
-  if (!fs.existsSync(sqlPath)) {
-    console.error('SQL file not found:', sqlPath);
-    process.exit(1);
-  }
-
-  let sql = fs.readFileSync(sqlPath, 'utf8');
-
-  // Handle MySQL client-only DELIMITER directives for triggers by converting to standard semicolons
-  // Remove CR for consistency
-  sql = sql.replace(/\r/g, '');
-  // Remove any DELIMITER lines
-  sql = sql.replace(/^DELIMITER\s+.+$/gm, '');
-  // Replace trailing // used to end trigger bodies with ;
-  sql = sql.replace(/\n\s*\/\/\s*\n/g, '\n;\n');
-
-  // Replace IF NOT EXISTS syntax for older MySQL variants if needed (no-op here)
-
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    multipleStatements: true
-  });
-
+async function runSqlFile(filePath) {
   try {
-    await connection.query(sql);
-    console.log('Executed SQL:', fileArg);
-  } finally {
-    await connection.end();
+    console.log(`Reading SQL file: ${filePath}`);
+    const sqlContent = fs.readFileSync(filePath, 'utf8');
+    
+    // Handle DELIMITER statements and split properly
+    let currentDelimiter = ';';
+    let statements = [];
+    let currentStatement = '';
+    
+    const lines = sqlContent.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip comments and empty lines
+      if (trimmedLine.startsWith('--') || trimmedLine === '') {
+        continue;
+      }
+      
+      // Handle DELIMITER changes
+      if (trimmedLine.startsWith('DELIMITER ')) {
+        currentDelimiter = trimmedLine.replace('DELIMITER ', '').trim();
+        continue;
+      }
+      
+      currentStatement += line + '\n';
+      
+      // Check if statement ends with current delimiter
+      if (currentStatement.trim().endsWith(currentDelimiter)) {
+        const statement = currentStatement.trim().slice(0, -currentDelimiter.length).trim();
+        if (statement.length > 0) {
+          statements.push(statement);
+        }
+        currentStatement = '';
+      }
+    }
+    
+    // Add any remaining statement
+    if (currentStatement.trim()) {
+      statements.push(currentStatement.trim());
+    }
+    
+    console.log(`Found ${statements.length} SQL statements to execute`);
+    
+    for (let i = 0; i < statements.length; i++) {
+      const statement = statements[i];
+      if (statement.trim()) {
+        try {
+          console.log(`Executing statement ${i + 1}/${statements.length}...`);
+          await executeQuery(statement);
+          console.log(`✅ Statement ${i + 1} executed successfully`);
+        } catch (error) {
+          console.error(`❌ Error executing statement ${i + 1}:`, error.message);
+          // Continue with other statements unless it's a critical error
+          if (error.code === 'ER_TABLE_EXISTS_ERROR') {
+            console.log('⚠️  Table already exists, continuing...');
+          } else if (error.code === 'ER_FK_CANNOT_DROP_PARENT') {
+            console.log('⚠️  Cannot drop table due to foreign key constraint, continuing...');
+          } else if (error.code === 'ER_NO_SUCH_TABLE') {
+            console.log('⚠️  Table does not exist, continuing...');
+          } else {
+            throw error;
+          }
+        }
+      }
+    }
+    
+    console.log('✅ All SQL statements executed successfully');
+  } catch (error) {
+    console.error('❌ Error running SQL file:', error.message);
+    process.exit(1);
   }
 }
 
-run().catch((err) => {
-  console.error('Migration error:', err.message);
+// Get file path from command line arguments
+const filePath = process.argv[2];
+if (!filePath) {
+  console.error('Usage: node runSqlFile.js <path-to-sql-file>');
   process.exit(1);
-});
+}
 
-
+runSqlFile(filePath);

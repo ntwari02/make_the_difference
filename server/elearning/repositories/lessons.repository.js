@@ -1,24 +1,30 @@
 const { executeQuery } = require('../../config/database');
 
 const getLessonsByModule = async (moduleId, organizationId = null) => {
-	if (organizationId) {
-		return executeQuery(
-			`SELECT l.* FROM course_lessons l
-			 JOIN course_modules m ON m.id = l.module_id
-			 JOIN courses c ON c.id = m.course_id
-			 WHERE l.module_id = ? AND (c.organization_id = ? OR c.organization_id IS NULL)
-			 ORDER BY l.order_index ASC`,
-			[moduleId, organizationId]
-		);
-	}
+	// Note: courses table does not have organization_id column, so all courses are global
+	// Organization filtering is not applicable for lessons
 	return executeQuery(
 		`SELECT l.* FROM course_lessons l
 		 JOIN course_modules m ON m.id = l.module_id
 		 JOIN courses c ON c.id = m.course_id
-		 WHERE l.module_id = ? AND c.organization_id IS NULL
+		 WHERE l.module_id = ?
 		 ORDER BY l.order_index ASC`,
 		[moduleId]
 	);
+};
+
+const getLessonById = async (lessonId, organizationId = null) => {
+	// Note: courses table does not have organization_id column, so all courses are global
+	// Organization filtering is not applicable for lessons
+	const rows = await executeQuery(
+		`SELECT l.* FROM course_lessons l
+		 JOIN course_modules m ON m.id = l.module_id
+		 JOIN courses c ON c.id = m.course_id
+		 WHERE l.id = ?
+		 LIMIT 1`,
+		[lessonId]
+	);
+	return rows[0] || null;
 };
 
 const createLesson = async (lesson) => {
@@ -47,6 +53,7 @@ const deleteLesson = async (lessonId) => {
 
 module.exports = {
 	getLessonsByModule,
+	getLessonById,
 	createLesson,
 	updateLesson,
 	deleteLesson
