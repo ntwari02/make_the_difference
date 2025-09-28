@@ -218,10 +218,9 @@ This certificate can be verified at: ${process.env.FRONTEND_URL || 'http://local
     
     query += ' ORDER BY c.issue_date DESC';
     
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
+    // Use LIMIT without parameter binding to avoid SQL issues
+    const limit = filters.limit || 20;
+    query += ` LIMIT ${parseInt(limit)}`;
     
     return await executeQuery(query, params);
   }
