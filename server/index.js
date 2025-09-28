@@ -34,6 +34,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/orgs', require('./elearning/routes/org.routes'));
 app.use('/api/elearning', require('./elearning/routes/elearning.routes'));
+app.use('/api/quiz', require('./elearning/routes/quiz.routes'));
 app.use('/api/online-classes', require('./elearning/routes/online-classes.routes'));
 app.use('/api/certificates', require('./elearning/routes/certificate.routes'));
 app.use('/api/elearning-payments', require('./elearning/routes/elearning-payment.routes'));

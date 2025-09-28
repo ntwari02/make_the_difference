@@ -7,7 +7,15 @@ const validateCreateQuizQuestions = [
   body('questions.*.question_text').isString().isLength({ min: 10 }),
   body('questions.*.question_type').isIn(['multiple_choice', 'true_false', 'fill_blank', 'short_answer', 'essay']),
   body('questions.*.correct_answer').isString().isLength({ min: 1 }),
-  body('questions.*.options').optional().isObject(),
+  body('questions.*.options').optional().custom((value) => {
+    if (Array.isArray(value)) {
+      return value.length >= 2; // At least 2 options for multiple choice
+    }
+    if (typeof value === 'object' && value !== null) {
+      return true; // Allow object format too
+    }
+    throw new Error('Options must be an array or object');
+  }),
   body('questions.*.explanation').optional().isString(),
   body('questions.*.points').optional().isInt({ min: 1, max: 10 }),
   body('questions.*.difficulty').optional().isIn(['easy', 'medium', 'hard'])

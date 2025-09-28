@@ -30,6 +30,11 @@ const updateModule = async (moduleId, updates) => {
 	return rows[0] || null;
 };
 
+const getModuleById = async (moduleId) => {
+	const rows = await executeQuery(`SELECT * FROM course_modules WHERE id = ? LIMIT 1`, [moduleId]);
+	return rows[0] || null;
+};
+
 const deleteModule = async (moduleId) => {
 	await executeQuery(`DELETE FROM course_modules WHERE id = ?`, [moduleId]);
 	return { success: true };
@@ -37,6 +42,7 @@ const deleteModule = async (moduleId) => {
 
 module.exports = {
 	getModulesByCourse,
+	getModuleById,
 	createModule,
 	updateModule,
 	deleteModule
