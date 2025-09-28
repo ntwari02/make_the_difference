@@ -51,6 +51,8 @@ app.use('/api/competitive', require('./routes/competitive-features.routes'));
 app.use('/api/advertising', require('./routes/advertising.routes'));
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
+app.use('/api/password-reset', require('./routes/passwordReset.routes'));
 
 // Start server after DB check
 (async () => {

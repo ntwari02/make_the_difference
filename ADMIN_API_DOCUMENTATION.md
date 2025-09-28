@@ -1075,6 +1075,180 @@ X-RateLimit-Reset: 1640995200
 
 ---
 
+## Security Questions Management
+
+### Get Available Security Questions
+Get all available security questions for user setup.
+
+**Endpoint:** `GET /security-questions`
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "question_123",
+      "question_text": "What is your mother's maiden name?",
+      "category": "family"
+    },
+    {
+      "id": "question_456",
+      "question_text": "What was the name of your first pet?",
+      "category": "childhood"
+    }
+  ]
+}
+```
+
+### Get Security Questions by Category
+Get security questions filtered by category.
+
+**Endpoint:** `GET /security-questions/category/:category`
+
+**Valid Categories:** `personal`, `family`, `childhood`, `education`, `work`, `location`, `preference`
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "question_123",
+      "question_text": "What is your mother's maiden name?",
+      "category": "family"
+    }
+  ]
+}
+```
+
+### Get User's Security Questions
+Get security questions set up by a specific user (admin only).
+
+**Endpoint:** `GET /users/:userId/security-questions`
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "user_question_123",
+      "question_text": "What is your mother's maiden name?",
+      "category": "family"
+    }
+  ]
+}
+```
+
+### Delete User's Security Questions
+Remove all security questions for a user (admin only).
+
+**Endpoint:** `DELETE /users/:userId/security-questions`
+
+**Response:**
+```json
+{
+  "message": "Security questions deleted successfully"
+}
+```
+
+---
+
+## Password Reset Management
+
+### Get Password Reset Options
+Get available password reset methods for a user.
+
+**Endpoint:** `GET /password-reset/options/:email`
+
+**Response:**
+```json
+{
+  "data": {
+    "options": [
+      {
+        "method": "security_questions",
+        "name": "Security Questions",
+        "description": "Answer your security questions to reset your password"
+      },
+      {
+        "method": "email",
+        "name": "Email Reset",
+        "description": "Receive a password reset link via email"
+      }
+    ]
+  }
+}
+```
+
+### Initiate Password Reset
+Start the password reset process with security questions.
+
+**Endpoint:** `POST /password-reset/initiate`
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "answers": [
+    {
+      "questionId": "question_123",
+      "answer": "Smith"
+    },
+    {
+      "questionId": "question_456",
+      "answer": "Fluffy"
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "resetToken": "abc123def456",
+    "expiresAt": "2024-01-20T15:30:00Z",
+    "message": "Security questions verified. You can now reset your password."
+  }
+}
+```
+
+### Reset Password
+Complete password reset using the token from security questions verification.
+
+**Endpoint:** `POST /password-reset/reset`
+
+**Request Body:**
+```json
+{
+  "token": "abc123def456",
+  "newPassword": "newSecurePassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Password reset successfully"
+}
+```
+
+### Verify Reset Token
+Check if a password reset token is valid.
+
+**Endpoint:** `GET /password-reset/verify/:token`
+
+**Response:**
+```json
+{
+  "data": {
+    "valid": true,
+    "email": "user@example.com"
+  }
+}
+```
+
+---
+
 ## Support
 
 For technical support or questions about the Admin API:
