@@ -5,7 +5,7 @@ This documentation covers all administrative API endpoints and features availabl
 
 ## Base URL
 ```
-http://localhost:3000/api/admin
+http://localhost:3001/api/admin
 ```
 
 ## Authentication

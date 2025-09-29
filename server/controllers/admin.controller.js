@@ -1,6 +1,9 @@
 const { executeQuery } = require('../config/database');
 const { ok, created, noContent, badRequest, unauthorized, forbidden, notFound, serverError } = require('../utils/response');
 
+// Reference to the controller instance for internal method calls
+let adminController;
+
 class AdminController {
   
   // Dashboard Overview
@@ -16,11 +19,11 @@ class AdminController {
         onlineClassesStats,
         revenueStats
       ] = await Promise.all([
-        this.getUserStatistics(period),
-        this.getEcommerceStatistics(period),
-        this.getElearningStatistics(period),
-        this.getOnlineClassesStatistics(period),
-        this.getRevenueStatistics(period)
+        adminController.getUserStatistics(period),
+        adminController.getEcommerceStatistics(period),
+        adminController.getElearningStatistics(period),
+        adminController.getOnlineClassesStatistics(period),
+        adminController.getRevenueStatistics(period)
       ]);
       
       const overview = {
@@ -453,12 +456,12 @@ class AdminController {
       const { period = '30d' } = req.query;
       
       const analytics = {
-        users: await this.getUserStatistics(period),
-        ecommerce: await this.getEcommerceStatistics(period),
-        elearning: await this.getElearningStatistics(period),
-        online_classes: await this.getOnlineClassesStatistics(period),
-        certificates: await this.getCertificateStatistics(period),
-        revenue: await this.getRevenueStatistics(period),
+        users: await adminController.getUserStatistics(period),
+        ecommerce: await adminController.getEcommerceStatistics(period),
+        elearning: await adminController.getElearningStatistics(period),
+        online_classes: await adminController.getOnlineClassesStatistics(period),
+        certificates: await adminController.getCertificateStatistics(period),
+        revenue: await adminController.getRevenueStatistics(period),
         period,
         generated_at: new Date().toISOString()
       };
@@ -475,7 +478,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getEcommerceStatistics(period);
+      const analytics = await adminController.getEcommerceStatistics(period);
       
       // Add additional ecommerce metrics
       const additionalMetrics = await executeQuery(`
@@ -486,7 +489,7 @@ class AdminController {
           COUNT(CASE WHEN status = 'sold' THEN 1 END) as total_sales,
           COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_listings
         FROM cars
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -507,7 +510,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getElearningStatistics(period);
+      const analytics = await adminController.getElearningStatistics(period);
       
       // Add additional elearning metrics
       const additionalMetrics = await executeQuery(`
@@ -518,7 +521,7 @@ class AdminController {
           COUNT(DISTINCT instructor_id) as active_instructors
         FROM courses
         WHERE rating IS NOT NULL
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -539,7 +542,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getOnlineClassesStatistics(period);
+      const analytics = await adminController.getOnlineClassesStatistics(period);
       
       // Add additional online classes metrics
       const additionalMetrics = await executeQuery(`
@@ -549,7 +552,7 @@ class AdminController {
           COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_classes,
           COUNT(CASE WHEN status = 'live' THEN 1 END) as currently_live
         FROM online_classes
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -570,7 +573,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getCertificateStatistics(period);
+      const analytics = await adminController.getCertificateStatistics(period);
       
       // Add additional certificate metrics
       const additionalMetrics = await executeQuery(`
@@ -579,7 +582,7 @@ class AdminController {
           COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_certificates,
           COUNT(CASE WHEN status = 'issued' THEN 1 END) as total_issued
         FROM certificates
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -1151,7 +1154,7 @@ class AdminController {
 
   // Helper methods for statistics
   async getUserStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1170,7 +1173,7 @@ class AdminController {
   }
 
   async getEcommerceStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1186,7 +1189,7 @@ class AdminController {
   }
 
   async getElearningStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1200,7 +1203,7 @@ class AdminController {
   }
 
   async getOnlineClassesStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1215,7 +1218,7 @@ class AdminController {
   }
 
   async getCertificateStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1264,4 +1267,5 @@ class AdminController {
   }
 }
 
-module.exports = new AdminController();
+adminController = new AdminController();
+module.exports = adminController;

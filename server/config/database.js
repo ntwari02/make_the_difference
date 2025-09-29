@@ -45,47 +45,130 @@ function buildDbConfigFromEnv() {
     database,
     ssl: needsSSL ? { rejectUnauthorized: false } : undefined,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 20, // Increased from 10
     queueLimit: 0,
-    acquireTimeout: 60000, // 60 seconds - valid for connection pool
-    idleTimeout: 300000 // 5 minutes
+    acquireTimeout: 30000, // Reduced from 60 seconds to 30 seconds
+    timeout: 20000, // Query timeout
+    reconnect: true, // Enable automatic reconnection
+    idleTimeout: 600000, // Increased to 10 minutes
+    maxReconnects: 5, // Maximum reconnection attempts
+    reconnectDelay: 2000, // Delay between reconnection attempts
+    charset: 'utf8mb4',
+    timezone: 'Z',
+    // Additional connection options for better stability
+    supportBigNumbers: true,
+    bigNumberStrings: true,
+    dateStrings: false,
+    debug: false,
+    trace: false,
+    // Connection pool specific options
+    multipleStatements: false,
+    namedPlaceholders: true
   };
 }
 
 // MySQL Database Configuration
 const dbConfig = buildDbConfigFromEnv();
 
-// Create connection pool
+// Create connection pool with enhanced error handling
 const pool = mysql.createPool(dbConfig);
 
-// Test database connection
+// Add connection pool event listeners for better monitoring
+pool.on('connection', (connection) => {
+  console.log('🔗 New database connection established as id ' + connection.threadId);
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Database pool error:', err);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.log('🔄 Connection lost, pool will handle reconnection automatically');
+  }
+});
+
+// Connection health check
+let isHealthy = true;
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 3;
+
+// Test database connection with circuit breaker
 const testConnection = async () => {
+  if (!isHealthy && consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+    console.log('🚫 Circuit breaker open - skipping connection test');
+    return false;
+  }
+
   try {
     const connection = await pool.getConnection();
+    await connection.ping(); // Test the connection with a ping
     connection.release();
+    
+    // Reset failure counter on successful connection
+    consecutiveFailures = 0;
+    isHealthy = true;
     return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    consecutiveFailures++;
+    isHealthy = false;
+    console.error(`❌ Database connection failed (attempt ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, error.message);
+    
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.log('🚨 Circuit breaker opened - too many consecutive failures');
+    }
+    
     return false;
   }
 };
 
-// Execute query helper with retry logic
+// Health check function
+const getConnectionHealth = () => ({
+  isHealthy,
+  consecutiveFailures,
+  maxFailures: MAX_CONSECUTIVE_FAILURES,
+  poolStats: {
+    totalConnections: pool._allConnections?.length || 0,
+    freeConnections: pool._freeConnections?.length || 0,
+    acquiringConnections: pool._acquiringConnections?.length || 0
+  }
+});
+
+// Execute query helper with enhanced retry logic and circuit breaker
 const executeQuery = async (query, params = [], retries = 3) => {
+  // Check circuit breaker before attempting query
+  if (!isHealthy && consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+    throw new Error('Database circuit breaker is open - too many consecutive failures');
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const [results] = await pool.execute(query, params);
+      
+      // Reset failure counter on successful query
+      if (attempt > 1) {
+        consecutiveFailures = 0;
+        isHealthy = true;
+      }
+      
       return results;
     } catch (error) {
       console.error(`Database query error (attempt ${attempt}/${retries}):`, error.message);
+      
+      // Handle specific connection errors
+      if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
+        consecutiveFailures++;
+        isHealthy = false;
+        console.log(`🔄 Connection lost, attempt ${attempt}/${retries}`);
+      }
       
       if (attempt === retries) {
         throw error;
       }
       
-      // Wait before retry (exponential backoff)
-      const delay = Math.pow(2, attempt) * 1000;
-      console.log(`Retrying in ${delay}ms...`);
+      // Wait before retry with exponential backoff and jitter
+      const baseDelay = Math.pow(2, attempt) * 1000;
+      const jitter = Math.random() * 1000; // Add randomness to prevent thundering herd
+      const delay = baseDelay + jitter;
+      
+      console.log(`Retrying in ${Math.round(delay)}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -117,5 +200,7 @@ module.exports = {
   pool,
   testConnection,
   executeQuery,
-  executeTransaction
+  executeTransaction,
+  getConnectionHealth,
+  dbConfig
 };
