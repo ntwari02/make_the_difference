@@ -16,7 +16,15 @@ const validateCreateUser = [
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('first_name').isLength({ min: 1, max: 100 }).withMessage('First name is required and must be less than 100 characters'),
   body('last_name').isLength({ min: 1, max: 100 }).withMessage('Last name is required and must be less than 100 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('phone').optional().custom((value) => {
+    if (!value) return true; // Optional field
+    // Allow various phone number formats
+    const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/;
+    if (!phoneRegex.test(value)) {
+      throw new Error('Valid phone number is required');
+    }
+    return true;
+  }),
   body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
@@ -27,7 +35,15 @@ const validateUpdateUser = [
   body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('first_name').optional().isLength({ min: 1, max: 100 }).withMessage('First name must be less than 100 characters'),
   body('last_name').optional().isLength({ min: 1, max: 100 }).withMessage('Last name must be less than 100 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('phone').optional().custom((value) => {
+    if (!value) return true; // Optional field
+    // Allow various phone number formats
+    const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/;
+    if (!phoneRegex.test(value)) {
+      throw new Error('Valid phone number is required');
+    }
+    return true;
+  }),
   body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
