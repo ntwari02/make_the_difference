@@ -72,26 +72,30 @@ class SecurityQuestionsService {
             }
 
             // Hash answers and store
-            await db.beginTransaction();
+            const connection = await db.getConnection();
             
             try {
+                await connection.beginTransaction();
+                
                 // Clear existing security questions for this user
-                await db.execute('DELETE FROM user_security_questions WHERE user_id = ?', [userId]);
+                await connection.execute('DELETE FROM user_security_questions WHERE user_id = ?', [userId]);
 
                 // Insert new security questions
                 for (const question of questions) {
                     const answerHash = await bcrypt.hash(question.answer.toLowerCase().trim(), 12);
-                    await db.execute(
+                    await connection.execute(
                         'INSERT INTO user_security_questions (user_id, question_id, answer_hash) VALUES (?, ?, ?)',
                         [userId, question.questionId, answerHash]
                     );
                 }
 
-                await db.commit();
+                await connection.commit();
                 return { message: 'Security questions set up successfully' };
             } catch (error) {
-                await db.rollback();
+                await connection.rollback();
                 throw error;
+            } finally {
+                connection.release();
             }
         } catch (error) {
             throw new Error(`Failed to setup security questions: ${error.message}`);

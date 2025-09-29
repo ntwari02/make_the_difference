@@ -624,7 +624,7 @@ class AdminController {
       const { action, reason, moderator_notes } = req.body;
       
       // Log moderation action
-      await this.logAdminAction(req.user.id, 'moderate_content', {
+      await logAdminAction(req.user.id, 'moderate_content', {
         content_id: contentId,
         action,
         reason,
@@ -638,7 +638,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Moderate content error:', error);
-      return serverError(res, 'Failed to moderate content', error);
+      return res.status(500).json({ 
+        message: 'Failed to moderate content',
+        error: error.message 
+      });
     }
   }
 
@@ -648,7 +651,7 @@ class AdminController {
       const { reason } = req.body;
       
       // Log content removal
-      await this.logAdminAction(req.user.id, 'remove_content', {
+      await logAdminAction(req.user.id, 'remove_content', {
         content_id: contentId,
         reason
       });
@@ -660,7 +663,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Remove content error:', error);
-      return serverError(res, 'Failed to remove content', error);
+      return res.status(500).json({ 
+        message: 'Failed to remove content',
+        error: error.message 
+      });
     }
   }
 
@@ -690,7 +696,7 @@ class AdminController {
       const settings = req.body;
       
       // Log settings change
-      await this.logAdminAction(req.user.id, 'update_system_settings', { settings });
+      await logAdminAction(req.user.id, 'update_system_settings', { settings });
       
       return ok(res, {
         message: 'System settings updated successfully',
@@ -699,7 +705,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Update system settings error:', error);
-      return serverError(res, 'Failed to update system settings', error);
+      return res.status(500).json({
+        message: 'Failed to update system settings',
+        error: error.message
+      });
     }
   }
 
@@ -709,21 +718,24 @@ class AdminController {
       const featureFlags = await executeQuery(`
         SELECT 
           id,
-          name,
+          flag_name as name,
           description,
-          is_enabled,
-          target_percentage,
+          enabled as is_enabled,
+          rollout_percentage as target_percentage,
           created_at,
           updated_at
         FROM feature_flags
-        ORDER BY name
+        ORDER BY flag_name
       `);
       
       return ok(res, { data: featureFlags });
       
     } catch (error) {
       console.error('Get feature flags error:', error);
-      return serverError(res, 'Failed to retrieve feature flags', error);
+      return res.status(500).json({
+        message: 'Failed to retrieve feature flags',
+        error: error.message
+      });
     }
   }
 
@@ -732,15 +744,15 @@ class AdminController {
       const { flagId } = req.params;
       const { is_enabled, target_percentage, description } = req.body;
       
-      // Update feature flag
+      // Update feature flag (map API fields to database fields)
       await executeQuery(`
         UPDATE feature_flags 
-        SET is_enabled = ?, target_percentage = ?, description = ?, updated_at = NOW()
+        SET enabled = ?, rollout_percentage = ?, description = ?, updated_at = NOW()
         WHERE id = ?
       `, [is_enabled, target_percentage, description, flagId]);
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'update_feature_flag', {
+      await logAdminAction(req.user.id, 'update_feature_flag', {
         flag_id: flagId,
         is_enabled,
         target_percentage,
@@ -754,7 +766,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Update feature flag error:', error);
-      return serverError(res, 'Failed to update feature flag', error);
+      return res.status(500).json({
+        message: 'Failed to update feature flag',
+        error: error.message
+      });
     }
   }
 
@@ -827,26 +842,55 @@ class AdminController {
   async getUserActivityLogs(req, res) {
     try {
       const { userId } = req.params;
-      const { limit = 100 } = req.query;
+      const limit = parseInt(req.query.limit) || 100;
       
+      // First check if user exists
+      const userExists = await executeQuery(`
+        SELECT id, first_name, last_name, email FROM users WHERE id = ?
+      `, [userId]);
+      
+      if (userExists.length === 0) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      }
+      
+      // Get user activity logs without LIMIT first, then limit in JavaScript
       const activities = await executeQuery(`
         SELECT 
-          ua.*,
-          u.first_name,
-          u.last_name,
-          u.email
-        FROM user_activity ua
-        JOIN users u ON ua.user_id = u.id
+          ua.id,
+          ua.user_id,
+          ua.action,
+          ua.resource_type,
+          ua.resource_id,
+          ua.metadata,
+          ua.ip_address,
+          ua.user_agent,
+          ua.created_at
+        FROM user_activity_logs ua
         WHERE ua.user_id = ?
         ORDER BY ua.created_at DESC
-        LIMIT ?
-      `, [userId, limit]);
+      `, [userId]);
       
-      return ok(res, { data: activities });
+      // Limit results in JavaScript
+      const limitedActivities = activities.slice(0, limit);
+      
+      // Add user info to each activity
+      const activitiesWithUserInfo = limitedActivities.map(activity => ({
+        ...activity,
+        first_name: userExists[0].first_name,
+        last_name: userExists[0].last_name,
+        email: userExists[0].email
+      }));
+      
+      return ok(res, { data: activitiesWithUserInfo });
       
     } catch (error) {
       console.error('Get user activity logs error:', error);
-      return serverError(res, 'Failed to retrieve user activity logs', error);
+      return res.status(500).json({
+        message: 'Failed to retrieve user activity logs',
+        error: error.message
+      });
     }
   }
 
@@ -922,7 +966,7 @@ class AdminController {
       );
       
       // Log emergency action
-      await this.logAdminAction(req.user.id, 'emergency_suspend_user', {
+      await logAdminAction(req.user.id, 'emergency_suspend_user', {
         user_id,
         reason,
         duration,
@@ -936,7 +980,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Emergency suspend user error:', error);
-      return serverError(res, 'Failed to emergency suspend user', error);
+      return res.status(500).json({
+        message: 'Failed to emergency suspend user',
+        error: error.message
+      });
     }
   }
 
@@ -945,7 +992,7 @@ class AdminController {
       const { content_id, content_type, reason } = req.body;
       
       // Log emergency content removal
-      await this.logAdminAction(req.user.id, 'emergency_remove_content', {
+      await logAdminAction(req.user.id, 'emergency_remove_content', {
         content_id,
         content_type,
         reason,
@@ -959,7 +1006,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Emergency remove content error:', error);
-      return serverError(res, 'Failed to emergency remove content', error);
+      return res.status(500).json({
+        message: 'Failed to emergency remove content',
+        error: error.message
+      });
     }
   }
 
@@ -983,7 +1033,7 @@ class AdminController {
       }
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'toggle_maintenance_mode', {
+      await logAdminAction(req.user.id, 'toggle_maintenance_mode', {
         enabled,
         message
       });
@@ -995,7 +1045,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Toggle maintenance mode error:', error);
-      return serverError(res, 'Failed to toggle maintenance mode', error);
+      return res.status(500).json({
+        message: 'Failed to toggle maintenance mode',
+        error: error.message
+      });
     }
   }
 
@@ -1030,7 +1083,7 @@ class AdminController {
       `, [isActive, ...user_ids]);
       
       // Log bulk action
-      await this.logAdminAction(req.user.id, 'bulk_update_user_status', {
+      await logAdminAction(req.user.id, 'bulk_update_user_status', {
         user_ids,
         action,
         reason,
@@ -1044,7 +1097,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Bulk update user status error:', error);
-      return serverError(res, 'Failed to bulk update user status', error);
+      return res.status(500).json({
+        message: 'Failed to bulk update user status',
+        error: error.message
+      });
     }
   }
 
@@ -1058,7 +1114,7 @@ class AdminController {
       
       // Log bulk moderation action for each content item
       for (const contentId of content_ids) {
-        await this.logAdminAction(req.user.id, 'bulk_moderate_content', {
+        await logAdminAction(req.user.id, 'bulk_moderate_content', {
           content_id: contentId,
           action,
           reason,
@@ -1073,7 +1129,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Bulk moderate content error:', error);
-      return serverError(res, 'Failed to bulk moderate content', error);
+      return res.status(500).json({
+        message: 'Failed to bulk moderate content',
+        error: error.message
+      });
     }
   }
 
@@ -1101,30 +1160,28 @@ class AdminController {
         user_id: userId,
         title,
         message,
-        type: notification_type,
-        channels: JSON.stringify(channels),
-        created_at: new Date().toISOString()
+        type: 'in_app', // Use in_app as default type since it's in the ENUM
+        data: JSON.stringify({ channels, notification_type })
       }));
       
       // Insert notifications (this would be done in batches for large arrays)
       for (const notification of notifications) {
         await executeQuery(`
           INSERT INTO notifications (
-            id, user_id, title, message, type, channels, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            id, user_id, title, message, type, data
+          ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
           notification.id,
           notification.user_id,
           notification.title,
           notification.message,
           notification.type,
-          notification.channels,
-          notification.created_at
+          notification.data
         ]);
       }
       
       // Log bulk notification action
-      await this.logAdminAction(req.user.id, 'send_bulk_notifications', {
+      await logAdminAction(req.user.id, 'send_bulk_notifications', {
         user_ids,
         title,
         message,
@@ -1145,7 +1202,10 @@ class AdminController {
       
     } catch (error) {
       console.error('Send bulk notifications error:', error);
-      return serverError(res, 'Failed to send bulk notifications', error);
+      return res.status(500).json({
+        message: 'Failed to send bulk notifications',
+        error: error.message
+      });
     }
   }
 
@@ -1261,6 +1321,19 @@ class AdminController {
     } catch (error) {
       console.error('Failed to log admin action:', error);
     }
+  }
+}
+
+// Standalone helper function for logging admin actions
+async function logAdminAction(adminId, action, details) {
+  try {
+    await executeQuery(`
+      INSERT INTO admin_actions (
+        id, admin_id, action, details, created_at
+      ) VALUES (UUID(), ?, ?, ?, NOW())
+    `, [adminId, action, JSON.stringify(details)]);
+  } catch (error) {
+    console.error('Failed to log admin action:', error);
   }
 }
 
