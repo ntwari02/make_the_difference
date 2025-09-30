@@ -1,5 +1,5 @@
 const securityQuestionsService = require('../services/securityQuestions.service');
-const { successResponse, errorResponse } = require('../utils/response');
+const { ok } = require('../utils/response');
 
 class SecurityQuestionsController {
     /**
@@ -8,9 +8,12 @@ class SecurityQuestionsController {
     async getAvailableQuestions(req, res) {
         try {
             const questions = await securityQuestionsService.getAvailableQuestions();
-            return successResponse(res, questions, 'Security questions retrieved successfully');
+            return ok(res, { data: questions }, 'Security questions retrieved successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -24,13 +27,18 @@ class SecurityQuestionsController {
             // Validate category
             const validCategories = ['personal', 'family', 'childhood', 'education', 'work', 'location', 'preference'];
             if (!validCategories.includes(category)) {
-                return errorResponse(res, 'Invalid category', 400);
+                return res.status(400).json({
+                    message: 'Invalid category'
+                });
             }
 
             const questions = await securityQuestionsService.getQuestionsByCategory(category);
-            return successResponse(res, questions, 'Security questions retrieved successfully');
+            return ok(res, { data: questions }, 'Security questions retrieved successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -44,23 +52,32 @@ class SecurityQuestionsController {
 
             // Validate input
             if (!questions || !Array.isArray(questions)) {
-                return errorResponse(res, 'Questions array is required', 400);
+                return res.status(400).json({
+                    message: 'Questions array is required'
+                });
             }
 
             // Validate each question
             for (const question of questions) {
                 if (!question.questionId || !question.answer) {
-                    return errorResponse(res, 'Each question must have questionId and answer', 400);
+                    return res.status(400).json({
+                        message: 'Each question must have questionId and answer'
+                    });
                 }
                 if (typeof question.answer !== 'string' || question.answer.trim().length < 2) {
-                    return errorResponse(res, 'Answer must be at least 2 characters long', 400);
+                    return res.status(400).json({
+                        message: 'Answer must be at least 2 characters long'
+                    });
                 }
             }
 
             const result = await securityQuestionsService.setupSecurityQuestions(userId, questions);
-            return successResponse(res, result, 'Security questions set up successfully');
+            return ok(res, { data: result }, 'Security questions set up successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 400);
+            return res.status(400).json({
+                message: 'Failed to setup security questions',
+                error: error.message
+            });
         }
     }
 
@@ -71,9 +88,12 @@ class SecurityQuestionsController {
         try {
             const userId = req.user.id; // Assuming user is authenticated
             const questions = await securityQuestionsService.getUserSecurityQuestions(userId);
-            return successResponse(res, questions, 'User security questions retrieved successfully');
+            return ok(res, { data: questions }, 'User security questions retrieved successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -85,7 +105,9 @@ class SecurityQuestionsController {
             const { email, answers } = req.body;
 
             if (!email || !answers) {
-                return errorResponse(res, 'Email and answers are required', 400);
+                return res.status(400).json({
+                    message: 'Email and answers are required'
+                });
             }
 
             // Get user by email
@@ -93,7 +115,9 @@ class SecurityQuestionsController {
             const [users] = await db.execute('SELECT id FROM users WHERE email = ?', [email]);
             
             if (users.length === 0) {
-                return errorResponse(res, 'User not found', 404);
+                return res.status(404).json({
+                    message: 'User not found'
+                });
             }
 
             const userId = users[0].id;
@@ -101,21 +125,30 @@ class SecurityQuestionsController {
             // Check if user has security questions set up
             const hasQuestions = await securityQuestionsService.hasSecurityQuestions(userId);
             if (!hasQuestions) {
-                return errorResponse(res, 'No security questions set up for this account', 400);
+                return res.status(400).json({
+                    message: 'No security questions set up for this account'
+                });
             }
 
             const result = await securityQuestionsService.verifySecurityQuestions(userId, answers);
             
             if (result.verified) {
-                return successResponse(res, {
-                    resetToken: result.resetToken,
-                    expiresAt: result.expiresAt
+                return ok(res, {
+                    data: {
+                        resetToken: result.resetToken,
+                        expiresAt: result.expiresAt
+                    }
                 }, 'Security questions verified successfully. You can now reset your password.');
             } else {
-                return errorResponse(res, result.message, 400);
+                return res.status(400).json({
+                    message: result.message
+                });
             }
         } catch (error) {
-            return errorResponse(res, error.message, 400);
+            return res.status(400).json({
+                message: 'Failed to setup security questions',
+                error: error.message
+            });
         }
     }
 
@@ -127,7 +160,9 @@ class SecurityQuestionsController {
             const { email } = req.params;
 
             if (!email) {
-                return errorResponse(res, 'Email is required', 400);
+                return res.status(400).json({
+                    message: 'Email is required'
+                });
             }
 
             // Get user by email
@@ -135,7 +170,9 @@ class SecurityQuestionsController {
             const [users] = await db.execute('SELECT id FROM users WHERE email = ?', [email]);
             
             if (users.length === 0) {
-                return errorResponse(res, 'User not found', 404);
+                return res.status(404).json({
+                    message: 'User not found'
+                });
             }
 
             const userId = users[0].id;
@@ -143,13 +180,18 @@ class SecurityQuestionsController {
             // Check if user has security questions set up
             const hasQuestions = await securityQuestionsService.hasSecurityQuestions(userId);
             if (!hasQuestions) {
-                return errorResponse(res, 'No security questions set up for this account', 400);
+                return res.status(400).json({
+                    message: 'No security questions set up for this account'
+                });
             }
 
             const questions = await securityQuestionsService.getUserSecurityQuestions(userId);
-            return successResponse(res, questions, 'Security questions retrieved successfully');
+            return ok(res, { data: questions }, 'Security questions retrieved successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -160,9 +202,12 @@ class SecurityQuestionsController {
         try {
             const userId = req.user.id; // Assuming user is authenticated
             const hasQuestions = await securityQuestionsService.hasSecurityQuestions(userId);
-            return successResponse(res, { hasQuestions }, 'Security questions status retrieved successfully');
+            return ok(res, { data: { hasQuestions } }, 'Security questions status retrieved successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -173,9 +218,12 @@ class SecurityQuestionsController {
         try {
             const userId = req.user.id; // Assuming user is authenticated
             const result = await securityQuestionsService.deleteSecurityQuestions(userId);
-            return successResponse(res, result, 'Security questions deleted successfully');
+            return ok(res, { data: result }, 'Security questions deleted successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 500);
+            return res.status(500).json({
+                message: 'Failed to retrieve security questions',
+                error: error.message
+            });
         }
     }
 
@@ -189,13 +237,18 @@ class SecurityQuestionsController {
             const { answer } = req.body;
 
             if (!answer || typeof answer !== 'string' || answer.trim().length < 2) {
-                return errorResponse(res, 'Answer must be at least 2 characters long', 400);
+                return res.status(400).json({
+                    message: 'Answer must be at least 2 characters long'
+                });
             }
 
             const result = await securityQuestionsService.updateSecurityQuestion(userId, questionId, answer);
-            return successResponse(res, result, 'Security question updated successfully');
+            return ok(res, { data: result }, 'Security question updated successfully');
         } catch (error) {
-            return errorResponse(res, error.message, 400);
+            return res.status(400).json({
+                message: 'Failed to setup security questions',
+                error: error.message
+            });
         }
     }
 }

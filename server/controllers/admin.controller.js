@@ -718,14 +718,14 @@ class AdminController {
       const featureFlags = await executeQuery(`
         SELECT 
           id,
-          name,
+          flag_name as name,
           description,
-          is_enabled,
-          target_percentage,
+          enabled as is_enabled,
+          rollout_percentage as target_percentage,
           created_at,
           updated_at
         FROM feature_flags
-        ORDER BY name
+        ORDER BY flag_name
       `);
       
       return ok(res, { data: featureFlags });
@@ -741,10 +741,10 @@ class AdminController {
       const { flagId } = req.params;
       const { is_enabled, target_percentage, description } = req.body;
       
-      // Update feature flag
+      // Update feature flag (map API fields to database fields)
       await executeQuery(`
         UPDATE feature_flags 
-        SET is_enabled = ?, target_percentage = ?, description = ?, updated_at = NOW()
+        SET enabled = ?, rollout_percentage = ?, description = ?, updated_at = NOW()
         WHERE id = ?
       `, [is_enabled, target_percentage, description, flagId]);
       
@@ -836,25 +836,51 @@ class AdminController {
   async getUserActivityLogs(req, res) {
     try {
       const { userId } = req.params;
-      const { limit = 100 } = req.query;
+      const limit = parseInt(req.query.limit) || 100;
       
       // Convert limit to integer to fix parameter binding issue
       const limitInt = parseInt(limit, 10);
       
-      const activities = await executeQuery(`
-        SELECT 
-          ua.*,
-          u.first_name,
-          u.last_name,
-          u.email
-        FROM user_activity ua
-        JOIN users u ON ua.user_id = u.id
-        WHERE ua.user_id = ?
-        ORDER BY ua.created_at DESC
-        LIMIT ${limitInt}
+      // First check if user exists
+      const userExists = await executeQuery(`
+        SELECT id, first_name, last_name, email FROM users WHERE id = ?
       `, [userId]);
       
-      return ok(res, { data: activities });
+      if (userExists.length === 0) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      }
+      
+      // Get user activity logs without LIMIT first, then limit in JavaScript
+      const activities = await executeQuery(`
+        SELECT 
+          ua.id,
+          ua.user_id,
+          ua.action,
+          ua.resource_type,
+          ua.resource_id,
+          ua.metadata,
+          ua.ip_address,
+          ua.user_agent,
+          ua.created_at
+        FROM user_activity_logs ua
+        WHERE ua.user_id = ?
+        ORDER BY ua.created_at DESC
+      `, [userId]);
+      
+      // Limit results in JavaScript
+      const limitedActivities = activities.slice(0, limit);
+      
+      // Add user info to each activity
+      const activitiesWithUserInfo = limitedActivities.map(activity => ({
+        ...activity,
+        first_name: userExists[0].first_name,
+        last_name: userExists[0].last_name,
+        email: userExists[0].email
+      }));
+      
+      return ok(res, { data: activitiesWithUserInfo });
       
     } catch (error) {
       console.error('Get user activity logs error:', error);
@@ -1113,25 +1139,23 @@ class AdminController {
         user_id: userId,
         title,
         message,
-        type: notification_type,
-        channels: JSON.stringify(channels),
-        created_at: new Date().toISOString()
+        type: 'in_app', // Use in_app as default type since it's in the ENUM
+        data: JSON.stringify({ channels, notification_type })
       }));
       
       // Insert notifications (this would be done in batches for large arrays)
       for (const notification of notifications) {
         await executeQuery(`
           INSERT INTO notifications (
-            id, user_id, title, message, type, channels, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            id, user_id, title, message, type, data
+          ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
           notification.id,
           notification.user_id,
           notification.title,
           notification.message,
           notification.type,
-          notification.channels,
-          notification.created_at
+          notification.data
         ]);
       }
       
