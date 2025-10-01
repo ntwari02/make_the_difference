@@ -47,6 +47,15 @@ class PerformanceMonitor {
     try {
       const timestamp = new Date();
       
+      // Check if database is healthy before collecting metrics
+      const { getConnectionHealth } = require('../../config/database');
+      const health = getConnectionHealth();
+      
+      if (!health.isHealthy) {
+        console.log('⚠️  Skipping metrics collection - database circuit breaker is open');
+        return;
+      }
+      
       // Collect chatbot metrics
       await this.collectChatbotMetrics(timestamp);
       
