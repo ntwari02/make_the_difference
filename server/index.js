@@ -13,15 +13,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS
-const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+// CORS - Allow all origins in development
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: true, // Allow all origins in development
   credentials: true
 }));
 
