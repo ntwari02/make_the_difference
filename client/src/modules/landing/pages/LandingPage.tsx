@@ -82,8 +82,6 @@ const HeroSection: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleGetStarted = () => {
-    console.log('Get Started button clicked!');
-    console.log('Navigating to /auth/register');
     navigate('/auth/register');
   };
 
@@ -207,25 +205,6 @@ const HeroSection: React.FC = () => {
                     }}
                   >
                     Get Started Free
-                  </Button>
-                </motion.div>
-
-                {/* Test Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                >
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      console.log('Test button clicked!');
-                      navigate('/auth/register');
-                    }}
-                    sx={{ ml: 2 }}
-                  >
-                    TEST REGISTER
                   </Button>
                 </motion.div>
                 
@@ -602,8 +581,6 @@ const CallToActionSection: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    console.log('CTA Get Started button clicked!');
-    console.log('Navigating to /auth/register');
     navigate('/auth/register');
   };
 

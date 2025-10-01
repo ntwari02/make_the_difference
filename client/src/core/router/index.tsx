@@ -1,21 +1,20 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
+import { CssBaseline } from '@mui/material';
 
 // Store and theme
 import { store } from '../store';
-import { theme } from '../config/theme.config';
 import { queryClient } from '../services/api/queryClient';
 import { ENV } from '../config/environment';
 
 // Layout components
 import AuthLayout from '../../shared/components/layout/AuthLayout';
-import MainLayout from '../../shared/components/layout/MainLayout';
+import AppLayout from '../../shared/components/layout/AppLayout';
 import AdminLayout from '../../shared/components/layout/AdminLayout';
 
 // Auth components
@@ -51,6 +50,9 @@ import MyCoursesPage from '../../modules/elearning/pages/MyCoursesPage';
 // Protected route component
 import ProtectedRoute from './ProtectedRoute';
 
+// Navigation component
+import NavigationMenu from '../../shared/components/navigation/NavigationMenu';
+
 // Error page
 import ErrorPage from '../../shared/components/ui/ErrorPage';
 
@@ -61,6 +63,10 @@ const router = createBrowserRouter([
     path: '/',
     element: <LandingPage />,
     errorElement: <ErrorPage />,
+  },
+  {
+    path: '/navigation',
+    element: <NavigationMenu />,
   },
   
   // Auth routes
@@ -96,7 +102,9 @@ const router = createBrowserRouter([
     path: '/app',
     element: (
       <ProtectedRoute>
-        <MainLayout />
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
       </ProtectedRoute>
     ),
     children: [
@@ -115,6 +123,10 @@ const router = createBrowserRouter([
       {
         path: 'settings',
         element: <SettingsPage />,
+      },
+      {
+        path: 'navigation',
+        element: <NavigationMenu />,
       },
       
       // E-commerce routes
@@ -205,7 +217,7 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider>
           <CssBaseline />
           <RouterProvider router={router} />
           <Toaster

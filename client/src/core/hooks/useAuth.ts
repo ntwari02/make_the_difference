@@ -111,8 +111,10 @@ export const useAuth = () => {
   const isSeller = hasRole('seller');
   const isBuyer = hasRole('buyer');
   
-  const fullName = auth.user ? `${auth.user.first_name} ${auth.user.last_name}` : '';
-  const initials = auth.user ? `${auth.user.first_name.charAt(0)}${auth.user.last_name.charAt(0)}`.toUpperCase() : '';
+  const fullName = auth.user ? `${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() : '';
+  const initials = auth.user && auth.user.first_name && auth.user.last_name 
+    ? `${auth.user.first_name.charAt(0)}${auth.user.last_name.charAt(0)}`.toUpperCase() 
+    : '';
 
   return {
     // State

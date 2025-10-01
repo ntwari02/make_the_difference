@@ -1,10 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../../types';
+import { User, LoginCredentials, RegisterCredentials } from '../../types';
 import { api } from '../../services/api/apiClient';
-import { mockApiClient } from '../../services/api/mockAuthService';
 import { setToStorage, getFromStorage, removeFromStorage } from '../../../shared/utils';
 import { STORAGE_KEYS } from '../../config/constants';
-import { ENV } from '../../config/environment';
 
 // Auth state interface
 interface AuthState {
@@ -33,10 +31,18 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      // Use mock service in development, real API in production
-      const apiClient = ENV.IS_DEVELOPMENT ? mockApiClient : api;
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      const { access_token, refresh_token, user } = response.data.data;
+      console.log('🔐 Attempting login with real backend API:', { email: credentials.email });
+      
+      // Use real API - your backend expects 'identifier' field for email/phone
+      const response = await api.post('/auth/login', {
+        identifier: credentials.email, // Backend expects 'identifier' field
+        password: credentials.password
+      });
+      
+      console.log('✅ Login response from backend:', response.data);
+      
+      // Your backend returns: { access_token, access_expires_in, refresh_token, refresh_expires_in, user }
+      const { access_token, refresh_token, user } = response.data;
       
       // Store tokens and user data
       setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
@@ -44,9 +50,12 @@ export const loginUser = createAsyncThunk(
       setToStorage(STORAGE_KEYS.USER_DATA, user);
       setToStorage('last_login', new Date().toISOString());
       
+      console.log('✅ Login successful, tokens stored');
+      
       return { access_token, refresh_token, user };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Login failed');
+      console.error('❌ Login failed:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.error || error.message || 'Login failed');
     }
   }
 );
@@ -55,20 +64,57 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (credentials: RegisterCredentials, { rejectWithValue }) => {
     try {
-      // Use mock service in development, real API in production
-      const apiClient = ENV.IS_DEVELOPMENT ? mockApiClient : api;
-      const response = await apiClient.post<AuthResponse>('/auth/register', credentials);
-      const { access_token, refresh_token, user } = response.data.data;
+      console.log('📝 Attempting registration with real backend API:', { 
+        email: credentials.email, 
+        firstName: credentials.first_name,
+        role: credentials.role 
+      });
       
-      // Store tokens and user data
-      setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
-      setToStorage(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
-      setToStorage(STORAGE_KEYS.USER_DATA, user);
-      setToStorage('last_login', new Date().toISOString());
+      // Use real API - your backend expects specific field names
+      const response = await api.post('/auth/register', {
+        email: credentials.email,
+        password: credentials.password,
+        first_name: credentials.first_name,
+        last_name: credentials.last_name,
+        phone: credentials.phone,
+        role: credentials.role || 'student' // Default to student if not specified
+      });
       
-      return { access_token, refresh_token, user };
+      console.log('✅ Registration response from backend:', response.data);
+      
+      // Your backend returns: { id, email, role, is_verified } for registration
+      // Note: Registration doesn't return tokens, user needs to login separately
+      const { id, email, role, is_verified } = response.data;
+      
+      // Create user object for frontend
+      const user = {
+        id,
+        email,
+        first_name: credentials.first_name,
+        last_name: credentials.last_name,
+        phone: credentials.phone || '',
+        role,
+        is_verified,
+        is_active: true,
+        preferences: {
+          currency: 'USD',
+          language: 'en',
+          notifications: {
+            sms: true,
+            push: true,
+            email: true,
+          },
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      console.log('✅ Registration successful, user created:', user);
+      
+      return { user };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Registration failed');
+      console.error('❌ Registration failed:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
     }
   }
 );
@@ -83,38 +129,59 @@ export const refreshToken = createAsyncThunk(
         throw new Error('No refresh token available');
       }
       
-      const response = await api.post<AuthResponse>('/auth/refresh', {
+      console.log('🔄 Attempting token refresh with real backend API');
+      
+      const response = await api.post('/auth/refresh', {
         refresh_token: refreshTokenValue,
       });
       
-      const { access_token, refresh_token: newRefreshToken } = response.data.data;
+      console.log('✅ Token refresh response from backend:', response.data);
+      
+      // Your backend returns: { access_token, access_expires_in, refresh_token, refresh_expires_in }
+      const { access_token, refresh_token: newRefreshToken } = response.data;
       
       // Update stored tokens
       setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       setToStorage(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
       
+      console.log('✅ Token refresh successful, new tokens stored');
+      
       return { access_token, refresh_token: newRefreshToken };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Token refresh failed');
+      console.error('❌ Token refresh failed:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.error || error.message || 'Token refresh failed');
     }
   }
 );
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
-      // Call logout endpoint
-      await api.post('/auth/logout');
+      const refreshTokenValue = getFromStorage(STORAGE_KEYS.REFRESH_TOKEN, null);
       
-      // Clear stored data
+      console.log('🚪 Attempting logout with real backend API');
+      
+      // Call logout endpoint if refresh token exists
+      if (refreshTokenValue) {
+        await api.post('/auth/logout', {
+          refresh_token: refreshTokenValue,
+        });
+        console.log('✅ Logout request sent to backend');
+      }
+      
+      // Clear stored data regardless of API call success
       removeFromStorage(STORAGE_KEYS.ACCESS_TOKEN);
       removeFromStorage(STORAGE_KEYS.REFRESH_TOKEN);
       removeFromStorage(STORAGE_KEYS.USER_DATA);
       removeFromStorage('last_login');
       
+      console.log('✅ Logout successful, local data cleared');
+      
       return null;
     } catch (error: any) {
+      console.error('⚠️ Logout API call failed, but clearing local data:', error.response?.data || error.message);
+      
       // Even if logout fails on server, clear local data
       removeFromStorage(STORAGE_KEYS.ACCESS_TOKEN);
       removeFromStorage(STORAGE_KEYS.REFRESH_TOKEN);
@@ -126,19 +193,41 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+// Interface for profile updates
+interface ProfileUpdateData {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  bio?: string;
+}
+
 export const updateUserProfile = createAsyncThunk(
   'auth/updateProfile',
-  async (userData: Partial<User>, { rejectWithValue }) => {
+  async (userData: ProfileUpdateData) => {
     try {
-      const response = await api.patch<User>(`/users/${userData.id}`, userData);
-      const updatedUser = response.data.data;
+      console.log('👤 Attempting profile update with real backend API:', userData);
+      
+      const response = await api.put(`/auth/profile`, {
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        phone: userData.phone,
+        bio: userData.bio
+      });
+      
+      console.log('✅ Profile update response from backend:', response.data);
+      
+      // Your backend returns: { message, user: { id, email, first_name, last_name, phone, bio, role, updated_at } }
+      const updatedUser = response.data.user;
       
       // Update stored user data
       setToStorage(STORAGE_KEYS.USER_DATA, updatedUser);
       
+      console.log('✅ Profile update successful, user data updated');
+      
       return updatedUser;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Profile update failed');
+      console.error('❌ Profile update failed:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || error.message || 'Profile update failed');
     }
   }
 );
@@ -198,11 +287,9 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.accessToken = action.payload.access_token;
-        state.refreshToken = action.payload.refresh_token;
         state.user = action.payload.user;
-        state.lastLogin = new Date().toISOString();
+        // Note: Registration doesn't return tokens, user needs to login separately
+        state.isAuthenticated = false;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {

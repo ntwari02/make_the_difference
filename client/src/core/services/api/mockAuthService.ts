@@ -1,10 +1,15 @@
 // Mock authentication service for development/testing
 import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../../types';
 
-// Mock user data
-const mockUsers: User[] = [
+// Extended user interface with password for mock service
+interface MockUser extends User {
+  password: string;
+}
+
+// Mock user data with passwords
+const mockUsers: MockUser[] = [
   {
-    id: 1,
+    id: '1',
     email: 'admin@reaglex.com',
     first_name: 'Admin',
     last_name: 'User',
@@ -12,6 +17,7 @@ const mockUsers: User[] = [
     phone: '+1234567890',
     is_active: true,
     is_verified: true,
+    password: 'password123', // Default password for all mock users
     preferences: {
       currency: 'USD',
       language: 'en',
@@ -25,7 +31,7 @@ const mockUsers: User[] = [
     updated_at: '2024-01-01T00:00:00Z',
   },
   {
-    id: 2,
+    id: '2',
     email: 'student@reaglex.com',
     first_name: 'John',
     last_name: 'Student',
@@ -33,6 +39,7 @@ const mockUsers: User[] = [
     phone: '+1234567891',
     is_active: true,
     is_verified: true,
+    password: 'password123', // Default password for all mock users
     preferences: {
       currency: 'USD',
       language: 'en',
@@ -46,7 +53,7 @@ const mockUsers: User[] = [
     updated_at: '2024-01-01T00:00:00Z',
   },
   {
-    id: 3,
+    id: '3',
     email: 'instructor@reaglex.com',
     first_name: 'Jane',
     last_name: 'Instructor',
@@ -54,6 +61,7 @@ const mockUsers: User[] = [
     phone: '+1234567892',
     is_active: true,
     is_verified: true,
+    password: 'password123', // Default password for all mock users
     preferences: {
       currency: 'USD',
       language: 'en',
@@ -77,16 +85,28 @@ export const mockAuthService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     await mockAuthService.delay(800); // Simulate network delay
     
+    console.log('🔐 Mock Login Attempt:', { email: credentials.email, passwordLength: credentials.password.length });
+    console.log('📋 Available Users:', mockUsers.map(u => ({ email: u.email, id: u.id })));
+    
     const user = mockUsers.find(u => u.email === credentials.email);
     
     if (!user) {
+      console.log('❌ User not found:', credentials.email);
       throw new Error('Invalid email or password');
     }
     
-    // Mock password check (in real app, this would be server-side)
-    if (credentials.password !== 'password123') {
+    console.log('👤 User found:', { email: user.email, id: user.id });
+    
+    // Check password against stored password
+    if (credentials.password !== user.password) {
+      console.log('❌ Password mismatch:', { provided: credentials.password, stored: user.password });
       throw new Error('Invalid email or password');
     }
+    
+    console.log('✅ Login successful for:', user.email);
+    
+    // Remove password from user object before returning
+    const { password, ...userWithoutPassword } = user;
     
     const mockTokens = {
       access_token: `mock_access_token_${user.id}_${Date.now()}`,
@@ -97,7 +117,7 @@ export const mockAuthService = {
       success: true,
       message: 'Login successful',
       data: {
-        user,
+        user: userWithoutPassword,
         ...mockTokens,
       },
     };
@@ -107,15 +127,22 @@ export const mockAuthService = {
   register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     await mockAuthService.delay(1200); // Simulate network delay
     
+    console.log('📝 Mock Registration Attempt:', { 
+      email: credentials.email, 
+      firstName: credentials.first_name,
+      passwordLength: credentials.password.length 
+    });
+    
     // Check if user already exists
     const existingUser = mockUsers.find(u => u.email === credentials.email);
     if (existingUser) {
+      console.log('❌ User already exists:', credentials.email);
       throw new Error('User with this email already exists');
     }
     
-    // Create new user
-    const newUser: User = {
-      id: mockUsers.length + 1,
+    // Create new user with password
+    const newUser: MockUser = {
+      id: String(mockUsers.length + 1),
       email: credentials.email,
       first_name: credentials.first_name,
       last_name: credentials.last_name,
@@ -123,6 +150,7 @@ export const mockAuthService = {
       phone: credentials.phone || '',
       is_active: true,
       is_verified: false,
+      password: credentials.password, // Store the password
       preferences: {
         currency: 'USD',
         language: 'en',
@@ -138,16 +166,22 @@ export const mockAuthService = {
     
     mockUsers.push(newUser);
     
+    console.log('✅ Registration successful for:', newUser.email);
+    console.log('📋 Total users now:', mockUsers.length);
+    
     const mockTokens = {
       access_token: `mock_access_token_${newUser.id}_${Date.now()}`,
       refresh_token: `mock_refresh_token_${newUser.id}_${Date.now()}`,
     };
     
+    // Remove password from user object before returning
+    const { password, ...userWithoutPassword } = newUser;
+    
     return {
       success: true,
       message: 'Registration successful',
       data: {
-        user: newUser,
+        user: userWithoutPassword,
         ...mockTokens,
       },
     };
@@ -163,7 +197,7 @@ export const mockAuthService = {
       throw new Error('Invalid refresh token');
     }
     
-    const userId = parseInt(userIdMatch[1]);
+    const userId = userIdMatch[1];
     const user = mockUsers.find(u => u.id === userId);
     
     if (!user) {
@@ -175,11 +209,14 @@ export const mockAuthService = {
       refresh_token: `mock_refresh_token_${user.id}_${Date.now()}`,
     };
     
+    // Remove password from user object before returning
+    const { password, ...userWithoutPassword } = user;
+    
     return {
       success: true,
       message: 'Token refreshed successfully',
       data: {
-        user,
+        user: userWithoutPassword,
         ...mockTokens,
       },
     };
