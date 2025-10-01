@@ -56,6 +56,30 @@ const getQuizQuestions = async (lessonId) => {
   }));
 };
 
+// Create multiple quiz questions for a lesson
+const createQuizQuestions = async (lessonId, questions) => {
+  const createdQuestions = [];
+  
+  for (let i = 0; i < questions.length; i++) {
+    const questionData = {
+      lesson_id: lessonId,
+      question_text: questions[i].question_text,
+      question_type: questions[i].question_type,
+      options: questions[i].options || null,
+      correct_answer: questions[i].correct_answer,
+      explanation: questions[i].explanation || null,
+      points: questions[i].points || 1,
+      difficulty: questions[i].difficulty || 'medium',
+      order_index: questions[i].order_index || i
+    };
+    
+    const createdQuestion = await createQuizQuestion(questionData);
+    createdQuestions.push(createdQuestion);
+  }
+  
+  return createdQuestions;
+};
+
 const getQuizQuestionById = async (questionId) => {
   const query = 'SELECT * FROM quiz_questions WHERE id = ? AND is_active = TRUE';
   const result = await executeQuery(query, [questionId]);
@@ -399,25 +423,108 @@ const getQuizFeedback = async (answerId) => {
   return result[0] || null;
 };
 
+// Additional functions needed by the service
+const getQuizQuestionsByLesson = async (lessonId) => {
+  return getQuizQuestions(lessonId);
+};
+
+const startQuizAttempt = async (userId, lessonId, attemptId) => {
+  const attemptData = {
+    id: attemptId,
+    user_id: userId,
+    lesson_id: lessonId,
+    status: 'in_progress',
+    started_at: new Date()
+  };
+  return createQuizAttempt(attemptData);
+};
+
+const submitQuizAnswers = async (attemptId, answers) => {
+  // Create answers for each question
+  for (const answer of answers) {
+    const answerData = {
+      attempt_id: attemptId,
+      question_id: answer.question_id,
+      user_answer: answer.user_answer,
+      time_spent_seconds: answer.time_spent_seconds || 0,
+      is_correct: false // Will be calculated based on correct_answer
+    };
+    await createQuizAnswer(answerData);
+  }
+  
+  // Complete the attempt
+  const attempt = await getQuizAttempt(attemptId);
+  return completeQuizAttempt(attemptId, { 
+    completed_at: new Date(),
+    status: 'completed'
+  });
+};
+
+const getQuizResults = async (attemptId, userId) => {
+  const attempt = await getQuizAttempt(attemptId);
+  const answers = await getQuizAnswers(attemptId);
+  return { attempt, answers };
+};
+
+const resumeQuizAttempt = async (attemptId, userId) => {
+  return getQuizAttempt(attemptId);
+};
+
+const abandonQuizAttempt = async (attemptId, userId) => {
+  return updateQuizAttempt(attemptId, { 
+    status: 'abandoned',
+    abandoned_at: new Date()
+  });
+};
+
+const getUserQuizHistory = async (userId, lessonId) => {
+  return getUserQuizAttempts(userId, lessonId);
+};
+
+const getQuizStatistics = async (lessonId) => {
+  const query = `
+    SELECT 
+      COUNT(*) as total_attempts,
+      AVG(score) as average_score,
+      MAX(score) as highest_score,
+      MIN(score) as lowest_score
+    FROM quiz_attempts 
+    WHERE lesson_id = ? AND status = 'completed'
+  `;
+  const result = await executeQuery(query, [lessonId]);
+  return result[0] || { total_attempts: 0, average_score: 0, highest_score: 0, lowest_score: 0 };
+};
+
 module.exports = {
   // Quiz Questions
   createQuizQuestion,
+  createQuizQuestions,
   getQuizQuestions,
+  getQuizQuestionsByLesson,
   getQuizQuestionById,
   updateQuizQuestion,
   deleteQuizQuestion,
   
   // Quiz Attempts
   createQuizAttempt,
+  startQuizAttempt,
   getQuizAttempt,
   getUserQuizAttempts,
   updateQuizAttempt,
   completeQuizAttempt,
+  resumeQuizAttempt,
+  abandonQuizAttempt,
   
   // Quiz Answers
   createQuizAnswer,
   getQuizAnswers,
   getQuizAnswerById,
+  submitQuizAnswers,
+  
+  // Quiz Results & History
+  getQuizResults,
+  getUserQuizHistory,
+  getQuizStatistics,
   
   // Quiz Analytics
   updateQuizAnalytics,

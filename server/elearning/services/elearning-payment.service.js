@@ -462,7 +462,7 @@ class ELearningPaymentService {
   }
 
   async validateOnlineClass(classId, userId) {
-    const query = 'SELECT * FROM online_classes WHERE id = ? AND status = "active"';
+    const query = 'SELECT * FROM online_classes WHERE id = ? AND status IN ("live", "scheduled")';
     const onlineClass = await executeQuery(query, [classId]);
     
     if (!onlineClass[0]) {

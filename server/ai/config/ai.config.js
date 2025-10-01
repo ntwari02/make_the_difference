@@ -102,7 +102,7 @@ const aiConfig = {
   // Performance Monitoring
   monitoring: {
     enabled: process.env.AI_MONITORING_ENABLED === 'true' || true,
-    metrics_collection_interval: parseInt(process.env.AI_MONITORING_INTERVAL || '300'), // 5 minutes
+    metrics_collection_interval: parseInt(process.env.AI_MONITORING_INTERVAL || '900'), // 15 minutes (reduced frequency)
     alert_thresholds: {
       response_time: parseFloat(process.env.AI_MONITORING_RESPONSE_TIME || '5.0'),
       error_rate: parseFloat(process.env.AI_MONITORING_ERROR_RATE || '0.05'),

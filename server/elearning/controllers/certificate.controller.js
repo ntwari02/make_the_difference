@@ -1,6 +1,6 @@
 const CertificateService = require('../services/certificate.service');
 const { executeQuery } = require('../../config/database');
-const { ok, created, noContent, badRequest, unauthorized, forbidden, notFound, serverError } = require('../../utils/response');
+const { ok, created, noContent, badRequest, unauthorized, forbidden, notFound, internalError } = require('../../utils/response');
 
 class CertificateController {
   
@@ -29,8 +29,9 @@ class CertificateController {
       
       const enrollment = enrollments[0];
       
-      // Check if certificate already exists
-      if (enrollment.certificate_issued) {
+      // Check if certificate already exists in certificates table
+      const existingCertificates = await executeQuery('SELECT id FROM certificates WHERE enrollment_id = ?', [enrollmentId]);
+      if (existingCertificates.length > 0) {
         return badRequest(res, 'Certificate already issued for this enrollment');
       }
       
@@ -76,7 +77,7 @@ class CertificateController {
       // Log certificate creation
       await CertificateService.logCertificateEvent(
         certificate.id,
-        'view',
+        'viewed',
         { action: 'created' },
         req.ip,
         req.get('User-Agent')
@@ -89,7 +90,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Create certificate error:', error);
-      return serverError(res, 'Failed to create certificate', error);
+      return internalError(res, 'Failed to create certificate', error);
     }
   }
 
@@ -112,7 +113,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get user certificates error:', error);
-      return serverError(res, 'Failed to retrieve certificates', error);
+      return internalError(res, 'Failed to retrieve certificates');
     }
   }
 
@@ -144,7 +145,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get certificate error:', error);
-      return serverError(res, 'Failed to retrieve certificate', error);
+      return internalError(res, 'Failed to retrieve certificate', error);
     }
   }
 
@@ -165,7 +166,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Verify certificate error:', error);
-      return serverError(res, 'Failed to verify certificate', error);
+      return internalError(res, 'Failed to verify certificate', error);
     }
   }
 
@@ -209,7 +210,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Download certificate error:', error);
-      return serverError(res, 'Failed to download certificate', error);
+      return internalError(res, 'Failed to download certificate', error);
     }
   }
 
@@ -253,7 +254,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Share certificate error:', error);
-      return serverError(res, 'Failed to share certificate', error);
+      return internalError(res, 'Failed to share certificate', error);
     }
   }
 
@@ -278,7 +279,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get certificate analytics error:', error);
-      return serverError(res, 'Failed to retrieve certificate analytics', error);
+      return internalError(res, 'Failed to retrieve certificate analytics', error);
     }
   }
 
@@ -303,7 +304,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Create certificate template error:', error);
-      return serverError(res, 'Failed to create certificate template', error);
+      return internalError(res, 'Failed to create certificate template', error);
     }
   }
 
@@ -321,7 +322,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get certificate templates error:', error);
-      return serverError(res, 'Failed to retrieve certificate templates', error);
+      return internalError(res, 'Failed to retrieve certificate templates', error);
     }
   }
 
@@ -341,7 +342,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Create partner organization error:', error);
-      return serverError(res, 'Failed to create partner organization', error);
+      return internalError(res, 'Failed to create partner organization', error);
     }
   }
 
@@ -358,7 +359,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get partner organizations error:', error);
-      return serverError(res, 'Failed to retrieve partner organizations', error);
+      return internalError(res, 'Failed to retrieve partner organizations', error);
     }
   }
 
@@ -389,7 +390,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Associate course with partners error:', error);
-      return serverError(res, 'Failed to associate course with partners', error);
+      return internalError(res, 'Failed to associate course with partners', error);
     }
   }
 
@@ -403,7 +404,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Get course partners error:', error);
-      return serverError(res, 'Failed to retrieve course partners', error);
+      return internalError(res, 'Failed to retrieve course partners', error);
     }
   }
 
@@ -444,7 +445,7 @@ class CertificateController {
       
     } catch (error) {
       console.error('Revoke certificate error:', error);
-      return serverError(res, 'Failed to revoke certificate', error);
+      return internalError(res, 'Failed to revoke certificate', error);
     }
   }
 }

@@ -1,5 +1,8 @@
 const { executeQuery } = require('../config/database');
-const { ok, created, noContent, badRequest, unauthorized, forbidden, notFound, serverError } = require('../utils/response');
+const { ok, created, noContent, badRequest, unauthorized, forbidden, notFound, internalError } = require('../utils/response');
+
+// Reference to the controller instance for internal method calls
+let adminController;
 
 class AdminController {
   
@@ -16,11 +19,11 @@ class AdminController {
         onlineClassesStats,
         revenueStats
       ] = await Promise.all([
-        this.getUserStatistics(period),
-        this.getEcommerceStatistics(period),
-        this.getElearningStatistics(period),
-        this.getOnlineClassesStatistics(period),
-        this.getRevenueStatistics(period)
+        adminController.getUserStatistics(period),
+        adminController.getEcommerceStatistics(period),
+        adminController.getElearningStatistics(period),
+        adminController.getOnlineClassesStatistics(period),
+        adminController.getRevenueStatistics(period)
       ]);
       
       const overview = {
@@ -37,7 +40,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Dashboard overview error:', error);
-      return serverError(res, 'Failed to retrieve dashboard overview', error);
+      return internalError(res, 'Failed to retrieve dashboard overview', error);
     }
   }
 
@@ -75,7 +78,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Get pending alerts error:', error);
-      return serverError(res, 'Failed to retrieve pending alerts', error);
+      return internalError(res, 'Failed to retrieve pending alerts', error);
     }
   }
 
@@ -83,7 +86,10 @@ class AdminController {
     try {
       const { limit = 20 } = req.query;
       
-      // Get recent user activities
+      // Convert limit to integer to fix parameter binding issue
+      const limitInt = parseInt(limit, 10);
+      
+      // Get recent user activities - using string interpolation for LIMIT to avoid parameter binding issues
       const activities = await executeQuery(`
         SELECT 
           'user_registration' as activity_type,
@@ -103,7 +109,7 @@ class AdminController {
           u.last_name,
           u.email,
           c.created_at as timestamp,
-          CONCAT('Listed car: ', c.make, ' ', c.model) as description
+          CONCAT('Listed car: ', c.brand, ' ', c.model) as description
         FROM cars c
         JOIN users u ON c.seller_id = u.id
         WHERE c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -122,14 +128,14 @@ class AdminController {
         WHERE co.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         
         ORDER BY timestamp DESC
-        LIMIT ?
-      `, [limit]);
+        LIMIT ${limitInt}
+      `);
       
       return ok(res, { data: activities });
       
     } catch (error) {
       console.error('Get recent activity error:', error);
-      return serverError(res, 'Failed to retrieve recent activity', error);
+      return internalError(res, 'Failed to retrieve recent activity', error);
     }
   }
 
@@ -196,7 +202,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Get all users error:', error);
-      return serverError(res, 'Failed to retrieve users', error);
+      return internalError(res, 'Failed to retrieve users', error);
     }
   }
 
@@ -231,7 +237,7 @@ class AdminController {
       `, [userId, email, hashedPassword, first_name, last_name, phone, role, is_active, is_verified]);
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'create_user', { user_id: userId, email });
+      await adminController.logAdminAction(req.user.id, 'create_user', { user_id: userId, email });
       
       return created(res, {
         message: 'User created successfully',
@@ -240,7 +246,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Create user error:', error);
-      return serverError(res, 'Failed to create user', error);
+      return internalError(res, 'Failed to create user');
     }
   }
 
@@ -278,7 +284,7 @@ class AdminController {
       );
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'update_user', { user_id: userId, changes: updateData });
+      await adminController.logAdminAction(req.user.id, 'update_user', { user_id: userId, changes: updateData });
       
       return ok(res, {
         message: 'User updated successfully',
@@ -287,7 +293,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Update user error:', error);
-      return serverError(res, 'Failed to update user', error);
+      return internalError(res, 'Failed to update user', error);
     }
   }
 
@@ -327,7 +333,7 @@ class AdminController {
       );
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'update_user_status', {
+      await adminController.logAdminAction(req.user.id, 'update_user_status', {
         user_id: userId,
         action,
         reason,
@@ -341,7 +347,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Update user status error:', error);
-      return serverError(res, 'Failed to update user status', error);
+      return internalError(res, 'Failed to update user status', error);
     }
   }
 
@@ -350,50 +356,52 @@ class AdminController {
       const { userId } = req.params;
       const { limit = 50 } = req.query;
       
-      // Get user activity logs
+      // Convert limit to integer to fix parameter binding issue
+      const limitInt = parseInt(limit, 10);
+      
+      // Get user activity logs - using string interpolation for LIMIT to avoid parameter binding issues
       const activities = await executeQuery(`
         SELECT 
-          'login' as activity_type,
-          'User logged in' as description,
-          ua.created_at as timestamp,
-          ua.ip_address,
-          ua.user_agent
-        FROM user_activity ua
-        WHERE ua.user_id = ?
-        
-        UNION ALL
-        
-        SELECT 
-          'car_view' as activity_type,
-          CONCAT('Viewed car: ', c.make, ' ', c.model) as description,
-          cv.created_at as timestamp,
-          NULL as ip_address,
-          NULL as user_agent
-        FROM car_views cv
-        JOIN cars c ON cv.car_id = c.id
-        WHERE cv.user_id = ?
+          ual.action as activity_type,
+          CONCAT('User ', ual.action, CASE WHEN ual.resource_type IS NOT NULL THEN CONCAT(' ', ual.resource_type) ELSE '' END) as description,
+          ual.created_at as timestamp,
+          ual.ip_address,
+          ual.user_agent
+        FROM user_activity_logs ual
+        WHERE ual.user_id = ?
         
         UNION ALL
         
         SELECT 
           'course_enrollment' as activity_type,
           CONCAT('Enrolled in course: ', co.title) as description,
-          ce.created_at as timestamp,
+          ce.enrollment_date as timestamp,
           NULL as ip_address,
           NULL as user_agent
         FROM course_enrollments ce
         JOIN courses co ON ce.course_id = co.id
         WHERE ce.user_id = ?
         
+        UNION ALL
+        
+        SELECT 
+          'car_listing' as activity_type,
+          CONCAT('Listed car: ', c.brand, ' ', c.model) as description,
+          c.created_at as timestamp,
+          NULL as ip_address,
+          NULL as user_agent
+        FROM cars c
+        WHERE c.seller_id = ?
+        
         ORDER BY timestamp DESC
-        LIMIT ?
-      `, [userId, userId, userId, limit]);
+        LIMIT ${limitInt}
+      `, [userId, userId, userId]);
       
       return ok(res, { data: activities });
       
     } catch (error) {
       console.error('Get user activity error:', error);
-      return serverError(res, 'Failed to retrieve user activity', error);
+      return internalError(res, 'Failed to retrieve user activity', error);
     }
   }
 
@@ -405,21 +413,21 @@ class AdminController {
       const sessions = await executeQuery(`
         SELECT 
           id,
-          ip_address,
-          user_agent,
+          user_id,
+          token_hash,
+          expires_at,
           created_at,
-          last_activity,
-          is_active
+          CASE WHEN expires_at > NOW() THEN 1 ELSE 0 END as is_active
         FROM user_sessions
-        WHERE user_id = ? AND is_active = 1
-        ORDER BY last_activity DESC
+        WHERE user_id = ? AND expires_at > NOW()
+        ORDER BY created_at DESC
       `, [userId]);
       
       return ok(res, { data: sessions });
       
     } catch (error) {
       console.error('Get user sessions error:', error);
-      return serverError(res, 'Failed to retrieve user sessions', error);
+      return internalError(res, 'Failed to retrieve user sessions', error);
     }
   }
 
@@ -427,14 +435,14 @@ class AdminController {
     try {
       const { userId } = req.params;
       
-      // Revoke all user sessions
+      // Revoke all user sessions by setting expiration to past
       await executeQuery(
-        'UPDATE user_sessions SET is_active = 0, revoked_at = NOW() WHERE user_id = ?',
+        'UPDATE user_sessions SET expires_at = NOW() WHERE user_id = ?',
         [userId]
       );
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'revoke_user_sessions', { user_id: userId });
+      await adminController.logAdminAction(req.user.id, 'revoke_user_sessions', { user_id: userId });
       
       return ok(res, {
         message: 'User sessions revoked successfully',
@@ -443,7 +451,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Revoke user sessions error:', error);
-      return serverError(res, 'Failed to revoke user sessions', error);
+      return internalError(res, 'Failed to revoke user sessions', error);
     }
   }
 
@@ -453,12 +461,12 @@ class AdminController {
       const { period = '30d' } = req.query;
       
       const analytics = {
-        users: await this.getUserStatistics(period),
-        ecommerce: await this.getEcommerceStatistics(period),
-        elearning: await this.getElearningStatistics(period),
-        online_classes: await this.getOnlineClassesStatistics(period),
-        certificates: await this.getCertificateStatistics(period),
-        revenue: await this.getRevenueStatistics(period),
+        users: await adminController.getUserStatistics(period),
+        ecommerce: await adminController.getEcommerceStatistics(period),
+        elearning: await adminController.getElearningStatistics(period),
+        online_classes: await adminController.getOnlineClassesStatistics(period),
+        certificates: await adminController.getCertificateStatistics(period),
+        revenue: await adminController.getRevenueStatistics(period),
         period,
         generated_at: new Date().toISOString()
       };
@@ -467,7 +475,7 @@ class AdminController {
       
     } catch (error) {
       console.error('System analytics error:', error);
-      return serverError(res, 'Failed to retrieve system analytics', error);
+      return internalError(res, 'Failed to retrieve system analytics', error);
     }
   }
 
@@ -475,7 +483,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getEcommerceStatistics(period);
+      const analytics = await adminController.getEcommerceStatistics(period);
       
       // Add additional ecommerce metrics
       const additionalMetrics = await executeQuery(`
@@ -486,7 +494,7 @@ class AdminController {
           COUNT(CASE WHEN status = 'sold' THEN 1 END) as total_sales,
           COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_listings
         FROM cars
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -499,7 +507,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Ecommerce analytics error:', error);
-      return serverError(res, 'Failed to retrieve ecommerce analytics', error);
+      return internalError(res, 'Failed to retrieve ecommerce analytics', error);
     }
   }
 
@@ -507,7 +515,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getElearningStatistics(period);
+      const analytics = await adminController.getElearningStatistics(period);
       
       // Add additional elearning metrics
       const additionalMetrics = await executeQuery(`
@@ -518,7 +526,7 @@ class AdminController {
           COUNT(DISTINCT instructor_id) as active_instructors
         FROM courses
         WHERE rating IS NOT NULL
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -531,7 +539,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Elearning analytics error:', error);
-      return serverError(res, 'Failed to retrieve elearning analytics', error);
+      return internalError(res, 'Failed to retrieve elearning analytics', error);
     }
   }
 
@@ -539,17 +547,18 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getOnlineClassesStatistics(period);
+      const analytics = await adminController.getOnlineClassesStatistics(period);
       
       // Add additional online classes metrics
       const additionalMetrics = await executeQuery(`
         SELECT 
-          COUNT(DISTINCT instructor_id) as active_instructors,
-          AVG(price) as avg_class_price,
-          COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_classes,
-          COUNT(CASE WHEN status = 'live' THEN 1 END) as currently_live
-        FROM online_classes
-      `, [this.getDaysFromPeriod(period)]);
+          COUNT(DISTINCT oc.instructor_id) as active_instructors,
+          AVG(c.price) as avg_class_price,
+          COUNT(CASE WHEN oc.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_classes,
+          COUNT(CASE WHEN oc.status = 'live' THEN 1 END) as currently_live
+        FROM online_classes oc
+        JOIN courses c ON oc.course_id = c.id
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -562,7 +571,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Online classes analytics error:', error);
-      return serverError(res, 'Failed to retrieve online classes analytics', error);
+      return internalError(res, 'Failed to retrieve online classes analytics', error);
     }
   }
 
@@ -570,7 +579,7 @@ class AdminController {
     try {
       const { period = '30d' } = req.query;
       
-      const analytics = await this.getCertificateStatistics(period);
+      const analytics = await adminController.getCertificateStatistics(period);
       
       // Add additional certificate metrics
       const additionalMetrics = await executeQuery(`
@@ -579,7 +588,7 @@ class AdminController {
           COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN 1 END) as new_certificates,
           COUNT(CASE WHEN status = 'issued' THEN 1 END) as total_issued
         FROM certificates
-      `, [this.getDaysFromPeriod(period)]);
+      `, [adminController.getDaysFromPeriod(period)]);
       
       const result = {
         ...analytics,
@@ -592,7 +601,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Certificate analytics error:', error);
-      return serverError(res, 'Failed to retrieve certificate analytics', error);
+      return internalError(res, 'Failed to retrieve certificate analytics', error);
     }
   }
 
@@ -614,7 +623,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Get flagged content error:', error);
-      return serverError(res, 'Failed to retrieve flagged content', error);
+      return internalError(res, 'Failed to retrieve flagged content', error);
     }
   }
 
@@ -624,7 +633,7 @@ class AdminController {
       const { action, reason, moderator_notes } = req.body;
       
       // Log moderation action
-      await this.logAdminAction(req.user.id, 'moderate_content', {
+      await adminController.logAdminAction(req.user.id, 'moderate_content', {
         content_id: contentId,
         action,
         reason,
@@ -638,7 +647,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Moderate content error:', error);
-      return serverError(res, 'Failed to moderate content', error);
+      return internalError(res, 'Failed to moderate content', error);
     }
   }
 
@@ -648,7 +657,7 @@ class AdminController {
       const { reason } = req.body;
       
       // Log content removal
-      await this.logAdminAction(req.user.id, 'remove_content', {
+      await adminController.logAdminAction(req.user.id, 'remove_content', {
         content_id: contentId,
         reason
       });
@@ -660,7 +669,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Remove content error:', error);
-      return serverError(res, 'Failed to remove content', error);
+      return internalError(res, 'Failed to remove content', error);
     }
   }
 
@@ -681,7 +690,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Get system settings error:', error);
-      return serverError(res, 'Failed to retrieve system settings', error);
+      return internalError(res, 'Failed to retrieve system settings', error);
     }
   }
 
@@ -690,7 +699,7 @@ class AdminController {
       const settings = req.body;
       
       // Log settings change
-      await this.logAdminAction(req.user.id, 'update_system_settings', { settings });
+      await adminController.logAdminAction(req.user.id, 'update_system_settings', { settings });
       
       return ok(res, {
         message: 'System settings updated successfully',
@@ -699,7 +708,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Update system settings error:', error);
-      return serverError(res, 'Failed to update system settings', error);
+      return internalError(res, 'Failed to update system settings', error);
     }
   }
 
@@ -709,21 +718,21 @@ class AdminController {
       const featureFlags = await executeQuery(`
         SELECT 
           id,
-          name,
+          flag_name as name,
           description,
-          is_enabled,
-          target_percentage,
+          enabled as is_enabled,
+          rollout_percentage as target_percentage,
           created_at,
           updated_at
         FROM feature_flags
-        ORDER BY name
+        ORDER BY flag_name
       `);
       
       return ok(res, { data: featureFlags });
       
     } catch (error) {
       console.error('Get feature flags error:', error);
-      return serverError(res, 'Failed to retrieve feature flags', error);
+      return internalError(res, 'Failed to retrieve feature flags', error);
     }
   }
 
@@ -732,15 +741,15 @@ class AdminController {
       const { flagId } = req.params;
       const { is_enabled, target_percentage, description } = req.body;
       
-      // Update feature flag
+      // Update feature flag (map API fields to database fields)
       await executeQuery(`
         UPDATE feature_flags 
-        SET is_enabled = ?, target_percentage = ?, description = ?, updated_at = NOW()
+        SET enabled = ?, rollout_percentage = ?, description = ?, updated_at = NOW()
         WHERE id = ?
       `, [is_enabled, target_percentage, description, flagId]);
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'update_feature_flag', {
+      await adminController.logAdminAction(req.user.id, 'update_feature_flag', {
         flag_id: flagId,
         is_enabled,
         target_percentage,
@@ -754,7 +763,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Update feature flag error:', error);
-      return serverError(res, 'Failed to update feature flag', error);
+      return internalError(res, 'Failed to update feature flag', error);
     }
   }
 
@@ -820,33 +829,62 @@ class AdminController {
       
     } catch (error) {
       console.error('Get audit logs error:', error);
-      return serverError(res, 'Failed to retrieve audit logs', error);
+      return internalError(res, 'Failed to retrieve audit logs', error);
     }
   }
 
   async getUserActivityLogs(req, res) {
     try {
       const { userId } = req.params;
-      const { limit = 100 } = req.query;
+      const limit = parseInt(req.query.limit) || 100;
       
+      // Convert limit to integer to fix parameter binding issue
+      const limitInt = parseInt(limit, 10);
+      
+      // First check if user exists
+      const userExists = await executeQuery(`
+        SELECT id, first_name, last_name, email FROM users WHERE id = ?
+      `, [userId]);
+      
+      if (userExists.length === 0) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      }
+      
+      // Get user activity logs without LIMIT first, then limit in JavaScript
       const activities = await executeQuery(`
         SELECT 
-          ua.*,
-          u.first_name,
-          u.last_name,
-          u.email
-        FROM user_activity ua
-        JOIN users u ON ua.user_id = u.id
+          ua.id,
+          ua.user_id,
+          ua.action,
+          ua.resource_type,
+          ua.resource_id,
+          ua.metadata,
+          ua.ip_address,
+          ua.user_agent,
+          ua.created_at
+        FROM user_activity_logs ua
         WHERE ua.user_id = ?
         ORDER BY ua.created_at DESC
-        LIMIT ?
-      `, [userId, limit]);
+      `, [userId]);
       
-      return ok(res, { data: activities });
+      // Limit results in JavaScript
+      const limitedActivities = activities.slice(0, limit);
+      
+      // Add user info to each activity
+      const activitiesWithUserInfo = limitedActivities.map(activity => ({
+        ...activity,
+        first_name: userExists[0].first_name,
+        last_name: userExists[0].last_name,
+        email: userExists[0].email
+      }));
+      
+      return ok(res, { data: activitiesWithUserInfo });
       
     } catch (error) {
       console.error('Get user activity logs error:', error);
-      return serverError(res, 'Failed to retrieve user activity logs', error);
+      return internalError(res, 'Failed to retrieve user activity logs', error);
     }
   }
 
@@ -907,7 +945,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Get system events error:', error);
-      return serverError(res, 'Failed to retrieve system events', error);
+      return internalError(res, 'Failed to retrieve system events', error);
     }
   }
 
@@ -922,7 +960,7 @@ class AdminController {
       );
       
       // Log emergency action
-      await this.logAdminAction(req.user.id, 'emergency_suspend_user', {
+      await adminController.logAdminAction(req.user.id, 'emergency_suspend_user', {
         user_id,
         reason,
         duration,
@@ -936,7 +974,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Emergency suspend user error:', error);
-      return serverError(res, 'Failed to emergency suspend user', error);
+      return internalError(res, 'Failed to emergency suspend user', error);
     }
   }
 
@@ -945,7 +983,7 @@ class AdminController {
       const { content_id, content_type, reason } = req.body;
       
       // Log emergency content removal
-      await this.logAdminAction(req.user.id, 'emergency_remove_content', {
+      await adminController.logAdminAction(req.user.id, 'emergency_remove_content', {
         content_id,
         content_type,
         reason,
@@ -959,7 +997,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Emergency remove content error:', error);
-      return serverError(res, 'Failed to emergency remove content', error);
+      return internalError(res, 'Failed to emergency remove content', error);
     }
   }
 
@@ -983,7 +1021,7 @@ class AdminController {
       }
       
       // Log admin action
-      await this.logAdminAction(req.user.id, 'toggle_maintenance_mode', {
+      await adminController.logAdminAction(req.user.id, 'toggle_maintenance_mode', {
         enabled,
         message
       });
@@ -995,7 +1033,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Toggle maintenance mode error:', error);
-      return serverError(res, 'Failed to toggle maintenance mode', error);
+      return internalError(res, 'Failed to toggle maintenance mode', error);
     }
   }
 
@@ -1030,7 +1068,7 @@ class AdminController {
       `, [isActive, ...user_ids]);
       
       // Log bulk action
-      await this.logAdminAction(req.user.id, 'bulk_update_user_status', {
+      await adminController.logAdminAction(req.user.id, 'bulk_update_user_status', {
         user_ids,
         action,
         reason,
@@ -1044,7 +1082,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Bulk update user status error:', error);
-      return serverError(res, 'Failed to bulk update user status', error);
+      return internalError(res, 'Failed to bulk update user status', error);
     }
   }
 
@@ -1058,7 +1096,7 @@ class AdminController {
       
       // Log bulk moderation action for each content item
       for (const contentId of content_ids) {
-        await this.logAdminAction(req.user.id, 'bulk_moderate_content', {
+        await adminController.logAdminAction(req.user.id, 'bulk_moderate_content', {
           content_id: contentId,
           action,
           reason,
@@ -1073,7 +1111,7 @@ class AdminController {
       
     } catch (error) {
       console.error('Bulk moderate content error:', error);
-      return serverError(res, 'Failed to bulk moderate content', error);
+      return internalError(res, 'Failed to bulk moderate content', error);
     }
   }
 
@@ -1095,36 +1133,47 @@ class AdminController {
         return badRequest(res, 'Title and message are required');
       }
       
-      // Create notifications for each user
+      // Validate that all user IDs exist in the database
+      const placeholders = user_ids.map(() => '?').join(',');
+      const existingUsers = await executeQuery(`
+        SELECT id FROM users WHERE id IN (${placeholders})
+      `, user_ids);
+      
+      const existingUserIds = existingUsers.map(user => user.id);
+      const invalidUserIds = user_ids.filter(id => !existingUserIds.includes(id));
+      
+      if (invalidUserIds.length > 0) {
+        return badRequest(res, `The following user IDs do not exist: ${invalidUserIds.join(', ')}`);
+      }
+      
+      // Create notifications for each valid user
       const notifications = user_ids.map(userId => ({
         id: require('crypto').randomUUID(),
         user_id: userId,
         title,
         message,
-        type: notification_type,
-        channels: JSON.stringify(channels),
-        created_at: new Date().toISOString()
+        type: 'in_app', // Use in_app as default type since it's in the ENUM
+        data: JSON.stringify({ channels, notification_type })
       }));
       
       // Insert notifications (this would be done in batches for large arrays)
       for (const notification of notifications) {
         await executeQuery(`
           INSERT INTO notifications (
-            id, user_id, title, message, type, channels, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            id, user_id, title, message, type, data
+          ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
           notification.id,
           notification.user_id,
           notification.title,
           notification.message,
           notification.type,
-          notification.channels,
-          notification.created_at
+          notification.data
         ]);
       }
       
       // Log bulk notification action
-      await this.logAdminAction(req.user.id, 'send_bulk_notifications', {
+      await adminController.logAdminAction(req.user.id, 'send_bulk_notifications', {
         user_ids,
         title,
         message,
@@ -1145,13 +1194,13 @@ class AdminController {
       
     } catch (error) {
       console.error('Send bulk notifications error:', error);
-      return serverError(res, 'Failed to send bulk notifications', error);
+      return internalError(res, 'Failed to send bulk notifications', error);
     }
   }
 
   // Helper methods for statistics
   async getUserStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1170,7 +1219,7 @@ class AdminController {
   }
 
   async getEcommerceStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1186,7 +1235,7 @@ class AdminController {
   }
 
   async getElearningStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1200,7 +1249,7 @@ class AdminController {
   }
 
   async getOnlineClassesStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1215,7 +1264,7 @@ class AdminController {
   }
 
   async getCertificateStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     const stats = await executeQuery(`
       SELECT 
@@ -1229,7 +1278,7 @@ class AdminController {
   }
 
   async getRevenueStatistics(period) {
-    const days = this.getDaysFromPeriod(period);
+    const days = adminController.getDaysFromPeriod(period);
     
     // This would integrate with payment/transaction tables
     return {
@@ -1264,4 +1313,5 @@ class AdminController {
   }
 }
 
-module.exports = new AdminController();
+adminController = new AdminController();
+module.exports = adminController;

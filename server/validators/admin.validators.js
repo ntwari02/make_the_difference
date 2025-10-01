@@ -16,7 +16,15 @@ const validateCreateUser = [
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('first_name').isLength({ min: 1, max: 100 }).withMessage('First name is required and must be less than 100 characters'),
   body('last_name').isLength({ min: 1, max: 100 }).withMessage('Last name is required and must be less than 100 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('phone').optional().custom((value) => {
+    if (!value) return true; // Optional field
+    // Allow various phone number formats
+    const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/;
+    if (!phoneRegex.test(value)) {
+      throw new Error('Valid phone number is required');
+    }
+    return true;
+  }),
   body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
@@ -27,7 +35,15 @@ const validateUpdateUser = [
   body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('first_name').optional().isLength({ min: 1, max: 100 }).withMessage('First name must be less than 100 characters'),
   body('last_name').optional().isLength({ min: 1, max: 100 }).withMessage('Last name must be less than 100 characters'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('phone').optional().custom((value) => {
+    if (!value) return true; // Optional field
+    // Allow various phone number formats
+    const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/;
+    if (!phoneRegex.test(value)) {
+      throw new Error('Valid phone number is required');
+    }
+    return true;
+  }),
   body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
   body('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean')
@@ -68,8 +84,8 @@ const validateSystemSettings = [
 
 const validateFeatureFlag = [
   param('flagId').isUUID().withMessage('Valid feature flag ID is required'),
-  body('enabled').isBoolean().withMessage('enabled must be a boolean'),
-  body('rollout_percentage').optional().isInt({ min: 0, max: 100 }).withMessage('rollout_percentage must be between 0 and 100'),
+  body('is_enabled').isBoolean().withMessage('is_enabled must be a boolean'),
+  body('target_percentage').optional().isInt({ min: 0, max: 100 }).withMessage('target_percentage must be between 0 and 100'),
   body('description').optional().isLength({ max: 500 }).withMessage('Description must be less than 500 characters')
 ];
 
@@ -98,7 +114,7 @@ const validateEmergencySuspend = [
 ];
 
 const validateEmergencyRemove = [
-  body('content_id').isUUID().withMessage('Valid content ID is required'),
+  body('content_id').isLength({ min: 1, max: 100 }).withMessage('Valid content ID is required'),
   body('content_type').isIn(['car', 'course', 'review', 'message', 'user']).withMessage('Content type must be car, course, review, message, or user'),
   body('reason').isLength({ min: 1, max: 500 }).withMessage('Reason is required and must be less than 500 characters')
 ];
@@ -119,7 +135,7 @@ const validateBulkUserUpdate = [
 
 const validateBulkContentModeration = [
   body('content_ids').isArray({ min: 1, max: 50 }).withMessage('Content IDs must be an array with 1-50 items'),
-  body('content_ids.*').isUUID().withMessage('Each content ID must be a valid UUID'),
+  body('content_ids.*').isLength({ min: 1, max: 100 }).withMessage('Each content ID must be valid'),
   body('action').isIn(['approve', 'reject', 'flag', 'remove']).withMessage('Action must be approve, reject, flag, or remove'),
   body('reason').isLength({ min: 1, max: 500 }).withMessage('Reason is required and must be less than 500 characters')
 ];
@@ -130,7 +146,8 @@ const validateBulkNotification = [
   body('role').optional().isIn(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university', 'visa_officer', 'admin', 'advertiser']).withMessage('Invalid role'),
   body('title').isLength({ min: 1, max: 200 }).withMessage('Title is required and must be less than 200 characters'),
   body('message').isLength({ min: 1, max: 1000 }).withMessage('Message is required and must be less than 1000 characters'),
-  body('type').isIn(['info', 'warning', 'error', 'success']).withMessage('Type must be info, warning, error, or success'),
+  body('notification_type').isIn(['admin_announcement', 'system_update', 'security_alert', 'feature_release']).withMessage('Notification type must be admin_announcement, system_update, security_alert, or feature_release'),
+  body('channels').optional().isArray().withMessage('Channels must be an array'),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Priority must be low, medium, high, or urgent')
 ];
 
