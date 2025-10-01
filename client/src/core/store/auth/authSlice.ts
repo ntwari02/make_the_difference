@@ -1,10 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../../types';
 import { api } from '../../services/api/apiClient';
-import { mockApiClient } from '../../services/api/mockAuthService';
 import { setToStorage, getFromStorage, removeFromStorage } from '../../../shared/utils';
 import { STORAGE_KEYS } from '../../config/constants';
-import { ENV } from '../../config/environment';
 
 // Auth state interface
 interface AuthState {
@@ -33,10 +31,14 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      // Use mock service in development, real API in production
-      const apiClient = ENV.IS_DEVELOPMENT ? mockApiClient : api;
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      const { access_token, refresh_token, user } = response.data.data;
+      // Map email to identifier for backend compatibility
+      const loginPayload = {
+        identifier: credentials.email,
+        password: credentials.password,
+        remember_me: credentials.remember_me
+      };
+      const response = await api.post<AuthResponse>('/auth/login', loginPayload);
+      const { access_token, refresh_token, user } = response.data;
       
       // Store tokens and user data
       setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
@@ -55,10 +57,8 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (credentials: RegisterCredentials, { rejectWithValue }) => {
     try {
-      // Use mock service in development, real API in production
-      const apiClient = ENV.IS_DEVELOPMENT ? mockApiClient : api;
-      const response = await apiClient.post<AuthResponse>('/auth/register', credentials);
-      const { access_token, refresh_token, user } = response.data.data;
+      const response = await api.post<AuthResponse>('/auth/register', credentials);
+      const { access_token, refresh_token, user } = response.data;
       
       // Store tokens and user data
       setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
