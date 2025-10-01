@@ -47,12 +47,8 @@ function buildDbConfigFromEnv() {
     waitForConnections: true,
     connectionLimit: 20, // Increased from 10
     queueLimit: 0,
-    acquireTimeout: 30000, // Reduced from 60 seconds to 30 seconds
-    timeout: 20000, // Query timeout
-    reconnect: true, // Enable automatic reconnection
+    // acquireTimeout: 30000, // Not supported in MySQL2 - removed
     idleTimeout: 600000, // Increased to 10 minutes
-    maxReconnects: 5, // Maximum reconnection attempts
-    reconnectDelay: 2000, // Delay between reconnection attempts
     charset: 'utf8mb4',
     timezone: 'Z',
     // Additional connection options for better stability
@@ -63,7 +59,9 @@ function buildDbConfigFromEnv() {
     trace: false,
     // Connection pool specific options
     multipleStatements: false,
-    namedPlaceholders: true
+    namedPlaceholders: true,
+    // Connection-level options
+    connectTimeout: 20000 // Connection timeout
   };
 }
 
@@ -113,6 +111,7 @@ const testConnection = async () => {
     
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       console.log('🚨 Circuit breaker opened - too many consecutive failures');
+      scheduleCircuitBreakerReset();
     }
     
     return false;
@@ -130,6 +129,30 @@ const getConnectionHealth = () => ({
     acquiringConnections: pool._acquiringConnections?.length || 0
   }
 });
+
+// Circuit breaker reset function
+const resetCircuitBreaker = () => {
+  consecutiveFailures = 0;
+  isHealthy = true;
+  console.log('🔄 Circuit breaker reset - database connection restored');
+};
+
+// Auto-reset circuit breaker after a period of time
+let circuitBreakerResetTimer = null;
+const CIRCUIT_BREAKER_RESET_DELAY = 5 * 60 * 1000; // 5 minutes
+
+const scheduleCircuitBreakerReset = () => {
+  if (circuitBreakerResetTimer) {
+    clearTimeout(circuitBreakerResetTimer);
+  }
+  
+  circuitBreakerResetTimer = setTimeout(() => {
+    if (!isHealthy && consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.log('🔄 Attempting circuit breaker reset...');
+      resetCircuitBreaker();
+    }
+  }, CIRCUIT_BREAKER_RESET_DELAY);
+};
 
 // Execute query helper with enhanced retry logic and circuit breaker
 const executeQuery = async (query, params = [], retries = 3) => {
@@ -202,5 +225,7 @@ module.exports = {
   executeQuery,
   executeTransaction,
   getConnectionHealth,
+  resetCircuitBreaker,
+  scheduleCircuitBreakerReset,
   dbConfig
 };

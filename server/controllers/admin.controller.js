@@ -1133,7 +1133,20 @@ class AdminController {
         return badRequest(res, 'Title and message are required');
       }
       
-      // Create notifications for each user
+      // Validate that all user IDs exist in the database
+      const placeholders = user_ids.map(() => '?').join(',');
+      const existingUsers = await executeQuery(`
+        SELECT id FROM users WHERE id IN (${placeholders})
+      `, user_ids);
+      
+      const existingUserIds = existingUsers.map(user => user.id);
+      const invalidUserIds = user_ids.filter(id => !existingUserIds.includes(id));
+      
+      if (invalidUserIds.length > 0) {
+        return badRequest(res, `The following user IDs do not exist: ${invalidUserIds.join(', ')}`);
+      }
+      
+      // Create notifications for each valid user
       const notifications = user_ids.map(userId => ({
         id: require('crypto').randomUUID(),
         user_id: userId,
