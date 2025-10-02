@@ -2,6 +2,9 @@
 export * from './api.types';
 export * from './auth.types';
 export * from './common.types';
+export * from './spare-parts.types';
+export * from './payment.types';
+export * from './analytics.types';
 
 // Re-export commonly used types for convenience
 export type {

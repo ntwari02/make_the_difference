@@ -38,10 +38,13 @@ import SystemSettingsPage from '../../modules/admin/pages/SystemSettingsPage';
 import AnalyticsPage from '../../modules/admin/pages/AnalyticsPage';
 import PaymentManagementPage from '../../modules/admin/pages/PaymentManagementPage';
 
+
 // E-commerce pages
 import CarListingPage from '../../modules/ecommerce/pages/CarListingPage';
 import CarDetailsPage from '../../modules/ecommerce/pages/CarDetailsPage';
 import CheckoutPage from '../../modules/ecommerce/pages/CheckoutPage';
+import SparePartsListingPage from '../../modules/ecommerce/pages/SparePartsListingPage';
+import PaymentHistoryPage from '../../modules/ecommerce/pages/PaymentHistoryPage';
 
 // E-learning pages
 import CourseCatalogPage from '../../modules/elearning/pages/CourseCatalogPage';
@@ -147,6 +150,16 @@ const router = createBrowserRouter([
       {
         path: 'checkout',
         element: <CheckoutPage />,
+      },
+      {
+        path: 'payments',
+        element: <PaymentHistoryPage />,
+      },
+
+      // Spare Parts routes
+      {
+        path: 'spare-parts',
+        element: <SparePartsListingPage />,
       },
       
       // E-learning routes

@@ -6,13 +6,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Box,
   Typography,
   Collapse,
   IconButton,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import {
   Dashboard,
@@ -20,15 +18,11 @@ import {
   DirectionsCar,
   Psychology,
   TrendingUp,
-  People,
-  Settings,
   Assignment,
   Payment,
   Security,
-  Notifications,
   ExpandLess,
   ExpandMore,
-  Home,
   ShoppingCart,
   Quiz,
   EmojiEvents,
@@ -57,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose, isMobile }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, hasRole, hasAnyRole } = useAuth();
+  const { hasAnyRole } = useAuth();
   
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
 
@@ -286,8 +280,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose, isMobile }) => {
       {/* Header */}
       <Box
         sx={{
-          p: 3,
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          px: 3,
+          py: 1,
         }}
       >
         <motion.div
@@ -295,21 +289,34 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose, isMobile }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Typography
-            variant="h6"
-            fontWeight="bold"
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
             sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              py: 0.5,
             }}
           >
-            Reaglex
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Platform Dashboard
-          </Typography>
+            <Box
+              component="img"
+              src="/logo.jpg"
+              alt="Reaglex Logo"
+              sx={{
+                width: 48,
+                height: 48,
+                objectFit: 'cover',
+                borderRadius: '50%',
+                border: `2px solid ${theme.palette.primary.main}`,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                  borderColor: theme.palette.primary.light,
+                },
+              }}
+            />
+          </Box>
         </motion.div>
       </Box>
 

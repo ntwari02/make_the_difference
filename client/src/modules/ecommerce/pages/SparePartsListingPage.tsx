@@ -24,34 +24,32 @@ import {
   Tooltip,
   Stack,
   Divider,
+  Badge,
 } from '@mui/material';
 import {
-  DirectionsCar,
+  Build,
   Search,
   FilterList,
   FavoriteBorder,
   LocationOn,
-  LocalGasStation,
-  Speed,
-  Settings,
+  Inventory,
   Star,
-  ThreeDRotation,
   Visibility,
   Share,
   Compare,
-  CalendarToday,
-  AttachMoney,
+  LocalShipping,
+  Verified,
+  Schedule,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import CarListingApiService, { Car, CarFilters } from '../../../core/services/api/carListingApiService';
-import CarViewer3D from '../../../shared/components/3d/CarViewer3D';
+import SparePartsApiService, { SparePart, SparePartFilters } from '../../../core/services/api/sparePartsApiService';
 
-const CarListingPage: React.FC = () => {
+const SparePartsListingPage: React.FC = () => {
   const theme = useTheme();
-  const [cars, setCars] = useState<Car[]>([]);
+  const [spareParts, setSpareParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CarFilters>({
+  const [filters, setFilters] = useState<SparePartFilters>({
     page: 1,
     limit: 12,
     sort_by: 'created_at',
@@ -60,56 +58,60 @@ const CarListingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCarFor3D, setSelectedCarFor3D] = useState<Car | null>(null);
-  const [show3DViewer, setShow3DViewer] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
-  // Load cars on component mount and when filters change
+  // Load spare parts on component mount and when filters change
   useEffect(() => {
-    loadCars();
+    loadSpareParts();
   }, [filters]);
 
-  // Load available brands on component mount
+  // Load available brands and categories on component mount
   useEffect(() => {
-    const loadBrands = async () => {
+    const loadFilters = async () => {
       try {
-        const brands = await CarListingApiService.getBrands();
-        setAvailableBrands(brands.slice(0, 15)); // Limit to first 15 brands
+        const brands = await SparePartsApiService.getBrands();
+        const categories = SparePartsApiService.getCategories();
+
+        setAvailableBrands(brands.slice(0, 20)); // Limit to first 20 brands
+        setAvailableCategories(categories);
       } catch (error) {
-        console.error('Error loading brands:', error);
-        // Use static fallback brands if API fails
+        console.error('Error loading filters:', error);
+        // Use static fallback data if API fails
         setAvailableBrands([
           'Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan', 'BMW', 'Mercedes-Benz',
-          'Audi', 'Volkswagen', 'Hyundai', 'Kia', 'Mazda', 'Tesla', 'Subaru', 'Lexus'
+          'Audi', 'Volkswagen', 'Hyundai', 'Kia', 'Mazda', 'Subaru', 'Lexus',
+          'Acura', 'Infiniti', 'Cadillac', 'Lincoln', 'Buick', 'GMC'
         ]);
+        setAvailableCategories(SparePartsApiService.getCategories());
       }
     };
-    
-    loadBrands();
+
+    loadFilters();
   }, []);
 
-  const loadCars = async () => {
+  const loadSpareParts = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      let carsData;
+
+      let sparePartsData;
       if (searchQuery.trim()) {
-        carsData = await CarListingApiService.searchCars(searchQuery, filters);
+        sparePartsData = await SparePartsApiService.searchSpareParts(searchQuery, filters);
       } else {
-        carsData = await CarListingApiService.listCars(filters);
+        sparePartsData = await SparePartsApiService.listSpareParts(filters);
       }
-      
-      setCars(carsData);
+
+      setSpareParts(sparePartsData);
       // For now, we'll calculate pagination based on the limit
       // In a real implementation, the backend should return total count
-      const totalCars = carsData.length;
-      const calculatedPages = Math.max(1, Math.ceil(totalCars / (filters.limit || 12)));
+      const totalParts = sparePartsData.length;
+      const calculatedPages = Math.max(1, Math.ceil(totalParts / (filters.limit || 12)));
       setTotalPages(calculatedPages);
     } catch (err) {
-      console.error('Error loading cars:', err);
-      setError('Failed to load cars. Please try again later.');
+      console.error('Error loading spare parts:', err);
+      setError('Failed to load spare parts. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -117,10 +119,10 @@ const CarListingPage: React.FC = () => {
 
   const handleSearch = () => {
     setFilters(prev => ({ ...prev, page: 1 }));
-    loadCars();
+    loadSpareParts();
   };
 
-  const handleFilterChange = (key: keyof CarFilters, value: any) => {
+  const handleFilterChange = (key: keyof SparePartFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
@@ -137,65 +139,46 @@ const CarListingPage: React.FC = () => {
     }).format(price);
   };
 
-  const formatMileage = (mileage: number) => {
-    return new Intl.NumberFormat('en-US').format(mileage);
-  };
-
-  // Function to get appropriate car image based on brand and model
-  const getCarImage = (car: Car) => {
-    // Sample high-quality car images from reliable sources
-    const carImages: { [key: string]: string } = {
-      'Honda Civic': 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Toyota Camry': 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'BMW X5': 'https://images.unsplash.com/photo-1555215695-3004980ad54e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Tesla Model 3': 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Mercedes-Benz C-Class': 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Audi A4': 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Ford Mustang': 'https://images.unsplash.com/photo-1494905998402-395d579af36f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Chevrolet Camaro': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Porsche 911': 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-      'Lamborghini Huracan': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'
+  // Function to get appropriate spare part image based on category
+  const getSparePartImage = (sparePart: SparePart) => {
+    // Sample high-quality spare part images from reliable sources
+    const partImages: { [key: string]: string } = {
+      'Engine Parts': 'https://images.unsplash.com/photo-1486754735734-325b5831c3ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'Brake System': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'Electrical System': 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'Suspension & Steering': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'Body Parts': 'https://images.unsplash.com/photo-1580414155534-57fe7737c3d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
     };
 
-    const carKey = `${car.brand} ${car.model}`;
-    
-    // Try exact match first
-    if (carImages[carKey]) {
-      return carImages[carKey];
+    // Try exact category match first
+    if (partImages[sparePart.category]) {
+      return partImages[sparePart.category];
     }
-    
-    // Try brand match
-    const brandImages = Object.keys(carImages).filter(key => key.includes(car.brand));
-    if (brandImages.length > 0) {
-      return carImages[brandImages[0]];
+
+    // Try partial category match
+    const categoryImages = Object.keys(partImages).filter(key =>
+      sparePart.category.toLowerCase().includes(key.toLowerCase())
+    );
+    if (categoryImages.length > 0) {
+      return partImages[categoryImages[0]];
     }
-    
-    // Default fallback to a generic car image
-    return 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
+
+    // Default fallback to a generic automotive part image
+    return 'https://images.unsplash.com/photo-1486754735734-325b5831c3d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
   };
 
-  const handle3DView = (car: Car) => {
-    setSelectedCarFor3D(car);
-    setShow3DViewer(true);
+  const handleImageLoad = (partId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [partId]: false }));
   };
 
-  const close3DViewer = () => {
-    setShow3DViewer(false);
-    setSelectedCarFor3D(null);
+  const handleImageLoadStart = (partId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [partId]: true }));
   };
 
-  const handleImageLoad = (carId: string) => {
-    setImageLoadingStates(prev => ({ ...prev, [carId]: false }));
-  };
-
-  const handleImageLoadStart = (carId: string) => {
-    setImageLoadingStates(prev => ({ ...prev, [carId]: true }));
-  };
-
-  // Render enhanced car card
-  const renderCarCard = (car: Car, index: number) => (
-    <Box 
-      key={car.id}
+  // Render enhanced spare part card
+  const renderSparePartCard = (part: SparePart, index: number) => (
+    <Box
+      key={part.id}
       sx={{
         width: { xs: '100%', sm: '50%', lg: '33.333%' },
         p: 1
@@ -224,7 +207,7 @@ const CarListingPage: React.FC = () => {
         >
           {/* Image Section with Overlay Actions */}
           <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-            {imageLoadingStates[car.id] && (
+            {imageLoadingStates[part.id] && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -242,12 +225,12 @@ const CarListingPage: React.FC = () => {
                 <CircularProgress size={40} />
               </Box>
             )}
-            
+
             <CardMedia
               component="img"
               height="220"
-              image={getCarImage(car)}
-              alt={`${car.year} ${car.brand} ${car.model}`}
+              image={getSparePartImage(part)}
+              alt={part.name}
               sx={{
                 objectFit: 'cover',
                 transition: 'transform 0.3s ease-in-out',
@@ -256,15 +239,15 @@ const CarListingPage: React.FC = () => {
                   transform: 'scale(1.05)',
                 },
               }}
-              onLoad={() => handleImageLoad(car.id)}
-              onLoadStart={() => handleImageLoadStart(car.id)}
+              onLoad={() => handleImageLoad(part.id)}
+              onLoadStart={() => handleImageLoadStart(part.id)}
               onError={(e) => {
-                handleImageLoad(car.id);
+                handleImageLoad(part.id);
                 // Fallback to a default image if the main image fails to load
-                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486754735734-325b5831c3d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
               }}
             />
-            
+
             {/* Overlay Actions */}
             <Box
               sx={{
@@ -276,23 +259,6 @@ const CarListingPage: React.FC = () => {
                 gap: 1,
               }}
             >
-              <Tooltip title="View in 3D">
-                <IconButton
-                  onClick={() => handle3DView(car)}
-                  sx={{
-                    backgroundColor: alpha(theme.palette.background.paper, 0.9),
-                    backdropFilter: 'blur(10px)',
-                    '&:hover': {
-                      backgroundColor: theme.palette.primary.main,
-                      color: 'white',
-                      transform: 'scale(1.1)',
-                    },
-                  }}
-                >
-                  <ThreeDRotation />
-                </IconButton>
-              </Tooltip>
-              
               <Tooltip title="Add to Favorites">
                 <IconButton
                   sx={{
@@ -310,107 +276,172 @@ const CarListingPage: React.FC = () => {
               </Tooltip>
             </Box>
 
-            {/* Condition Badge */}
+            {/* Status Badges */}
             <Box
               sx={{
                 position: 'absolute',
                 top: 12,
                 left: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
               }}
             >
               <Chip
-                label={car.car_condition?.toUpperCase() || 'USED'}
+                label={part.condition?.toUpperCase()}
                 size="small"
                 sx={{
-                  backgroundColor: alpha(theme.palette.success.main, 0.9),
+                  backgroundColor: alpha(
+                    part.condition === 'new' ? theme.palette.success.main :
+                    part.condition === 'refurbished' ? theme.palette.info.main :
+                    part.condition === 'used' ? theme.palette.warning.main :
+                    theme.palette.secondary.main, 0.9
+                  ),
                   color: 'white',
                   fontWeight: 'bold',
                   backdropFilter: 'blur(10px)',
                 }}
               />
+
+              {part.is_featured && (
+                <Chip
+                  label="FEATURED"
+                  size="small"
+                  sx={{
+                    backgroundColor: alpha(theme.palette.primary.main, 0.9),
+                    color: 'white',
+                    fontWeight: 'bold',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                />
+              )}
+
+              {part.stock_quantity <= 5 && part.stock_quantity > 0 && (
+                <Chip
+                  label={`Only ${part.stock_quantity} left`}
+                  size="small"
+                  sx={{
+                    backgroundColor: alpha(theme.palette.error.main, 0.9),
+                    color: 'white',
+                    fontWeight: 'bold',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                />
+              )}
             </Box>
           </Box>
-          
+
           <CardContent sx={{ flexGrow: 1, p: 3 }}>
-            {/* Title and Year */}
+            {/* Title and Part Number */}
             <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
               <Box>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  {car.brand} {car.model}
+                  {part.name}
                 </Typography>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CalendarToday fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    {car.year}
-                  </Typography>
-                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  Part #: {part.part_number}
+                </Typography>
               </Box>
-              
-              {car.rating && (
+
+              {part.rating && (
                 <Box display="flex" alignItems="center" gap={0.5}>
                   <Star fontSize="small" sx={{ color: '#ffc107' }} />
                   <Typography variant="body2" fontWeight="bold">
-                    {car.rating.toFixed(1)}
+                    {part.rating.toFixed(1)}
                   </Typography>
                 </Box>
               )}
             </Box>
-            
-            {/* Price */}
+
+            {/* Price and Stock */}
             <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <AttachMoney sx={{ color: theme.palette.success.main }} />
               <Typography variant="h5" color="primary" fontWeight="bold">
-                {formatPrice(Number(car.price))}
+                {formatPrice(Number(part.price))}
               </Typography>
             </Box>
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Specifications */}
+            {/* Part Details */}
             <Stack spacing={1.5}>
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Speed fontSize="small" color="action" />
+                  <Build fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Mileage
+                    Brand
                   </Typography>
                 </Box>
                 <Typography variant="body2" fontWeight="medium">
-                  {formatMileage(car.mileage)} mi
+                  {part.brand}
                 </Typography>
               </Box>
 
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <LocalGasStation fontSize="small" color="action" />
+                  <Inventory fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Fuel Type
+                    Stock
                   </Typography>
                 </Box>
                 <Typography variant="body2" fontWeight="medium">
-                  {car.fuel_type}
+                  {part.stock_quantity} available
                 </Typography>
               </Box>
 
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Settings fontSize="small" color="action" />
+                  <LocationOn fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Transmission
+                    Location
                   </Typography>
                 </Box>
                 <Typography variant="body2" fontWeight="medium">
-                  {car.transmission}
+                  {part.location}
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <LocationOn fontSize="small" color="action" />
-                <Typography variant="body2" color="text.secondary">
-                  {car.location}
-                </Typography>
-              </Box>
+              {part.warranty_months && (
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Verified fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      Warranty
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    {part.warranty_months} months
+                  </Typography>
+                </Box>
+              )}
             </Stack>
+
+            {/* Compatibility */}
+            {part.compatibility.length > 0 && (
+              <Box mt={2}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Compatible with:
+                </Typography>
+                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                  {part.compatibility.slice(0, 3).map((vehicle, idx) => (
+                    <Chip
+                      key={idx}
+                      label={vehicle}
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  ))}
+                  {part.compatibility.length > 3 && (
+                    <Chip
+                      label={`+${part.compatibility.length - 3} more`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
 
             {/* Description */}
             <Typography
@@ -425,7 +456,7 @@ const CarListingPage: React.FC = () => {
                 lineHeight: 1.5,
               }}
             >
-              {car.description}
+              {part.description}
             </Typography>
           </CardContent>
 
@@ -443,7 +474,7 @@ const CarListingPage: React.FC = () => {
               >
                 View Details
               </Button>
-              
+
               <Tooltip title="Share">
                 <IconButton
                   sx={{
@@ -454,7 +485,7 @@ const CarListingPage: React.FC = () => {
                   <Share />
                 </IconButton>
               </Tooltip>
-              
+
               <Tooltip title="Compare">
                 <IconButton
                   sx={{
@@ -473,7 +504,7 @@ const CarListingPage: React.FC = () => {
   );
 
   // Show loading state
-  if (loading && cars.length === 0) {
+  if (loading && spareParts.length === 0) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -504,7 +535,7 @@ const CarListingPage: React.FC = () => {
             mb: 4,
           }}
         >
-          Car Listings
+          Spare Parts
         </Typography>
       </motion.div>
 
@@ -518,7 +549,7 @@ const CarListingPage: React.FC = () => {
           <Box display="flex" gap={2} mb={2}>
             <TextField
               fullWidth
-              placeholder="Search cars..."
+              placeholder="Search spare parts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -543,9 +574,9 @@ const CarListingPage: React.FC = () => {
           </Box>
 
           {showFilters && (
-            <Box 
-              sx={{ 
-                display: 'flex', 
+            <Box
+              sx={{
+                display: 'flex',
                 flexWrap: 'wrap',
                 gap: 2,
                 mt: 2
@@ -566,41 +597,58 @@ const CarListingPage: React.FC = () => {
                   </Select>
                 </FormControl>
               </Box>
-              
+
               <Box sx={{ width: { xs: '100%', sm: '48%', md: '23%' } }}>
                 <FormControl fullWidth>
-                  <InputLabel>Fuel Type</InputLabel>
+                  <InputLabel>Category</InputLabel>
                   <Select
-                    value={filters.fuel_type || ''}
-                    onChange={(e) => handleFilterChange('fuel_type', e.target.value)}
-                    label="Fuel Type"
+                    value={filters.category || ''}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                    label="Category"
                   >
-                    <MenuItem value="">All Types</MenuItem>
-                    {CarListingApiService.getFuelTypes().map(type => (
-                      <MenuItem key={type} value={type}>{type}</MenuItem>
+                    <MenuItem value="">All Categories</MenuItem>
+                    {availableCategories.map(category => (
+                      <MenuItem key={category} value={category}>{category}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Box>
 
               <Box sx={{ width: { xs: '100%', sm: '48%', md: '23%' } }}>
-                <TextField
-                  fullWidth
-                  label="Min Price"
-                  type="number"
-                  value={filters.price_min || ''}
-                  onChange={(e) => handleFilterChange('price_min', e.target.value ? Number(e.target.value) : undefined)}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Condition</InputLabel>
+                  <Select
+                    value={filters.condition || ''}
+                    onChange={(e) => handleFilterChange('condition', e.target.value)}
+                    label="Condition"
+                  >
+                    <MenuItem value="">All Conditions</MenuItem>
+                    {SparePartsApiService.getConditions().map(condition => (
+                      <MenuItem key={condition} value={condition}>{condition}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
 
               <Box sx={{ width: { xs: '100%', sm: '48%', md: '23%' } }}>
-                <TextField
-                  fullWidth
-                  label="Max Price"
-                  type="number"
-                  value={filters.price_max || ''}
-                  onChange={(e) => handleFilterChange('price_max', e.target.value ? Number(e.target.value) : undefined)}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Sort By</InputLabel>
+                  <Select
+                    value={`${filters.sort_by || 'created_at'}_${filters.sort_order || 'DESC'}`}
+                    onChange={(e) => {
+                      const [sort_by, sort_order] = e.target.value.split('_');
+                      handleFilterChange('sort_by', sort_by);
+                      handleFilterChange('sort_order', sort_order);
+                    }}
+                    label="Sort By"
+                  >
+                    <MenuItem value="created_at_DESC">Newest First</MenuItem>
+                    <MenuItem value="price_ASC">Price: Low to High</MenuItem>
+                    <MenuItem value="price_DESC">Price: High to Low</MenuItem>
+                    <MenuItem value="name_ASC">Name: A to Z</MenuItem>
+                    <MenuItem value="rating_DESC">Highest Rated</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
             </Box>
           )}
@@ -614,18 +662,18 @@ const CarListingPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Cars Grid */}
-      {cars.length > 0 ? (
+      {/* Spare Parts Grid */}
+      {spareParts.length > 0 ? (
         <>
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               flexWrap: 'wrap',
               gap: 2,
               mt: 2
             }}
           >
-            {cars.map((car, index) => renderCarCard(car, index))}
+            {spareParts.map((part, index) => renderSparePartCard(part, index))}
           </Box>
 
           {/* Pagination */}
@@ -643,9 +691,9 @@ const CarListingPage: React.FC = () => {
         </>
       ) : !loading && (
         <Paper sx={{ p: 6, textAlign: 'center' }}>
-          <DirectionsCar sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Build sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            No cars found
+            No spare parts found
           </Typography>
           <Typography color="text.secondary">
             Try adjusting your search criteria or filters.
@@ -654,7 +702,7 @@ const CarListingPage: React.FC = () => {
       )}
 
       {/* Loading overlay for subsequent loads */}
-      {loading && cars.length > 0 && (
+      {loading && spareParts.length > 0 && (
         <Box
           position="fixed"
           top={0}
@@ -668,38 +716,10 @@ const CarListingPage: React.FC = () => {
           zIndex={9999}
         >
           <CircularProgress />
-    </Box>
-      )}
-
-      {/* 3D Car Viewer Dialog */}
-      {selectedCarFor3D && (
-        <CarViewer3D
-          car={{
-            id: selectedCarFor3D.id,
-            title: `${selectedCarFor3D.year} ${selectedCarFor3D.brand} ${selectedCarFor3D.model}`,
-            brand: selectedCarFor3D.brand,
-            model: selectedCarFor3D.model,
-            year: selectedCarFor3D.year,
-            color: '#ffffff', // Default color since Car type doesn't have color property
-            price: Number(selectedCarFor3D.price),
-            mileage: selectedCarFor3D.mileage,
-            fuelType: selectedCarFor3D.fuel_type,
-            transmission: selectedCarFor3D.transmission,
-            condition: selectedCarFor3D.car_condition,
-            location: selectedCarFor3D.location,
-            description: selectedCarFor3D.description,
-            images: [getCarImage(selectedCarFor3D)],
-            features: [],
-            rating: selectedCarFor3D.rating || 0,
-            bodyType: selectedCarFor3D.body_type,
-          }}
-          onClose={close3DViewer}
-          fullscreen={show3DViewer}
-          useRealistic3D={false} // Use our custom realistic car models
-        />
+        </Box>
       )}
     </Container>
   );
 };
 
-export default CarListingPage;
+export default SparePartsListingPage;

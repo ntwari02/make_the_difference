@@ -30,7 +30,7 @@ import {
   TrendingUp,
   People,
   Assignment,
-  Payment,
+  Payment as PaymentIcon,
   Notifications,
   ExpandMore,
   ExpandLess,
@@ -40,6 +40,7 @@ import {
   LockReset,
   Help,
   Info,
+  Build,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -153,10 +154,24 @@ const NavigationMenu: React.FC = () => {
           requiresAuth: true,
         },
         {
+          path: '/app/spare-parts',
+          label: 'Spare Parts',
+          icon: <Build />,
+          description: 'Browse and search spare parts',
+          requiresAuth: true,
+        },
+        {
           path: '/app/checkout',
           label: 'Checkout',
           icon: <ShoppingCart />,
           description: 'Complete your purchase',
+          requiresAuth: true,
+        },
+        {
+          path: '/app/payments',
+          label: 'Payment History',
+          icon: <PaymentIcon />,
+          description: 'View your payment history',
           requiresAuth: true,
         },
         {
@@ -451,7 +466,17 @@ const NavigationMenu: React.FC = () => {
               >
                 Browse Cars
               </Button>
-              
+
+              <Button
+                variant="contained"
+                startIcon={<Build />}
+                onClick={() => navigate('/app/spare-parts')}
+                disabled={!isAuthenticated}
+                sx={{ backgroundColor: theme.palette.secondary.main }}
+              >
+                Spare Parts
+              </Button>
+
               <Button
                 variant="contained"
                 startIcon={<School />}
