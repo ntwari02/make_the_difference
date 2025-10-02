@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
   Typography,
   Button,
-  GridLegacy as Grid,
+  Grid,
   Card,
   CardContent,
   Avatar,
+  Chip,
   Stack,
   IconButton,
+  useTheme,
+  useMediaQuery,
+  Switch,
+  FormControlLabel,
+  Paper,
+  Divider,
 } from '@mui/material';
 import {
   School,
@@ -21,225 +28,165 @@ import {
   Star,
   TrendingUp,
   People,
-  ArrowForward,
-  CheckCircle,
-  ArrowBack,
+  Security,
+  Speed,
+  Support,
   DarkMode,
   LightMode,
+  ArrowForward,
+  CheckCircle,
+  PlayArrow,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
 
-
-
-// Theme Context
-const ThemeContext = React.createContext<{
-  isDarkMode: boolean;
-  toggleTheme: () => void;
-}>({
-  isDarkMode: false,
-  toggleTheme: () => {},
-});
-
-// Theme Provider Component
-const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
+// Theme Toggle Component
+const ThemeToggle: React.FC = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  
   const toggleTheme = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    
-    // Apply CSS variables to document
-    const root = document.documentElement;
-    if (newTheme) {
-      root.style.setProperty('--bg-primary', '#0f0f23');
-      root.style.setProperty('--bg-secondary', '#1a1a2e');
-      root.style.setProperty('--bg-tertiary', '#16213e');
-      root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#e0e0e0');
-      root.style.setProperty('--text-muted', '#a0a0a0');
-      root.style.setProperty('--accent-primary', '#6366f1');
-      root.style.setProperty('--accent-secondary', '#8b5cf6');
-      root.style.setProperty('--card-bg', 'rgba(26, 26, 46, 0.8)');
-      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
-      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
-    } else {
-      root.style.setProperty('--bg-primary', '#1a1a2e');
-      root.style.setProperty('--bg-secondary', '#16213e');
-      root.style.setProperty('--bg-tertiary', '#0f0f23');
-      root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#e0e0e0');
-      root.style.setProperty('--text-muted', '#a0a0a0');
-      root.style.setProperty('--accent-primary', '#6366f1');
-      root.style.setProperty('--accent-secondary', '#8b5cf6');
-      root.style.setProperty('--card-bg', 'rgba(26, 26, 46, 0.8)');
-      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
-      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
-    }
+    setDarkMode(!darkMode);
+    // Here you would integrate with your theme system
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+    <FormControlLabel
+      control={
+        <Switch
+          checked={darkMode}
+          onChange={toggleTheme}
+          icon={<LightMode />}
+          checkedIcon={<DarkMode />}
+          sx={{
+            '& .MuiSwitch-thumb': {
+              backgroundColor: darkMode ? '#1976d2' : '#ffc107',
+            },
+            '& .MuiSwitch-track': {
+              backgroundColor: darkMode ? '#1976d2' : '#ffc107',
+            },
+          }}
+        />
+      }
+      label={darkMode ? 'Dark' : 'Light'}
+      sx={{ color: 'white' }}
+    />
   );
 };
 
-// Hook to use theme
-const useTheme = () => React.useContext(ThemeContext);
+// Hero Section Component
+const HeroSection: React.FC = () => {
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-// Innovative Theme Switcher Component
-const ThemeSwitcher: React.FC = () => {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const handleGetStarted = () => {
+    navigate('/auth/register');
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth/login');
+  };
 
   return (
-    <motion.div
-      initial={{ scale: 0, rotate: -180 }}
-      animate={{ scale: 1, rotate: 0 }}
-      transition={{ 
-        type: 'spring', 
-        stiffness: 200, 
-        damping: 15,
-        delay: 0.5 
-      }}
-      style={{
-        position: 'fixed',
-        top: 20,
-        right: 20,
-        zIndex: 1000,
+    <Box 
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={toggleTheme}
-        style={{
-          width: 45,
-          height: 45,
-          borderRadius: '50%',
-          background: isDarkMode 
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: isDarkMode
-            ? '0 6px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-            : '0 6px 24px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-          border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)'}`,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Background Animation */}
-        <motion.div
-          animate={{
-            rotate: isDarkMode ? 360 : 0,
-            scale: isDarkMode ? [1, 1.2, 1] : [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 0.8,
-            ease: 'easeInOut',
-          }}
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            background: isDarkMode
-              ? 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%)',
-          }}
-        />
+      {/* Theme Toggle */}
+      <Box sx={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+        <ThemeToggle />
+      </Box>
 
-        {/* Icon Container */}
-        <motion.div
-          animate={{
-            rotate: isDarkMode ? 180 : 0,
-            scale: isDarkMode ? [1, 0.8, 1] : [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 0.6,
-            ease: 'easeInOut',
-          }}
-          style={{
-            position: 'relative',
-            zIndex: 2,
-          }}
-        >
-          {isDarkMode ? (
-            <DarkMode 
-              sx={{ 
-                fontSize: 20, 
-                color: '#e0e0e0',
-                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))',
-              }} 
+      {/* 3D Background */}
+      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1 }}>
+        <Canvas>
+          <OrbitControls enableZoom={false} enablePan={false} />
+          <Sphere args={[1, 100, 200]} scale={2}>
+            <MeshDistortMaterial
+              color="#ffffff"
+              attach="material"
+              distort={0.3}
+              speed={1.5}
             />
-          ) : (
-            <LightMode 
-              sx={{ 
-                fontSize: 20, 
-                color: '#ff6b35',
-                filter: 'drop-shadow(0 1px 2px rgba(255, 107, 53, 0.3))',
-              }} 
-            />
-          )}
-        </motion.div>
+          </Sphere>
+        </Canvas>
+      </Box>
 
-        {/* Floating Particles */}
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            animate={{
-              y: isDarkMode ? [0, -15, 0] : [0, 15, 0],
-              x: isDarkMode ? [0, 8, 0] : [0, -8, 0],
-              opacity: isDarkMode ? [0.2, 0.6, 0.2] : [0.4, 0.8, 0.4],
-              scale: isDarkMode ? [0.3, 0.8, 0.3] : [0.8, 0.3, 0.8],
-            }}
-            transition={{
-              duration: 2 + i * 0.5,
-              repeat: Infinity,
-              delay: i * 0.3,
-            }}
-            style={{
-              position: 'absolute',
-              width: 3,
-              height: 3,
-              borderRadius: '50%',
-              background: isDarkMode ? '#e0e0e0' : '#ff6b35',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-        ))}
-      </motion.div>
+      <Container maxWidth="lg" sx={{ px: 4, position: 'relative', zIndex: 2 }}>
+        <Grid container spacing={6} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <Typography
+                variant={isMobile ? 'h3' : 'h2'}
+                component="h1"
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'white',
+                  mb: 2,
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
+                Welcome to{' '}
+                <Box component="span" sx={{ color: '#fbbf24', fontWeight: 'bold' }}>
+                  Reaglex
+                </Box>
+              </Typography>
+              
+              <Typography
+                variant="h5"
+                sx={{
+                  color: 'white',
+                  mb: 3,
+                  fontWeight: 500,
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                Your Gateway to Education, Commerce, and Innovation
+              </Typography>
+              
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'white',
+                  mb: 4,
+                  fontSize: '1.1rem',
+                  lineHeight: 1.6,
+                  opacity: 0.95,
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                Discover a comprehensive platform that combines e-learning, e-commerce, 
+                AI-powered insights, scholarship opportunities, visa assistance, and 
+                advertising solutions - all in one place.
+              </Typography>
 
-      {/* Tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ 
-          delay: 1.5,
-          duration: 0.3 
-        }}
-        style={{
-          position: 'absolute',
-          top: '70px',
-          right: '20px',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          fontSize: '0.875rem',
-          pointerEvents: 'none',
-          zIndex: 1000,
-        }}
-      >
-        {isDarkMode ? 'Switch to Light' : 'Switch to Dark'}
-      </motion.div>
-    </motion.div>
+              <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 4 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleGetStarted}
+                    endIcon={<ArrowForward />}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: 3,
                       background: 'rgba(255, 255, 255, 0.15)',
                       backdropFilter: 'blur(10px)',
                       border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -358,39 +305,11 @@ const ThemeSwitcher: React.FC = () => {
         </Grid>
       </Container>
     </Box>
-=======
-      {/* Tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-        style={{
-          position: 'absolute',
-          top: 55,
-          right: 0,
-          background: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-          color: isDarkMode ? '#fff' : '#333',
-          padding: '6px 10px',
-          borderRadius: 6,
-          fontSize: '11px',
-          fontWeight: 'bold',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
-          backdropFilter: 'blur(10px)',
-          border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-        }}
-      >
-        {isDarkMode ? 'Switch to Light' : 'Switch to Dark'}
-      </motion.div>
-    </motion.div>
->>>>>>> sam's
   );
 };
 
 // Features Section Component
 const FeaturesSection: React.FC = () => {
-  const { isDarkMode } = useTheme();
-  
   const features = [
     {
       icon: <School sx={{ fontSize: 40 }} />,
@@ -437,93 +356,38 @@ const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <Box 
-      id="why-choose-section"
-      sx={{ 
-      minHeight: '100vh',
-        background: isDarkMode 
-          ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)'
-          : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-      py: 8,
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Background Animation Elements */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          style={{
-            position: 'absolute',
-            width: Math.random() * 80 + 40,
-            height: Math.random() * 80 + 40,
-            borderRadius: '50%',
-            background: `rgba(25, 118, 210, ${Math.random() * 0.1 + 0.05})`,
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, 20, 0],
-            rotate: [0, 180, 360],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: Math.random() * 8 + 12,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-
-      <Container maxWidth="lg" sx={{ px: 4, position: 'relative', zIndex: 2 }}>
+    <Box sx={{ py: 12, background: '#f8fafc' }}>
+      <Container maxWidth="lg" sx={{ px: 4 }}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
         >
           <Box textAlign="center" mb={8}>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+            <Typography 
+              variant="h3" 
+              component="h2" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#1e293b',
+                mb: 2,
+              }}
             >
-              <Typography 
-                variant="h2" 
-                component="h1" 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  color: '#1e293b',
-                  mb: 2,
-                  fontSize: { xs: '2rem', md: '3rem' },
-                  background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Why Choose Reaglex?
-              </Typography>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              Why Choose Reaglex?
+            </Typography>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: '#64748b', 
+                maxWidth: 600, 
+                mx: 'auto',
+                lineHeight: 1.6,
+              }}
             >
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  color: '#64748b', 
-                  maxWidth: 600, 
-                  mx: 'auto',
-                  lineHeight: 1.6,
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
-                }}
-              >
-                We provide comprehensive solutions that empower individuals and businesses 
-                to achieve their goals through technology and innovation.
-              </Typography>
-            </motion.div>
+              We provide comprehensive solutions that empower individuals and businesses 
+              to achieve their goals through technology and innovation.
+            </Typography>
           </Box>
         </motion.div>
 
@@ -531,70 +395,44 @@ const FeaturesSection: React.FC = () => {
           {features.map((feature, index) => (
             <Grid item xs={12} md={6} lg={4} key={index}>
               <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ 
-                  duration: 0.6, 
-                  delay: index * 0.1,
-                  type: 'spring',
-                  stiffness: 100,
-                }}
-                whileHover={{ 
-                  scale: 1.05,
-                  transition: { duration: 0.2 }
-                }}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
               >
                 <Card
                   sx={{
                     height: '100%',
-                    borderRadius: 4,
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                    borderRadius: 3,
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
                     border: '1px solid rgba(0, 0, 0, 0.05)',
                     transition: 'all 0.3s ease',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(10px)',
-                    position: 'relative',
-                    overflow: 'hidden',
+                    background: 'white',
                     '&:hover': {
-                      transform: 'translateY(-12px)',
-                      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
                       borderColor: feature.color,
-                    },
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: `linear-gradient(90deg, ${feature.color}20, ${feature.color}60)`,
                     },
                   }}
                 >
                   <CardContent sx={{ p: 4 }}>
-                    <motion.div
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.6 }}
+                    <Box
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${feature.color}20, ${feature.color}40)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mx: 'auto',
+                        mb: 3,
+                        color: feature.color,
+                        border: `2px solid ${feature.color}20`,
+                      }}
                     >
-                      <Box
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: '50%',
-                          background: `linear-gradient(135deg, ${feature.color}20, ${feature.color}40)`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mx: 'auto',
-                          mb: 3,
-                          color: feature.color,
-                          border: `2px solid ${feature.color}20`,
-                          boxShadow: `0 8px 24px ${feature.color}30`,
-                        }}
-                      >
-                        {feature.icon}
-                      </Box>
-                    </motion.div>
+                      {feature.icon}
+                    </Box>
                     
                     <Typography 
                       variant="h5" 
@@ -622,53 +460,38 @@ const FeaturesSection: React.FC = () => {
                     </Typography>
 
                     <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" sx={{ color: '#374151', mb: 1, fontWeight: 600, textAlign: 'center' }}>
+                      <Typography variant="subtitle2" sx={{ color: '#374151', mb: 1, fontWeight: 600 }}>
                         Key Benefits:
                       </Typography>
                       <Stack spacing={1}>
                         {feature.benefits.map((benefit, idx) => (
-                          <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.8 + index * 0.1 + idx * 0.05 }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <CheckCircle sx={{ color: feature.color, fontSize: 16 }} />
-                              <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                                {benefit}
-                              </Typography>
-                            </Box>
-                          </motion.div>
+                          <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CheckCircle sx={{ color: feature.color, fontSize: 16 }} />
+                            <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                              {benefit}
+                            </Typography>
+                          </Box>
                         ))}
                       </Stack>
                     </Box>
 
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Button
-                        variant="outlined"
-                        fullWidth
-                        sx={{
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      sx={{
+                        borderColor: feature.color,
+                        color: feature.color,
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        py: 1,
+                        '&:hover': {
+                          background: `${feature.color}10`,
                           borderColor: feature.color,
-                          color: feature.color,
-                          fontWeight: 600,
-                          borderRadius: 3,
-                          py: 1.5,
-                          borderWidth: 2,
-                          '&:hover': {
-                            background: `${feature.color}10`,
-                            borderColor: feature.color,
-                            transform: 'translateY(-2px)',
-                            boxShadow: `0 8px 24px ${feature.color}30`,
-                          },
-                        }}
-                      >
-                        Learn More
-                      </Button>
-                    </motion.div>
+                        },
+                      }}
+                    >
+                      Learn More
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -753,7 +576,6 @@ const StatisticsSection: React.FC = () => {
   );
 };
 
-<<<<<<< HEAD
 // Call to Action Section
 const CallToActionSection: React.FC = () => {
   const navigate = useNavigate();
@@ -931,13 +753,9 @@ const CallToActionSection: React.FC = () => {
     </Box>
   );
 };
-=======
->>>>>>> sam's
 
 // Testimonials Section Component
 const TestimonialsSection: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const testimonials = [
     {
       name: 'Sarah Johnson',
@@ -960,44 +778,7 @@ const TestimonialsSection: React.FC = () => {
       content: 'Teaching on Reaglex is a joy. The platform provides excellent tools for creating engaging content.',
       rating: 5,
     },
-    {
-      name: 'David Kim',
-      role: 'Scholarship Recipient',
-      avatar: 'DK',
-      content: 'Thanks to Reaglex, I found the perfect scholarship that helped me pursue my dream education abroad.',
-      rating: 5,
-    },
-    {
-      name: 'Lisa Wang',
-      role: 'Visa Applicant',
-      avatar: 'LW',
-      content: 'The visa assistance service was incredible. They guided me through every step and my application was approved!',
-      rating: 5,
-    },
   ];
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % testimonials.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  };
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-  };
-
-  // Auto-slide functionality
-  useEffect(() => {
-    if (isPaused) return;
-    
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % testimonials.length);
-    }, 2500); // Change slide every 2.5 seconds
-
-    return () => clearInterval(interval);
-  }, [testimonials.length, isPaused]);
 
   return (
     <Box sx={{ py: 8, background: '#f8f9fa' }}>
@@ -1018,473 +799,163 @@ const TestimonialsSection: React.FC = () => {
           </Box>
         </motion.div>
 
-        <Box 
-          sx={{ position: 'relative', overflow: 'hidden' }}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {/* Navigation Arrows */}
-          <IconButton
-            onClick={prevSlide}
-            sx={{
-              position: 'absolute',
-              left: -60,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              background: 'white',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              '&:hover': {
-                background: '#f8f9fa',
-                transform: 'translateY(-50%) scale(1.1)',
-              },
-            }}
-          >
-            <ArrowBack />
-          </IconButton>
-
-          <IconButton
-            onClick={nextSlide}
-            sx={{
-              position: 'absolute',
-              right: -60,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              background: 'white',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              '&:hover': {
-                background: '#f8f9fa',
-                transform: 'translateY(-50%) scale(1.1)',
-              },
-            }}
-          >
-            <ArrowForward />
-          </IconButton>
-
-          {/* Sliding Container */}
-          <Box
-            sx={{
-              position: 'relative',
-              overflow: 'hidden',
-              height: 300,
-            }}
-          >
-          <Box
-            sx={{
-              display: 'flex',
-              transition: 'transform 0.5s ease-in-out',
-              transform: `translateX(-${currentSlide * 100}%)`,
-                height: '100%',
-            }}
-          >
-            {testimonials.map((testimonial, index) => (
-              <Box
-                key={index}
-                sx={{
-                    minWidth: '100%',
-                    width: '100%',
-                  px: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
+        <Grid container spacing={4}>
+          {testimonials.map((testimonial, index) => (
+            <Grid item xs={12} md={4} key={index}>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
               >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ 
-                      opacity: 1,
-                      scale: 1,
+                <Card
+                  sx={{
+                    height: '100%',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                    p: 3,
                   }}
-                  transition={{ duration: 0.3 }}
-                    style={{ width: '100%', maxWidth: 600 }}
                 >
-                  <Card
-                    sx={{
-                      height: '100%',
-                      borderRadius: 3,
-                        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
-                      p: 4,
-                      background: 'white',
-                        border: '2px solid #1976d2',
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    {/* Rating Stars */}
-                    <Box display="flex" alignItems="center" mb={2}>
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} sx={{ color: '#ffd700', fontSize: 24 }} />
-                      ))}
-                    </Box>
-                    
-                    {/* Testimonial Content */}
-                    <Typography 
-                      variant="body1" 
-                      color="text.secondary" 
-                      sx={{ 
-                        mb: 3, 
-                        fontStyle: 'italic',
-                        fontSize: '1.1rem',
-                        lineHeight: 1.6,
+                  <Box display="flex" alignItems="center" mb={2}>
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} sx={{ color: '#ffd700', fontSize: 20 }} />
+                    ))}
+                  </Box>
+                  
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontStyle: 'italic' }}>
+                    "{testimonial.content}"
+                  </Typography>
+                  
+                  <Box display="flex" alignItems="center">
+                    <Avatar
+                      sx={{
+                        bgcolor: 'primary.main',
+                        mr: 2,
+                        width: 50,
+                        height: 50,
                       }}
                     >
-                      "{testimonial.content}"
-                    </Typography>
+                      {testimonial.avatar}
+                    </Avatar>
                     
-                    {/* User Information */}
-                    <Box display="flex" alignItems="center">
-                      <Avatar
-                        sx={{
-                          bgcolor: 'primary.main',
-                          mr: 2,
-                          width: 60,
-                          height: 60,
-                          fontSize: '1.2rem',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {testimonial.avatar}
-                      </Avatar>
-                      
-                      <Box>
-                        <Typography variant="h6" fontWeight="bold" gutterBottom>
-                          {testimonial.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {testimonial.role}
-                        </Typography>
-                      </Box>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {testimonial.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {testimonial.role}
+                      </Typography>
                     </Box>
-                  </Card>
-                </motion.div>
-              </Box>
-            ))}
-            </Box>
-          </Box>
-
-          {/* Dots Indicator */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gap: 1 }}>
-            {testimonials.map((_, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Box
-                  onClick={() => goToSlide(index)}
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    background: index === currentSlide ? '#1976d2' : '#e0e0e0',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    transform: index === currentSlide ? 'scale(1.2)' : 'scale(1)',
-                    boxShadow: index === currentSlide ? '0 0 8px rgba(25, 118, 210, 0.3)' : 'none',
-                    '&:hover': {
-                      background: index === currentSlide ? '#1565c0' : '#bdbdbd',
-                      transform: 'scale(1.3)',
-                    },
-                  }}
-                />
+                  </Box>
+                </Card>
               </motion.div>
-            ))}
-            
-            {/* Auto-slide indicator */}
-            <Box sx={{ ml: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: isPaused ? '#ff9800' : '#4caf50',
-                  transition: 'all 0.3s ease',
-                }}
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                {isPaused ? 'Paused' : `Auto (${currentSlide + 1}/${testimonials.length})`}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+            </Grid>
+          ))}
+        </Grid>
       </Container>
     </Box>
   );
 };
 
-// Typing Animation Component
-const TypingAnimation: React.FC<{ text: string; speed?: number }> = ({ text, speed = 100 }) => {
-  const [displayText, setDisplayText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    if (!isDeleting && currentIndex < text.length) {
-      // Typing phase
-      const timeout = setTimeout(() => {
-        setDisplayText(prev => prev + text[currentIndex]);
-        setCurrentIndex(prev => prev + 1);
-      }, speed);
-
-      return () => clearTimeout(timeout);
-    } else if (!isDeleting && currentIndex >= text.length) {
-      // Finished typing, wait a moment then start deleting
-      const waitTimeout = setTimeout(() => {
-        setIsDeleting(true);
-      }, 1500); // Wait 1.5 seconds before starting to delete
-
-      return () => clearTimeout(waitTimeout);
-    } else if (isDeleting && displayText.length > 0) {
-      // Deleting phase
-      const timeout = setTimeout(() => {
-        setDisplayText(prev => prev.slice(0, -1));
-      }, speed / 2); // Delete faster than typing
-
-      return () => clearTimeout(timeout);
-    } else if (isDeleting && displayText.length === 0) {
-      // Finished deleting, restart
-      const restartTimeout = setTimeout(() => {
-        setIsDeleting(false);
-        setCurrentIndex(0);
-      }, 500); // Short pause before restarting
-
-      return () => clearTimeout(restartTimeout);
-    }
-  }, [currentIndex, text, speed, isDeleting, displayText.length]);
-
-  return <span>{displayText}</span>;
-};
-
-// Get Started Section Component
-const GetStartedSection: React.FC = () => {
+// CTA Section Component
+const CTASection: React.FC = () => {
   const navigate = useNavigate();
-  const { isDarkMode } = useTheme();
-
-  const handleGetStarted = () => {
-    navigate('/auth/login');
-  };
-
-  const handleLearnMore = () => {
-    // Scroll to "Why Choose Reaglex" section
-    const whyChooseSection = document.getElementById('why-choose-section');
-    if (whyChooseSection) {
-      whyChooseSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
-    <Box sx={{ 
-      py: 8, 
-      background: isDarkMode 
-        ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)'
-        : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Background Animation Elements */}
-      {[...Array(6)].map((_, i) => (
+    <Box sx={{ py: 8, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <Container maxWidth="md">
         <motion.div
-          key={i}
-          style={{
-            position: 'absolute',
-            width: Math.random() * 60 + 30,
-            height: Math.random() * 60 + 30,
-            borderRadius: '50%',
-            background: `rgba(255, 255, 255, ${Math.random() * 0.08 + 0.03})`,
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, 20, 0],
-            rotate: [0, 180, 360],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: Math.random() * 8 + 12,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-
-      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <Box textAlign="center" mb={6}>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            >
-              <Typography 
-                variant="h3" 
-                component="h1" 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  color: 'white',
-                  mb: 2,
-                  fontSize: { xs: '1.8rem', md: '2.5rem' },
-                }}
-              >
-                <TypingAnimation text="Your Journey to Success Starts with Reaglex" speed={80} />
-              </Typography>
-            </motion.div>
+          <Box textAlign="center">
+            <Typography variant="h3" component="h2" fontWeight="bold" color="white" gutterBottom>
+              Ready to Get Started?
+            </Typography>
             
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'rgba(255, 255, 255, 0.9)', 
-                  maxWidth: 500, 
-                  mx: 'auto',
-                  lineHeight: 1.5,
-                  fontSize: { xs: '1rem', md: '1.1rem' },
-                  mb: 3,
-                }}
-              >
-                Trusted by over 10,000+ learners worldwide. Reaglex unlocks your potential with our comprehensive platform that delivers real results and transforms dreams into achievements.
-              </Typography>
-            </motion.div>
-          </Box>
-        </motion.div>
+            <Typography variant="h6" color="white" sx={{ opacity: 0.9, mb: 4 }}>
+              Join thousands of users who are already transforming their lives with Reaglex
+            </Typography>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          viewport={{ once: true }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="contained"
-                size="medium"
-                onClick={handleGetStarted}
-                sx={{
-                  background: 'linear-gradient(45deg, #ffffff 30%, #f5f5f5 90%)',
-                  color: '#1976d2',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 2,
-                  boxShadow: '0 4px 16px rgba(255, 255, 255, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #f5f5f5 30%, #ffffff 90%)',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 6px 20px rgba(255, 255, 255, 0.4)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                Get Free Start
-              </Button>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="outlined"
-                size="medium"
-                onClick={handleLearnMore}
-                sx={{
-                  borderColor: 'white',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  '&:hover': {
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'white',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 16px rgba(255, 255, 255, 0.2)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                Learn More
-              </Button>
-            </motion.div>
-          </Box>
-        </motion.div>
-
-        {/* Feature Highlights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-        >
-          <Box sx={{ mt: 5, display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
-            {[
-              { icon: <People sx={{ fontSize: 24 }} />, text: '10,000+ Success Stories' },
-              { icon: <Star sx={{ fontSize: 24 }} />, text: '4.9/5 Trusted Rating' },
-              { icon: <TrendingUp sx={{ fontSize: 24 }} />, text: '98% Achievement Rate' },
-            ].map((item, index) => (
+            <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
               <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.05 }}
               >
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1.5,
-                  color: 'white',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
-                  px: 2.5,
-                  py: 1.5,
-                  borderRadius: 2,
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                }}>
-                  {item.icon}
-                  <Typography variant="body1" fontWeight="bold">
-                    {item.text}
-                  </Typography>
-                </Box>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => navigate('/auth/register')}
+                  sx={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    '&:hover': {
+                      background: 'rgba(255, 255, 255, 0.3)',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  Create Free Account
+                </Button>
               </motion.div>
-            ))}
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                viewport={{ once: true }}
+              >
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => navigate('/auth/login')}
+                  sx={{
+                    borderColor: 'white',
+                    color: 'white',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    '&:hover': {
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderColor: 'white',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  Sign In
+                </Button>
+              </motion.div>
+            </Stack>
           </Box>
         </motion.div>
       </Container>
     </Box>
   );
 };
-
 
 // Main Landing Page Component
 const LandingPage: React.FC = () => {
   return (
-    <ThemeProvider>
     <Box>
-        <ThemeSwitcher />
-        <GetStartedSection />
+      <HeroSection />
       <FeaturesSection />
       <StatisticsSection />
+      <CallToActionSection />
       <TestimonialsSection />
     </Box>
-    </ThemeProvider>
   );
 };
 
