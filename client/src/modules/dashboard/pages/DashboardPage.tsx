@@ -137,7 +137,7 @@ const DashboardPage: React.FC = () => {
                     fontWeight: 'bold',
                   }}
                 >
-                  {user.first_name.charAt(0)}{user.last_name.charAt(0)}
+                  {user.first_name?.charAt(0) || ''}{user.last_name?.charAt(0) || ''}
                 </Avatar>
                 <Box>
                   <Typography variant="h4" component="h1" fontWeight="bold">
@@ -148,7 +148,7 @@ const DashboardPage: React.FC = () => {
                   </Typography>
                   <Chip
                     icon={getRoleIcon(user.role)}
-                    label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                    label={user.role?.charAt(0).toUpperCase() + user.role?.slice(1) || 'User'}
                     sx={{
                       background: getRoleColor(user.role),
                       color: 'white',
