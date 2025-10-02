@@ -15,11 +15,32 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+
+// Development CORS configuration - more permissive for local development
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+    // In development, allow all origins if no specific origins are configured
+    if (isDevelopment && corsOrigins.length === 0) {
       return callback(null, true);
     }
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
+    if (corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, allow localhost on any port
+    if (isDevelopment && origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+    
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
