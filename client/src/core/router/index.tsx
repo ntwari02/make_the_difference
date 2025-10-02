@@ -36,6 +36,7 @@ import UserManagementPage from '../../modules/admin/pages/UserManagementPage';
 import ContentManagementPage from '../../modules/admin/pages/ContentManagementPage';
 import SystemSettingsPage from '../../modules/admin/pages/SystemSettingsPage';
 import AnalyticsPage from '../../modules/admin/pages/AnalyticsPage';
+import PaymentManagementPage from '../../modules/admin/pages/PaymentManagementPage';
 
 // E-commerce pages
 import CarListingPage from '../../modules/ecommerce/pages/CarListingPage';
@@ -255,7 +256,7 @@ const router = createBrowserRouter([
       // Payment Management
       {
         path: 'payments',
-        element: <AnalyticsPage />,
+        element: <PaymentManagementPage />,
       },
       // AI Services Routes
       {
