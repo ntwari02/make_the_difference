@@ -1,13 +1,8 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import ComprehensiveAnalytics from './ComprehensiveAnalytics';
 
 const AnalyticsPage: React.FC = () => {
-  return (
-    <Box>
-      <Typography variant="h4">Analytics</Typography>
-      <Typography>This page is under construction.</Typography>
-    </Box>
-  );
+  return <ComprehensiveAnalytics />;
 };
 
 export default AnalyticsPage;

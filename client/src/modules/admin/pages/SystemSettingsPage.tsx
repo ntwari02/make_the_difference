@@ -1,13 +1,8 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import ComprehensiveSystemSettings from './ComprehensiveSystemSettings';
 
 const SystemSettingsPage: React.FC = () => {
-  return (
-    <Box>
-      <Typography variant="h4">System Settings</Typography>
-      <Typography>This page is under construction.</Typography>
-    </Box>
-  );
+  return <ComprehensiveSystemSettings />;
 };
 
 export default SystemSettingsPage;

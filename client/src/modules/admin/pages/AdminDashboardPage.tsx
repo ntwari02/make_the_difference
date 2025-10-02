@@ -1,13 +1,8 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import AdminDashboard from '../../dashboard/pages/role-based/AdminDashboard';
 
 const AdminDashboardPage: React.FC = () => {
-  return (
-    <Box>
-      <Typography variant="h4">Admin Dashboard</Typography>
-      <Typography>Welcome to the admin dashboard!</Typography>
-    </Box>
-  );
+  return <AdminDashboard />;
 };
 
 export default AdminDashboardPage;

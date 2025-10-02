@@ -1,13 +1,8 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import ComprehensiveUserManagement from './ComprehensiveUserManagement';
 
 const UserManagementPage: React.FC = () => {
-  return (
-    <Box>
-      <Typography variant="h4">User Management</Typography>
-      <Typography>This page is under construction.</Typography>
-    </Box>
-  );
+  return <ComprehensiveUserManagement />;
 };
 
 export default UserManagementPage;

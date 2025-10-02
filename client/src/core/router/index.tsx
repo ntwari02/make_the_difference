@@ -15,7 +15,7 @@ import { ENV } from '../config/environment';
 // Layout components
 import AuthLayout from '../../shared/components/layout/AuthLayout';
 import AppLayout from '../../shared/components/layout/AppLayout';
-import AdminLayout from '../../shared/components/layout/AdminLayout';
+import EnhancedAdminLayout from '../../shared/components/layout/EnhancedAdminLayout';
 
 // Auth components
 import LoginPage from '../../modules/auth/pages/LoginPage';
@@ -174,7 +174,7 @@ const router = createBrowserRouter([
     path: '/admin',
     element: (
       <ProtectedRoute requiredRole="admin">
-        <AdminLayout />
+        <EnhancedAdminLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -186,21 +186,116 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: <AdminDashboardPage />,
       },
+      // User Management Routes
       {
         path: 'users',
-        element: <UserManagementPage />,
+        children: [
+          {
+            index: true,
+            element: <UserManagementPage />,
+          },
+          {
+            path: 'roles',
+            element: <UserManagementPage />,
+          },
+          {
+            path: 'analytics',
+            element: <UserManagementPage />,
+          },
+        ],
       },
+      // Content Management Routes
       {
         path: 'content',
-        element: <ContentManagementPage />,
+        children: [
+          {
+            index: true,
+            element: <ContentManagementPage />,
+          },
+          {
+            path: 'courses',
+            element: <ContentManagementPage />,
+          },
+          {
+            path: 'cars',
+            element: <ContentManagementPage />,
+          },
+          {
+            path: 'scholarships',
+            element: <ContentManagementPage />,
+          },
+          {
+            path: 'visa',
+            element: <ContentManagementPage />,
+          },
+        ],
       },
-      {
-        path: 'settings',
-        element: <SystemSettingsPage />,
-      },
+      // Analytics Routes
       {
         path: 'analytics',
+        children: [
+          {
+            index: true,
+            element: <AnalyticsPage />,
+          },
+          {
+            path: 'revenue',
+            element: <AnalyticsPage />,
+          },
+          {
+            path: 'users',
+            element: <AnalyticsPage />,
+          },
+          {
+            path: 'performance',
+            element: <AnalyticsPage />,
+          },
+        ],
+      },
+      // Payment Management
+      {
+        path: 'payments',
         element: <AnalyticsPage />,
+      },
+      // AI Services Routes
+      {
+        path: 'ai',
+        children: [
+          {
+            path: 'chatbot',
+            element: <SystemSettingsPage />,
+          },
+          {
+            path: 'pricing',
+            element: <SystemSettingsPage />,
+          },
+          {
+            path: 'personalization',
+            element: <SystemSettingsPage />,
+          },
+        ],
+      },
+      // System Settings Routes
+      {
+        path: 'system',
+        children: [
+          {
+            index: true,
+            element: <SystemSettingsPage />,
+          },
+          {
+            path: 'general',
+            element: <SystemSettingsPage />,
+          },
+          {
+            path: 'security',
+            element: <SystemSettingsPage />,
+          },
+          {
+            path: 'integrations',
+            element: <SystemSettingsPage />,
+          },
+        ],
       },
     ],
   },
