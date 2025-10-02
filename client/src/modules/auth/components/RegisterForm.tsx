@@ -40,7 +40,7 @@ import { RegisterCredentials } from '../../../core/types';
 import Loading from '../../../shared/components/ui/Loading';
 import AnimatedBackground from '../../../shared/components/ui/AnimatedBackground';
 
-// Validation schema
+// Simplified validation schema
 const registerSchema = yup.object({
   email: yup
     .string()
@@ -48,11 +48,7 @@ const registerSchema = yup.object({
     .required('Email is required'),
   password: yup
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    )
+    .min(6, 'Password must be at least 6 characters')
     .required('Password is required'),
   confirm_password: yup
     .string()
@@ -91,7 +87,7 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
-  onSuccess,
+  onSuccess: _onSuccess,
   onLogin,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -99,6 +95,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [activeStep, setActiveStep] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
+
 
   const {
     register,
@@ -123,6 +120,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     clearAuthError();
     const { confirm_password, terms_accepted, ...registerData } = data;
     
+    console.log('Submitting registration:', registerData);
+    
     // Transform the data to match RegisterCredentials interface
     const transformedData: RegisterCredentials = {
       email: registerData.email,
@@ -133,10 +132,24 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       role: registerData.role ?? undefined,
     };
     
-    const result = await registerUser(transformedData);
-    
-    if (result.success) {
-      onSuccess?.();
+    try {
+      const result = await registerUser(transformedData);
+      
+      console.log('Registration result:', result);
+      
+      if (result.success) {
+        // Registration successful - show success message and redirect to login
+        console.log('✅ Registration successful! User can now login.');
+        
+        // Show success message (you could add a toast notification here)
+        alert('Registration successful! Please login with your credentials.');
+        
+        // Redirect to login page
+        onLogin?.();
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      // Error is already handled by the authSlice
     }
   };
 
@@ -1279,11 +1292,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     color: isDarkMode ? '#60a5fa' : 'primary.main',
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     '&:hover': {
-                      textDecoration: 'underline',
+                      transform: 'translateY(-1px)',
+                      filter: 'brightness(1.1)',
                     },
                   }}
                 >
-                  Sign in here
+                  Sign in here →
                 </Link>
               </Typography>
             </Box>
