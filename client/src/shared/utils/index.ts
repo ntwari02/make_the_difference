@@ -87,7 +87,8 @@ export const slugify = (str: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
-export const generateInitials = (firstName: string, lastName: string): string => {
+export const generateInitials = (firstName?: string, lastName?: string): string => {
+  if (!firstName || !lastName) return '';
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 };
 

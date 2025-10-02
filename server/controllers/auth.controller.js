@@ -104,9 +104,12 @@ module.exports = {
 
   async getProfile(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
       const user = await AuthService.getUserProfile(userId);
-      
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -132,17 +135,24 @@ module.exports = {
 
   async updateProfile(req, res) {
     try {
-      const userId = req.user.id;
-      const { first_name, last_name, phone, bio } = req.body || {};
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
 
+      const { first_name, last_name, phone, bio } = req.body || {};
       const updateData = {};
+
       if (first_name) updateData.firstName = sanitizeName(first_name);
       if (last_name) updateData.lastName = sanitizeName(last_name);
-      if (phone) updateData.phone = String(phone).trim();
-      if (bio) updateData.bio = String(bio).trim();
+      if (phone !== undefined) updateData.phone = phone ? String(phone).trim() : null;
+      if (bio !== undefined) updateData.bio = bio ? String(bio).trim() : null;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
 
       const user = await AuthService.updateUserProfile(userId, updateData);
-      
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }

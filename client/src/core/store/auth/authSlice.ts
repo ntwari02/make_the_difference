@@ -33,15 +33,15 @@ export const loginUser = createAsyncThunk(
     try {
       console.log('🔐 Attempting login with real backend API:', { email: credentials.email });
       
-      // Use real API - your backend expects 'identifier' field for email/phone
-      const response = await api.post('/auth/login', {
-        identifier: credentials.email, // Backend expects 'identifier' field
-        password: credentials.password
-      });
+      // Map email to identifier for backend compatibility
+      const loginPayload = {
+        identifier: credentials.email,
+        password: credentials.password,
+        remember_me: credentials.remember_me
+      };
+      const response = await api.post('/auth/login', loginPayload);
       
       console.log('✅ Login response from backend:', response.data);
-      
-      // Your backend returns: { access_token, access_expires_in, refresh_token, refresh_expires_in, user }
       const { access_token, refresh_token, user } = response.data;
       
       // Store tokens and user data
