@@ -4,6 +4,9 @@ export const ENV = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
   API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
   
+  // Backend Configuration
+  USE_REAL_API: import.meta.env.VITE_USE_REAL_API === 'true' || import.meta.env.VITE_NODE_ENV === 'production',
+  
   // Application Configuration
   APP_NAME: import.meta.env.VITE_APP_NAME || 'Reaglex Platform',
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
