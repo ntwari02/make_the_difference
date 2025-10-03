@@ -17,67 +17,6 @@ export const API_ENDPOINTS = {
     VERIFY_EMAIL: '/auth/verify-email',
   },
   
-  // Admin endpoints
-  ADMIN: {
-    DASHBOARD: '/admin/dashboard/overview',
-    USERS: '/admin/users',
-    CONTENT_FLAGGED: '/admin/content/flagged',
-    CONTENT_MODERATE: '/admin/content/:contentId/moderate',
-    CONTENT_REMOVE: '/admin/content/:contentId',
-    SETTINGS: '/admin/settings',
-    FEATURE_FLAGS: '/admin/feature-flags',
-    AUDIT_LOGS: '/admin/audit-logs',
-    USER_ACTIVITY: '/admin/user-activity/:userId',
-    EMERGENCY_SUSPEND: '/admin/emergency/suspend-user',
-    EMERGENCY_REMOVE: '/admin/emergency/remove-content',
-    MAINTENANCE_MODE: '/admin/maintenance-mode',
-    BULK_USERS: '/admin/bulk/users/update-status',
-    BULK_CONTENT: '/admin/bulk/content/moderate',
-    BULK_NOTIFICATIONS: '/admin/bulk/notifications/send',
-  },
-  
-  // E-commerce endpoints
-  ECOMMERCE: {
-    CARS: '/cars',
-    CAR_DETAILS: '/cars/:carId',
-    SEARCH: '/cars/search',
-    PAYMENTS: '/payments',
-    SPARE_PARTS: '/spare-parts',
-  },
-  
-  // E-learning endpoints
-  ELEARNING: {
-    COURSES: '/elearning/courses',
-    COURSE_DETAILS: '/elearning/courses/:courseId',
-    MODULES: '/elearning/courses/:courseId/modules',
-    LESSONS: '/elearning/modules/:moduleId/lessons',
-    QUIZZES: '/elearning/quizzes',
-    CERTIFICATES: '/elearning/certificates',
-    ONLINE_CLASSES: '/elearning/online-classes',
-  },
-  
-  // AI endpoints
-  AI: {
-    CHATBOT: '/ai/chatbot',
-    ANALYTICS: '/ai/analytics',
-    PERSONALIZATION: '/ai/personalization',
-    PRICING: '/ai/pricing',
-  },
-  
-  // Scholarships endpoints
-  SCHOLARSHIPS: {
-    LIST: '/scholarships',
-    APPLY: '/scholarships/apply',
-    APPLICATIONS: '/scholarships/applications',
-    MATCHING: '/scholarships/matching',
-  },
-  
-  // Visa endpoints
-  VISA: {
-    APPLICATIONS: '/visa/applications',
-    STATUS: '/visa/status/:applicationId',
-  },
-  
   // Security Questions endpoints
   SECURITY_QUESTIONS: {
     LIST: '/security-questions',
@@ -128,23 +67,11 @@ export const STORAGE_KEYS = {
 
 // User roles
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  STUDENT: 'student',
-  INSTRUCTOR: 'instructor',
-  BUYER: 'buyer',
-  SELLER: 'seller',
-  DEALER: 'dealer',
-  UNIVERSITY: 'university',
-  VISA_OFFICER: 'visa_officer',
-  ADVERTISER: 'advertiser',
+  USER: 'user',
 } as const;
 
 // Content types
 export const CONTENT_TYPES = {
-  CAR: 'car',
-  COURSE: 'course',
-  REVIEW: 'review',
-  MESSAGE: 'message',
   USER: 'user',
 } as const;
 

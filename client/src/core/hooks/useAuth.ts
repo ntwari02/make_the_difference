@@ -12,8 +12,7 @@ import {
   LoginCredentials, 
   RegisterCredentials, 
   User, 
-  UserRole,
-  SecurityQuestionAnswer 
+  UserRole
 } from '../types';
 import { useCallback } from 'react';
 

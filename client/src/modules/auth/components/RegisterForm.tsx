@@ -40,7 +40,7 @@ import { RegisterCredentials } from '../../../core/types';
 import Loading from '../../../shared/components/ui/Loading';
 import AnimatedBackground from '../../../shared/components/ui/AnimatedBackground';
 
-// Simplified validation schema
+// Validation schema
 const registerSchema = yup.object({
   email: yup
     .string()
@@ -48,7 +48,11 @@ const registerSchema = yup.object({
     .required('Email is required'),
   password: yup
     .string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    )
     .required('Password is required'),
   confirm_password: yup
     .string()
@@ -96,7 +100,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0c7a0f0293bb76cc41692b8d8a21c21628261bbb
   const {
     register,
     handleSubmit,
@@ -132,6 +139,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       role: registerData.role ?? undefined,
     };
     
+<<<<<<< HEAD
     try {
       const result = await registerUser(transformedData);
       
@@ -150,6 +158,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     } catch (error) {
       console.error('Registration failed:', error);
       // Error is already handled by the authSlice
+=======
+    const result = await registerUser(transformedData);
+    
+    if (result.success) {
+      onSuccess?.();
+>>>>>>> 0c7a0f0293bb76cc41692b8d8a21c21628261bbb
     }
   };
 
@@ -1291,12 +1305,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     color: isDarkMode ? '#60a5fa' : 'primary.main',
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     '&:hover': {
-                      transform: 'translateY(-1px)',
-                      filter: 'brightness(1.1)',
+                      textDecoration: 'underline',
                     },
                   }}
                 >
-                  Sign in here →
+                  Sign in here
                 </Link>
               </Typography>
             </Box>
