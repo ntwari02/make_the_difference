@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -14,8 +14,6 @@ import { ENV } from '../config/environment';
 
 // Layout components
 import AuthLayout from '../../shared/components/layout/AuthLayout';
-import AppLayout from '../../shared/components/layout/AppLayout';
-import AdminLayout from '../../shared/components/layout/AdminLayout';
 
 // Auth components
 import LoginPage from '../../modules/auth/pages/LoginPage';
@@ -26,32 +24,6 @@ import SecurityQuestionsPage from '../../modules/auth/pages/SecurityQuestionsPag
 
 // Main pages
 import LandingPage from '../../modules/landing/pages/LandingPage';
-import DashboardPage from '../../modules/dashboard/pages/DashboardPage';
-import ProfilePage from '../../modules/profile/pages/ProfilePage';
-import SettingsPage from '../../modules/settings/pages/SettingsPage';
-
-// Admin pages
-import AdminDashboardPage from '../../modules/admin/pages/AdminDashboardPage';
-import UserManagementPage from '../../modules/admin/pages/UserManagementPage';
-import ContentManagementPage from '../../modules/admin/pages/ContentManagementPage';
-import SystemSettingsPage from '../../modules/admin/pages/SystemSettingsPage';
-import AnalyticsPage from '../../modules/admin/pages/AnalyticsPage';
-
-// E-commerce pages
-import CarListingPage from '../../modules/ecommerce/pages/CarListingPage';
-import CarDetailsPage from '../../modules/ecommerce/pages/CarDetailsPage';
-import CheckoutPage from '../../modules/ecommerce/pages/CheckoutPage';
-
-// E-learning pages
-import CourseCatalogPage from '../../modules/elearning/pages/CourseCatalogPage';
-import CourseDetailsPage from '../../modules/elearning/pages/CourseDetailsPage';
-import MyCoursesPage from '../../modules/elearning/pages/MyCoursesPage';
-
-// Protected route component
-import ProtectedRoute from './ProtectedRoute';
-
-// Navigation component
-import NavigationMenu from '../../shared/components/navigation/NavigationMenu';
 
 // Error page
 import ErrorPage from '../../shared/components/ui/ErrorPage';
@@ -63,10 +35,6 @@ const router = createBrowserRouter([
     path: '/',
     element: <LandingPage />,
     errorElement: <ErrorPage />,
-  },
-  {
-    path: '/navigation',
-    element: <NavigationMenu />,
   },
   
   // Auth routes
@@ -93,114 +61,6 @@ const router = createBrowserRouter([
       {
         path: 'security-questions',
         element: <SecurityQuestionsPage />,
-      },
-    ],
-  },
-  
-  // Main app routes (protected)
-  {
-    path: '/app',
-    element: (
-      <ProtectedRoute>
-        <AppLayout>
-          <Outlet />
-        </AppLayout>
-      </ProtectedRoute>
-    ),
-    children: [
-      {
-        index: true,
-        element: <Navigate to="/app/dashboard" replace />,
-      },
-      {
-        path: 'dashboard',
-        element: <DashboardPage />,
-      },
-      {
-        path: 'profile',
-        element: <ProfilePage />,
-      },
-      {
-        path: 'settings',
-        element: <SettingsPage />,
-      },
-      {
-        path: 'navigation',
-        element: <NavigationMenu />,
-      },
-      
-      // E-commerce routes
-      {
-        path: 'cars',
-        children: [
-          {
-            index: true,
-            element: <CarListingPage />,
-          },
-          {
-            path: ':id',
-            element: <CarDetailsPage />,
-          },
-        ],
-      },
-      {
-        path: 'checkout',
-        element: <CheckoutPage />,
-      },
-      
-      // E-learning routes
-      {
-        path: 'courses',
-        children: [
-          {
-            index: true,
-            element: <CourseCatalogPage />,
-          },
-          {
-            path: 'my-courses',
-            element: <MyCoursesPage />,
-          },
-          {
-            path: ':id',
-            element: <CourseDetailsPage />,
-          },
-        ],
-      },
-    ],
-  },
-  
-  // Admin routes (protected with admin role)
-  {
-    path: '/admin',
-    element: (
-      <ProtectedRoute requiredRole="admin">
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      {
-        index: true,
-        element: <Navigate to="/admin/dashboard" replace />,
-      },
-      {
-        path: 'dashboard',
-        element: <AdminDashboardPage />,
-      },
-      {
-        path: 'users',
-        element: <UserManagementPage />,
-      },
-      {
-        path: 'content',
-        element: <ContentManagementPage />,
-      },
-      {
-        path: 'settings',
-        element: <SystemSettingsPage />,
-      },
-      {
-        path: 'analytics',
-        element: <AnalyticsPage />,
       },
     ],
   },
