@@ -61,7 +61,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onRegister,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const { login, isLoading, error, clearAuthError } = useAuth();
 
   const {
@@ -141,7 +141,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         transition={{ duration: 0.5 }}
         style={{
           width: '100%',
-          maxWidth: '1800px',
+          maxWidth: '500px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -220,10 +220,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <Card
         elevation={8}
         sx={{
-          width: { xs: '100%', sm: '99%', md: '98%', lg: '96%', xl: '94%' },
-          maxWidth: '1800px',
+          width: '100%',
+          maxWidth: '500px',
           height: 'auto',
-          minHeight: '80vh',
+          minHeight: 'auto',
           maxHeight: '95vh',
           borderRadius: 3,
           background: isDarkMode 

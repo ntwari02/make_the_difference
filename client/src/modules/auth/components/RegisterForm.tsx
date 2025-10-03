@@ -97,7 +97,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
 
   const {
@@ -670,7 +670,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         transition={{ duration: 0.5 }}
         style={{
           width: '100%',
-          maxWidth: '1600px',
+          maxWidth: '550px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -749,10 +749,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
          <Card
            elevation={8}
            sx={{
-             width: { xs: '100%', sm: '99%', md: '98%', lg: '96%', xl: '94%' },
-             maxWidth: '1800px',
+             width: '100%',
+             maxWidth: '550px',
              height: 'auto',
-             minHeight: '80vh',
+             minHeight: 'auto',
              maxHeight: '95vh',
              borderRadius: 3,
              background: isDarkMode 
