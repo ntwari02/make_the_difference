@@ -14,6 +14,7 @@ import SecurityQuestionsPage from '../modules/auth/pages/SecurityQuestionsPage';
 // E-commerce Pages
 import CarListingPage from '../modules/ecommerce/pages/CarListingPage';
 import CarDetailsPage from '../modules/ecommerce/pages/CarDetailsPage';
+import DealerDashboard from '../modules/ecommerce/pages/DealerDashboard';
 
 const App: React.FC = () => {
   return (
@@ -32,6 +33,9 @@ const App: React.FC = () => {
         {/* E-commerce Routes */}
         <Route path="/cars" element={<CarListingPage />} />
         <Route path="/cars/:id" element={<CarDetailsPage />} />
+        
+        {/* Dealer Dashboard */}
+        <Route path="/dealer/dashboard" element={<DealerDashboard />} />
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

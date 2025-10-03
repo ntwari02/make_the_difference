@@ -6,7 +6,27 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSuccess = () => {
-    navigate('/');
+    // After successful login, check user role and redirect accordingly
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Redirect based on role
+        if (user.role === 'dealer') {
+          navigate('/dealer/dashboard');
+        } else if (user.role === 'student') {
+          navigate('/'); // Will add student dashboard later
+        } else if (user.role === 'admin') {
+          navigate('/'); // Will add admin dashboard later
+        } else {
+          navigate('/');
+        }
+      } catch {
+        navigate('/');
+      }
+    } else {
+      navigate('/');
+    }
   };
 
   const handleForgotPassword = () => {
