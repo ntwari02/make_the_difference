@@ -100,10 +100,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 0c7a0f0293bb76cc41692b8d8a21c21628261bbb
   const {
     register,
     handleSubmit,
@@ -139,7 +135,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       role: registerData.role ?? undefined,
     };
     
-<<<<<<< HEAD
     try {
       const result = await registerUser(transformedData);
       
@@ -154,16 +149,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         
         // Redirect to login page
         onLogin?.();
+        // Call the _onSuccess callback if provided
+        _onSuccess?.();
       }
     } catch (error) {
       console.error('Registration failed:', error);
-      // Error is already handled by the authSlice
-=======
-    const result = await registerUser(transformedData);
-    
-    if (result.success) {
-      onSuccess?.();
->>>>>>> 0c7a0f0293bb76cc41692b8d8a21c21628261bbb
+      // Error is already handled by useAuth hook
     }
   };
 
