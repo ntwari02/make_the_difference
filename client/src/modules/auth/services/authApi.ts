@@ -12,8 +12,14 @@ import {
 // Auth API service
 export const authApi = {
   // Login user
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login', credentials);
+  login: async (credentials: LoginCredentials): Promise<any> => {
+    // Backend expects 'identifier' instead of 'email'
+    const requestData = {
+      identifier: credentials.email,
+      password: credentials.password,
+    };
+    const response = await api.post('/auth/login', requestData);
+    // Backend returns: { access_token, refresh_token, user }
     return response.data;
   },
 

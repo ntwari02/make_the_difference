@@ -85,10 +85,26 @@ const LoginForm: React.FC<LoginFormProps> = ({
       password: data.password,
       remember_me: data.remember_me ?? false,
     };
-    const result = await login(loginData);
     
-    if (result.success) {
-      onSuccess?.();
+    try {
+      console.log('Attempting login with:', { email: data.email, hasPassword: !!data.password });
+      const result = await login(loginData);
+      
+      if (result.success) {
+        console.log('Login successful!');
+        onSuccess?.();
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Show specific error messages
+      if (error.response?.status === 403) {
+        console.error('Account is disabled. Please contact support.');
+      } else if (error.response?.status === 401) {
+        console.error('Invalid email or password.');
+      }
+      // Error is already handled by useAuth hook and will be displayed in UI
     }
   };
 
