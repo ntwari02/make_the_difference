@@ -133,6 +133,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           position: 'relative',
           padding: { xs: 2, sm: 3 },
           boxSizing: 'border-box',
+          background: isDarkMode 
+            ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)'
+            : '#f5f5f5',
         }}
       >
       <motion.div
@@ -228,8 +231,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
           borderRadius: 3,
           background: isDarkMode 
             ? 'linear-gradient(145deg, #374151 0%, #1f2937 100%)'
-            : 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-          border: '1px solid rgba(0, 0, 0, 0.05)',
+            : '#ffffff',
+          border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
           position: 'relative',
           zIndex: 10,
           display: 'flex',
