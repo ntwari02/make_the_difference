@@ -64,15 +64,18 @@ const optionalAuthenticate = (req, res, next) => {
 };
 
 const authorizeRoles = (...allowedRoles) => {
-	return (req, res, next) => {
+    return (req, res, next) => {
 		if (!req.user) return res.status(401).json({ message: 'Authentication required' });
 		
 		// Admin users can access all endpoints regardless of role requirements
 		if (req.user.role === 'admin') {
 			return next();
 		}
-		
-		if (!allowedRoles.includes(req.user.role)) {
+        // Normalize roles to handle both authorizeRoles('dealer') and authorizeRoles(['dealer'])
+        const flatRoles = Array.isArray(allowedRoles)
+            ? allowedRoles.flatMap(r => Array.isArray(r) ? r : [r])
+            : [];
+        if (!flatRoles.includes(req.user.role)) {
 			return res.status(403).json({ message: 'Forbidden: insufficient role' });
 		}
 		return next();

@@ -7,7 +7,8 @@ import Loading from '../../shared/components/ui/Loading';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  requiredRole?: UserRole; // backward-compat single role
+  allowedRoles?: UserRole[]; // preferred multi-role
   requiredPermissions?: string[];
   fallbackPath?: string;
 }
@@ -15,11 +16,24 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRole,
+  allowedRoles,
   requiredPermissions = [],
   fallbackPath = '/auth/login',
 }) => {
   const location = useLocation();
   const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
+
+  // Fallback to localStorage if Redux store hasn't been hydrated
+  const lsUser = React.useMemo(() => {
+    if (user) return user;
+    try {
+      const raw = localStorage.getItem('user') || localStorage.getItem('user_data');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [user]);
+  const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('access_token');
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -27,12 +41,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
+  if ((!isAuthenticated || !lsUser) && !hasToken) {
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
   // Check role requirement
-  if (requiredRole && user.role !== requiredRole) {
+  const rolesToCheck = allowedRoles && allowedRoles.length > 0 ? allowedRoles : (requiredRole ? [requiredRole] : []);
+  if (rolesToCheck.length > 0 && lsUser && !rolesToCheck.includes(lsUser.role as UserRole)) {
     // Redirect to appropriate dashboard based on user role
     const roleDashboardMap: Record<UserRole, string> = {
       admin: '/admin/dashboard',
@@ -45,12 +60,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       advertiser: '/app/dashboard',
     };
 
-    const redirectPath = roleDashboardMap[user.role] || '/app/dashboard';
+    const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/app/dashboard';
     return <Navigate to={redirectPath} replace />;
   }
 
   // Check permissions (if needed)
-  if (requiredPermissions.length > 0) {
+  if (requiredPermissions.length > 0 && lsUser) {
     const hasPermission = requiredPermissions.every(permission => {
       // This would typically check against a permissions matrix
       // For now, we'll implement basic role-based checks
@@ -66,7 +81,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         advertiser: ['ads:read', 'ads:write'],
       };
 
-      const userPermissions = permissions[user.role] || [];
+      const userPermissions = permissions[lsUser.role as UserRole] || [];
       return userPermissions.includes('*') || userPermissions.includes(permission);
     });
 

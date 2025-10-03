@@ -15,16 +15,20 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    const token = getFromStorage(STORAGE_KEYS.ACCESS_TOKEN, null);
+    // Get token directly from localStorage (it's stored as a plain string, not JSON)
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔐 Debug - Token attached:', token.substring(0, 20) + '...');
+    } else {
+      console.warn('⚠️ Debug - No token found for request');
     }
     
     // Add request timestamp for debugging
     if (ENV.IS_DEVELOPMENT) {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        headers: config.headers,
+        hasAuth: !!config.headers?.Authorization,
         data: config.data,
         params: config.params,
       });
@@ -68,7 +72,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        const refreshToken = getFromStorage(STORAGE_KEYS.REFRESH_TOKEN, null);
+        const refreshToken = getFromStorage(STORAGE_KEYS.REFRESH_TOKEN, null) || localStorage.getItem('refresh_token');
         
         if (refreshToken) {
           // Try to refresh the token
@@ -76,11 +80,14 @@ apiClient.interceptors.response.use(
             refresh_token: refreshToken,
           });
           
-          const { access_token, refresh_token: newRefreshToken } = response.data.data;
+          const payload = response.data.data || response.data;
+          const { access_token, refresh_token: newRefreshToken } = payload;
           
           // Update stored tokens
           localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', newRefreshToken);
           
           // Retry original request with new token
           if (originalRequest.headers) {

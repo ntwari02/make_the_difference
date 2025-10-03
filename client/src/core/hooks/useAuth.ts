@@ -25,7 +25,7 @@ export const useAuth = () => {
   // Initialize auth state from localStorage
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('user') || localStorage.getItem('user_data');
 
     if (token && userStr) {
       try {
@@ -55,10 +55,17 @@ export const useAuth = () => {
       // Backend returns tokens and user directly, not wrapped in 'data'
       const { access_token, refresh_token, user } = response;
 
-      // Store tokens and user in localStorage
+      // Store tokens and user in localStorage (keys used across app and interceptors)
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user_data', JSON.stringify(user));
+      
+      // Debug: Verify storage
+      console.log('🔍 Auth Debug - Stored data:');
+      console.log('- Token stored:', !!localStorage.getItem('access_token'));
+      console.log('- User stored:', localStorage.getItem('user'));
+      console.log('- User role:', user.role);
 
       setAuthState({
         user,

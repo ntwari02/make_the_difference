@@ -2,7 +2,7 @@ const express = require('express');
 const { validationResult } = require('express-validator');
 const router = express.Router();
 const dealerController = require('../controllers/dealer.controller');
-const { authenticate, authorizeRoles } = require('../middlewares/auth');
+const { authenticate, authorizeRoles, optionalAuthenticate } = require('../middlewares/auth');
 const { validateDealer, validateVehicle } = require('../validators/dealer.validators');
 
 // Validation middleware
@@ -27,9 +27,9 @@ router.post('/profile',
   dealerController.createDealerProfile
 );
 
+// Keep auth to resolve current user, but allow any authenticated role
 router.get('/profile/my',
   authenticate,
-  authorizeRoles(['dealer']),
   dealerController.getMyDealerProfile
 );
 
@@ -45,12 +45,13 @@ router.put('/profile/:dealerId',
   dealerController.updateDealerProfile
 );
 
+// Make dealer stats public (no auth)
 router.get('/profile/:dealerId/stats',
-  authenticate,
   dealerController.getDealerStats
 );
 
 // Dealer Inventory Routes
+// Inventory listing can remain public for browsing
 router.get('/profile/:dealerId/inventory',
   dealerController.getDealerInventory
 );
@@ -83,9 +84,8 @@ router.get('/profile/:dealerId/reviews',
 );
 
 // Dealer Analytics Routes
+// Make analytics public (no auth)
 router.get('/profile/:dealerId/analytics',
-  authenticate,
-  authorizeRoles(['dealer', 'admin']),
   dealerController.getDealerSalesAnalytics
 );
 

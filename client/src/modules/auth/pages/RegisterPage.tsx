@@ -6,7 +6,8 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSuccess = () => {
-    navigate('/app/dashboard');
+    // After successful registration, redirect to login page
+    navigate('/auth/login');
   };
 
   const handleLogin = () => {

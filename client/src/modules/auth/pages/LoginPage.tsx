@@ -7,12 +7,12 @@ const LoginPage: React.FC = () => {
 
   const handleSuccess = () => {
     // After successful login, check user role and redirect accordingly
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('user') || localStorage.getItem('user_data');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         // Redirect based on role
-        if (user.role === 'dealer') {
+        if (user.role === 'dealer' || user.role === 'admin') {
           navigate('/dealer/dashboard');
         } else if (user.role === 'student') {
           navigate('/'); // Will add student dashboard later

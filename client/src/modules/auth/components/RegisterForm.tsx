@@ -113,8 +113,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       confirm_password: '',
       first_name: '',
       last_name: '',
-      phone: undefined,
-      role: undefined,
+      phone: '',
+      role: 'student',
       terms_accepted: false,
     },
   });
@@ -125,15 +125,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     
     console.log('Submitting registration:', registerData);
     
-    // Transform the data to match RegisterCredentials interface
+    // Transform the data to match backend expectations
     const transformedData: RegisterCredentials = {
       email: registerData.email,
       password: registerData.password,
       first_name: registerData.first_name,
       last_name: registerData.last_name,
-      phone: registerData.phone ?? undefined,
-      role: registerData.role ?? undefined,
+      phone: registerData.phone || '',
+      role: registerData.role || 'student',
     };
+    
+    console.log('Transformed data:', transformedData);
     
     try {
       const result = await registerUser(transformedData);
@@ -148,13 +150,28 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         alert('Registration successful! Please login with your credentials.');
         
         // Redirect to login page
-        onLogin?.();
-        // Call the _onSuccess callback if provided
         _onSuccess?.();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      // Error is already handled by useAuth hook
+      console.error('Registration error response:', error.response?.data);
+      
+      // Show specific error message based on response
+      if (error.response?.status === 409) {
+        // Email already exists
+        alert('This email is already registered. Please use a different email or try logging in.');
+      } else if (error.response?.status === 400) {
+        // Validation error
+        const errorMsg = error.response?.data?.error || 'Invalid registration data. Please check your inputs.';
+        alert(errorMsg);
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        // Timeout error
+        alert('Connection timeout. Please check if the server is running and try again.');
+      } else {
+        // Generic error
+        const errorMsg = error.response?.data?.error || 'Registration failed. Please try again.';
+        alert(errorMsg);
+      }
     }
   };
 
