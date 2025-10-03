@@ -93,7 +93,6 @@ export const useAuth = () => {
       instructor: ['courses:read', 'courses:write', 'students:read'],
       student: ['courses:read', 'profile:write'],
       buyer: ['cars:read', 'profile:write'],
-      seller: ['cars:read', 'cars:write', 'profile:write'],
       dealer: ['cars:read', 'cars:write', 'profile:write'],
       university: ['courses:read', 'students:read'],
       visa_officer: ['visa:read', 'visa:write'],
@@ -108,7 +107,6 @@ export const useAuth = () => {
   const isAdmin = hasRole('admin');
   const isStudent = hasRole('student');
   const isInstructor = hasRole('instructor');
-  const isSeller = hasRole('seller');
   const isBuyer = hasRole('buyer');
   
   const fullName = auth.user ? `${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() : '';
@@ -141,7 +139,6 @@ export const useAuth = () => {
     isAdmin,
     isStudent,
     isInstructor,
-    isSeller,
     isBuyer,
     fullName,
     initials,

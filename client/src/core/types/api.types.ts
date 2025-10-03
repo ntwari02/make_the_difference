@@ -65,7 +65,6 @@ export type UserRole =
   | 'student'
   | 'instructor'
   | 'buyer'
-  | 'seller'
   | 'dealer'
   | 'university'
   | 'visa_officer'
@@ -356,7 +355,6 @@ export interface DashboardStats {
     new_this_period: number;
     students: number;
     instructors: number;
-    sellers: number;
     buyers: number;
     admins: number;
   };

@@ -2,15 +2,11 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query/react';
 import { ENV } from '../config/environment';
 import authSlice from './auth/authSlice';
-import uiSlice from './ui/uiSlice';
-import appSlice from './app/appSlice';
 
 // Configure the store
 export const store = configureStore({
   reducer: {
     auth: authSlice,
-    ui: uiSlice,
-    app: appSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

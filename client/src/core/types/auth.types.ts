@@ -28,7 +28,6 @@ export type UserRole =
   | 'student'
   | 'instructor'
   | 'buyer'
-  | 'seller'
   | 'dealer'
   | 'university'
   | 'visa_officer'
@@ -180,7 +179,6 @@ export interface UseAuthReturn extends AuthContextType {
   isAdmin: boolean;
   isStudent: boolean;
   isInstructor: boolean;
-  isSeller: boolean;
   isBuyer: boolean;
   fullName: string;
   initials: string;

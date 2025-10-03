@@ -28,7 +28,6 @@ export const APP_CONSTANTS = {
     STUDENT: 'student',
     INSTRUCTOR: 'instructor',
     BUYER: 'buyer',
-    SELLER: 'seller',
     DEALER: 'dealer',
     UNIVERSITY: 'university',
     VISA_OFFICER: 'visa_officer',

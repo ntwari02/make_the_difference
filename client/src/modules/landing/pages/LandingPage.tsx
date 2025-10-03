@@ -612,8 +612,20 @@ const StatisticsSection: React.FC = () => {
 
 // Testimonials Section Component
 const TestimonialsSection: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 1200, height: 400 });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: 400 }); // Fixed height for testimonials section
+    };
+
+    handleResize(); // Set initial size
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const testimonials = [
     {
       name: 'Sarah Johnson',
@@ -676,8 +688,153 @@ const TestimonialsSection: React.FC = () => {
   }, [testimonials.length, isPaused]);
 
   return (
-    <Box sx={{ py: 8, background: '#f8f9fa' }}>
-      <Container maxWidth="lg">
+    <Box sx={{ py: 8, background: isDarkMode ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)' : '#f8f9fa', position: 'relative', overflow: 'hidden' }}>
+      {/* Animated Background Elements */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0,
+          opacity: isDarkMode ? 0.35 : 0.35,
+        }}
+      >
+        {/* Floating Particles */}
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: 'absolute',
+              width: Math.random() * 3 + 1.5,
+              height: Math.random() * 3 + 1.5,
+              borderRadius: '50%',
+              background: isDarkMode
+                ? `rgba(${Math.floor(Math.random() * 60) + 180}, ${Math.floor(Math.random() * 40) + 190}, 255, ${0.6 + Math.random() * 0.3})`
+                : `rgba(${Math.floor(Math.random() * 80) + 100}, ${Math.floor(Math.random() * 80) + 120}, 255, ${0.7 + Math.random() * 0.2})`,
+            }}
+            animate={{
+              x: [Math.random() * windowSize.width, Math.random() * windowSize.width],
+              y: [Math.random() * windowSize.height, Math.random() * windowSize.height],
+              opacity: [0.4, 0.9, 0.4],
+            }}
+            transition={{
+              duration: Math.random() * 15 + 20,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            initial={{
+              x: Math.random() * windowSize.width,
+              y: Math.random() * windowSize.height,
+              opacity: 0.4 + Math.random() * 0.3,
+            }}
+          />
+        ))}
+
+        {/* Animated Gradient Orbs */}
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={`orb-${i}`}
+            style={{
+              position: 'absolute',
+              width: Math.random() * 80 + 40,
+              height: Math.random() * 80 + 40,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${
+                isDarkMode
+                  ? `rgba(102, 126, 234, ${0.25 + i * 0.03})`
+                  : `rgba(102, 126, 234, ${0.25 + i * 0.03})`
+              } 0%, rgba(102, 126, 234, ${isDarkMode ? 0.08 : 0.08}) 50%, transparent 80%)`,
+              filter: 'blur(0.5px)',
+            }}
+            animate={{
+              x: [Math.random() * windowSize.width * 0.7, Math.random() * windowSize.width * 0.7],
+              y: [Math.random() * windowSize.height * 0.8, Math.random() * windowSize.height * 0.8],
+              opacity: isDarkMode ? [0.4, 0.8, 0.4] : [0.6, 0.9, 0.6],
+            }}
+            transition={{
+              duration: 15 + i * 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            initial={{
+              x: Math.random() * windowSize.width,
+              y: Math.random() * windowSize.height,
+              opacity: isDarkMode ? (0.4 + Math.random() * 0.3) : (0.6 + Math.random() * 0.3),
+            }}
+          />
+        ))}
+
+        {/* Animated Lines */}
+        {[...Array(10)].map((_, i) => (
+          <motion.div
+            key={`line-${i}`}
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: Math.random() * 120 + 60,
+              background: `linear-gradient(45deg, ${
+                isDarkMode
+                  ? 'rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3)'
+                  : 'rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0.35)'
+              })`,
+              transformOrigin: 'bottom',
+              borderRadius: 0.5,
+            }}
+            animate={{
+              rotate: [i * 12, i * 12 + 5, i * 12],
+              opacity: isDarkMode ? [0.2, 0.6, 0.2] : [0.4, 0.8, 0.4],
+            }}
+            transition={{
+              duration: 8 + i * 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            initial={{
+              left: `${10 + i * 8}%`,
+              top: `${Math.random() * 75 + 10}%`,
+              opacity: isDarkMode ? (0.2 + Math.random() * 0.3) : (0.4 + Math.random() * 0.3),
+            }}
+          />
+        ))}
+
+        {/* Subtle Background Shapes */}
+        {[...Array(2)].map((_, i) => (
+          <motion.div
+            key={`shape-${i}`}
+            style={{
+              position: 'absolute',
+              width: Math.random() * 150 + 80,
+              height: Math.random() * 150 + 80,
+              background: `radial-gradient(ellipse, ${
+                isDarkMode
+                  ? `rgba(102, 126, 234, ${0.06 + i * 0.02})`
+                  : `rgba(102, 126, 234, ${0.08 + i * 0.02})`
+              } 0%, transparent 70%)`,
+              borderRadius: '50%',
+              filter: 'blur(2px)',
+            }}
+            animate={{
+              x: [Math.random() * windowSize.width * 0.5, Math.random() * windowSize.width * 0.5],
+              y: [Math.random() * windowSize.height * 0.6, Math.random() * windowSize.height * 0.6],
+              opacity: isDarkMode ? [0.1, 0.25, 0.1] : [0.15, 0.35, 0.15],
+            }}
+            transition={{
+              duration: 25 + i * 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            initial={{
+              x: Math.random() * windowSize.width,
+              y: Math.random() * windowSize.height,
+              opacity: isDarkMode ? (0.1 + Math.random() * 0.1) : (0.15 + Math.random() * 0.1),
+            }}
+          />
+        ))}
+      </Box>
+
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -685,10 +842,24 @@ const TestimonialsSection: React.FC = () => {
           viewport={{ once: true }}
         >
           <Box textAlign="center" mb={6}>
-            <Typography variant="h3" component="h2" fontWeight="bold" gutterBottom>
+            <Typography
+              variant="h3"
+              component="h2"
+              fontWeight="bold"
+              gutterBottom
+              sx={{
+                color: isDarkMode ? '#ffffff' : 'text.primary',
+                textShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'
+              }}
+            >
               What Our Users Say
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography
+              variant="h6"
+              sx={{
+                color: isDarkMode ? '#e0e0e0' : 'text.secondary'
+              }}
+            >
               Real stories from our community
             </Typography>
           </Box>
@@ -708,10 +879,10 @@ const TestimonialsSection: React.FC = () => {
               top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              background: 'white',
+              background: isDarkMode ? '#2a2a2a' : 'white',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                background: '#f8f9fa',
+                background: isDarkMode ? '#3a3a3a' : '#f8f9fa',
                 transform: 'translateY(-50%) scale(1.1)',
               },
             }}
@@ -727,10 +898,10 @@ const TestimonialsSection: React.FC = () => {
               top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              background: 'white',
+              background: isDarkMode ? '#2a2a2a' : 'white',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                background: '#f8f9fa',
+                background: isDarkMode ? '#3a3a3a' : '#f8f9fa',
                 transform: 'translateY(-50%) scale(1.1)',
               },
             }}
@@ -781,8 +952,8 @@ const TestimonialsSection: React.FC = () => {
                       borderRadius: 3,
                         boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
                       p: 4,
-                      background: 'white',
-                        border: '2px solid #1976d2',
+                      background: isDarkMode ? '#2a2a2a' : 'white',
+                        border: `2px solid ${isDarkMode ? '#90caf9' : '#1976d2'}`,
                       transition: 'all 0.3s ease',
                     }}
                   >
@@ -794,14 +965,14 @@ const TestimonialsSection: React.FC = () => {
                     </Box>
                     
                     {/* Testimonial Content */}
-                    <Typography 
-                      variant="body1" 
-                      color="text.secondary" 
-                      sx={{ 
-                        mb: 3, 
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 3,
                         fontStyle: 'italic',
                         fontSize: '1.1rem',
                         lineHeight: 1.6,
+                        color: isDarkMode ? '#f0f0f0' : 'text.secondary'
                       }}
                     >
                       "{testimonial.content}"
@@ -823,10 +994,22 @@ const TestimonialsSection: React.FC = () => {
                       </Avatar>
                       
                       <Box>
-                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          gutterBottom
+                          sx={{
+                            color: isDarkMode ? '#ffffff' : 'text.primary'
+                          }}
+                        >
                           {testimonial.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: isDarkMode ? '#cccccc' : 'text.secondary'
+                          }}
+                        >
                           {testimonial.role}
                         </Typography>
                       </Box>
@@ -852,13 +1035,17 @@ const TestimonialsSection: React.FC = () => {
                     width: 12,
                     height: 12,
                     borderRadius: '50%',
-                    background: index === currentSlide ? '#1976d2' : '#e0e0e0',
+                    background: index === currentSlide
+                      ? (isDarkMode ? '#90caf9' : '#1976d2')
+                      : (isDarkMode ? '#555555' : '#e0e0e0'),
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     transform: index === currentSlide ? 'scale(1.2)' : 'scale(1)',
-                    boxShadow: index === currentSlide ? '0 0 8px rgba(25, 118, 210, 0.3)' : 'none',
+                    boxShadow: index === currentSlide ? `0 0 8px ${isDarkMode ? 'rgba(144, 202, 249, 0.3)' : 'rgba(25, 118, 210, 0.3)'}` : 'none',
                     '&:hover': {
-                      background: index === currentSlide ? '#1565c0' : '#bdbdbd',
+                      background: index === currentSlide
+                        ? (isDarkMode ? '#bbdefb' : '#1565c0')
+                        : (isDarkMode ? '#777777' : '#bdbdbd'),
                       transform: 'scale(1.3)',
                     },
                   }}
@@ -873,11 +1060,19 @@ const TestimonialsSection: React.FC = () => {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: isPaused ? '#ff9800' : '#4caf50',
+                  background: isPaused
+                    ? (isDarkMode ? '#ffcc02' : '#ff9800')
+                    : (isDarkMode ? '#66bb6a' : '#4caf50'),
                   transition: 'all 0.3s ease',
                 }}
               />
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: '0.75rem',
+                  color: isDarkMode ? '#aaaaaa' : 'text.secondary'
+                }}
+              >
                 {isPaused ? 'Paused' : `Auto (${currentSlide + 1}/${testimonials.length})`}
               </Typography>
             </Box>

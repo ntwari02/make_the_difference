@@ -69,7 +69,7 @@ const registerSchema = yup.object({
     .optional(),
   role: yup
     .string()
-    .oneOf(['student', 'instructor', 'buyer', 'seller', 'dealer', 'university'], 'Please select a valid role')
+    .oneOf(['student', 'instructor', 'buyer', 'dealer', 'university'], 'Please select a valid role')
     .nullable()
     .optional(),
   terms_accepted: yup
@@ -569,7 +569,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <MenuItem value="student">Student - Learn courses and skills</MenuItem>
                 <MenuItem value="instructor">Instructor - Teach and create courses</MenuItem>
                 <MenuItem value="buyer">Buyer - Purchase cars and services</MenuItem>
-                <MenuItem value="seller">Seller - Sell cars and services</MenuItem>
                 <MenuItem value="dealer">Dealer - Professional car dealership</MenuItem>
                 <MenuItem value="university">University - Educational institution</MenuItem>
               </TextField>
