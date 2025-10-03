@@ -1,146 +1,180 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../store';
-import { 
-  loginUser, 
-  registerUser, 
-  logoutUser, 
-  refreshToken, 
-  updateUserProfile,
-  clearError 
-} from '../store/auth/authSlice';
+import { useState, useEffect, useCallback } from 'react';
+import { authApi } from '../../modules/auth/services/authApi';
 import { 
   LoginCredentials, 
   RegisterCredentials, 
   User, 
-  UserRole
+  AuthResponse 
 } from '../types';
-import { useCallback } from 'react';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
 
 export const useAuth = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const auth = useSelector((state: RootState) => state.auth);
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
+  });
+
+  // Initialize auth state from localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const userStr = localStorage.getItem('user');
+
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setAuthState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        // Invalid user data in localStorage
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      }
+    }
+  }, []);
 
   // Login function
   const login = useCallback(async (credentials: LoginCredentials) => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
     try {
-      await dispatch(loginUser(credentials)).unwrap();
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error as string };
+      const response: any = await authApi.login(credentials);
+      
+      // Backend returns tokens and user directly, not wrapped in 'data'
+      const { access_token, refresh_token, user } = response;
+
+      // Store tokens and user in localStorage
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      setAuthState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+
+      return { success: true, data: { user, access_token, refresh_token, expires_in: 0 }, message: 'Login successful' };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Login failed. Please try again.';
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+      throw error;
     }
-  }, [dispatch]);
+  }, []);
 
   // Register function
   const register = useCallback(async (credentials: RegisterCredentials) => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
     try {
-      await dispatch(registerUser(credentials)).unwrap();
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error as string };
+      const response: any = await authApi.register(credentials);
+      
+      // Backend returns user directly: { id, email, role, is_verified }
+      // For registration, we don't get tokens automatically - user needs to login
+      const user = response;
+
+      setAuthState({
+        user,
+        isAuthenticated: false, // Not authenticated yet, need to login
+        isLoading: false,
+        error: null,
+      });
+
+      return { success: true, data: { user }, message: 'Registration successful. Please login.' };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Registration failed. Please try again.';
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+      throw error;
     }
-  }, [dispatch]);
+  }, []);
 
   // Logout function
   const logout = useCallback(async () => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
     try {
-      await dispatch(logoutUser()).unwrap();
-      return { success: true };
+      await authApi.logout();
     } catch (error) {
-      return { success: false, error: error as string };
-    }
-  }, [dispatch]);
+      console.error('Logout error:', error);
+    } finally {
+      // Clear tokens and user from localStorage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
 
-  // Refresh token function
-  const refreshAuthToken = useCallback(async () => {
-    try {
-      await dispatch(refreshToken()).unwrap();
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error as string };
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
     }
-  }, [dispatch]);
+  }, []);
+
+  // Clear auth error
+  const clearAuthError = useCallback(() => {
+    setAuthState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  // Refresh user profile
+  const refreshProfile = useCallback(async () => {
+    try {
+      const user = await authApi.getProfile();
+      localStorage.setItem('user', JSON.stringify(user));
+      setAuthState(prev => ({ ...prev, user }));
+      return user;
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+      throw error;
+    }
+  }, []);
 
   // Update user profile
   const updateProfile = useCallback(async (userData: Partial<User>) => {
     try {
-      await dispatch(updateUserProfile(userData)).unwrap();
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error as string };
+      const updatedUser = await authApi.updateProfile(userData);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setAuthState(prev => ({ ...prev, user: updatedUser }));
+      return updatedUser;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to update profile.';
+      setAuthState(prev => ({ ...prev, error: errorMessage }));
+      throw error;
     }
-  }, [dispatch]);
-
-  // Clear error
-  const clearAuthError = useCallback(() => {
-    dispatch(clearError());
-  }, [dispatch]);
-
-  // Permission checking functions
-  const hasRole = useCallback((role: UserRole): boolean => {
-    return auth.user?.role === role;
-  }, [auth.user]);
-
-  const hasAnyRole = useCallback((roles: UserRole[]): boolean => {
-    return auth.user ? roles.includes(auth.user.role) : false;
-  }, [auth.user]);
-
-  const hasPermission = useCallback((resource: string, action: string): boolean => {
-    if (!auth.user) return false;
-    
-    const permissions: Record<UserRole, string[]> = {
-      admin: ['*'], // Admin has all permissions
-      instructor: ['courses:read', 'courses:write', 'students:read'],
-      student: ['courses:read', 'profile:write'],
-      buyer: ['cars:read', 'profile:write'],
-      dealer: ['cars:read', 'cars:write', 'profile:write'],
-      university: ['courses:read', 'students:read'],
-      visa_officer: ['visa:read', 'visa:write'],
-      advertiser: ['ads:read', 'ads:write'],
-    };
-
-    const userPermissions = permissions[auth.user.role] || [];
-    return userPermissions.includes('*') || userPermissions.includes(`${resource}:${action}`);
-  }, [auth.user]);
-
-  // Computed properties
-  const isAdmin = hasRole('admin');
-  const isStudent = hasRole('student');
-  const isInstructor = hasRole('instructor');
-  const isBuyer = hasRole('buyer');
-  
-  const fullName = auth.user ? `${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() : '';
-  const initials = auth.user && auth.user.first_name && auth.user.last_name 
-    ? `${auth.user.first_name.charAt(0)}${auth.user.last_name.charAt(0)}`.toUpperCase() 
-    : '';
+  }, []);
 
   return {
-    // State
-    user: auth.user,
-    isAuthenticated: auth.isAuthenticated,
-    isLoading: auth.isLoading,
-    error: auth.error,
-    lastLogin: auth.lastLogin,
-    
-    // Actions
+    user: authState.user,
+    isAuthenticated: authState.isAuthenticated,
+    isLoading: authState.isLoading,
+    error: authState.error,
     login,
     register,
     logout,
-    refreshAuthToken,
-    updateProfile,
     clearAuthError,
-    
-    // Permission checking
-    hasRole,
-    hasAnyRole,
-    hasPermission,
-    
-    // Computed properties
-    isAdmin,
-    isStudent,
-    isInstructor,
-    isBuyer,
-    fullName,
-    initials,
+    refreshProfile,
+    updateProfile,
   };
 };
 
