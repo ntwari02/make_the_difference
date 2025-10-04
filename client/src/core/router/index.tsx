@@ -72,7 +72,17 @@ const router = createBrowserRouter([
       },
     ],
   },
-  // Dealer dashboard (protected)
+  // Dealer routes (protected)
+  {
+    path: '/dealer',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/dealer/dashboard',
     element: (

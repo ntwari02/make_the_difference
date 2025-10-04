@@ -118,14 +118,14 @@ const createCustomTheme = (mode: PaletteMode): ThemeOptions => ({
       contrastText: '#ffffff',
     },
     background: {
-      default: mode === 'dark' ? '#121212' : '#fafafa',
-      paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
+      default: mode === 'dark' ? '#0f0f23' : '#fafafa',
+      paper: mode === 'dark' ? '#1a1a2e' : '#ffffff',
     },
     text: {
       primary: mode === 'dark' ? '#ffffff' : '#212121',
       secondary: mode === 'dark' ? '#b3b3b3' : '#757575',
     },
-    divider: mode === 'dark' ? '#333333' : '#e0e0e0',
+    divider: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#e0e0e0',
     action: {
       hover: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
       selected: mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -223,16 +223,18 @@ const createCustomTheme = (mode: PaletteMode): ThemeOptions => ({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
+          borderRadius: 8,
+          backgroundColor: mode === 'dark' ? '#16213e' : '#ffffff',
           boxShadow: mode === 'dark' 
-            ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
-            : '0 4px 20px rgba(0, 0, 0, 0.08)',
+            ? '0 2px 8px rgba(0, 0, 0, 0.4)' 
+            : '0 2px 8px rgba(0, 0, 0, 0.08)',
           transition: 'all 0.3s ease',
+          border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
           '&:hover': {
             transform: 'translateY(-2px)',
             boxShadow: mode === 'dark'
-              ? '0 8px 30px rgba(0, 0, 0, 0.4)'
-              : '0 8px 30px rgba(0, 0, 0, 0.12)',
+              ? '0 4px 16px rgba(0, 0, 0, 0.5)'
+              : '0 4px 16px rgba(0, 0, 0, 0.12)',
           },
         },
       },
@@ -270,7 +272,7 @@ const createCustomTheme = (mode: PaletteMode): ThemeOptions => ({
       styleOverrides: {
         root: {
           backgroundColor: mode === 'dark' 
-            ? 'rgba(18, 18, 18, 0.8)' 
+            ? 'rgba(26, 26, 46, 0.95)' 
             : 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(20px)',
         },
@@ -279,8 +281,8 @@ const createCustomTheme = (mode: PaletteMode): ThemeOptions => ({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: mode === 'dark' ? '#1e1e1e' : '#ffffff',
-          borderRight: `1px solid ${mode === 'dark' ? '#333333' : '#e0e0e0'}`,
+          backgroundColor: mode === 'dark' ? '#16213e' : '#ffffff',
+          borderRight: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#e0e0e0'}`,
         },
       },
     },
