@@ -9,10 +9,15 @@ const { validateDealer, validateVehicle } = require('../validators/dealer.valida
 const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('❌ Validation errors:', errors.array());
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: errors.array()
+      errors: errors.array(),
+      debug: {
+        receivedData: req.body,
+        param: req.params.dealerId
+      }
     });
   }
   return next();
@@ -39,7 +44,6 @@ router.get('/profile/:dealerId',
 
 router.put('/profile/:dealerId',
   authenticate,
-  authorizeRoles(['dealer', 'admin']),
   validateDealer.update,
   handleValidation,
   dealerController.updateDealerProfile

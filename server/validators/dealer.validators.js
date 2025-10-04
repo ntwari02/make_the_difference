@@ -1,5 +1,15 @@
 const { body, param, query } = require('express-validator');
 
+// Custom URL validation function
+const isValidUrl = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const validateDealer = {
   create: [
     body('business_name')
@@ -61,18 +71,27 @@ const validateDealer = {
       .withMessage('Valid logo URL is required'),
     
     body('images')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Images must be an array'),
     
     body('business_hours')
-      .optional()
-      .isObject()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return typeof value === 'object' && !Array.isArray(value);
+      })
       .withMessage('Business hours must be an object'),
     
     body('services')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Services must be an array')
   ],
 
@@ -138,28 +157,43 @@ const validateDealer = {
       .withMessage('Valid email is required'),
     
     body('website')
-      .optional()
-      .isURL()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return isValidUrl(value);
+      })
       .withMessage('Valid website URL is required'),
     
     body('logo')
-      .optional()
-      .isURL()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return isValidUrl(value);
+      })
       .withMessage('Valid logo URL is required'),
     
     body('images')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Images must be an array'),
     
     body('business_hours')
-      .optional()
-      .isObject()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return typeof value === 'object' && !Array.isArray(value);
+      })
       .withMessage('Business hours must be an object'),
     
     body('services')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Services must be an array')
   ]
 };
@@ -203,8 +237,11 @@ const validateVehicle = {
       .withMessage('Invalid body type'),
     
     body('color')
-      .optional()
-      .isLength({ min: 1, max: 50 })
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return value.length >= 1 && value.length <= 50;
+      })
       .withMessage('Color must be less than 50 characters'),
     
     body('condition')
@@ -213,23 +250,35 @@ const validateVehicle = {
       .withMessage('Invalid condition'),
     
     body('description')
-      .optional()
-      .isLength({ min: 1, max: 2000 })
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return value.length >= 1 && value.length <= 2000;
+      })
       .withMessage('Description must be less than 2000 characters'),
     
     body('images')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Images must be an array'),
     
     body('features')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Features must be an array'),
     
     body('specifications')
-      .optional()
-      .isObject()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return typeof value === 'object' && !Array.isArray(value);
+      })
       .withMessage('Specifications must be an object'),
     
     body('vin')
@@ -299,8 +348,11 @@ const validateVehicle = {
       .withMessage('Invalid body type'),
     
     body('color')
-      .optional()
-      .isLength({ min: 1, max: 50 })
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return value.length >= 1 && value.length <= 50;
+      })
       .withMessage('Color must be less than 50 characters'),
     
     body('condition')
@@ -309,23 +361,35 @@ const validateVehicle = {
       .withMessage('Invalid condition'),
     
     body('description')
-      .optional()
-      .isLength({ min: 1, max: 2000 })
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined || value === '') return true;
+        return value.length >= 1 && value.length <= 2000;
+      })
       .withMessage('Description must be less than 2000 characters'),
     
     body('images')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Images must be an array'),
     
     body('features')
-      .optional()
-      .isArray()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return Array.isArray(value);
+      })
       .withMessage('Features must be an array'),
     
     body('specifications')
-      .optional()
-      .isObject()
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null || value === undefined) return true;
+        return typeof value === 'object' && !Array.isArray(value);
+      })
       .withMessage('Specifications must be an object'),
     
     body('vin')

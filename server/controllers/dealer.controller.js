@@ -78,6 +78,12 @@ class DealerController {
     try {
       const { dealerId } = req.params;
       const updateData = req.body;
+      
+      console.log('🔍 Update Profile Debug:');
+      console.log('- Dealer ID:', dealerId);
+      console.log('- User ID:', req.user?.id);
+      console.log('- User Role:', req.user?.role);
+      console.log('- Update Data:', JSON.stringify(updateData, null, 2));
 
       const updated = await dealerService.updateDealerProfile(dealerId, updateData);
 
@@ -93,9 +99,17 @@ class DealerController {
         message: 'Dealer profile updated successfully'
       });
     } catch (error) {
+      console.error('❌ Update Profile Error:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
+        details: error.response?.data || error.details || null
       });
     }
   }

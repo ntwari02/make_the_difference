@@ -25,21 +25,31 @@ apiClient.interceptors.request.use(
       console.warn('⚠️ Debug - No token found for request');
     }
     
-    // Add request timestamp for debugging
+    // Enhanced debugging for problematic requests
     if (ENV.IS_DEVELOPMENT) {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
         hasAuth: !!config.headers?.Authorization,
+        fullUrl: `${config.baseURL}${config.url}`,
         data: config.data,
         params: config.params,
+        headers: config.headers
       });
+      
+      // Special debug for PUT requests to dealer profile
+      if (config.method === 'PUT' && config.url?.includes('/dealers/profile/')) {
+        console.log('🔍 PUT Request Debug:', {
+          method: config.method,
+          url: config.url,
+          dataSize: JSON.stringify(config.data || {}).length,
+          authHeader: config.headers?.Authorization?.substring(0, 30) + '...'
+        });
+      }
     }
     
     return config;
   },
   (error: AxiosError) => {
-    if (ENV.IS_DEVELOPMENT) {
-      console.error('❌ Request Error:', error);
-    }
+    console.error('❌ Request Interceptor Error:', error);
     return Promise.reject(error);
   }
 );
@@ -62,9 +72,28 @@ apiClient.interceptors.response.use(
     if (ENV.IS_DEVELOPMENT) {
       console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
         status: error.response?.status,
+        statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message,
+        code: error.code,
+        request: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          timeout: error.config?.timeout,
+          hasAuth: !!error.config?.headers?.Authorization
+        }
       });
+      
+      // Special handling for network errors
+      if (error.message === 'Network Error') {
+        console.error('🚨 Network Error Debug:', {
+          fullUrl: `${error.config?.baseURL}${error.config?.url}`,
+          method: error.config?.method,
+          timeout: error.config?.timeout,
+          serverReachable: false // We'll test this separately
+        });
+      }
     }
     
     // Handle 401 Unauthorized - Token expired
