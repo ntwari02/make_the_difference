@@ -31,6 +31,15 @@ import ProtectedRoute from './ProtectedRoute';
 
 // Dealer pages
 const DealerDashboard = React.lazy(() => import('../../modules/dealer/pages/DealerDashboard'));
+const DealerProfile = React.lazy(() => import('../../modules/dealer/pages/DealerProfile'));
+const DealerVehicles = React.lazy(() => import('../../modules/dealer/pages/DealerVehicles'));
+const AddVehicle = React.lazy(() => import('../../modules/dealer/pages/AddVehicle'));
+const DealerAnalytics = React.lazy(() => import('../../modules/dealer/pages/DealerAnalytics'));
+const DealerMessages = React.lazy(() => import('../../modules/dealer/pages/DealerMessages'));
+const DealerReviews = React.lazy(() => import('../../modules/dealer/pages/DealerReviews'));
+const DealerTeam = React.lazy(() => import('../../modules/dealer/pages/DealerTeam'));
+const DealerPayments = React.lazy(() => import('../../modules/dealer/pages/DealerPayments'));
+const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/DealerSettings'));
 
 const Fallback: React.FC = () => (
   <div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: '#64748b' }}>Loading…</div>
@@ -89,6 +98,96 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['dealer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <DealerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/vehicles',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerVehicles />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/vehicles/add',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <AddVehicle />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/messages',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerMessages />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/reviews',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerReviews />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/team',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerTeam />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/payments',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerPayments />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dealer/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['dealer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <DealerSettings />
         </React.Suspense>
       </ProtectedRoute>
     ),
