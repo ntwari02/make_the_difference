@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Box, Container } from '@mui/material';
-import ThemeSwitcher from '../ui/ThemeSwitcher';
 
 const AuthLayout: React.FC = () => {
   return (
@@ -16,7 +15,6 @@ const AuthLayout: React.FC = () => {
         py: 4,
       }}
     >
-      <ThemeSwitcher position="absolute" size="small" />
       <Container maxWidth="sm">
         <Outlet />
       </Container>

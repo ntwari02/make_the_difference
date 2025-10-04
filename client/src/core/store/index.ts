@@ -3,12 +3,14 @@ import { setupListeners } from '@reduxjs/toolkit/query/react';
 import { ENV } from '../config/environment';
 import authSlice from './auth/authSlice';
 import dealerSlice from '../../modules/dealer/store/dealerSlice';
+import buyerSlice from '../../modules/buyer/store/buyerSlice';
 
 // Configure the store
 export const store = configureStore({
   reducer: {
     auth: authSlice,
     dealer: dealerSlice,
+    buyer: buyerSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

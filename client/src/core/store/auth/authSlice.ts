@@ -170,23 +170,21 @@ export const logoutUser = createAsyncThunk(
         console.log('✅ Logout request sent to backend');
       }
       
-      // Clear stored data regardless of API call success
-      removeFromStorage(STORAGE_KEYS.ACCESS_TOKEN);
-      removeFromStorage(STORAGE_KEYS.REFRESH_TOKEN);
-      removeFromStorage(STORAGE_KEYS.USER_DATA);
-      removeFromStorage('last_login');
+      // Clear ALL storage data (session debug approach)
+      localStorage.clear();
+      sessionStorage.clear();
       
-      console.log('✅ Logout successful, local data cleared');
+      console.log('✅ Logout successful, all storage cleared');
       
       return null;
     } catch (error: any) {
       console.error('⚠️ Logout API call failed, but clearing local data:', error.response?.data || error.message);
       
-      // Even if logout fails on server, clear local data
-      removeFromStorage(STORAGE_KEYS.ACCESS_TOKEN);
-      removeFromStorage(STORAGE_KEYS.REFRESH_TOKEN);
-      removeFromStorage(STORAGE_KEYS.USER_DATA);
-      removeFromStorage('last_login');
+      // Even if logout fails on server, clear ALL local data
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      console.log('✅ All storage cleared despite API error');
       
       return null;
     }

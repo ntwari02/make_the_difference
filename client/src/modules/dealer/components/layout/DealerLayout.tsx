@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import DealerSidebar from './DealerSidebar';
 import DealerHeader from './DealerHeader';
+import SessionDebugger from '../../../../shared/components/debug/SessionDebugger';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../../core/store';
 import { setSidebarOpen } from '../../store/dealerSlice';
@@ -83,6 +84,9 @@ const DealerLayout: React.FC<DealerLayoutProps> = ({ children }) => {
           {children}
         </Box>
       </Box>
+      
+      {/* Session Debugger - Remove in Production */}
+      {process.env.NODE_ENV === 'development' && <SessionDebugger />}
     </Box>
   );
 };

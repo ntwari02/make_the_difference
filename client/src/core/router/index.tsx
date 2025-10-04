@@ -41,6 +41,12 @@ const DealerTeam = React.lazy(() => import('../../modules/dealer/pages/DealerTea
 const DealerPayments = React.lazy(() => import('../../modules/dealer/pages/DealerPayments'));
 const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/DealerSettings'));
 
+// Buyer pages
+const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard'));
+
+// Debug page (temporary)
+const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth'));
+
 const Fallback: React.FC = () => (
   <div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: '#64748b' }}>Loading…</div>
 );
@@ -190,6 +196,28 @@ const router = createBrowserRouter([
           <DealerSettings />
         </React.Suspense>
       </ProtectedRoute>
+    ),
+  },
+
+  // Buyer routes
+  {
+    path: '/buyer/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // Debug route (temporary - remove in production)
+  {
+    path: '/debug/auth',
+    element: (
+      <React.Suspense fallback={<Fallback />}>
+        <DebugAuth />
+      </React.Suspense>
     ),
   },
   

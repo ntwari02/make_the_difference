@@ -51,16 +51,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Redirect to appropriate dashboard based on user role
     const roleDashboardMap: Record<UserRole, string> = {
       admin: '/admin/dashboard',
-      student: '/app/dashboard',
-      instructor: '/app/dashboard',
-      buyer: '/app/dashboard',
-      dealer: '/app/dashboard',
-      university: '/app/dashboard',
-      visa_officer: '/app/dashboard',
-      advertiser: '/app/dashboard',
+      student: '/student/dashboard',
+      instructor: '/instructor/dashboard',
+      buyer: '/buyer/dashboard',
+      dealer: '/dealer/dashboard',
+      university: '/university/dashboard',
+      visa_officer: '/visa/dashboard',
+      advertiser: '/advertiser/dashboard',
     };
 
-    const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/app/dashboard';
+    const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/';
+    console.log(`⚠️ User role '${lsUser.role}' not allowed. Redirecting to: ${redirectPath}`);
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -86,7 +87,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
 
     if (!hasPermission) {
-      return <Navigate to="/app/dashboard" replace />;
+      // Redirect to user's own dashboard if they don't have permission
+      const roleDashboardMap: Record<UserRole, string> = {
+        admin: '/admin/dashboard',
+        student: '/student/dashboard',
+        instructor: '/instructor/dashboard',
+        buyer: '/buyer/dashboard',
+        dealer: '/dealer/dashboard',
+        university: '/university/dashboard',
+        visa_officer: '/visa/dashboard',
+        advertiser: '/advertiser/dashboard',
+      };
+      const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/';
+      return <Navigate to={redirectPath} replace />;
     }
   }
 

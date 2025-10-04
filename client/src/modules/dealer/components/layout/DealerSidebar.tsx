@@ -113,7 +113,7 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
                 noWrap
                 sx={{
                   fontWeight: 700,
-                  color: 'text.primary',
+                  color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                 }}
               >
                 {profile?.business_name || 'Dealer Portal'}
@@ -121,7 +121,7 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
               <Typography
                 variant="caption"
                 sx={{
-                  color: 'text.secondary',
+                  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : theme.palette.text.secondary,
                   display: 'block',
                 }}
               >
@@ -144,7 +144,11 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
         )}
       </Box>
 
-      <Divider />
+      <Divider sx={{ 
+        borderColor: theme.palette.mode === 'dark' 
+          ? 'rgba(255, 255, 255, 0.1)' 
+          : theme.palette.divider 
+      }} />
 
       {/* Navigation Menu */}
       <List sx={{ flex: 1, py: 2, px: 1 }}>
@@ -168,14 +172,23 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
                   minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
+                  color: theme.palette.mode === 'dark' 
+                    ? (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)')
+                    : (isActive ? theme.palette.primary.main : theme.palette.text.secondary),
+                  '&:hover': {
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.08)' 
+                      : theme.palette.action.hover,
+                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                  },
                   '&.Mui-selected': {
                     bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
+                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.primary.contrastText,
                     '&:hover': {
                       bgcolor: 'primary.dark',
                     },
                     '& .MuiListItemIcon-root': {
-                      color: 'primary.contrastText',
+                      color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.primary.contrastText,
                     },
                   },
                 }}
@@ -185,7 +198,9 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
                     minWidth: 0,
                     mr: open ? 2 : 'auto',
                     justifyContent: 'center',
-                    color: isActive ? 'inherit' : 'text.secondary',
+                    color: theme.palette.mode === 'dark' 
+                      ? (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)')
+                      : (isActive ? theme.palette.primary.main : theme.palette.text.secondary),
                   }}
                 >
                   {item.icon}
@@ -195,7 +210,7 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
                     <ListItemText
                       primary={item.title}
                       primaryTypographyProps={{
-                        fontWeight: isActive ? 600 : 400,
+                        fontWeight: isActive ? 700 : 500,
                       }}
                     />
                     {showBadge && (
@@ -226,9 +241,20 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
       {/* Footer */}
       {open && (
         <>
-          <Divider />
+          <Divider sx={{ 
+        borderColor: theme.palette.mode === 'dark' 
+          ? 'rgba(255, 255, 255, 0.1)' 
+          : theme.palette.divider 
+      }} />
           <Box sx={{ p: 2 }}>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.5)' 
+                  : theme.palette.text.secondary 
+              }}
+            >
               © 2025 Dealer Portal
             </Typography>
           </Box>
@@ -252,8 +278,10 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              bgcolor: 'background.paper',
-              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark' 
+                ? `1px solid rgba(255, 255, 255, 0.1)` 
+                : `1px solid ${theme.palette.divider}`,
             },
           }}
         >
@@ -270,8 +298,10 @@ const DealerSidebar: React.FC<DealerSidebarProps> = ({
             '& .MuiDrawer-paper': {
               width: open ? drawerWidth : collapsedWidth,
               boxSizing: 'border-box',
-              bgcolor: 'background.paper',
-              borderRight: `1px solid ${theme.palette.divider}`,
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark' 
+                ? `1px solid rgba(255, 255, 255, 0.1)` 
+                : `1px solid ${theme.palette.divider}`,
               overflowX: 'hidden',
               transition: theme.transitions.create('width', {
                 easing: theme.transitions.easing.sharp,

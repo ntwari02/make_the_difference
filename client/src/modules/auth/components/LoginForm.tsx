@@ -114,25 +114,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-    // Update CSS variables for theme switching
-    const root = document.documentElement;
-    if (!isDarkMode) {
-      // Dark mode
-      root.style.setProperty('--bg-primary', '#0f0f23');
-      root.style.setProperty('--bg-secondary', '#1a1a2e');
-      root.style.setProperty('--bg-tertiary', '#16213e');
-      root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#e0e0e0');
-      root.style.setProperty('--text-muted', '#a0a0a0');
-    } else {
-      // Light mode
-      root.style.setProperty('--bg-primary', '#ffffff');
-      root.style.setProperty('--bg-secondary', '#f8f9fa');
-      root.style.setProperty('--bg-tertiary', '#e9ecef');
-      root.style.setProperty('--text-primary', '#212529');
-      root.style.setProperty('--text-secondary', '#495057');
-      root.style.setProperty('--text-muted', '#6c757d');
-    }
   };
 
   return (
@@ -149,9 +130,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
           position: 'relative',
           padding: { xs: 2, sm: 3 },
           boxSizing: 'border-box',
-          background: isDarkMode 
-            ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)'
-            : '#f5f5f5',
         }}
       >
       <motion.div
@@ -168,21 +146,30 @@ const LoginForm: React.FC<LoginFormProps> = ({
         }}
       >
       {/* Enhanced Floating Background Elements */}
-      {[...Array(12)].map((_, i) => (
-        <motion.div
-          key={i}
-          style={{
-            position: 'absolute',
-            width: Math.random() * 80 + 40,
-            height: Math.random() * 80 + 40,
-            background: `linear-gradient(45deg, rgba(102, 126, 234, ${Math.random() * 0.15 + 0.05}), rgba(118, 75, 162, ${Math.random() * 0.1 + 0.03}))`,
-            borderRadius: '50%',
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            pointerEvents: 'none',
-            zIndex: 0,
-            filter: 'blur(1px)',
-          }}
+      {[...Array(12)].map((_, i) => {
+        const size = 40 + (i * 7) % 40;
+        const opacity1 = 0.05 + (i * 0.01) % 0.1;
+        const opacity2 = 0.03 + (i * 0.005) % 0.05;
+        const top = (i * 7) % 100;
+        const left = (i * 11) % 100;
+        
+        return (
+          <motion.div
+            key={`floating-${i}-${isDarkMode}`}
+            style={{
+              position: 'absolute',
+              width: size,
+              height: size,
+              background: isDarkMode 
+                ? `linear-gradient(45deg, rgba(102, 126, 234, ${opacity1}), rgba(118, 75, 162, ${opacity2}))`
+                : `linear-gradient(45deg, rgba(59, 130, 246, ${opacity1 * 0.7}), rgba(147, 51, 234, ${opacity2 * 0.7}))`,
+              borderRadius: '50%',
+              top: `${top}%`,
+              left: `${left}%`,
+              pointerEvents: 'none',
+              zIndex: 0,
+              filter: 'blur(1px)',
+            }}
           initial={{ 
             opacity: 0, 
             scale: 0,
@@ -199,26 +186,35 @@ const LoginForm: React.FC<LoginFormProps> = ({
             duration: 8 + Math.random() * 4,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: Math.random() * 5,
-          }}
-        />
-      ))}
+              delay: i * 0.3,
+            }}
+          />
+          );
+        })}
       
       {/* Additional Glowing Orbs */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={`orb-${i}`}
-          style={{
-            position: 'absolute',
-            width: Math.random() * 120 + 80,
-            height: Math.random() * 120 + 80,
-            background: `radial-gradient(circle, rgba(102, 126, 234, ${Math.random() * 0.1 + 0.02}) 0%, transparent 70%)`,
-            borderRadius: '50%',
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
+      {[...Array(6)].map((_, i) => {
+        const size = 80 + (i * 15) % 40;
+        const opacity = 0.02 + (i * 0.015) % 0.08;
+        const top = (i * 17) % 100;
+        const left = (i * 23) % 100;
+        
+        return (
+          <motion.div
+            key={`orb-${i}-${isDarkMode}`}
+            style={{
+              position: 'absolute',
+              width: size,
+              height: size,
+              background: isDarkMode 
+                ? `radial-gradient(circle, rgba(102, 126, 234, ${opacity}) 0%, transparent 70%)`
+                : `radial-gradient(circle, rgba(59, 130, 246, ${opacity * 0.8}) 0%, transparent 70%)`,
+              borderRadius: '50%',
+              top: `${top}%`,
+              left: `${left}%`,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
           initial={{ 
             opacity: 0, 
             scale: 0 
@@ -231,30 +227,36 @@ const LoginForm: React.FC<LoginFormProps> = ({
             duration: 12 + Math.random() * 6,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: Math.random() * 8,
+            delay: i * 0.5,
           }}
         />
-      ))}
+        );
+      })}
 
-      <Card
-        elevation={8}
-        sx={{
-          width: '100%',
-          maxWidth: '500px',
-          height: 'auto',
-          minHeight: 'auto',
-          maxHeight: '95vh',
-          borderRadius: 3,
-          background: isDarkMode 
-            ? 'linear-gradient(145deg, #374151 0%, #1f2937 100%)'
-            : '#ffffff',
-          border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          margin: 'auto',
-        }}
+        <Card
+          elevation={isDarkMode ? 8 : 4}
+          sx={{
+            width: '100%',
+            maxWidth: '500px',
+            height: 'auto',
+            minHeight: 'auto',
+            maxHeight: '95vh',
+            borderRadius: 3,
+            background: isDarkMode 
+              ? 'linear-gradient(145deg, #374151 0%, #1f2937 100%)'
+              : 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+            border: isDarkMode 
+              ? '1px solid rgba(255, 255, 255, 0.1)' 
+              : '1px solid rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 'auto',
+            boxShadow: isDarkMode 
+              ? '0 25px 50px rgba(0, 0, 0, 0.3)'
+              : '0 25px 50px rgba(0, 0, 0, 0.1)',
+          }}
         component={motion.div}
         initial={{ 
           scale: 0.8, 
@@ -554,6 +556,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       borderRadius: 2,
                       transition: 'all 0.3s ease',
                       backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                      color: isDarkMode ? '#ffffff' : 'inherit',
                       '&:hover fieldset': {
                         borderColor: '#667eea',
                         boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
@@ -561,6 +564,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       '&.Mui-focused fieldset': {
                         borderColor: '#667eea',
                         boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.2)',
+                      },
+                      '& input': {
+                        color: isDarkMode ? '#ffffff' : 'inherit',
                       },
                     },
                     '& .MuiInputLabel-root': {
@@ -573,6 +579,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       '&.MuiInputLabel-shrink': {
                         color: 'primary.main',
                       },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: isDarkMode ? '#9ca3af' : 'inherit',
                     },
                   }}
                 />
@@ -658,6 +667,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       borderRadius: 2,
                       transition: 'all 0.3s ease',
                       backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                      color: isDarkMode ? '#ffffff' : 'inherit',
                       '&:hover fieldset': {
                         borderColor: '#667eea',
                         boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
@@ -665,6 +675,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       '&.Mui-focused fieldset': {
                         borderColor: '#667eea',
                         boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.2)',
+                      },
+                      '& input': {
+                        color: isDarkMode ? '#ffffff' : 'inherit',
                       },
                     },
                     '& .MuiInputLabel-root': {
@@ -677,6 +690,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
                       '&.MuiInputLabel-shrink': {
                         color: 'primary.main',
                       },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: isDarkMode ? '#9ca3af' : 'inherit',
                     },
                   }}
                 />

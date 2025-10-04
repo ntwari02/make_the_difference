@@ -67,11 +67,30 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    dispatch(clearProfile());
-    navigate('/auth/login');
-    handleMenuClose();
+    // Use the session debug approach - clear all storage
+    if (window.confirm('⚠️ Are you sure you want to logout? This will clear all session data.')) {
+      console.log('🚪 Logging out - clearing all storage...');
+      
+      // Clear all localStorage
+      localStorage.clear();
+      
+      // Clear all sessionStorage
+      sessionStorage.clear();
+      
+      // Clear Redux state
+      dispatch(clearProfile());
+      
+      console.log('✅ All storage cleared, redirecting to login...');
+      
+      // Show success message
+      alert('✅ Logged out successfully! Redirecting to login...');
+      
+      // Redirect to login
+      navigate('/auth/login');
+      
+      // Close menu
+      handleMenuClose();
+    }
   };
 
   const handleNavigateToProfile = () => {
@@ -93,20 +112,25 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
       const label = value.charAt(0).toUpperCase() + value.slice(1).replace('-', ' ');
 
       return isLast ? (
-        <Typography key={path} color="text.primary" fontWeight={600}>
+        <Typography 
+          key={path} 
+          color={theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary} 
+          fontWeight={700} 
+          fontSize="1rem"
+        >
           {label}
         </Typography>
       ) : (
         <Link
           key={path}
           underline="hover"
-          color="inherit"
+          color={theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : theme.palette.text.secondary}
           href={path}
           onClick={(e) => {
             e.preventDefault();
             navigate(path);
           }}
-          sx={{ cursor: 'pointer' }}
+          sx={{ cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem' }}
         >
           {label}
         </Link>
@@ -120,12 +144,14 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
       elevation={0}
       sx={{
         zIndex: theme.zIndex.drawer + 1,
-        bgcolor: mode === 'dark' ? 'rgba(26, 26, 46, 0.95)' : 'rgba(255, 255, 255, 0.9)',
+        bgcolor: theme.palette.mode === 'dark' ? '#16213e' : '#ffffff',
         backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${theme.palette.divider}`,
+        borderBottom: theme.palette.mode === 'dark' 
+          ? `1px solid rgba(255, 255, 255, 0.1)` 
+          : `1px solid ${theme.palette.divider}`,
         width: '100%',
         left: 0,
-        color: mode === 'dark' ? theme.palette.text.primary : theme.palette.text.primary,
+        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
       }}
     >
       <Toolbar>
@@ -136,7 +162,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
           onClick={onMenuClick}
           sx={{ 
             mr: 2,
-            color: mode === 'dark' ? 'text.primary' : 'text.primary',
+            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
           }}
         >
           <MenuIcon />
@@ -144,7 +170,14 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
 
         {/* Breadcrumbs */}
         <Box sx={{ flexGrow: 1 }}>
-          <Breadcrumbs aria-label="breadcrumb" sx={{ color: 'text.secondary' }}>
+          <Breadcrumbs 
+            aria-label="breadcrumb" 
+            sx={{ 
+              color: theme.palette.mode === 'dark' 
+                ? 'rgba(255, 255, 255, 0.7)' 
+                : theme.palette.text.secondary 
+            }}
+          >
             {generateBreadcrumbs()}
           </Breadcrumbs>
         </Box>
@@ -153,7 +186,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
         <IconButton 
           sx={{ 
             mr: 1,
-            color: 'text.primary',
+            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
           }}
         >
           <SearchIcon />
@@ -164,7 +197,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
           onClick={toggleColorMode} 
           sx={{ 
             mr: 1,
-            color: 'text.primary',
+            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
           }}
         >
           {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
@@ -175,7 +208,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
           onClick={handleNotificationOpen}
           sx={{ 
             mr: 2,
-            color: 'text.primary',
+            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
           }}
         >
           <Badge badgeContent={unreadNotifications} color="error">
@@ -243,7 +276,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
             <ListItemIcon>
               <LogoutIcon fontSize="small" />
             </ListItemIcon>
-            Logout
+            Clear Session & Logout
           </MenuItem>
         </Menu>
 

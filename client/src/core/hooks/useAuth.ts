@@ -50,6 +50,15 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      // IMPORTANT: Clear ALL old session data before logging in
+      // This prevents old user data from interfering with new login
+      console.log('🧹 Clearing old session data...');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_data');
+      sessionStorage.clear(); // Clear session storage too
+      
       const response: any = await authApi.login(credentials);
       
       // Backend returns tokens and user directly, not wrapped in 'data'
