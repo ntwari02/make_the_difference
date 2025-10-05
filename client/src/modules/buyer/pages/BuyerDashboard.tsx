@@ -9,6 +9,7 @@ import {
   useTheme,
   Avatar,
   Chip,
+  IconButton,
 } from '@mui/material';
 import {
   Favorite as FavoriteIcon,
@@ -20,10 +21,29 @@ import {
 import { useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import SessionDebugger from '../../../shared/components/debug/SessionDebugger';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { MoreVert as MoreIcon } from '@mui/icons-material';
 
 const BuyerDashboard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+
+  // Mock analytics data (mirror style from dealer)
+  const engagementData = [
+    { month: 'Jan', views: 320, favorites: 12 },
+    { month: 'Feb', views: 410, favorites: 15 },
+    { month: 'Mar', views: 380, favorites: 18 },
+    { month: 'Apr', views: 520, favorites: 22 },
+    { month: 'May', views: 610, favorites: 26 },
+    { month: 'Jun', views: 740, favorites: 30 },
+  ];
+
+  const favoritesByType = [
+    { name: 'Sedan', value: 8 },
+    { name: 'SUV', value: 12 },
+    { name: 'Hatchback', value: 5 },
+    { name: 'Pickup', value: 4 },
+  ];
 
   const stats = [
     {
@@ -104,6 +124,102 @@ const BuyerDashboard: React.FC = () => {
           ))}
         </Grid>
 
+        {/* Charts Section */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          {/* Engagement Chart */}
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      Engagement Overview
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Monthly views and favorites trends
+                    </Typography>
+                  </Box>
+                  <IconButton size="small">
+                    <MoreIcon />
+                  </IconButton>
+                </Box>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={engagementData}>
+                    <defs>
+                      <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.3} />
+                      </linearGradient>
+                      <linearGradient id="favGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0.3} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 
+                      vertical={false}
+                    />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke={theme.palette.text.secondary}
+                      tick={{ fill: theme.palette.text.secondary }}
+                      axisLine={{ stroke: theme.palette.divider }}
+                    />
+                    <YAxis 
+                      stroke={theme.palette.text.secondary}
+                      tick={{ fill: theme.palette.text.secondary }}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      }}
+                      labelStyle={{ color: theme.palette.text.primary }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px', color: theme.palette.text.primary }} />
+                    <Bar dataKey="views" fill="url(#viewsGradient)" name="Views" radius={[8, 8, 0, 0]} maxBarSize={50} />
+                    <Bar dataKey="favorites" fill="url(#favGradient)" name="Favorites" radius={[8, 8, 0, 0]} maxBarSize={50} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Favorites by Type */}
+          <Grid item xs={12} md={4}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Favorites by Type
+                </Typography>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie data={favoritesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90}>
+                      {favoritesByType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={["#06b6d4", "#3b82f6", "#10b981", "#f59e0b"][index % 4]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      }}
+                      labelStyle={{ color: theme.palette.text.primary }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
         {/* Quick Actions */}
         <Card>
           <CardContent>
@@ -162,11 +278,11 @@ const BuyerDashboard: React.FC = () => {
                 We're building an amazing vehicle browsing experience with:
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 3 }}>
-                <Chip label="Advanced Filters" color="primary" />
-                <Chip label="3D Vehicle Views" color="primary" />
-                <Chip label="Price Alerts" color="primary" />
-                <Chip label="Compare Vehicles" color="primary" />
-                <Chip label="Dealer Chat" color="primary" />
+                <Chip label="Advanced Filters" color="primary" clickable onClick={() => navigate('/browse')} />
+                <Chip label="3D Vehicle Views" color="primary" clickable onClick={() => navigate('/browse')} />
+                <Chip label="Price Alerts" color="primary" clickable onClick={() => navigate('/buyer/settings')} />
+                <Chip label="Compare Vehicles" color="primary" clickable onClick={() => navigate('/browse')} />
+                <Chip label="Dealer Chat" color="primary" clickable onClick={() => navigate('/buyer/messages')} />
               </Box>
               <Typography variant="body2" color="text.secondary">
                 Stay tuned for the complete marketplace experience! 🎉

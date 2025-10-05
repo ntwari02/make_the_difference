@@ -43,6 +43,13 @@ const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/Deale
 
 // Buyer pages
 const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard'));
+const BrowsePage = React.lazy(() => import('../../modules/buyer/pages/BrowsePage'));
+const BuyerFavorites = React.lazy(() => import('../../modules/buyer/pages/BuyerFavorites'));
+const BuyerMessages = React.lazy(() => import('../../modules/buyer/pages/BuyerMessages'));
+const BuyerProfile = React.lazy(() => import('../../modules/buyer/pages/BuyerProfile'));
+const BuyerSettings = React.lazy(() => import('../../modules/buyer/pages/BuyerSettings'));
+const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat'));
+const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments'));
 
 // Debug page (temporary)
 const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth'));
@@ -86,6 +93,15 @@ const router = createBrowserRouter([
         element: <SecurityQuestionsPage />,
       },
     ],
+  },
+  // Public browse route
+  {
+    path: '/browse',
+    element: (
+      <React.Suspense fallback={<Fallback />}>
+        <BrowsePage />
+      </React.Suspense>
+    ),
   },
   // Dealer routes (protected)
   {
@@ -206,6 +222,66 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['buyer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <BuyerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/favorites',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerFavorites />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/messages',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerMessages />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerSettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/ai-chat',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerAIChat />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/buyer/payments',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <BuyerPayments />
         </React.Suspense>
       </ProtectedRoute>
     ),

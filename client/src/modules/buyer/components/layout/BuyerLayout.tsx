@@ -1,91 +1,50 @@
 import React from 'react';
-import { Box, Container, AppBar, Toolbar, Typography, Button, Avatar, IconButton } from '@mui/material';
-import { DirectionsCar, Person, Favorite, Settings, Logout } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Container, useTheme, useMediaQuery } from '@mui/material';
+ 
 import SessionDebugger from '../../../../shared/components/debug/SessionDebugger';
+import BuyerSidebar from './BuyerSidebar';
+import BuyerHeader from './BuyerHeader';
 
 interface BuyerLayoutProps {
   children: React.ReactNode;
 }
 
-const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
-  const navigate = useNavigate();
+const DRAWER_WIDTH = 280;
+const COLLAPSED_DRAWER_WIDTH = 70;
 
-  const handleLogout = () => {
-    // Use the session debug approach - clear all storage
-    if (window.confirm('⚠️ Are you sure you want to logout? This will clear all session data.')) {
-      console.log('🚪 Logging out - clearing all storage...');
-      
-      // Clear all localStorage
-      localStorage.clear();
-      
-      // Clear all sessionStorage
-      sessionStorage.clear();
-      
-      console.log('✅ All storage cleared, redirecting to login...');
-      
-      // Show success message
-      alert('✅ Logged out successfully! Redirecting to login...');
-      
-      // Redirect to login
-      navigate('/auth/login');
-    }
-  };
+const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+
+  // Local UI state for sidebar open/close (buyer slice doesn't have one yet)
+  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(!isMobile);
+
+  React.useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
+
+  
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Simple Navbar for Buyer */}
-      <AppBar position="fixed" sx={{ bgcolor: '#16213e' }}>
-        <Toolbar>
-          <DirectionsCar sx={{ mr: 1 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            Auto Marketplace
-          </Typography>
-          <Button color="inherit" onClick={() => navigate('/browse')}>
-            Browse
-          </Button>
-          <Button color="inherit" onClick={() => navigate('/buyer/favorites')} startIcon={<Favorite />}>
-            Favorites
-          </Button>
-          <Button color="inherit" onClick={() => navigate('/buyer/dashboard')}>
-            Dashboard
-          </Button>
-          <IconButton color="inherit" onClick={() => navigate('/buyer/settings')}>
-            <Settings />
-          </IconButton>
-          <IconButton 
-            color="inherit" 
-            onClick={handleLogout}
-            title="Clear Session & Logout"
-          >
-            <Logout />
-          </IconButton>
-          <Avatar sx={{ ml: 1, bgcolor: 'primary.main', cursor: 'pointer' }} onClick={() => navigate('/buyer/profile')}>
-            <Person />
-          </Avatar>
-        </Toolbar>
-      </AppBar>
-      
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          py: 4,
-          mt: 8, // Account for fixed navbar
-        }}
-      >
-        <Container maxWidth="xl">
-          {children}
-        </Container>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', overflow: 'hidden', width: '100%' }}>
+      {/* Sidebar */}
+      <BuyerSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} drawerWidth={DRAWER_WIDTH} collapsedWidth={COLLAPSED_DRAWER_WIDTH} />
+
+      {/* Main Content */}
+      <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+        {/* Header */}
+        <BuyerHeader onMenuClick={() => setSidebarOpen((o) => !o)} />
+
+        {/* Page Content */}
+        <Box sx={{ flexGrow: 1, mt: '64px', width: '100%', maxWidth: '100%', pl: 2, pr: 3, py: 2 }}>
+          <Container maxWidth="xl">
+            {children}
+          </Container>
+        </Box>
       </Box>
-      
+
       {/* Session Debugger - Remove in Production */}
       {process.env.NODE_ENV === 'development' && <SessionDebugger />}
     </Box>
