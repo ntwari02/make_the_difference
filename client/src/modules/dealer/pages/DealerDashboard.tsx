@@ -242,11 +242,11 @@ const DealerDashboard: React.FC = () => {
           ))}
         </Grid>
 
-        {/* Charts Section */}
+        {/* Charts + Right Column (two-column like instructor) */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {/* Sales Chart */}
-          <Grid item xs={12} md={8}>
-            <Card>
+          {/* Left column: charts stacked, smaller width */}
+          <Grid item xs={12} lg={5}>
+            <Card sx={{ mb: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Box>
@@ -261,7 +261,7 @@ const DealerDashboard: React.FC = () => {
                     <MoreIcon />
                   </IconButton>
                 </Box>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={salesData}>
                     <defs>
                       <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
@@ -332,11 +332,9 @@ const DealerDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </Grid>
 
-          {/* Performance Gauge */}
-          <Grid item xs={12} md={4}>
-            <Card sx={{ height: '100%' }}>
+            {/* Performance Gauge */}
+            <Card sx={{ height: 320 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                   <Box>
@@ -348,7 +346,7 @@ const DealerDashboard: React.FC = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 280, position: 'relative' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 220, position: 'relative' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <defs>
@@ -435,7 +433,7 @@ const DealerDashboard: React.FC = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', px: 2 }}>
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', px: 2 }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
                       0%
@@ -450,12 +448,12 @@ const DealerDashboard: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-        </Grid>
 
-        {/* Recent Activity & Quick Actions */}
-        <Grid container spacing={2}>
+          {/* Right column: recent activity + quick actions stacked, wider column */}
+          <Grid item xs={12} lg={7}>
+            <Grid container spacing={2}>
           {/* Recent Activity */}
-          <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -486,15 +484,15 @@ const DealerDashboard: React.FC = () => {
             </Card>
           </Grid>
 
-          {/* Quick Actions */}
-          <Grid item xs={12} md={6}>
+              {/* Quick Actions */}
+          <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>
                   Quick Actions
                 </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={6}>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid item xs={6} md={3}>
                     <Button
                       fullWidth
                       variant="outlined"
@@ -502,10 +500,10 @@ const DealerDashboard: React.FC = () => {
                       onClick={() => navigate('/dealer/vehicles/add')}
                       sx={{ py: 2 }}
                     >
-                      Add Vehicle
+                        Add Vehicle
                     </Button>
-                  </Grid>
-                  <Grid item xs={6}>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
                     <Button
                       fullWidth
                       variant="outlined"
@@ -513,10 +511,10 @@ const DealerDashboard: React.FC = () => {
                       onClick={() => navigate('/dealer/vehicles')}
                       sx={{ py: 2 }}
                     >
-                      View Inventory
+                        Inventory
                     </Button>
-                  </Grid>
-                  <Grid item xs={6}>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
                     <Button
                       fullWidth
                       variant="outlined"
@@ -526,8 +524,8 @@ const DealerDashboard: React.FC = () => {
                     >
                       Analytics
                     </Button>
-                  </Grid>
-                  <Grid item xs={6}>
+                      </Grid>
+                      <Grid item xs={6} md={3}>
                     <Button
                       fullWidth
                       variant="outlined"
@@ -535,10 +533,10 @@ const DealerDashboard: React.FC = () => {
                       onClick={() => navigate('/dealer/profile')}
                       sx={{ py: 2 }}
                     >
-                      My Profile
+                        Profile
                     </Button>
-                  </Grid>
-                </Grid>
+                      </Grid>
+                    </Grid>
 
                 {/* Performance Badge */}
                 <Box 
@@ -547,8 +545,7 @@ const DealerDashboard: React.FC = () => {
                     p: 2, 
                     bgcolor: '#16213e', 
                     borderRadius: 1,
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    maxWidth: '80%',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
                   }}
                 >
                   <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: '#ffffff' }}>
@@ -564,6 +561,8 @@ const DealerDashboard: React.FC = () => {
                 </Box>
               </CardContent>
             </Card>
+            </Grid>
+          </Grid>
           </Grid>
         </Grid>
       </Box>

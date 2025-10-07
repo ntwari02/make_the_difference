@@ -26,7 +26,7 @@ export const redirectToDashboard = (user: User | null, navigate: NavigateFunctio
   console.log('📍 Current URL:', window.location.href);
 
   // Validate role first
-  const validRoles = ['admin', 'student', 'instructor', 'buyer', 'dealer', 'university', 'visa_officer', 'advertiser'];
+  const validRoles = ['admin', 'student', 'instructor', 'buyer', 'dealer', 'seller', 'university', 'visa_officer', 'advertiser'];
   
   if (!validRoles.includes(role)) {
     console.error('❌ Invalid role detected:', role);
@@ -46,6 +46,12 @@ export const redirectToDashboard = (user: User | null, navigate: NavigateFunctio
       console.log('🛒 BUYER ROLE DETECTED - redirecting to buyer dashboard');
       console.log('🎯 Target URL: /buyer/dashboard');
       navigate('/buyer/dashboard');
+      console.log('✅ Navigation executed');
+      break;
+    case 'seller':
+      console.log('🏪 SELLER ROLE DETECTED - redirecting to seller dashboard');
+      console.log('🎯 Target URL: /seller/dashboard');
+      navigate('/seller/dashboard');
       console.log('✅ Navigation executed');
       break;
     case 'admin':
@@ -102,6 +108,7 @@ export const getDashboardPath = (role: string): string => {
   const dashboardPaths: Record<string, string> = {
     dealer: '/dealer/dashboard',
     buyer: '/buyer/dashboard',
+    seller: '/seller/dashboard',
     admin: '/admin/dashboard',
     student: '/student/dashboard',
     instructor: '/instructor/dashboard',

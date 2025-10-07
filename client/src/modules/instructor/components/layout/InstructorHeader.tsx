@@ -1,16 +1,23 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, useTheme } from '@mui/material';
-import { Notifications as NotificationsIcon, DarkMode as DarkModeIcon, LightMode as LightModeIcon } from '@mui/icons-material';
+import { Notifications as NotificationsIcon, DarkMode as DarkModeIcon, LightMode as LightModeIcon, Menu as MenuIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 
-const InstructorHeader: React.FC = () => {
+interface InstructorHeaderProps { onMenuClick: () => void }
+
+const InstructorHeader: React.FC<InstructorHeaderProps> = ({ onMenuClick }) => {
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeMode();
   const isDark = mode === 'dark';
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       elevation={0}
       sx={{
         borderBottom: (t) => `1px solid ${t.palette.divider}`,
@@ -20,6 +27,9 @@ const InstructorHeader: React.FC = () => {
       }}
     >
       <Toolbar>
+        <IconButton edge="start" onClick={onMenuClick} sx={{ mr: 2, color: theme.palette.text.primary }}>
+          <MenuIcon />
+        </IconButton>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Instructor Portal
         </Typography>
@@ -33,6 +43,9 @@ const InstructorHeader: React.FC = () => {
           </IconButton>
           <IconButton color="inherit" aria-label="Notifications">
             <NotificationsIcon />
+          </IconButton>
+          <IconButton color="inherit" aria-label="Logout" onClick={() => { dispatch(logoutUser() as any); navigate('/auth/login'); }}>
+            <LogoutIcon />
           </IconButton>
           <IconButton color="inherit" aria-label="Profile">
             <Avatar sx={{ width: 32, height: 32 }} />

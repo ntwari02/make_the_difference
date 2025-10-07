@@ -1,5 +1,5 @@
 import React from 'react';
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
+import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Divider, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Dashboard as DashboardIcon,
@@ -17,7 +17,13 @@ import {
   SmartToy as AIIcon,
 } from '@mui/icons-material';
 
-const drawerWidth = 240;
+interface InstructorSidebarProps {
+  open: boolean;
+  onClose: () => void;
+  drawerWidth: number;
+  collapsedWidth: number;
+  topOffset?: number;
+}
 
 interface MenuItem {
   label: string;
@@ -41,33 +47,101 @@ const menuItems: MenuItem[] = [
   { label: 'Profile', path: '/instructor/profile', icon: <ProfileIcon /> },
 ];
 
-const InstructorSidebar: React.FC = () => {
+const InstructorSidebar: React.FC<InstructorSidebarProps> = ({ open, onClose, drawerWidth, collapsedWidth, topOffset = 0 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const location = useLocation();
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
-      }}
-    >
-      <Toolbar />
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      onClose();
+    }
+  };
+
+  const drawerContent = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <List>
         {menuItems.map((item) => (
           <ListItemButton
             key={item.path}
             selected={location.pathname === item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleNavigate(item.path)}
+            sx={{
+              px: open ? 2 : 1.5,
+              justifyContent: open ? 'flex-start' : 'center',
+            }}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
+            <ListItemIcon sx={{ minWidth: 0, mr: open ? 2 : 0, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+            {open && <ListItemText primary={item.label} />}
           </ListItemButton>
         ))}
       </List>
-    </Drawer>
+      {open && (
+        <>
+          <Divider sx={{ mt: 'auto' }} />
+          <Box sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">© 2025 Instructor Portal</Typography>
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <Drawer
+          variant="temporary"
+          open={open}
+          onClose={onClose}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark'
+                ? `1px solid rgba(255, 255, 255, 0.1)`
+                : `1px solid ${theme.palette.divider}`,
+              top: topOffset,
+              height: `calc(100% - ${topOffset}px)`,
+              overflow: 'hidden',
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        <Drawer
+          variant="permanent"
+          open={open}
+          sx={{
+            width: open ? drawerWidth : collapsedWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: open ? drawerWidth : collapsedWidth,
+              boxSizing: 'border-box',
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark'
+                ? `1px solid rgba(255, 255, 255, 0.1)`
+                : `1px solid ${theme.palette.divider}`,
+              overflowX: 'hidden',
+              overflowY: 'hidden',
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              top: topOffset,
+              height: `calc(100% - ${topOffset}px)`,
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+    </>
   );
 };
 

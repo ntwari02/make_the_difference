@@ -45,6 +45,26 @@ export const instructorApi = {
     const res = await api.get(`/online-classes/${classId}/attendance`);
     return res.data;
   },
+  async upsertAttendance(classId: string, records: Array<{ studentId: string; status: 'present' | 'late' | 'absent' }>): Promise<any> {
+    // Backend: POST /api/online-classes/:classId/attendance with array of records
+    const res = await api.post(`/online-classes/${classId}/attendance`, { records });
+    return res.data;
+  },
+  async listPolls(classId: string): Promise<any[]> {
+    // Backend: GET /api/online-classes/:classId/polls
+    const res = await api.get(`/online-classes/${classId}/polls`);
+    return res.data;
+  },
+  async createPoll(classId: string, payload: { question: string; options: string[] }): Promise<any> {
+    // Backend: POST /api/online-classes/:classId/polls
+    const res = await api.post(`/online-classes/${classId}/polls`, payload);
+    return res.data;
+  },
+  async votePoll(classId: string, pollId: string, payload: { optionIndex: number }): Promise<any> {
+    // Backend: POST /api/online-classes/:classId/polls/:pollId/vote
+    const res = await api.post(`/online-classes/${classId}/polls/${pollId}/vote`, payload);
+    return res.data;
+  },
   async listMyCertificates(): Promise<any[]> {
     // Backend: GET /api/certificates/my-certificates
     const res = await api.get('/certificates/my-certificates');

@@ -2,6 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, IconButton, Breadcrumbs, Link, Typography, useTheme, Box, Avatar, Menu, MenuItem, Divider, Badge, ListItemIcon } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -11,6 +12,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SchoolIcon from '@mui/icons-material/School';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 
 interface StudentHeaderProps { onMenuClick: () => void }
 
@@ -18,6 +20,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onMenuClick }) => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { mode, toggleColorMode } = useThemeMode();
 
   const crumbs = location.pathname.split('/').filter(Boolean);
@@ -72,7 +75,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onMenuClick }) => {
           <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon>
           Favorites
         </MenuItem>
-        <MenuItem onClick={() => { alert('Logged out (demo)'); setAnchorEl(null); }}>
+        <MenuItem onClick={() => { dispatch(logoutUser() as any); setAnchorEl(null); navigate('/auth/login'); }}>
           <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
           Logout
         </MenuItem>

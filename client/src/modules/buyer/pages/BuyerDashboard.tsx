@@ -128,13 +128,13 @@ const BuyerDashboard: React.FC = () => {
           ))}
         </Grid>
 
-        {/* Charts Section */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          {/* Engagement Chart */}
-          <Grid item xs={12} md={8}>
+        {/* Two-column layout: Charts left, Content right */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 2fr' }, gap: 3, mb: 4 }}>
+          {/* Left Column: Charts */}
+          <Box sx={{ display: 'grid', gap: 2 }}>
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Box>
                     <Typography variant="h6" fontWeight={600}>
                       Engagement Overview
@@ -147,7 +147,7 @@ const BuyerDashboard: React.FC = () => {
                     <MoreIcon />
                   </IconButton>
                 </Box>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={engagementData}>
                     <defs>
                       <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
@@ -191,18 +191,15 @@ const BuyerDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </Grid>
 
-          {/* Favorites by Type */}
-          <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>
                   Favorites by Type
                 </Typography>
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie data={favoritesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90}>
+                    <Pie data={favoritesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
                       {favoritesByType.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={["#06b6d4", "#3b82f6", "#10b981", "#f59e0b"][index % 4]} />
                       ))}
@@ -221,79 +218,75 @@ const BuyerDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
+          </Box>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Quick Actions
-            </Typography>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6} md={4}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<SearchIcon />}
-                  onClick={() => navigate('/browse')}
-                  sx={{
-                    py: 2,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                  }}
-                >
-                  Browse Vehicles
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<FavoriteIcon />}
-                  onClick={() => navigate('/buyer/favorites')}
-                  sx={{ py: 2 }}
-                >
-                  My Favorites
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<CarIcon />}
-                  onClick={() => navigate('/browse')}
-                  sx={{ py: 2 }}
-                >
-                  Search by Make
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+          {/* Right Column: Quick Actions and Coming Soon */}
+          <Box sx={{ display: 'grid', gap: 2 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Quick Actions
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1.5 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    onClick={() => navigate('/browse')}
+                    sx={{
+                      py: 2,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                    }}
+                  >
+                    Browse Vehicles
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<FavoriteIcon />}
+                    onClick={() => navigate('/buyer/favorites')}
+                    sx={{ py: 2 }}
+                  >
+                    My Favorites
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<CarIcon />}
+                    onClick={() => navigate('/browse')}
+                    sx={{ py: 2 }}
+                  >
+                    Search by Make
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
 
-        {/* Coming Soon Banner */}
-        <Card sx={{ mt: 3, background: `linear-gradient(135deg, #06b6d420 0%, #10b98120 100%)` }}>
-          <CardContent>
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="h5" fontWeight={700} gutterBottom>
-                🚗 Full Buyer Experience Coming Soon!
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                We're building an amazing vehicle browsing experience with:
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 3 }}>
-                <Chip label="Advanced Filters" color="primary" clickable onClick={() => navigate('/browse')} />
-                <Chip label="3D Vehicle Views" color="primary" clickable onClick={() => navigate('/browse')} />
-                <Chip label="Price Alerts" color="primary" clickable onClick={() => navigate('/buyer/settings')} />
-                <Chip label="Compare Vehicles" color="primary" clickable onClick={() => navigate('/browse')} />
-                <Chip label="Dealer Chat" color="primary" clickable onClick={() => navigate('/buyer/messages')} />
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Stay tuned for the complete marketplace experience! 🎉
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
+            <Card sx={{ background: `linear-gradient(135deg, #06b6d420 0%, #10b98120 100%)` }}>
+              <CardContent>
+                <Box sx={{ textAlign: 'center', py: 2 }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    🚗 Full Buyer Experience Coming Soon!
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    We're building an amazing vehicle browsing experience with:
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
+                    <Chip label="Advanced Filters" color="primary" clickable onClick={() => navigate('/browse')} />
+                    <Chip label="3D Vehicle Views" color="primary" clickable onClick={() => navigate('/browse')} />
+                    <Chip label="Price Alerts" color="primary" clickable onClick={() => navigate('/buyer/settings')} />
+                    <Chip label="Compare Vehicles" color="primary" clickable onClick={() => navigate('/browse')} />
+                    <Chip label="Dealer Chat" color="primary" clickable onClick={() => navigate('/buyer/messages')} />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Stay tuned for the complete marketplace experience! 🎉
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+
       </Box>
       
       {/* Debug Tool - Remove in Production */}

@@ -349,9 +349,10 @@ const SellerDashboard: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Charts - Full width stacked */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, mb: 4 }}>
-          <Box>
+        {/* Two-column layout: Charts left, Content right */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 2fr' }, gap: 3, mb: 4 }}>
+          {/* Left Column: Charts */}
+          <Box sx={{ display: 'grid', gap: 2 }}>
             <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -371,9 +372,8 @@ const SellerDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </Box>
-          <Box>
-            <Card sx={{ height: '100%', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper', borderRadius: 2 }}>
+
+            <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper', borderRadius: 2 }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>Performance Score</Typography>
                 <Typography variant="caption" color="text.secondary">Close ratio</Typography>
@@ -387,11 +387,9 @@ const SellerDashboard: React.FC = () => {
               </CardContent>
             </Card>
           </Box>
-        </Box>
 
-        {/* Activity and Quick Actions like dealer */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3, mb: 4 }}>
-          <Box>
+          {/* Right Column: Activity and Quick Actions */}
+          <Box sx={{ display: 'grid', gap: 2 }}>
             <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Recent Activity</Typography>
@@ -400,8 +398,7 @@ const SellerDashboard: React.FC = () => {
                   </List>
               </CardContent>
             </Card>
-          </Box>
-          <Box>
+
             <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Quick Actions</Typography>
