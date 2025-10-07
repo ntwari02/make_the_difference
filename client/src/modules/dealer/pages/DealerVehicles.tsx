@@ -26,12 +26,9 @@ import {
   DialogActions,
   ToggleButtonGroup,
   ToggleButton,
-  Tooltip,
-  Badge,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  FilterList as FilterIcon,
   GridView as GridViewIcon,
   ViewList as ListViewIcon,
   Add as AddIcon,
@@ -45,8 +42,6 @@ import {
   LocalGasStation as FuelIcon,
   Speed as SpeedIcon,
   CalendarToday as CalendarIcon,
-  Close as CloseIcon,
-  CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -67,7 +62,6 @@ const DealerVehicles: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

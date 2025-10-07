@@ -28,14 +28,16 @@ export interface DealerProfile {
   updated_at: string;
 }
 
+type DayHours = { closed: true } | { open: string; close: string; closed?: boolean };
+
 export interface BusinessHours {
-  monday?: { open: string; close: string; closed?: boolean };
-  tuesday?: { open: string; close: string; closed?: boolean };
-  wednesday?: { open: string; close: string; closed?: boolean };
-  thursday?: { open: string; close: string; closed?: boolean };
-  friday?: { open: string; close: string; closed?: boolean };
-  saturday?: { open: string; close: string; closed?: boolean };
-  sunday?: { open: string; close: string; closed?: boolean };
+  monday?: DayHours;
+  tuesday?: DayHours;
+  wednesday?: DayHours;
+  thursday?: DayHours;
+  friday?: DayHours;
+  saturday?: DayHours;
+  sunday?: DayHours;
 }
 
 export interface Vehicle {

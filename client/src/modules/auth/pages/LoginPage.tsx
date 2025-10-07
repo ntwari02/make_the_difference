@@ -52,31 +52,18 @@ const LoginPage: React.FC = () => {
           console.log('✅ Parsed user data:', userData);
           console.log('👤 User role:', userData.role);
           
-          // Very important: Verify this is NOT a buyer role
-          if (userData.role === 'dealer') {
-            console.log('🏢 Confirmed dealer role - redirecting to dealer dashboard');
-            hasRedirected.current = true;
-            redirectToDashboard(userData, navigate);
-          } else if (userData.role === 'buyer') {
-            console.log('⚠️ WARNING: User has buyer role instead of dealer!');
-            console.log('🔍 Raw user data:', JSON.stringify(userData, null, 2));
-            // Still redirect but log the issue
-            hasRedirected.current = true;
-            redirectToDashboard(userData, navigate);
-          } else {
-            console.log('⚠️ Unknown role:', userData.role, 'redirecting to:', '/dealer/dashboard');
-            hasRedirected.current = true;
-            navigate('/dealer/dashboard');
-          }
+          // Always use generic redirect by role
+          hasRedirected.current = true;
+          redirectToDashboard(userData, navigate);
         } catch (error) {
           console.error('❌ Error parsing user data:', error);
-          console.log('🆘 Emergency redirect to dealer dashboard');
-          navigate('/dealer/dashboard');
+          console.log('🆘 Emergency redirect to home');
+          navigate('/');
         }
       } else {
         console.error('❌ No user data found in localStorage');
-        console.log('🆘 Emergency redirect to dealer dashboard');
-        navigate('/dealer/dashboard');
+        console.log('🆘 Emergency redirect to home');
+        navigate('/');
       }
     }, 100); // Shorter timeout for faster response
   };

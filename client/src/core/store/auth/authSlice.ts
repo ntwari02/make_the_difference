@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, LoginCredentials, RegisterCredentials } from '../../types';
 import { api } from '../../services/api/apiClient';
-import { setToStorage, getFromStorage, removeFromStorage } from '../../../shared/utils';
+import { setToStorage, getFromStorage } from '../../../shared/utils';
 import { STORAGE_KEYS } from '../../config/constants';
 
 // Auth state interface

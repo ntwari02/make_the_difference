@@ -20,21 +20,22 @@ export const redirectToDashboard = (user: User | null, navigate: NavigateFunctio
     return;
   }
 
-  console.log('👤 User role detected:', user.role);
+  const role = String(user.role ?? '').toLowerCase().trim();
+  console.log('👤 User role detected (normalized):', role);
   console.log('🔍 Full user object:', JSON.stringify(user, null, 2));
   console.log('📍 Current URL:', window.location.href);
 
   // Validate role first
   const validRoles = ['admin', 'student', 'instructor', 'buyer', 'dealer', 'university', 'visa_officer', 'advertiser'];
   
-  if (!validRoles.includes(user.role)) {
-    console.error('❌ Invalid role detected:', user.role);
-    console.log('🆘 Emergency redirecting to dealer dashboard');
-    navigate('/dealer/dashboard');
+  if (!validRoles.includes(role)) {
+    console.error('❌ Invalid role detected:', role);
+    console.log('🆘 Redirecting to home');
+    navigate('/');
     return;
   }
 
-  switch (user.role) {
+  switch (role) {
     case 'dealer':
       console.log('🏢 DEALER ROLE DETECTED - redirecting to dealer dashboard');
       console.log('🎯 Target URL: /dealer/dashboard');
@@ -84,9 +85,9 @@ export const redirectToDashboard = (user: User | null, navigate: NavigateFunctio
       console.log('✅ Navigation executed');
       break;
     default:
-      console.log('⚠️ Fallback case - redirecting to dealer dashboard');
-      console.log('🎯 Target URL: /dealer/dashboard');
-      navigate('/dealer/dashboard');
+      console.log('⚠️ Fallback case - redirecting to home');
+      console.log('🎯 Target URL: /');
+      navigate('/');
       console.log('✅ Navigation executed');
       break;
   }

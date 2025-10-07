@@ -185,9 +185,13 @@ const DealerDashboard: React.FC = () => {
                   height: '100%',
                   position: 'relative',
                   overflow: 'visible',
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  border: (t) => `1px solid ${t.palette.divider}`,
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     transition: 'transform 0.3s ease',
+                    boxShadow: (t) => t.shadows[8],
                   },
                 }}
               >
@@ -197,7 +201,7 @@ const DealerDashboard: React.FC = () => {
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         {card.title}
                       </Typography>
-                      <Typography variant="h4" fontWeight={700}>
+                      <Typography variant="h5" fontWeight={700}>
                         {card.value}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
@@ -226,6 +230,7 @@ const DealerDashboard: React.FC = () => {
                         color: card.color,
                         width: 56,
                         height: 56,
+                        boxShadow: `0 6px 16px ${card.color}40`,
                       }}
                     >
                       {card.icon}
