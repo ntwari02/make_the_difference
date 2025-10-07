@@ -5,6 +5,7 @@ import authSlice from './auth/authSlice';
 import dealerSlice from '../../modules/dealer/store/dealerSlice';
 import buyerSlice from '../../modules/buyer/store/buyerSlice';
 import instructorSlice from '../../modules/instructor/store/instructorSlice';
+import universitySlice from '../../modules/university/store/universitySlice';
 
 // Configure the store
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     dealer: dealerSlice,
     buyer: buyerSlice,
     instructor: instructorSlice,
+    university: universitySlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

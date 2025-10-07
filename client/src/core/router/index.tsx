@@ -59,6 +59,16 @@ const InstructorEarnings = React.lazy(() => import('../../modules/instructor/pag
 const InstructorMessages = React.lazy(() => import('../../modules/instructor/pages/InstructorMessages'));
 const InstructorSettings = React.lazy(() => import('../../modules/instructor/pages/InstructorSettings'));
 const InstructorProfile = React.lazy(() => import('../../modules/instructor/pages/InstructorProfile'));
+// University pages
+const UniversityDashboard = React.lazy(() => import('../../modules/university/pages/UniversityDashboard'));
+const UniversityScholarships = React.lazy(() => import('../../modules/university/pages/UniversityScholarships'));
+const UniversityApplications = React.lazy(() => import('../../modules/university/pages/UniversityApplications'));
+const UniversityCreateScholarship = React.lazy(() => import('../../modules/university/pages/UniversityCreateScholarship'));
+const UniversityAIAssistant = React.lazy(() => import('../../modules/university/pages/UniversityAIAssistant'));
+const UniversityAnalytics = React.lazy(() => import('../../modules/university/pages/UniversityAnalytics'));
+const UniversitySettings = React.lazy(() => import('../../modules/university/pages/UniversitySettings'));
+const UniversityProfile = React.lazy(() => import('../../modules/university/pages/UniversityProfile'));
+
 const InstructorLiveClasses = React.lazy(() => import('../../modules/instructor/pages/InstructorLiveClasses'));
 const InstructorScheduler = React.lazy(() => import('../../modules/instructor/pages/InstructorScheduler'));
 const InstructorLearners = React.lazy(() => import('../../modules/instructor/pages/InstructorLearners'));
@@ -369,6 +379,88 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['instructor','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <InstructorAIAssistant />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // University routes
+  {
+    path: '/university/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/scholarships',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityScholarships />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/scholarships/create',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityCreateScholarship />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/applications',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityApplications />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/ai',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityAIAssistant />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversitySettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityProfile />
         </React.Suspense>
       </ProtectedRoute>
     ),
