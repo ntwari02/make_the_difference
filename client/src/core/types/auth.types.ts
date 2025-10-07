@@ -23,12 +23,13 @@ export interface User {
   updated_at: string;
 }
 
-export type UserRole = 
+export type UserRole =
   | 'admin'
   | 'student'
   | 'instructor'
   | 'buyer'
   | 'dealer'
+  | 'seller'
   | 'university'
   | 'visa_officer'
   | 'advertiser';

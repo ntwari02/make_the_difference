@@ -4,6 +4,9 @@ import { ENV } from '../config/environment';
 import authSlice from './auth/authSlice';
 import dealerSlice from '../../modules/dealer/store/dealerSlice';
 import buyerSlice from '../../modules/buyer/store/buyerSlice';
+import sellerSlice from '../../modules/seller/store/sellerSlice';
+
+// Import thunk middleware explicitly
 
 // Configure the store
 export const store = configureStore({
@@ -11,9 +14,11 @@ export const store = configureStore({
     auth: authSlice,
     dealer: dealerSlice,
     buyer: buyerSlice,
+    seller: sellerSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
+      // Thunk is included by default in RTK; we keep serializableCheck config only
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
         ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],

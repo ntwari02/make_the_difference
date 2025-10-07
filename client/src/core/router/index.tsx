@@ -30,29 +30,43 @@ import ErrorPage from '../../shared/components/ui/ErrorPage';
 import ProtectedRoute from './ProtectedRoute';
 
 // Dealer pages
-const DealerDashboard = React.lazy(() => import('../../modules/dealer/pages/DealerDashboard'));
-const DealerProfile = React.lazy(() => import('../../modules/dealer/pages/DealerProfile'));
-const DealerVehicles = React.lazy(() => import('../../modules/dealer/pages/DealerVehicles'));
-const AddVehicle = React.lazy(() => import('../../modules/dealer/pages/AddVehicle'));
-const DealerAnalytics = React.lazy(() => import('../../modules/dealer/pages/DealerAnalytics'));
-const DealerMessages = React.lazy(() => import('../../modules/dealer/pages/DealerMessages'));
-const DealerReviews = React.lazy(() => import('../../modules/dealer/pages/DealerReviews'));
-const DealerTeam = React.lazy(() => import('../../modules/dealer/pages/DealerTeam'));
-const DealerPayments = React.lazy(() => import('../../modules/dealer/pages/DealerPayments'));
-const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/DealerSettings'));
+const DealerDashboard = React.lazy(() => import('../../modules/dealer/pages/DealerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerProfile = React.lazy(() => import('../../modules/dealer/pages/DealerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerVehicles = React.lazy(() => import('../../modules/dealer/pages/DealerVehicles')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const AddVehicle = React.lazy(() => import('../../modules/dealer/pages/AddVehicle')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerAnalytics = React.lazy(() => import('../../modules/dealer/pages/DealerAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerMessages = React.lazy(() => import('../../modules/dealer/pages/DealerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerReviews = React.lazy(() => import('../../modules/dealer/pages/DealerReviews')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerTeam = React.lazy(() => import('../../modules/dealer/pages/DealerTeam')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerPayments = React.lazy(() => import('../../modules/dealer/pages/DealerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/DealerSettings')) as React.LazyExoticComponent<React.ComponentType<any>>;
 
 // Buyer pages
-const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard'));
-const BrowsePage = React.lazy(() => import('../../modules/buyer/pages/BrowsePage'));
-const BuyerFavorites = React.lazy(() => import('../../modules/buyer/pages/BuyerFavorites'));
-const BuyerMessages = React.lazy(() => import('../../modules/buyer/pages/BuyerMessages'));
-const BuyerProfile = React.lazy(() => import('../../modules/buyer/pages/BuyerProfile'));
-const BuyerSettings = React.lazy(() => import('../../modules/buyer/pages/BuyerSettings'));
-const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat'));
-const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments'));
+const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BrowsePage = React.lazy(() => import('../../modules/buyer/pages/BrowsePage')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerFavorites = React.lazy(() => import('../../modules/buyer/pages/BuyerFavorites')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerMessages = React.lazy(() => import('../../modules/buyer/pages/BuyerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerProfile = React.lazy(() => import('../../modules/buyer/pages/BuyerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerSettings = React.lazy(() => import('../../modules/buyer/pages/BuyerSettings')) as React.LazyExoticComponent<React.ComponentType<any>>;
+
+// Seller pages
+const SellerDashboard = React.lazy(() => import('../../modules/seller/pages/SellerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
+// const SellerCars = React.lazy(() => import('../../modules/seller/pages/SellerCars')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerInventory = React.lazy(() => import('../../modules/seller/pages/SellerInventory')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerAddCar = React.lazy(() => import('../../modules/seller/pages/SellerAddCar')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerEditCar = React.lazy(() => import('../../modules/seller/pages/SellerEditCar')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerProfile = React.lazy(() => import('../../modules/seller/pages/SellerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerMessages = React.lazy(() => import('../../modules/seller/pages/SellerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerReviews = React.lazy(() => import('../../modules/seller/pages/SellerReviews')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerPayments = React.lazy(() => import('../../modules/seller/pages/SellerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSettings = React.lazy(() => import('../../modules/seller/pages/SellerSettings')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const CarDetails = React.lazy(() => import('../../modules/buyer/pages/CarDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
 
 // Debug page (temporary)
-const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth'));
+const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth')) as React.LazyExoticComponent<React.ComponentType<any>>;
 
 const Fallback: React.FC = () => (
   <div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: '#64748b' }}>Loading…</div>
@@ -100,6 +114,15 @@ const router = createBrowserRouter([
     element: (
       <React.Suspense fallback={<Fallback />}>
         <BrowsePage />
+      </React.Suspense>
+    ),
+  },
+  // Public car details
+  {
+    path: '/cars/:id',
+    element: (
+      <React.Suspense fallback={<Fallback />}>
+        <CarDetails />
       </React.Suspense>
     ),
   },
@@ -282,6 +305,108 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['buyer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <BuyerPayments />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // Seller routes
+  {
+    path: '/seller/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerInventory />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/add',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerAddCar />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/:id/edit',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerEditCar />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/messages',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerMessages />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/reviews',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerReviews />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/payments',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerPayments />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSettings />
         </React.Suspense>
       </ProtectedRoute>
     ),

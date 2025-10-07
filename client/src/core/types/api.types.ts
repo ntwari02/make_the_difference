@@ -60,12 +60,13 @@ export interface User {
   total_classes?: number;
 }
 
-export type UserRole = 
+export type UserRole =
   | 'admin'
   | 'student'
   | 'instructor'
   | 'buyer'
   | 'dealer'
+  | 'seller'
   | 'university'
   | 'visa_officer'
   | 'advertiser';

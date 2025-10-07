@@ -70,7 +70,6 @@ export type {
 
 export type {
   User,
-  UserRole,
   UserPreferences,
   LoginCredentials,
   RegisterCredentials,
@@ -100,4 +99,5 @@ export type {
   Permission,
   RolePermissions,
   UserSession,
+  UserRole,
 } from './auth.types';

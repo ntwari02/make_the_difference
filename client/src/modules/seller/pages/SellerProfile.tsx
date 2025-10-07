@@ -1,0 +1,519 @@
+import React, { useEffect, useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Avatar,
+  Alert,
+  Chip,
+  IconButton,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Paper,
+  Tabs,
+  Tab,
+} from '@mui/material';
+import {
+  Save as SaveIcon,
+  Edit as EditIcon,
+  Business as BusinessIcon,
+  LocationOn as LocationIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Language as WebsiteIcon,
+  Schedule as ScheduleIcon,
+  Star as StarIcon,
+  CheckCircle as VerifiedIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../../core/store';
+import { setProfile, setLoading, setError } from '../store/sellerSlice';
+import SellerLayout from '../components/layout/SellerLayout';
+import { sellerApi } from '../services/sellerApi';
+
+interface ProfileFormData {
+  business_name: string;
+  business_type: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postal_code: string;
+  phone: string;
+  email: string;
+  website: string;
+  logo: string;
+  images: string[];
+  business_hours: Record<string, any>;
+  services: string[];
+}
+
+const SellerProfile: React.FC = () => {
+  const dispatch = useDispatch();
+  const profile = useSelector((state: RootState) => state.seller.profile);
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState<ProfileFormData>({
+    business_name: '',
+    business_type: '',
+    description: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    postal_code: '',
+    phone: '',
+    email: '',
+    website: '',
+    logo: '',
+    images: [],
+    business_hours: {},
+    services: [],
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        business_name: profile.business_name || '',
+        business_type: profile.business_type || '',
+        description: profile.description || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        country: profile.country || '',
+        postal_code: profile.postal_code || '',
+        phone: profile.phone || '',
+        email: profile.email || '',
+        website: profile.website || '',
+        logo: profile.logo || '',
+        images: profile.images || [],
+        business_hours: profile.business_hours || {},
+        services: profile.services || [],
+      });
+    }
+  }, [profile]);
+
+  const handleInputChange = (field: keyof ProfileFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const updatedProfile = await sellerApi.profile.updateProfile(formData);
+      dispatch(setProfile(updatedProfile));
+      setSuccess('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      setError('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const businessTypes = [
+    'Dealership',
+    'Independent Seller',
+    'Auto Broker',
+    'Car Rental',
+    'Fleet Management',
+    'Parts Dealer',
+    'Service Center',
+  ];
+
+  const countries = [
+    'United States',
+    'Canada',
+    'United Kingdom',
+    'Australia',
+    'Germany',
+    'France',
+    'Italy',
+    'Spain',
+    'Netherlands',
+    'Belgium',
+    'Switzerland',
+    'Austria',
+    'Sweden',
+    'Norway',
+    'Denmark',
+    'Finland',
+  ];
+
+  const usStates = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+  ];
+
+  const getVerificationStatus = () => {
+    if (profile?.is_verified) {
+      return { status: 'verified', color: 'success', icon: <VerifiedIcon />, text: 'Verified' };
+    }
+    return { status: 'pending', color: 'warning', icon: <WarningIcon />, text: 'Pending Verification' };
+  };
+
+  const verificationStatus = getVerificationStatus();
+
+  return (
+    <SellerLayout>
+      <Box sx={{ flexGrow: 1 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Seller Profile
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Box>
+
+        {/* Alerts */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
+
+        {/* Profile Overview Card */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Avatar
+                src={formData.logo}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: 'primary.main',
+                  fontSize: '2rem',
+                }}
+              >
+                {formData.business_name?.charAt(0)}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    {formData.business_name || 'Your Business Name'}
+                  </Typography>
+                  <Chip
+                    icon={verificationStatus.icon}
+                    label={verificationStatus.text}
+                    color={verificationStatus.color as any}
+                    size="small"
+                  />
+                </Box>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  {formData.business_type}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <LocationIcon fontSize="small" color="action" />
+                    <Typography variant="body2">
+                      {formData.city && formData.state ? `${formData.city}, ${formData.state}` : 'Location not set'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <StarIcon fontSize="small" color="warning" />
+                    <Typography variant="body2">
+                      4.8 (127 reviews)
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Profile Tabs */}
+        <Paper sx={{ mb: 3 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            variant="fullWidth"
+          >
+            <Tab label="Business Information" />
+            <Tab label="Contact Details" />
+            <Tab label="Business Hours" />
+            <Tab label="Services" />
+          </Tabs>
+        </Paper>
+
+        {/* Tab Panels */}
+        <Box sx={{ mb: 3 }}>
+          {/* Business Information Tab */}
+          {activeTab === 0 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Business Information
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Business Name"
+                      value={formData.business_name}
+                      onChange={(e) => handleInputChange('business_name', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Business Type</InputLabel>
+                      <Select
+                        value={formData.business_type}
+                        label="Business Type"
+                        onChange={(e) => handleInputChange('business_type', e.target.value)}
+                      >
+                        {businessTypes.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={4}
+                      label="Business Description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Describe your business, experience, and what makes you unique..."
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Logo URL"
+                      value={formData.logo}
+                      onChange={(e) => handleInputChange('logo', e.target.value)}
+                      placeholder="https://example.com/logo.jpg"
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Contact Details Tab */}
+          {activeTab === 1 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Contact Information
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Business Address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="City"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>State</InputLabel>
+                      <Select
+                        value={formData.state}
+                        label="State"
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                      >
+                        {usStates.map((state) => (
+                          <MenuItem key={state} value={state}>
+                            {state}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Postal Code"
+                      value={formData.postal_code}
+                      onChange={(e) => handleInputChange('postal_code', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone Number"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Email Address"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Website"
+                      value={formData.website}
+                      onChange={(e) => handleInputChange('website', e.target.value)}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Business Hours Tab */}
+          {activeTab === 2 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Business Hours
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Set your business hours for each day of the week
+                </Typography>
+                <Grid container spacing={2}>
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                    <Grid item xs={12} sm={6} md={4} key={day}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="body2" sx={{ minWidth: 80 }}>
+                          {day}:
+                        </Typography>
+                        <TextField
+                          size="small"
+                          placeholder="9:00 AM - 6:00 PM"
+                          value={formData.business_hours[day] || ''}
+                          onChange={(e) => handleInputChange('business_hours', {
+                            ...formData.business_hours,
+                            [day]: e.target.value
+                          })}
+                        />
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Services Tab */}
+          {activeTab === 3 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Services Offered
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Select the services your business provides
+                </Typography>
+                <Grid container spacing={2}>
+                  {[
+                    'Car Sales',
+                    'Financing',
+                    'Trade-ins',
+                    'Warranty',
+                    'Service & Repair',
+                    'Parts Sales',
+                    'Delivery',
+                    'Online Sales',
+                    'Test Drives',
+                    'Vehicle History Reports',
+                    'Extended Warranty',
+                    'GAP Insurance',
+                  ].map((service) => (
+                    <Grid item xs={12} sm={6} md={4} key={service}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.services.includes(service)}
+                            onChange={(e) => {
+                              const newServices = e.target.checked
+                                ? [...formData.services, service]
+                                : formData.services.filter(s => s !== service);
+                              handleInputChange('services', newServices);
+                            }}
+                          />
+                        }
+                        label={service}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+
+        {/* Verification Status */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom fontWeight={600}>
+              Verification Status
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              {verificationStatus.icon}
+              <Typography variant="body1">
+                Your account is {verificationStatus.text.toLowerCase()}
+              </Typography>
+            </Box>
+            <Alert severity={verificationStatus.status === 'verified' ? 'success' : 'info'}>
+              {verificationStatus.status === 'verified'
+                ? 'Your business has been verified. You can now access all seller features.'
+                : 'Your verification is pending review. You may have limited access to some features until approved.'
+              }
+            </Alert>
+          </CardContent>
+        </Card>
+      </Box>
+    </SellerLayout>
+  );
+};
+
+export default SellerProfile;
