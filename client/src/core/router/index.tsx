@@ -60,6 +60,18 @@ const InstructorMessages = React.lazy(() => import('../../modules/instructor/pag
 const InstructorSettings = React.lazy(() => import('../../modules/instructor/pages/InstructorSettings'));
 const InstructorProfile = React.lazy(() => import('../../modules/instructor/pages/InstructorProfile'));
 // University pages
+// Visa pages
+const VisaDashboard = React.lazy(() => import('../../modules/visa/pages/VisaDashboard'));
+const VisaServices = React.lazy(() => import('../../modules/visa/pages/VisaServices'));
+const VisaApplications = React.lazy(() => import('../../modules/visa/pages/VisaApplications'));
+const VisaCreateService = React.lazy(() => import('../../modules/visa/pages/VisaCreateService'));
+const VisaAnalytics = React.lazy(() => import('../../modules/visa/pages/VisaAnalytics'));
+const VisaSettings = React.lazy(() => import('../../modules/visa/pages/VisaSettings'));
+const VisaProfile = React.lazy(() => import('../../modules/visa/pages/VisaProfile'));
+const VisaAIAssistant = React.lazy(() => import('../../modules/visa/pages/VisaAIAssistant'));
+const VisaMyApplications = React.lazy(() => import('../../modules/visa/pages/VisaMyApplications'));
+const VisaServiceDetail = React.lazy(() => import('../../modules/visa/pages/VisaServiceDetail'));
+const VisaApplyForm = React.lazy(() => import('../../modules/visa/pages/VisaApplyForm'));
 const UniversityDashboard = React.lazy(() => import('../../modules/university/pages/UniversityDashboard'));
 const UniversityScholarships = React.lazy(() => import('../../modules/university/pages/UniversityScholarships'));
 const UniversityApplications = React.lazy(() => import('../../modules/university/pages/UniversityApplications'));
@@ -461,6 +473,117 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['university','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <UniversityProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  // Visa routes
+  {
+    path: '/visa/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/services',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaServices />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/services/:id',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaServiceDetail />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/apply',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin','student']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaApplyForm />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/services/create',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaCreateService />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/applications',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaApplications />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/my-applications',
+    element: (
+      <ProtectedRoute allowedRoles={['student','visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaMyApplications />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','provider','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaSettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/ai',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaAIAssistant />
         </React.Suspense>
       </ProtectedRoute>
     ),

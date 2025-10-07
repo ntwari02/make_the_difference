@@ -60,7 +60,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role requirement (normalize role to avoid case/syntax mismatches)
   const rolesToCheck = allowedRoles && allowedRoles.length > 0 ? allowedRoles : (requiredRole ? [requiredRole] : []);
-  const userRole = (lsUser?.role ?? '').toString().toLowerCase().trim() as UserRole;
+  let userRole = (lsUser?.role ?? '').toString().toLowerCase().trim() as UserRole;
+  if (userRole === 'visa') userRole = 'visa_officer';
+  if (userRole === 'provider') userRole = 'visa_officer';
   if (rolesToCheck.length > 0 && lsUser && !rolesToCheck.includes(userRole)) {
     // Redirect to appropriate dashboard based on user role
     const roleDashboardMap: Record<UserRole, string> = {

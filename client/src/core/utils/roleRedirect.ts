@@ -20,7 +20,10 @@ export const redirectToDashboard = (user: User | null, navigate: NavigateFunctio
     return;
   }
 
-  const role = String(user.role ?? '').toLowerCase().trim();
+  let role = String(user.role ?? '').toLowerCase().trim();
+  // Normalize common aliases from backend
+  if (role === 'visa') role = 'visa_officer';
+  if (role === 'provider') role = 'visa_officer';
   console.log('👤 User role detected (normalized):', role);
   console.log('🔍 Full user object:', JSON.stringify(user, null, 2));
   console.log('📍 Current URL:', window.location.href);
