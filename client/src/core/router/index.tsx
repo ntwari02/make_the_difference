@@ -64,6 +64,21 @@ const SellerSettings = React.lazy(() => import('../../modules/seller/pages/Selle
 const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const CarDetails = React.lazy(() => import('../../modules/buyer/pages/CarDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
+// Student pages (static imports to avoid dynamic import issues during dev)
+import StudentDashboard from '../../modules/student/pages/StudentDashboard';
+import StudentMyCourses from '../../modules/student/pages/MyCourses';
+import StudentFavorites from '../../modules/student/pages/Favorites';
+import StudentCourseDetail from '../../modules/student/pages/CourseDetail';
+import LessonViewer from '../../modules/student/pages/LessonViewer';
+import StudentLiveClasses from '../../modules/student/pages/LiveClasses';
+import StudentPayments from '../../modules/student/pages/Payments';
+import StudentCertificates from '../../modules/student/pages/Certificates';
+import StudentSubscriptions from '../../modules/student/pages/Subscriptions';
+import CertificateDetail from '../../modules/student/pages/CertificateDetail';
+import LiveClassDetail from '../../modules/student/pages/LiveClassDetail';
+import StudentProgress from '../../modules/student/pages/Progress';
+import StudentMessages from '../../modules/student/pages/Messages';
+import StudentSettings from '../../modules/student/pages/Settings';
 
 // Debug page (temporary)
 const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -79,6 +94,78 @@ const router = createBrowserRouter([
     path: '/',
     element: <LandingPage />,
     errorElement: <ErrorPage />,
+  },
+  {
+    path: '/student/live-classes/:id',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <LiveClassDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/certificates/:id',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <CertificateDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/progress',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentProgress />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/messages',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentMessages />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/subscriptions',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentSubscriptions />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/live-classes',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentLiveClasses />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/payments',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentPayments />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/certificates',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentCertificates />
+      </ProtectedRoute>
+    ),
   },
   
   // Auth routes
@@ -124,6 +211,47 @@ const router = createBrowserRouter([
       <React.Suspense fallback={<Fallback />}>
         <CarDetails />
       </React.Suspense>
+    ),
+  },
+  // Student routes
+  {
+    path: '/student/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/courses',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentMyCourses />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/favorites',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentFavorites />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/courses/:id',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <StudentCourseDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/courses/:id/lessons/:lessonId',
+    element: (
+      <ProtectedRoute allowedRoles={['student','admin','instructor']}>
+        <LessonViewer />
+      </ProtectedRoute>
     ),
   },
   // Dealer routes (protected)

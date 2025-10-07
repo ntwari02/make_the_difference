@@ -15,6 +15,9 @@ import SecurityQuestionsPage from '../modules/auth/pages/SecurityQuestionsPage';
 import CarListingPage from '../modules/ecommerce/pages/CarListingPage';
 import CarDetailsPage from '../modules/ecommerce/pages/CarDetailsPage';
 // DealerDashboard removed
+import StudentProgress from '../modules/student/pages/Progress';
+import StudentMessages from '../modules/student/pages/Messages';
+import StudentSettings from '../modules/student/pages/Settings';
 
 const App: React.FC = () => {
   return (
@@ -35,6 +38,11 @@ const App: React.FC = () => {
         <Route path="/cars/:id" element={<CarDetailsPage />} />
         
         {/* Dealer Dashboard removed */}
+
+        {/* Student Progress (fallback router) */}
+        <Route path="/student/progress" element={<StudentProgress />} />
+        <Route path="/student/messages" element={<StudentMessages />} />
+        <Route path="/student/settings" element={<StudentSettings />} />
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
