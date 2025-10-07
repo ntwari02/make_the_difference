@@ -29,7 +29,6 @@ import {
   Paper,
   Tabs,
   Tab,
-  Divider,
   Avatar,
 } from '@mui/material';
 import {
@@ -47,7 +46,8 @@ import {
   Add as AddIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+// navigate not used currently
+// import { useNavigate } from 'react-router-dom';
 import DealerLayout from '../components/layout/DealerLayout';
 import toast from 'react-hot-toast';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -91,12 +91,11 @@ const TabPanel = (props: TabPanelProps) => {
 
 const DealerPayments: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [, setSelectedTransaction] = useState<Transaction | null>(null);
   const [addPaymentMethodOpen, setAddPaymentMethodOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 

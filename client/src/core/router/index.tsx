@@ -80,6 +80,31 @@ import StudentProgress from '../../modules/student/pages/Progress';
 import StudentMessages from '../../modules/student/pages/Messages';
 import StudentSettings from '../../modules/student/pages/Settings';
 
+// Instructor pages
+const InstructorDashboard = React.lazy(() => import('../../modules/instructor/pages/InstructorDashboard'));
+const InstructorCourses = React.lazy(() => import('../../modules/instructor/pages/InstructorCourses'));
+const InstructorStudents = React.lazy(() => import('../../modules/instructor/pages/InstructorStudents'));
+const InstructorEarnings = React.lazy(() => import('../../modules/instructor/pages/InstructorEarnings'));
+const InstructorMessages = React.lazy(() => import('../../modules/instructor/pages/InstructorMessages'));
+const InstructorSettings = React.lazy(() => import('../../modules/instructor/pages/InstructorSettings'));
+const InstructorProfile = React.lazy(() => import('../../modules/instructor/pages/InstructorProfile'));
+// University pages
+const UniversityDashboard = React.lazy(() => import('../../modules/university/pages/UniversityDashboard'));
+const UniversityScholarships = React.lazy(() => import('../../modules/university/pages/UniversityScholarships'));
+const UniversityApplications = React.lazy(() => import('../../modules/university/pages/UniversityApplications'));
+const UniversityCreateScholarship = React.lazy(() => import('../../modules/university/pages/UniversityCreateScholarship'));
+const UniversityAIAssistant = React.lazy(() => import('../../modules/university/pages/UniversityAIAssistant'));
+const UniversityAnalytics = React.lazy(() => import('../../modules/university/pages/UniversityAnalytics'));
+const UniversitySettings = React.lazy(() => import('../../modules/university/pages/UniversitySettings'));
+const UniversityProfile = React.lazy(() => import('../../modules/university/pages/UniversityProfile'));
+
+const InstructorLiveClasses = React.lazy(() => import('../../modules/instructor/pages/InstructorLiveClasses'));
+const InstructorScheduler = React.lazy(() => import('../../modules/instructor/pages/InstructorScheduler'));
+const InstructorLearners = React.lazy(() => import('../../modules/instructor/pages/InstructorLearners'));
+const InstructorAttendance = React.lazy(() => import('../../modules/instructor/pages/InstructorAttendance'));
+const InstructorCertificates = React.lazy(() => import('../../modules/instructor/pages/InstructorCertificates'));
+const InstructorAIAssistant = React.lazy(() => import('../../modules/instructor/pages/InstructorAIAssistant'));
+
 // Debug page (temporary)
 const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth')) as React.LazyExoticComponent<React.ComponentType<any>>;
 
@@ -373,6 +398,220 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['buyer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <BuyerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // Instructor routes
+  {
+    path: '/instructor/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/courses',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorCourses />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/students',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorStudents />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/earnings',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorEarnings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/messages',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorMessages />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorSettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorProfile />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/live',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorLiveClasses />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/scheduler',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorScheduler />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/learners',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorLearners />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/attendance',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorAttendance />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/certificates',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorCertificates />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/instructor/ai',
+    element: (
+      <ProtectedRoute allowedRoles={['instructor','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <InstructorAIAssistant />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // University routes
+  {
+    path: '/university/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/scholarships',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityScholarships />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/scholarships/create',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityCreateScholarship />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/applications',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityApplications />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/ai',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityAIAssistant />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversitySettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/university/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['university','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <UniversityProfile />
         </React.Suspense>
       </ProtectedRoute>
     ),

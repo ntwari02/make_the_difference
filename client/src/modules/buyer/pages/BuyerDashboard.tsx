@@ -101,19 +101,23 @@ const BuyerDashboard: React.FC = () => {
                     transition: 'transform 0.3s ease',
                     boxShadow: theme.shadows[8],
                   },
+                  borderRadius: 3,
+                  boxShadow: theme.shadows[2],
+                  border: `1px solid ${theme.palette.divider}`,
+                  height: '100%',
                 }}
                 onClick={stat.action}
               >
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: `${stat.color}20`, color: stat.color, width: 56, height: 56 }}>
+                    <Avatar sx={{ bgcolor: `${stat.color}20`, color: stat.color, width: 56, height: 56, boxShadow: `0 6px 16px ${stat.color}40` }}>
                       {stat.icon}
                     </Avatar>
                     <Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         {stat.title}
                       </Typography>
-                      <Typography variant="h4" fontWeight={700}>
+                      <Typography variant="h5" fontWeight={700}>
                         {stat.value}
                       </Typography>
                     </Box>

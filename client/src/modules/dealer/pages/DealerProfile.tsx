@@ -37,9 +37,17 @@ import {
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../core/store';
+import type { BusinessHours } from '../types';
 import { updateProfile } from '../store/dealerSlice';
 import DealerLayout from '../components/layout/DealerLayout';
 import toast from 'react-hot-toast';
+
+type DayClosed = { closed: true };
+type DayOpen = { open: string; close: string; closed?: boolean };
+type DayHours = DayClosed | DayOpen;
+
+const isClosedDay = (h: DayHours | undefined): h is DayClosed => !!h && 'closed' in h && h.closed === true;
+const isOpenDay = (h: DayHours | undefined): h is DayOpen => !!h && (h as any).open !== undefined && (h as any).close !== undefined;
 
 const DealerProfile: React.FC = () => {
   const theme = useTheme();
@@ -118,7 +126,7 @@ const DealerProfile: React.FC = () => {
     { value: 'rental_company', label: 'Rental Company' },
   ];
 
-  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as Array<keyof BusinessHours>;
 
   return (
     <DealerLayout>
@@ -176,7 +184,7 @@ const DealerProfile: React.FC = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
-                  <Avatar
+                <Avatar
                     sx={{
                       width: 120,
                       height: 120,
@@ -190,7 +198,7 @@ const DealerProfile: React.FC = () => {
                     ) : (
                       <BusinessIcon sx={{ fontSize: '3rem' }} />
                     )}
-                  </Avatar>
+                </Avatar>
                   {isEditing && (
                     <IconButton
                       sx={{
@@ -210,13 +218,13 @@ const DealerProfile: React.FC = () => {
                 <Typography variant="h5" fontWeight={700} gutterBottom>
                   {currentProfile.business_name}
                 </Typography>
-
+                
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
-                  <Chip
+                    <Chip
                     label={businessTypeOptions.find(t => t.value === currentProfile.business_type)?.label}
-                    size="small"
+                      size="small"
                     color="primary"
-                  />
+                    />
                   {currentProfile.is_verified && (
                     <Chip
                       icon={<VerifiedIcon />}
@@ -226,7 +234,7 @@ const DealerProfile: React.FC = () => {
                     />
                   )}
                 </Box>
-
+                
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 2 }}>
                   <StarIcon sx={{ color: '#fbbf24', fontSize: 20 }} />
                   <Typography variant="h6" fontWeight={600}>
@@ -274,19 +282,22 @@ const DealerProfile: React.FC = () => {
                     </IconButton>
                   )}
                 </Box>
-
+                
                 <Stack spacing={1.5}>
                   {dayNames.map((day) => {
-                    const hours = currentProfile.business_hours?.[day as keyof typeof currentProfile.business_hours];
+                    const hours = (currentProfile.business_hours as BusinessHours | undefined)?.[day] as DayHours | undefined;
+                    const isClosed = isClosedDay(hours);
+                    const openTime = isOpenDay(hours) ? hours.open : undefined;
+                    const closeTime = isOpenDay(hours) ? hours.close : undefined;
                     return (
-                      <Box key={day} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box key={String(day)} sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="body2" sx={{ textTransform: 'capitalize', fontWeight: 500 }}>
-                          {day}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {hours?.closed ? 'Closed' : `${hours?.open} - ${hours?.close}`}
-                        </Typography>
-                      </Box>
+                          {String(day)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                          {isClosed ? 'Closed' : `${openTime ?? '—'} - ${closeTime ?? '—'}`}
+                    </Typography>
+                  </Box>
                     );
                   })}
                 </Stack>
@@ -302,7 +313,7 @@ const DealerProfile: React.FC = () => {
                 <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
                   Business Information
                 </Typography>
-
+                
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
                     <TextField
@@ -320,7 +331,7 @@ const DealerProfile: React.FC = () => {
                       }}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -337,7 +348,7 @@ const DealerProfile: React.FC = () => {
                       ))}
                     </TextField>
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -347,7 +358,7 @@ const DealerProfile: React.FC = () => {
                       disabled={!isEditing}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -406,7 +417,7 @@ const DealerProfile: React.FC = () => {
                       }}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -424,7 +435,7 @@ const DealerProfile: React.FC = () => {
                       }}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -465,7 +476,7 @@ const DealerProfile: React.FC = () => {
                       disabled={!isEditing}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -475,7 +486,7 @@ const DealerProfile: React.FC = () => {
                       disabled={!isEditing}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -485,7 +496,7 @@ const DealerProfile: React.FC = () => {
                       disabled={!isEditing}
                     />
                   </Grid>
-
+                  
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -519,7 +530,7 @@ const DealerProfile: React.FC = () => {
             </Typography>
             <Typography variant="caption">
               Complete the verification process to build trust with customers and unlock premium features.
-            </Typography>
+                </Typography>
             <Button size="small" sx={{ mt: 1 }}>
               Start Verification
             </Button>
@@ -532,39 +543,42 @@ const DealerProfile: React.FC = () => {
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
               {dayNames.map((day) => {
-                const hours = editedProfile?.business_hours?.[day as keyof typeof editedProfile.business_hours];
+                const hours = (editedProfile?.business_hours as BusinessHours | undefined)?.[day] as DayHours | undefined;
+                const isClosed = isClosedDay(hours);
+                const openTime = isOpenDay(hours) ? hours.open : '';
+                const closeTime = isOpenDay(hours) ? hours.close : '';
                 return (
-                  <Box key={day}>
+                  <Box key={String(day)}>
                     <Typography variant="subtitle2" sx={{ textTransform: 'capitalize', mb: 1 }}>
-                      {day}
+                      {String(day)}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                       <TextField
                         type="time"
                         label="Open"
-                        value={hours?.open || '09:00'}
+                        value={openTime || '09:00'}
                         size="small"
-                        disabled={hours?.closed}
+                        disabled={Boolean(isClosed)}
                         sx={{ flex: 1 }}
                       />
                       <TextField
                         type="time"
                         label="Close"
-                        value={hours?.close || '18:00'}
+                        value={closeTime || '18:00'}
                         size="small"
-                        disabled={hours?.closed}
+                        disabled={Boolean(isClosed)}
                         sx={{ flex: 1 }}
                       />
-                      <Chip
-                        label={hours?.closed ? 'Closed' : 'Open'}
-                        color={hours?.closed ? 'default' : 'success'}
+                    <Chip
+                        label={isClosed ? 'Closed' : 'Open'}
+                        color={isClosed ? 'default' : 'success'}
                         size="small"
                         onClick={() => {
                           // Toggle closed status
                         }}
                       />
                     </Box>
-                  </Box>
+                </Box>
                 );
               })}
             </Stack>

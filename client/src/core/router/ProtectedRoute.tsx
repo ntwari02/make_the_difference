@@ -27,8 +27,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const lsUser = React.useMemo(() => {
     if (user) return user;
     try {
-      const raw = localStorage.getItem('user') || localStorage.getItem('user_data');
-      return raw ? JSON.parse(raw) : null;
+      // Prefer canonical key first
+      const canonical = localStorage.getItem('user_data');
+      const legacy = localStorage.getItem('user') || localStorage.getItem('userData');
+      const parsedCanonical = canonical ? JSON.parse(canonical) : null;
+      const parsedLegacy = legacy ? JSON.parse(legacy) : null;
+
+      // If both exist and conflict, trust canonical and heal legacy
+      if (parsedCanonical && parsedLegacy && parsedCanonical.role !== parsedLegacy.role) {
+        try {
+          localStorage.setItem('user', JSON.stringify(parsedCanonical));
+          localStorage.setItem('userData', JSON.stringify(parsedCanonical));
+        } catch {}
+        return parsedCanonical;
+      }
+      return parsedCanonical || parsedLegacy;
     } catch {
       return null;
     }
@@ -45,9 +58,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
-  // Check role requirement
+  // Check role requirement (normalize role to avoid case/syntax mismatches)
   const rolesToCheck = allowedRoles && allowedRoles.length > 0 ? allowedRoles : (requiredRole ? [requiredRole] : []);
-  if (rolesToCheck.length > 0 && lsUser && !rolesToCheck.includes(lsUser.role as UserRole)) {
+  const userRole = (lsUser?.role ?? '').toString().toLowerCase().trim() as UserRole;
+  if (rolesToCheck.length > 0 && lsUser && !rolesToCheck.includes(userRole)) {
     // Redirect to appropriate dashboard based on user role
     const roleDashboardMap: Record<UserRole, string> = {
       admin: '/admin/dashboard',
@@ -61,8 +75,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       advertiser: '/advertiser/dashboard',
     };
 
-    const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/';
-    console.log(`⚠️ User role '${lsUser.role}' not allowed. Redirecting to: ${redirectPath}`);
+    const redirectPath = roleDashboardMap[userRole] || '/';
+    console.log(`⚠️ User role '${lsUser.role}' (normalized: '${userRole}') not allowed. Redirecting to: ${redirectPath}`);
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -84,7 +98,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         advertiser: ['ads:read', 'ads:write'],
       };
 
-      const userPermissions = permissions[lsUser.role as UserRole] || [];
+      const userPermissions = permissions[userRole] || [];
       return userPermissions.includes('*') || userPermissions.includes(permission);
     });
 
@@ -101,7 +115,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         visa_officer: '/visa/dashboard',
         advertiser: '/advertiser/dashboard',
       };
-      const redirectPath = roleDashboardMap[lsUser.role as UserRole] || '/';
+      const redirectPath = roleDashboardMap[userRole] || '/';
       return <Navigate to={redirectPath} replace />;
     }
   }
