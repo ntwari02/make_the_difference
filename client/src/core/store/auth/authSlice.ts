@@ -44,11 +44,15 @@ export const loginUser = createAsyncThunk(
       console.log('✅ Login response from backend:', response.data);
       const { access_token, refresh_token, user } = response.data;
       
-      // Store tokens and user data
+      // Store tokens and user data - use consistent keys
       setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       setToStorage(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
       setToStorage(STORAGE_KEYS.USER_DATA, user);
       setToStorage('last_login', new Date().toISOString());
+      
+      // Clear any legacy keys to prevent conflicts
+      localStorage.removeItem('user');
+      localStorage.removeItem('userData');
       
       console.log('✅ Login successful, tokens stored');
       
@@ -174,6 +178,12 @@ export const logoutUser = createAsyncThunk(
       localStorage.clear();
       sessionStorage.clear();
       
+      // Ensure all auth-related keys are cleared
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
       console.log('✅ Logout successful, all storage cleared');
       
       return null;
@@ -183,6 +193,12 @@ export const logoutUser = createAsyncThunk(
       // Even if logout fails on server, clear ALL local data
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Ensure all auth-related keys are cleared
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
       
       console.log('✅ All storage cleared despite API error');
       

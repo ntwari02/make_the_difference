@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import type { UserRole } from '../types';
 import Loading from '../../shared/components/ui/Loading';
+import { normalizeRole, getDashboardPath, getUserFromStorage } from '../utils/authUtils';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -26,25 +27,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Fallback to localStorage if Redux store hasn't been hydrated
   const lsUser = React.useMemo(() => {
     if (user) return user;
-    try {
-      // Prefer canonical key first
-      const canonical = localStorage.getItem('user_data');
-      const legacy = localStorage.getItem('user') || localStorage.getItem('userData');
-      const parsedCanonical = canonical ? JSON.parse(canonical) : null;
-      const parsedLegacy = legacy ? JSON.parse(legacy) : null;
-
-      // If both exist and conflict, trust canonical and heal legacy
-      if (parsedCanonical && parsedLegacy && parsedCanonical.role !== parsedLegacy.role) {
-        try {
-          localStorage.setItem('user', JSON.stringify(parsedCanonical));
-          localStorage.setItem('userData', JSON.stringify(parsedCanonical));
-        } catch {}
-        return parsedCanonical;
-      }
-      return parsedCanonical || parsedLegacy;
-    } catch {
-      return null;
-    }
+    return getUserFromStorage();
   }, [user]);
   const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('access_token');
 
@@ -60,23 +43,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role requirement (normalize role to avoid case/syntax mismatches)
   const rolesToCheck = allowedRoles && allowedRoles.length > 0 ? allowedRoles : (requiredRole ? [requiredRole] : []);
-  let userRole = (lsUser?.role ?? '').toString().toLowerCase().trim() as UserRole;
-  if (userRole === 'visa') userRole = 'visa_officer';
-  if (userRole === 'provider') userRole = 'visa_officer';
+  const userRole = normalizeRole(lsUser?.role ?? '') as UserRole;
+  
   if (rolesToCheck.length > 0 && lsUser && !rolesToCheck.includes(userRole)) {
     // Redirect to appropriate dashboard based on user role
-    const roleDashboardMap: Record<UserRole, string> = {
-      admin: '/admin/dashboard',
-      student: '/student/dashboard',
-      instructor: '/instructor/dashboard',
-      buyer: '/buyer/dashboard',
-      dealer: '/dealer/dashboard',
-      university: '/university/dashboard',
-      visa_officer: '/visa/dashboard',
-      advertiser: '/advertiser/dashboard',
-    };
-
-    const redirectPath = roleDashboardMap[userRole] || '/';
+    const redirectPath = getDashboardPath(userRole);
     console.log(`⚠️ User role '${lsUser.role}' (normalized: '${userRole}') not allowed. Redirecting to: ${redirectPath}`);
     return <Navigate to={redirectPath} replace />;
   }
@@ -104,17 +75,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     if (!hasPermission) {
       // Redirect to user's own dashboard if they don't have permission
-      const roleDashboardMap: Record<UserRole, string> = {
-        admin: '/admin/dashboard',
-        student: '/student/dashboard',
-        instructor: '/instructor/dashboard',
-        buyer: '/buyer/dashboard',
-        dealer: '/dealer/dashboard',
-        university: '/university/dashboard',
-        visa_officer: '/visa/dashboard',
-        advertiser: '/advertiser/dashboard',
-      };
-      const redirectPath = roleDashboardMap[userRole] || '/';
+      const redirectPath = getDashboardPath(userRole);
       return <Navigate to={redirectPath} replace />;
     }
   }

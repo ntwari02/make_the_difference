@@ -36,13 +36,10 @@ const LoginPage: React.FC = () => {
       return;
     }
     
-    // Fallback to localStorage
+    // Fallback to localStorage - only use canonical key
     console.log('🔄 Falling back to localStorage check');
     setTimeout(() => {
-      // Check multiple possible keys in localStorage
-      const userStr = localStorage.getItem('user') || 
-                     localStorage.getItem('user_data') ||
-                     localStorage.getItem('userData');
+      const userStr = localStorage.getItem('user_data');
       
       console.log('📦 User data from localStorage:', userStr);
       

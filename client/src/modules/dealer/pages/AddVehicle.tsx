@@ -14,7 +14,6 @@ import {
   MenuItem,
   Chip,
   IconButton,
-  Avatar,
   FormControl,
   InputLabel,
   Select,
@@ -26,13 +25,11 @@ import {
   FormControlLabel,
   Alert,
   Stack,
-  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   ArrowForward as ForwardIcon,
   Save as SaveIcon,
-  Preview as PreviewIcon,
   DirectionsCar as CarIcon,
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
@@ -42,7 +39,6 @@ import {
   AttachMoney as MoneyIcon,
   Build as BuildIcon,
   Palette as ColorIcon,
-  LocalGasStation as FuelIcon,
   Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
