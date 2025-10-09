@@ -8,6 +8,7 @@ const aiInitializer = require('./ai/services/ai-initializer.service');
 const performanceMonitor = require('./ai/services/performance-monitor.service');
 
 const app = express();
+const path = require('path');
 
 // Middleware
 app.use(express.json());
@@ -77,6 +78,16 @@ app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
 app.use('/api/password-reset', require('./routes/passwordReset.routes'));
+
+// Serve built client (single-service deployment)
+const staticDir = path.join(__dirname, 'public');
+app.use(express.static(staticDir));
+
+// SPA fallback: send index.html for all non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(staticDir, 'index.html'));
+});
 
 // Port availability check
 const checkPort = (port) => {
