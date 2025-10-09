@@ -17,6 +17,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+const frontendUrl = (process.env.FRONTEND_URL || '').trim();
+const renderExternalUrl = (process.env.RENDER_EXTERNAL_URL || '').trim();
+const additionalOrigins = [frontendUrl, renderExternalUrl].filter(Boolean);
+const allowedOrigins = [...new Set([...corsOrigins, ...additionalOrigins])];
 
 // Development CORS configuration - more permissive for local development
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -29,17 +33,31 @@ app.use(cors({
     }
     
     // If no specific origins are configured, allow all origins
-    if (corsOrigins.length === 0) {
+    if (allowedOrigins.length === 0) {
       return callback(null, true);
     }
     
-    // Check if origin is in allowed list
-    if (corsOrigins.includes(origin)) {
+    // Helper: check wildcard and exact matches
+    const isAllowedByList = (testOrigin) => {
+      for (const entry of allowedOrigins) {
+        if (!entry) continue;
+        // Exact match
+        if (entry === testOrigin) return true;
+        // Wildcard: *.example.com -> allows subdomains
+        if (entry.startsWith('*.')) {
+          const suffix = entry.slice(1); // remove leading '*'
+          if (testOrigin.endsWith(suffix)) return true;
+        }
+      }
+      return false;
+    };
+
+    if (isAllowedByList(origin)) {
       return callback(null, true);
     }
     
     // In development, allow localhost on any port
-    if (isDevelopment && origin.startsWith('http://localhost:')) {
+    if (isDevelopment && (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:'))) {
       return callback(null, true);
     }
     
