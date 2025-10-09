@@ -1,3 +1,4 @@
+ 
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from '../theme/ThemeProvider';
@@ -101,6 +102,9 @@ const UniversityAIAssistant = React.lazy(() => import('../../modules/university/
 const UniversityAnalytics = React.lazy(() => import('../../modules/university/pages/UniversityAnalytics'));
 const UniversitySettings = React.lazy(() => import('../../modules/university/pages/UniversitySettings'));
 const UniversityProfile = React.lazy(() => import('../../modules/university/pages/UniversityProfile'));
+
+// Admin pages
+const AdminDashboard = React.lazy(() => import('../../modules/admin/pages/AdminDashboard'));
 
 const InstructorLiveClasses = React.lazy(() => import('../../modules/instructor/pages/InstructorLiveClasses'));
 const InstructorScheduler = React.lazy(() => import('../../modules/instructor/pages/InstructorScheduler'));
@@ -301,6 +305,67 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['visa_officer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <VisaDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  // Admin routes (protected)
+  {
+    path: '/admin/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <AdminDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          {React.createElement(React.lazy(() => import('../../modules/admin/pages/AdminAnalytics')))}
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/users',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          {React.createElement(React.lazy(() => import('../../modules/admin/pages/AdminUsers')))}
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/settings',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          {React.createElement(React.lazy(() => import('../../modules/admin/pages/AdminSettings')))}
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/moderation',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          {React.createElement(React.lazy(() => import('../../modules/admin/pages/AdminModeration')))}
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/audit',
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          {React.createElement(React.lazy(() => import('../../modules/admin/pages/AdminAudit')))}
         </React.Suspense>
       </ProtectedRoute>
     ),
