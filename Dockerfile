@@ -12,7 +12,8 @@ RUN npm run build
 FROM node:20-alpine AS server
 WORKDIR /app/server
 COPY server/package*.json ./
-RUN npm install --no-audit --no-fund
+# Avoid running lifecycle scripts (e.g., postinstall) during server install
+RUN npm install --no-audit --no-fund --ignore-scripts
 COPY server/ ./
 
 # ---- Runtime image ----
