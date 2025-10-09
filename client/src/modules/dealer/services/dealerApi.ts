@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { DealerProfile, Vehicle, DashboardStats, SalesAnalytics, Notification, Activity } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 // Create axios instance with default config
 const api = axios.create({

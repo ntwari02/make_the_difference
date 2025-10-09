@@ -6,7 +6,7 @@ export const APP_CONSTANTS = {
   APP_DESCRIPTION: 'Comprehensive eLearning and E-commerce Platform',
   
   // API Configuration
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api'),
   API_TIMEOUT: 10000,
   
   // Storage keys
