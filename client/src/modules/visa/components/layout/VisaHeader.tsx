@@ -1,14 +1,17 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, useTheme } from '@mui/material';
-import { Notifications, DarkMode, LightMode, Menu as MenuIcon, Logout } from '@mui/icons-material';
+import { AppBar, Toolbar, IconButton, Typography, Box, Avatar, useTheme } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Notifications, DarkMode, LightMode, Logout } from '@mui/icons-material';
+import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
-import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 
-interface UniversityHeaderProps { onMenuClick: () => void }
+interface VisaHeaderProps {
+  onMenuClick: () => void;
+}
 
-const UniversityHeader: React.FC<UniversityHeaderProps> = ({ onMenuClick }) => {
+const VisaHeader: React.FC<VisaHeaderProps> = ({ onMenuClick }) => {
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeMode();
   const isDark = mode === 'dark';
@@ -21,9 +24,7 @@ const UniversityHeader: React.FC<UniversityHeaderProps> = ({ onMenuClick }) => {
         <IconButton edge="start" onClick={onMenuClick} sx={{ mr: 2, color: theme.palette.text.primary }}>
           <MenuIcon />
         </IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          University Portal
-        </Typography>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>Visa Officer Portal</Typography>
         <Box>
           <IconButton onClick={toggleColorMode} sx={{ mr: 1, color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary }} aria-label="Toggle color mode">
             {isDark ? <LightMode /> : <DarkMode />}
@@ -43,7 +44,6 @@ const UniversityHeader: React.FC<UniversityHeaderProps> = ({ onMenuClick }) => {
   );
 };
 
-export default UniversityHeader;
-
+export default VisaHeader;
 
 

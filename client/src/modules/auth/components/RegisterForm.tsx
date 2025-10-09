@@ -22,7 +22,24 @@ import {
   Step,
   StepLabel,
   Tooltip,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ShieldIcon from '@mui/icons-material/Shield';
+import WorkspacesIcon from '@mui/icons-material/Workspaces';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import SchoolIcon from '@mui/icons-material/School';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import DirectionsCarFilledIcon from '@mui/icons-material/DirectionsCarFilled';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import {
   Visibility,
   VisibilityOff,
@@ -73,7 +90,7 @@ const registerSchema = yup.object({
     .optional(),
   role: yup
     .string()
-    .oneOf(['student', 'instructor', 'buyer', 'dealer', 'seller', 'university'], 'Please select a valid role')
+    .oneOf(['student', 'instructor', 'buyer', 'dealer', 'seller', 'university', 'visa_officer'], 'Please select a valid role')
     .nullable()
     .optional(),
   terms_accepted: yup
@@ -99,11 +116,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [activeStep, setActiveStep] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const { register: registerUser, isLoading, error, clearAuthError } = useAuth();
+  const [passwordValue, setPasswordValue] = useState('');
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
+    watch,
   } = useForm<RegisterFormData>({
     resolver: yupResolver(registerSchema) as any,
     mode: 'onChange',
@@ -187,7 +206,51 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     setIsDarkMode(!isDarkMode);
   };
 
+  const calculatePasswordStrength = (value: string): number => {
+    let score = 0;
+    if (!value) return 0;
+    if (value.length >= 8) score += 25;
+    if (/[A-Z]/.test(value)) score += 20;
+    if (/[a-z]/.test(value)) score += 20;
+    if (/[0-9]/.test(value)) score += 20;
+    if (/[^A-Za-z0-9]/.test(value)) score += 15;
+    return Math.min(score, 100);
+  };
+
+  const passwordChecklist = (value: string) => [
+    { label: 'At least 8 characters', ok: value.length >= 8 },
+    { label: 'One uppercase letter', ok: /[A-Z]/.test(value) },
+    { label: 'One lowercase letter', ok: /[a-z]/.test(value) },
+    { label: 'One number', ok: /[0-9]/.test(value) },
+    { label: 'One symbol (e.g. !@#$)', ok: /[^A-Za-z0-9]/.test(value) },
+  ];
+
   const steps = ['Personal Information', 'Account Details', 'Role Selection'];
+  const stepIcons: Record<number, React.ReactNode> = {
+    0: <AccountCircleIcon fontSize="small" />,
+    1: <ShieldIcon fontSize="small" />,
+    2: <WorkspacesIcon fontSize="small" />,
+  };
+
+  const selectedRole = watch('role');
+  const roleDescriptions: Record<string, string> = {
+    student: 'Learn courses and track your learning progress.',
+    instructor: 'Teach courses and manage your class content.',
+    buyer: 'Browse and purchase vehicles and services.',
+    dealer: 'Manage dealership inventory and analytics.',
+    seller: 'List and manage your car sales.',
+    university: 'Institutional account for student cohorts.',
+    visa_officer: 'Manage and review visa applications.',
+  };
+  const roleIcons: Record<string, React.ReactNode> = {
+    student: <SchoolIcon fontSize="small" />,
+    instructor: <PersonOutlineIcon fontSize="small" />,
+    buyer: <DirectionsCarFilledIcon fontSize="small" />,
+    dealer: <StorefrontIcon fontSize="small" />,
+    seller: <SellOutlinedIcon fontSize="small" />,
+    university: <AccountBalanceIcon fontSize="small" />,
+    visa_officer: <AssignmentIndIcon fontSize="small" />,
+  };
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -470,7 +533,32 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     color: isDarkMode ? '#9ca3af' : 'inherit',
                   },
                 }}
+                onChange={(e) => setPasswordValue(e.target.value)}
               />
+              <Box sx={{ mt: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={calculatePasswordStrength(passwordValue)}
+                  sx={{ height: 8, borderRadius: 9999 }}
+                />
+                <List dense sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, columnGap: 2 }}>
+                  {passwordChecklist(passwordValue).map((item: { label: string; ok: boolean }) => (
+                    <ListItem key={item.label} sx={{ py: 0.25 }}>
+                      <ListItemIcon sx={{ minWidth: 28 }}>
+                        {item.ok ? (
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        ) : (
+                          <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{ variant: 'caption', color: item.ok ? 'success.main' : 'text.secondary' }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
             </motion.div>
 
             {/* Confirm Password */}
@@ -590,12 +678,41 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   },
                 }}
               >
-                <MenuItem value="student">Student - Learn courses and skills</MenuItem>
-                <MenuItem value="instructor">Instructor - Teach and create courses</MenuItem>
-                <MenuItem value="buyer">Buyer - Purchase cars and services</MenuItem>
-                <MenuItem value="dealer">Dealer - Professional car dealership</MenuItem>
-                <MenuItem value="seller">Seller - Sell cars and manage listings</MenuItem>
-                <MenuItem value="university">University - Educational institution</MenuItem>
+                <MenuItem value="student">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.student} Student
+                  </Box>
+                </MenuItem>
+                <MenuItem value="instructor">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.instructor} Instructor
+                  </Box>
+                </MenuItem>
+                <MenuItem value="buyer">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.buyer} Buyer
+                  </Box>
+                </MenuItem>
+                <MenuItem value="dealer">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.dealer} Dealer
+                  </Box>
+                </MenuItem>
+                <MenuItem value="seller">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.seller} Seller
+                  </Box>
+                </MenuItem>
+                <MenuItem value="university">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.university} University
+                  </Box>
+                </MenuItem>
+                <MenuItem value="visa_officer">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons.visa_officer} Visa User
+                  </Box>
+                </MenuItem>
               </TextField>
             </motion.div>
 
@@ -646,6 +763,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   } 
                 }}
               />
+              {selectedRole && (
+                <Box sx={{ mt: 1.5, p: 1.5, borderRadius: 2, bgcolor: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}>
+                  <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {roleIcons[selectedRole]}
+                    {roleDescriptions[selectedRole]}
+                  </Typography>
+                </Box>
+              )}
               {errors.terms_accepted && (
                 <Typography 
                   variant="caption" 
@@ -1099,6 +1224,24 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                           color: 'success.main',
                         },
                       }}
+                      StepIconComponent={() => (
+                        <Box
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: index < activeStep ? 'success.light' : index === activeStep ? 'primary.light' : 'action.disabledBackground',
+                            color: index <= activeStep ? (index === activeStep ? 'primary.contrastText' : 'success.contrastText') : 'text.secondary',
+                            boxShadow: index === activeStep ? '0 0 0 3px rgba(99,102,241,0.25)' : 'none',
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          {stepIcons[index]}
+                        </Box>
+                      )}
                     >
                       {label}
                     </StepLabel>
@@ -1255,11 +1398,26 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       type="submit"
                       variant="contained"
                       disabled={!isValid || isLoading}
+                      startIcon={isLoading ? undefined : <RegisterIcon sx={{ color: 'white' }} />}
+                      size="large"
+                      fullWidth
+                      disableElevation
+                      disableRipple
+                      aria-label="Create account"
+                      aria-busy={isLoading ? 'true' : 'false'}
                       sx={{
                         borderRadius: 2,
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         color: 'white !important',
                         transition: 'all 0.3s ease',
+                        outline: 'none',
+                        '&:focus-visible': {
+                          boxShadow: '0 0 0 4px rgba(102,126,234,0.35)',
+                        },
+                        '&.Mui-disabled': {
+                          background: 'linear-gradient(135deg, rgba(102,126,234,0.5) 0%, rgba(118,75,162,0.5) 100%)',
+                          color: 'rgba(255,255,255,0.8) !important',
+                        },
                         '&:hover': {
                           background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
                           transform: 'translateY(-2px)',
@@ -1283,7 +1441,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       </motion.div>
                     ) : (
                       <motion.span
-                        style={{ color: 'white' }}
+                        style={{ color: 'white', display: 'inline-flex', alignItems: 'center', gap: 8 }}
                         animate={{ 
                           textShadow: [
                             "0 0 0px rgba(255,255,255,0)",

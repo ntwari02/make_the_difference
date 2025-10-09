@@ -35,6 +35,10 @@ const DealerProfile = React.lazy(() => import('../../modules/dealer/pages/Dealer
 const DealerVehicles = React.lazy(() => import('../../modules/dealer/pages/DealerVehicles')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const AddVehicle = React.lazy(() => import('../../modules/dealer/pages/AddVehicle')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const DealerAnalytics = React.lazy(() => import('../../modules/dealer/pages/DealerAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
+// Visa pages
+const VisaDashboard = React.lazy(() => import('../../modules/visa/pages/VisaDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const VisaApplications = React.lazy(() => import('../../modules/visa/pages/VisaApplications')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const VisaInbox = React.lazy(() => import('../../modules/visa/pages/VisaInbox')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const DealerMessages = React.lazy(() => import('../../modules/dealer/pages/DealerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const DealerReviews = React.lazy(() => import('../../modules/dealer/pages/DealerReviews')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const DealerTeam = React.lazy(() => import('../../modules/dealer/pages/DealerTeam')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -286,6 +290,37 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['dealer','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <DealerDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  // Visa officer routes (protected)
+  {
+    path: '/visa/dashboard',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/applications',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaApplications />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/visa/inbox',
+    element: (
+      <ProtectedRoute allowedRoles={['visa_officer','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <VisaInbox />
         </React.Suspense>
       </ProtectedRoute>
     ),

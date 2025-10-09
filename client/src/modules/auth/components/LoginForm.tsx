@@ -18,6 +18,10 @@ import {
   FormControlLabel,
   Checkbox,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Visibility,
@@ -28,11 +32,13 @@ import {
   DarkMode,
   LightMode,
 } from '@mui/icons-material';
+// removed unused icon imports (using inline SVGs for brand marks)
 import { motion } from 'framer-motion';
 import { useAuth } from '../../../core/hooks/useAuth';
 import { LoginCredentials } from '../../../core/types';
 import Loading from '../../../shared/components/ui/Loading';
 import AnimatedBackground from '../../../shared/components/ui/AnimatedBackground';
+import { api } from '../../../core/services/api/apiClient';
 
 // Validation schema
 const loginSchema = yup.object({
@@ -51,18 +57,21 @@ type LoginFormData = yup.InferType<typeof loginSchema>;
 
 interface LoginFormProps {
   onSuccess?: () => void;
-  onForgotPassword?: () => void;
   onRegister?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
-  onForgotPassword,
   onRegister,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const { login, isLoading, error, clearAuthError } = useAuth();
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [fpSubmitted, setFpSubmitted] = useState(false);
+  const [fpError, setFpError] = useState<string | null>(null);
+  const [fpLoading, setFpLoading] = useState(false);
+  const [fpOptions, setFpOptions] = useState<Array<{ method: string; name: string; description: string }>>([]);
 
   const {
     register,
@@ -76,6 +85,23 @@ const LoginForm: React.FC<LoginFormProps> = ({
       password: '',
       remember_me: false,
     },
+  });
+
+  // Forgot password modal form
+  const fpSchema = yup.object({
+    email: yup.string().email('Enter a valid email').required('Email is required'),
+  });
+  type FpForm = yup.InferType<typeof fpSchema>;
+  const {
+    register: fpRegister,
+    handleSubmit: fpHandleSubmit,
+    formState: { errors: fpErrors, isValid: fpIsValid },
+    reset: fpReset,
+    getValues: fpGetValues,
+  } = useForm<FpForm>({
+    resolver: yupResolver(fpSchema) as any,
+    mode: 'onChange',
+    defaultValues: { email: '' },
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -114,6 +140,36 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  const openForgot = () => {
+    setForgotOpen(true);
+    setFpSubmitted(false);
+    setFpError(null);
+    setFpOptions([]);
+  };
+
+  const closeForgot = () => {
+    setForgotOpen(false);
+    setFpSubmitted(false);
+    setFpError(null);
+    setFpOptions([]);
+    fpReset();
+  };
+
+  const onForgotSubmit = async ({ email }: FpForm) => {
+    setFpError(null);
+    setFpLoading(true);
+    try {
+      const resp = await api.get(`/password-reset/options/${encodeURIComponent(email)}`);
+      const options = resp?.data?.data?.options || [];
+      setFpOptions(options);
+      setFpSubmitted(true);
+    } catch (e: any) {
+      setFpError(e?.response?.data?.error || 'Failed to fetch reset options');
+    } finally {
+      setFpLoading(false);
+    }
   };
 
   return (
@@ -718,7 +774,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   <Link
                     component="button"
                     type="button"
-                    onClick={onForgotPassword}
+                    onClick={openForgot}
                     sx={{
                       fontSize: '0.875rem',
                       fontWeight: 500,
@@ -734,6 +790,80 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   </Link>
                 </Box>
               </motion.div>
+              
+              {/* Forgot Password Modal */}
+              <Dialog open={forgotOpen} onClose={closeForgot} fullWidth maxWidth="sm">
+                <DialogTitle>Forgot Password</DialogTitle>
+                <DialogContent>
+                  {fpError && (
+                    <Alert severity="error" sx={{ mb: 2 }}>{fpError}</Alert>
+                  )}
+                  <Box component="form" onSubmit={fpHandleSubmit(onForgotSubmit)}>
+                    <Stack spacing={2}>
+                      <TextField
+                        {...fpRegister('email')}
+                        label="Email address"
+                        fullWidth
+                        error={!!fpErrors.email}
+                        helperText={fpErrors.email?.message}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Email />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <Button type="submit" variant="contained" disabled={!fpIsValid || fpLoading}>
+                        {fpLoading ? 'Checking…' : 'Check reset options'}
+                      </Button>
+                    </Stack>
+                  </Box>
+                  {fpSubmitted && fpOptions.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Alert severity="success" sx={{ mb: 2 }}>Select a reset method:</Alert>
+                      <Stack spacing={1.5}>
+                        {fpOptions.map((opt) => (
+                          <Box key={opt.method} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                            <Typography variant="subtitle1" fontWeight={700}>{opt.name}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{opt.description}</Typography>
+                            <Stack direction="row" gap={1}>
+                              {opt.method === 'email' && (
+                                <Button
+                                  variant="contained"
+                                  onClick={async () => {
+                                    try {
+                                      const email = fpGetValues('email');
+                                      await api.post('/auth/forgot-password', { email });
+                                      closeForgot();
+                                      alert('If an account exists, a reset email has been sent.');
+                                    } catch (e: any) {
+                                      alert(e?.response?.data?.error || 'Failed to send email reset link');
+                                    }
+                                  }}
+                                >
+                                  Send email reset link
+                                </Button>
+                              )}
+                              {opt.method === 'security_questions' && (
+                                <Button
+                                  variant="outlined"
+                                  href={`/auth/security-questions`}
+                                >
+                                  Answer security questions
+                                </Button>
+                              )}
+                            </Stack>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={closeForgot}>Close</Button>
+                </DialogActions>
+              </Dialog>
 
               {/* Enhanced Login Button */}
               <motion.div
@@ -819,6 +949,79 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     </motion.span>
                   )}
                 </Button>
+              </motion.div>
+
+              {/* OAuth Providers */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
+                  <Tooltip title="Continue with Google" arrow>
+                    <IconButton
+                      aria-label="Continue with Google"
+                      onClick={() => window.location.href = '/api/auth/oauth/google'}
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      {/* Official Google G logo */}
+                      <svg width="20" height="20" viewBox="0 0 533.5 544.3" aria-hidden="true">
+                        <path fill="#EA4335" d="M533.5 278.4c0-18.6-1.6-37-4.8-54.9H272v103.9h147.4c-6.4 34.6-25.9 64-55.3 83.6v69.4h89.4c52.3-48.1 80-119.1 80-202z"/>
+                        <path fill="#34A853" d="M272 544.3c72.9 0 134.2-24.1 178.9-65.4l-89.4-69.4c-24.8 16.7-56.6 26.5-89.5 26.5-68.6 0-126.7-46.3-147.4-108.5H31.5v68.5C75.9 486.2 168.6 544.3 272 544.3z"/>
+                        <path fill="#4285F4" d="M124.6 327.5c-9.5-28.6-9.5-59.3 0-87.9V171H31.5c-40.5 80.9-40.5 176.5 0 257.4l93.1-100.9z"/>
+                        <path fill="#FBBC05" d="M272 106.7c37.7-.6 74 13.8 101.7 40.6l75.8-75.8C403.2 24.6 340.9 0 272 0 168.6 0 75.9 58.1 31.5 171l93.1 68.6C145.3 153 203.4 106.7 272 106.7z"/>
+                      </svg>
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Continue with GitHub" arrow>
+                    <IconButton
+                      aria-label="Continue with GitHub"
+                      onClick={() => window.location.href = '/api/auth/oauth/github'}
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      {/* Official GitHub mark */}
+                      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.33-.27 2.01-.27.68 0 1.37.09 2.01.27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                      </svg>
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Continue with Facebook" arrow>
+                    <IconButton
+                      aria-label="Continue with Facebook"
+                      onClick={() => window.location.href = '/api/auth/oauth/facebook'}
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      {/* Official Facebook f */}
+                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="#1877F2" d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.092 10.125 24v-8.437H7.078V12.07h3.047V9.412c0-3 1.792-4.657 4.533-4.657 1.312 0 2.686.235 2.686.235v2.953h-1.513c-1.49 0-1.953.929-1.953 1.887v2.238h3.328l-.532 3.492h-2.796V24C19.612 23.092 24 18.1 24 12.073z"/>
+                      </svg>
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </motion.div>
 
               {/* Divider */}

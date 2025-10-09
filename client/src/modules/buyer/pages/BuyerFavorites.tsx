@@ -6,8 +6,7 @@ import {
   CardContent,
   Typography,
   Button,
-  useTheme,
-  Avatar,
+  
   Chip,
   IconButton,
   Divider,
@@ -56,7 +55,6 @@ const MOCK_FAVORITES = [
 ].map((v, i) => ({ ...v, thumbnail: chooseImageFor(v.title, i) }));
 
 const BuyerFavorites: React.FC = () => {
-  const theme = useTheme();
   const [items, setItems] = React.useState(MOCK_FAVORITES);
 
   const remove = (id: string) => setItems((prev) => prev.filter((x) => x.id !== id));
@@ -87,7 +85,7 @@ const BuyerFavorites: React.FC = () => {
           </Card>
         ) : (
           <Grid container spacing={2}>
-            {items.map((item, idx) => (
+            {items.map((item) => (
               <Grid key={item.id} item xs={12} sm={6} md={4}>
                 <Card>
                   <Box sx={{ position: 'relative' }}>

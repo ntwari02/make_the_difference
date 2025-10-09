@@ -1,9 +1,24 @@
 import React from 'react';
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
+import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Box, Divider, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Dashboard, School, Assignment, AddCircle, Assessment, Settings, Person, SmartToy } from '@mui/icons-material';
+import {
+  Dashboard as DashboardIcon,
+  School as ScholarshipsIcon,
+  Assignment as ApplicationsIcon,
+  Add as CreateIcon,
+  Settings as SettingsIcon,
+  AccountCircle as ProfileIcon,
+  Analytics as AnalyticsIcon,
+  SmartToy as AIIcon,
+} from '@mui/icons-material';
 
-const drawerWidth = 240;
+interface UniversitySidebarProps {
+  open: boolean;
+  onClose: () => void;
+  drawerWidth: number;
+  collapsedWidth: number;
+  topOffset?: number;
+}
 
 interface MenuItem {
   label: string;
@@ -12,32 +27,99 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { label: 'Dashboard', path: '/university/dashboard', icon: <Dashboard /> },
-  { label: 'Scholarships', path: '/university/scholarships', icon: <School /> },
-  { label: 'Applications', path: '/university/applications', icon: <Assignment /> },
-  { label: 'Create Scholarship', path: '/university/scholarships/create', icon: <AddCircle /> },
-  { label: 'Analytics', path: '/university/analytics', icon: <Assessment /> },
-  { label: 'AI Assistant', path: '/university/ai', icon: <SmartToy /> },
-  { label: 'Settings', path: '/university/settings', icon: <Settings /> },
-  { label: 'Profile', path: '/university/profile', icon: <Person /> },
+  { label: 'Dashboard', path: '/university/dashboard', icon: <DashboardIcon /> },
+  { label: 'Scholarships', path: '/university/scholarships', icon: <ScholarshipsIcon /> },
+  { label: 'Create Scholarship', path: '/university/scholarships/create', icon: <CreateIcon /> },
+  { label: 'Applications', path: '/university/applications', icon: <ApplicationsIcon /> },
+  { label: 'Analytics', path: '/university/analytics', icon: <AnalyticsIcon /> },
+  { label: 'AI Assistant', path: '/university/ai', icon: <AIIcon /> },
+  { label: 'Settings', path: '/university/settings', icon: <SettingsIcon /> },
+  { label: 'Profile', path: '/university/profile', icon: <ProfileIcon /> },
 ];
 
-const UniversitySidebar: React.FC = () => {
+const UniversitySidebar: React.FC<UniversitySidebarProps> = ({ open, onClose, drawerWidth, collapsedWidth, topOffset = 0 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const location = useLocation();
 
-  return (
-    <Drawer variant="permanent" sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' } }}>
-      <Toolbar />
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile) onClose();
+  };
+
+  const content = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <List>
         {menuItems.map((item) => (
-          <ListItemButton key={item.path} selected={location.pathname === item.path} onClick={() => navigate(item.path)}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
+          <ListItemButton
+            key={item.path}
+            selected={location.pathname === item.path}
+            onClick={() => handleNavigate(item.path)}
+            sx={{ px: open ? 2 : 1.5, justifyContent: open ? 'flex-start' : 'center' }}
+          >
+            <ListItemIcon sx={{ minWidth: 0, mr: open ? 2 : 0, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+            {open && <ListItemText primary={item.label} />}
           </ListItemButton>
         ))}
       </List>
-    </Drawer>
+      {open && (
+        <>
+          <Divider sx={{ mt: 'auto' }} />
+          <Box sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">© 2025 University Portal</Typography>
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <Drawer
+          variant="temporary"
+          open={open}
+          onClose={onClose}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark' ? `1px solid rgba(255,255,255,0.1)` : `1px solid ${theme.palette.divider}`,
+              top: topOffset,
+              height: `calc(100% - ${topOffset}px)`,
+              overflow: 'hidden',
+            },
+          }}
+        >
+          {content}
+        </Drawer>
+      ) : (
+        <Drawer
+          variant="permanent"
+          open={open}
+          sx={{
+            width: open ? drawerWidth : collapsedWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: open ? drawerWidth : collapsedWidth,
+              boxSizing: 'border-box',
+              bgcolor: theme.palette.mode === 'dark' ? '#16213e' : theme.palette.background.paper,
+              borderRight: theme.palette.mode === 'dark' ? `1px solid rgba(255,255,255,0.1)` : `1px solid ${theme.palette.divider}`,
+              overflowX: 'hidden',
+              overflowY: 'hidden',
+              transition: theme.transitions.create('width', { easing: theme.transitions.easing.sharp, duration: theme.transitions.duration.enteringScreen }),
+              top: topOffset,
+              height: `calc(100% - ${topOffset}px)`,
+            },
+          }}
+        >
+          {content}
+        </Drawer>
+      )}
+    </>
   );
 };
 

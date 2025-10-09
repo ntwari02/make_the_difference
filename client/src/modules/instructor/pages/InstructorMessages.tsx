@@ -1,21 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Box, Card, CardContent, Typography, List, ListItem, ListItemText, Chip, TextField,
+  Box, Card, Typography, List, ListItem, ListItemText, Chip, TextField,
   InputAdornment, IconButton, Avatar, Divider, Button, ToggleButtonGroup, ToggleButton,
-  Badge, Menu, MenuItem, ListItemIcon, Tooltip
+  Tooltip, ListItemButton
 } from '@mui/material';
 import {
   Search as SearchIcon, FilterList as FilterIcon, Star as StarIcon, StarBorder as StarBorderIcon,
   Archive as ArchiveIcon, Delete as DeleteIcon, MoreVert as MoreIcon, Send as SendIcon,
   AttachFile as AttachFileIcon, EmojiEmotions as EmojiIcon, Reply as ReplyIcon,
-  MarkEmailRead as ReadIcon, MarkEmailUnread as UnreadIcon
+  MarkEmailRead as ReadIcon
 } from '@mui/icons-material';
 import InstructorLayout from '../components/layout/InstructorLayout';
 
 const InstructorMessages: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'starred' | 'archived'>('all');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [composerValue, setComposerValue] = useState('');
 
@@ -62,8 +61,7 @@ const InstructorMessages: React.FC = () => {
   const activeConversationId = selectedConversationId || filteredConversations[0]?.id || null;
   const activeMessages = activeConversationId ? messagesByConversation[activeConversationId] || [] : [];
 
-  const handleMoreOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
-  const handleMoreClose = () => setAnchorEl(null);
+  
 
   return (
     <InstructorLayout>
@@ -76,7 +74,7 @@ const InstructorMessages: React.FC = () => {
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="Mark all as read"><IconButton><ReadIcon /></IconButton></Tooltip>
             <Tooltip title="Archive"><IconButton><ArchiveIcon /></IconButton></Tooltip>
-            <Tooltip title="More"><IconButton onClick={handleMoreOpen}><MoreIcon /></IconButton></Tooltip>
+            <Tooltip title="More"><IconButton><MoreIcon /></IconButton></Tooltip>
           </Box>
         </Box>
 
@@ -120,10 +118,8 @@ const InstructorMessages: React.FC = () => {
                 {filteredConversations.map((c) => (
                   <ListItem
                     key={c.id}
-                    button
-                    selected={activeConversationId === c.id}
-                    onClick={() => setSelectedConversationId(c.id)}
                     divider
+                    disablePadding
                     secondaryAction={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="caption" color="text.secondary">{c.lastMessageAt}</Typography>
@@ -133,16 +129,21 @@ const InstructorMessages: React.FC = () => {
                       </Box>
                     }
                   >
-                    <Avatar sx={{ mr: 2 }}>{c.from.split(' ').map(n => n[0]).join('')}</Avatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography fontWeight={600}>{c.from}</Typography>
-                          {c.unread && <Chip size="small" label="Unread" color="primary" />}
-                        </Box>
-                      }
-                      secondary={<Typography variant="body2" color="text.secondary" noWrap>{c.subject}</Typography>}
-                    />
+                    <ListItemButton
+                      selected={activeConversationId === c.id}
+                      onClick={() => setSelectedConversationId(c.id)}
+                    >
+                      <Avatar sx={{ mr: 2 }}>{c.from.split(' ').map(n => n[0]).join('')}</Avatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography fontWeight={600}>{c.from}</Typography>
+                            {c.unread && <Chip size="small" label="Unread" color="primary" />}
+                          </Box>
+                        }
+                        secondary={<Typography variant="body2" color="text.secondary" noWrap>{c.subject}</Typography>}
+                      />
+                    </ListItemButton>
                   </ListItem>
                 ))}
               </List>

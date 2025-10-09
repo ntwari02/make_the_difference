@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, CardContent, Typography, TextField, Button, Stack } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
 import UniversityLayout from '../components/layout/UniversityLayout';
 
 const UniversityAIAssistant: React.FC = () => {
@@ -7,16 +7,11 @@ const UniversityAIAssistant: React.FC = () => {
     <UniversityLayout>
       <Box mb={3}>
         <Typography variant="h5" fontWeight={700}>AI Assistant</Typography>
+        <Typography variant="body2" color="text.secondary">Coming soon</Typography>
       </Box>
       <Card>
         <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">Use AI to draft scholarship descriptions or applicant communications.</Typography>
-            <TextField fullWidth multiline minRows={4} placeholder="Draft an email to an applicant requesting missing documents…" />
-            <Box>
-              <Button variant="contained">Generate</Button>
-            </Box>
-          </Stack>
+          <Typography color="text.secondary">This space is reserved for AI assistance features.</Typography>
         </CardContent>
       </Card>
     </UniversityLayout>
@@ -24,5 +19,6 @@ const UniversityAIAssistant: React.FC = () => {
 };
 
 export default UniversityAIAssistant;
+
 
 
