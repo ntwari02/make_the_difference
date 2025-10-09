@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
 dotenv.config();
 
 const { testConnection } = require('./config/database');
@@ -8,7 +10,6 @@ const aiInitializer = require('./ai/services/ai-initializer.service');
 const performanceMonitor = require('./ai/services/performance-monitor.service');
 
 const app = express();
-const path = require('path');
 
 // Middleware
 app.use(express.json());
@@ -22,13 +23,13 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 app.use(cors({
   origin: (origin, callback) => {
-    // In development, allow all origins if no specific origins are configured
-    if (isDevelopment && corsOrigins.length === 0) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
       return callback(null, true);
     }
     
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
+    // If no specific origins are configured, allow all origins
+    if (corsOrigins.length === 0) {
       return callback(null, true);
     }
     
@@ -83,10 +84,23 @@ app.use('/api/password-reset', require('./routes/passwordReset.routes'));
 const staticDir = path.join(__dirname, 'public');
 app.use(express.static(staticDir));
 
-// SPA fallback: send index.html for all non-API routes
+// SPA fallback: send index.html for all non-API routes that don't exist as static files
 app.get('*', (req, res, next) => {
+  // Skip API routes
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(staticDir, 'index.html'));
+  
+  // Check if the requested file exists in the static directory
+  const filePath = path.join(staticDir, req.path);
+  
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      // File doesn't exist, serve index.html for SPA routing
+      res.sendFile(path.join(staticDir, 'index.html'));
+    } else {
+      // File exists, serve it normally
+      res.sendFile(filePath);
+    }
+  });
 });
 
 // Port availability check
