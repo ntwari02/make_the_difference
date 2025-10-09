@@ -5,8 +5,8 @@ require('dotenv').config();
 function buildDbConfigFromEnv() {
   const { URL } = require('url');
 
-  // Prefer public URL if provided (externally reachable). Fallback to MYSQL_URL.
-  const mysqlUrl = process.env.MYSQL_PUBLIC_URL || process.env.MYSQL_URL;
+  // Prefer DATABASE_URL if provided, then public URL, then legacy MYSQL_URL
+  const mysqlUrl = process.env.DATABASE_URL || process.env.MYSQL_PUBLIC_URL || process.env.MYSQL_URL;
 
   let host;
   let port;
@@ -28,11 +28,11 @@ function buildDbConfigFromEnv() {
   }
 
   // Fallback to individual env vars (support both DB_* and MYSQL* conventions)
-  host = host || process.env.DB_HOST || process.env.MYSQLHOST || 'tramway.proxy.rlwy.net';
-  port = port || parseInt(process.env.DB_PORT || process.env.MYSQLPORT || '54880', 10);
-  user = user || process.env.DB_USER || process.env.MYSQLUSER || 'root';
-  password = password || process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
-  database = database || process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'railway';
+  host = host || process.env.DB_HOST || process.env.MYSQLHOST;
+  port = port || parseInt(process.env.DB_PORT || process.env.MYSQLPORT || '3306', 10);
+  user = user || process.env.DB_USER || process.env.MYSQLUSER;
+  password = password || process.env.DB_PASSWORD || process.env.MYSQLPASSWORD;
+  database = database || process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE;
 
   // Enable SSL for public proxies by default
   const needsSSL = /\b(proxy\.rlwy\.net|railway\.app)\b/.test(host);
