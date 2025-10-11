@@ -11,11 +11,7 @@ const performanceMonitor = require('./ai/services/performance-monitor.service');
 
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// CORS
+// CORS configuration
 const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
 const frontendUrl = (process.env.FRONTEND_URL || '').trim();
 const renderExternalUrl = (process.env.RENDER_EXTERNAL_URL || '').trim();
@@ -25,25 +21,20 @@ const allowedOrigins = [...new Set([...corsOrigins, ...additionalOrigins])];
 // Development CORS configuration - more permissive for local development
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Register CORS before body parsers so preflight OPTIONS requests are handled by CORS
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
+    if (!origin) return callback(null, true);
+
     // If no specific origins are configured, allow all origins
-    if (allowedOrigins.length === 0) {
-      return callback(null, true);
-    }
-    
+    if (allowedOrigins.length === 0) return callback(null, true);
+
     // Helper: check wildcard and exact matches
     const isAllowedByList = (testOrigin) => {
       for (const entry of allowedOrigins) {
         if (!entry) continue;
-        // Exact match
         if (entry === testOrigin) return true;
-        // Wildcard: *.example.com -> allows subdomains
         if (entry.startsWith('*.')) {
           const suffix = entry.slice(1); // remove leading '*'
           if (testOrigin.endsWith(suffix)) return true;
@@ -52,19 +43,23 @@ app.use(cors({
       return false;
     };
 
-    if (isAllowedByList(origin)) {
-      return callback(null, true);
-    }
-    
+    if (isAllowedByList(origin)) return callback(null, true);
+
     // In development, allow localhost on any port
     if (isDevelopment && (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:'))) {
       return callback(null, true);
     }
-    
-    return callback(new Error('Not allowed by CORS'));
+
+    // Deny: log for debugging and return false (don't throw an error)
+    console.warn(`⛔ CORS denied for origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+    return callback(null, false);
   },
   credentials: true
 }));
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
