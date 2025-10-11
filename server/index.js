@@ -106,10 +106,26 @@ app.use(express.static(staticDir));
 app.get('*', (req, res, next) => {
   // Skip API routes
   if (req.path.startsWith('/api/')) return next();
-  
-  // Check if the requested file exists in the static directory
+
+  // If this looks like a static asset request (has an extension or is under /assets/),
+  // don't return index.html when the file is missing — return 404 instead so the
+  // browser doesn't receive HTML where it expects CSS/JS (which causes MIME errors).
+  const looksLikeAsset = req.path.startsWith('/assets/') || path.extname(req.path) !== '';
   const filePath = path.join(staticDir, req.path);
-  
+
+  if (looksLikeAsset) {
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+      if (err) {
+        // File doesn't exist — respond 404 rather than serving index.html
+        return res.status(404).send('Not found');
+      }
+      // File exists, serve it normally
+      return res.sendFile(filePath);
+    });
+    return;
+  }
+
+  // Non-asset SPA route: if file exists serve it, otherwise return index.html
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
       // File doesn't exist, serve index.html for SPA routing
