@@ -11,7 +11,10 @@ async function verifyRecaptcha(req, res, next) {
     const secret = process.env.RECAPTCHA_SECRET_KEY;
     if (!secret) {
       console.log('⚠️ RECAPTCHA_SECRET_KEY not set, skipping verification');
-      return next();
+      return res.status(400).json({ 
+        error: 'reCAPTCHA not configured. Please set RECAPTCHA_SECRET_KEY environment variable.',
+        code: 'RECAPTCHA_NOT_CONFIGURED'
+      });
     }
 
     const token = req.body?.recaptcha_token;
@@ -19,7 +22,10 @@ async function verifyRecaptcha(req, res, next) {
     
     if (!token) {
       console.log('❌ No reCAPTCHA token provided');
-      return res.status(400).json({ error: 'Missing recaptcha_token' });
+      return res.status(400).json({ 
+        error: 'Missing recaptcha_token. Please ensure reCAPTCHA is properly configured on the frontend.',
+        code: 'MISSING_RECAPTCHA_TOKEN'
+      });
     }
 
     console.log('🔄 Verifying reCAPTCHA token with Google...');

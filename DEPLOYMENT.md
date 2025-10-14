@@ -62,6 +62,12 @@ RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 ```
 
+### reCAPTCHA Configuration
+```
+RECAPTCHA_SECRET_KEY=your-recaptcha-secret-key
+VITE_RECAPTCHA_SITE_KEY=your-recaptcha-site-key
+```
+
 ### AI Services Configuration (optional)
 ```
 OPENAI_API_KEY=your-openai-api-key
@@ -100,3 +106,8 @@ VITE_API_BASE_URL=https://your-backend-url.com/api
 2. **Network Errors**: Check that the frontend is using the correct API base URL
 3. **Database Connection**: Verify database credentials and connection string
 4. **File Uploads**: Ensure upload directory exists and has proper permissions
+5. **reCAPTCHA Errors**: 
+   - Ensure both `RECAPTCHA_SECRET_KEY` and `VITE_RECAPTCHA_SITE_KEY` are set
+   - Verify the site key matches your domain in Google reCAPTCHA console
+   - Check browser console for reCAPTCHA loading errors
+   - In development, reCAPTCHA is automatically disabled
