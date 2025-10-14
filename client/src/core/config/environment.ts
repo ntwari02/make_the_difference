@@ -33,6 +33,9 @@ export const ENV = {
   SESSION_TIMEOUT: Number(import.meta.env.VITE_SESSION_TIMEOUT) || 1800000, // 30 minutes
   REFRESH_TOKEN_EXPIRY: Number(import.meta.env.VITE_REFRESH_TOKEN_EXPIRY) || 604800000, // 7 days
   
+  // reCAPTCHA Configuration
+  RECAPTCHA_SITE_KEY: import.meta.env.VITE_RECAPTCHA_SITE_KEY || '',
+  
   // Environment checks
   IS_DEVELOPMENT: import.meta.env.DEV,
   IS_PRODUCTION: import.meta.env.PROD,

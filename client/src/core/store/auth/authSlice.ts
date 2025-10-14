@@ -30,32 +30,72 @@ const initialState: AuthState = {
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
-    try {
-      console.log('🔐 Attempting login with real backend API:', { email: credentials.email });
-      
-      // Map email to identifier for backend compatibility
-      const loginPayload = {
-        identifier: credentials.email,
-        password: credentials.password,
-        remember_me: credentials.remember_me
-      };
-      const response = await api.post('/auth/login', loginPayload);
-      
-      console.log('✅ Login response from backend:', response.data);
-      const { access_token, refresh_token, user } = response.data;
-      
-      // Store tokens and user data
-      setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
-      setToStorage(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
-      setToStorage(STORAGE_KEYS.USER_DATA, user);
-      setToStorage('last_login', new Date().toISOString());
-      
-      console.log('✅ Login successful, tokens stored');
-      
-      return { access_token, refresh_token, user };
-    } catch (error: any) {
-      console.error('❌ Login failed:', error.response?.data || error.message);
-      return rejectWithValue(error.response?.data?.error || error.message || 'Login failed');
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS = [1000, 2000, 3000]; // Exponential backoff: 1s, 2s, 3s
+    
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`🔐 Login attempt ${attempt + 1}/${MAX_RETRIES + 1}:`, { email: credentials.email });
+
+        // Map email to identifier for backend compatibility
+        const loginPayload = {
+          identifier: credentials.email,
+          password: credentials.password,
+          remember_me: credentials.remember_me,
+          recaptcha_token: credentials.recaptcha_token
+        };
+
+        // Use 4 second timeout for login to match reCAPTCHA timeout
+        const response = await api.post('/auth/login', loginPayload, {
+          timeout: 4000 // Increased to 4s to match reCAPTCHA timeout
+        });
+
+        console.log('✅ Login response from backend:', response.data);
+        const { access_token, refresh_token, user } = response.data;
+
+        // Store tokens and user data immediately
+        setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+        setToStorage(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+        setToStorage(STORAGE_KEYS.USER_DATA, user);
+        setToStorage('last_login', new Date().toISOString());
+
+        console.log('✅ Login successful, tokens stored');
+
+        return { access_token, refresh_token, user };
+      } catch (error: any) {
+        console.error(`❌ Login attempt ${attempt + 1} failed:`, {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          fullError: error
+        });
+
+        // Check if it's a timeout error and we have retries left
+        const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
+        
+        if (isTimeout && attempt < MAX_RETRIES) {
+          console.log(`⏳ Timeout on attempt ${attempt + 1}, retrying in ${RETRY_DELAYS[attempt]}ms...`);
+          
+          // Dispatch retry attempt to update UI
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('loginRetryAttempt', { 
+              detail: { attempt: attempt + 1, maxRetries: MAX_RETRIES + 1 } 
+            }));
+          }
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
+          continue; // Try again
+        }
+
+        // If it's the last attempt or not a timeout, return the error
+        if (isTimeout) {
+          return rejectWithValue('Login is taking longer than expected. Please check your connection and try again.');
+        }
+
+        return rejectWithValue(error.response?.data?.error || error.message || 'Login failed');
+      }
     }
   }
 );
@@ -79,7 +119,7 @@ export const oauthLogin = createAsyncThunk(
 
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async (credentials: RegisterCredentials, { rejectWithValue }) => {
+  async (credentials: RegisterCredentials, { rejectWithValue, dispatch }) => {
     try {
       console.log('📝 Attempting registration with real backend API:', { 
         email: credentials.email, 
@@ -87,23 +127,23 @@ export const registerUser = createAsyncThunk(
         role: credentials.role 
       });
       
-      // Use real API - your backend expects specific field names
       const response = await api.post('/auth/register', {
         email: credentials.email,
         password: credentials.password,
         first_name: credentials.first_name,
         last_name: credentials.last_name,
         phone: credentials.phone,
-        role: credentials.role || 'student' // Default to student if not specified
+        role: credentials.role || 'student',
+        recaptcha_token: (credentials as any).recaptcha_token
       });
       
       console.log('✅ Registration response from backend:', response.data);
       
-      // Your backend returns: { id, email, role, is_verified } for registration
-      // Note: Registration doesn't return tokens, user needs to login separately
       const { id, email, role, is_verified } = response.data;
       
-      // Create user object for frontend
+      // Skip auto-login for now to avoid timeout issues
+      console.log('ℹ️ Skipping auto-login after registration - user can login manually');
+      
       const user = {
         id,
         email,
@@ -128,7 +168,12 @@ export const registerUser = createAsyncThunk(
       
       console.log('✅ Registration successful, user created:', user);
       
-      return { user };
+      return { 
+        user,
+        isAuthenticated: false, // User needs to login manually after registration
+        accessToken: null,
+        refreshToken: null
+      };
     } catch (error: any) {
       console.error('❌ Registration failed:', error.response?.data || error.message);
       return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
@@ -312,8 +357,9 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload.user;
-        // Note: Registration doesn't return tokens, user needs to login separately
-        state.isAuthenticated = false;
+        state.isAuthenticated = action.payload.isAuthenticated;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {

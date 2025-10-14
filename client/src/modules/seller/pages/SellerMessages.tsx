@@ -363,13 +363,13 @@ const SellerMessages: React.FC = () => {
         >
           {selectedMessage && (
             <>
-              <DialogTitle>
+              <DialogTitle component="div">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ bgcolor: 'primary.main' }}>
                     {selectedMessage.sender.name.charAt(0)}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6">
+                    <Typography component="h2" variant="h6">
                       {selectedMessage.sender.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">

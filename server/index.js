@@ -90,8 +90,7 @@ app.use('/api/dealers', require('./routes/dealer.routes'));
 app.use('/api/moderators', require('./routes/moderator.routes'));  
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
-app.use('/api/password-reset', require('./routes/passwordReset.routes'));
+// Removed password reset and security-questions routes
 
 // Serve built client (single-service deployment)
 const staticDir = path.join(__dirname, 'public');

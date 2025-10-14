@@ -12,6 +12,7 @@ import {
   Divider,
   ListItemIcon,
   useTheme,
+  useMediaQuery,
   Switch,
   Breadcrumbs,
   Link,
@@ -43,6 +44,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { mode, toggleColorMode } = useThemeMode();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
@@ -51,7 +53,17 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
   const unreadNotifications = useSelector((state: RootState) => state.dealer.unreadNotifications);
   const notifications = useSelector((state: RootState) => state.dealer.notifications);
 
+  // Debug logging
+  console.log('DealerHeader Debug:', {
+    profile: profile?.business_name || 'No profile',
+    notifications: notifications.length,
+    unreadNotifications,
+    mode,
+    isMobile
+  });
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    console.log('👤 User menu clicked');
     setAnchorEl(event.currentTarget);
   };
 
@@ -60,6 +72,7 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
   };
 
   const handleNotificationOpen = (event: React.MouseEvent<HTMLElement>) => {
+    console.log('🔔 Notifications clicked');
     setNotificationAnchor(event.currentTarget);
   };
 
@@ -84,6 +97,16 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
   const handleNavigateToSettings = () => {
     navigate('/dealer/settings');
     handleMenuClose();
+  };
+
+  const handleSearchClick = () => {
+    console.log('🔍 Search clicked');
+    // TODO: Implement search functionality
+  };
+
+  const handleThemeToggle = () => {
+    console.log('🎨 Theme toggle clicked');
+    toggleColorMode();
   };
 
   // Generate breadcrumbs from path
@@ -137,78 +160,99 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
         color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
       }}
     >
-      <Toolbar>
+      <Toolbar sx={{ minHeight: isMobile ? '56px' : '64px' }}>
         {/* Menu Icon */}
         <IconButton
           edge="start"
           aria-label="menu"
           onClick={onMenuClick}
           sx={{ 
-            mr: 2,
+            mr: isMobile ? 1 : 2,
             color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
           }}
         >
           <MenuIcon />
         </IconButton>
 
-        {/* Breadcrumbs */}
-        <Box sx={{ flexGrow: 1 }}>
-          <Breadcrumbs 
-            aria-label="breadcrumb" 
-            sx={{ 
-              color: theme.palette.mode === 'dark' 
-                ? 'rgba(255, 255, 255, 0.7)' 
-                : theme.palette.text.secondary 
-            }}
-          >
-            {generateBreadcrumbs()}
-          </Breadcrumbs>
+        {/* Breadcrumbs - Hide on mobile, show only current page */}
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          {isMobile ? (
+            <Typography 
+              variant="h6" 
+              noWrap
+              sx={{ 
+                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                fontWeight: 600,
+                fontSize: '1rem'
+              }}
+            >
+              {location.pathname.split('/').pop()?.charAt(0).toUpperCase() + 
+               location.pathname.split('/').pop()?.slice(1).replace('-', ' ') || 'Dashboard'}
+            </Typography>
+          ) : (
+            <Breadcrumbs 
+              aria-label="breadcrumb" 
+              sx={{ 
+                color: theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.7)' 
+                  : theme.palette.text.secondary 
+              }}
+            >
+              {generateBreadcrumbs()}
+            </Breadcrumbs>
+          )}
         </Box>
 
-        {/* Search Icon */}
-        <IconButton 
-          sx={{ 
-            mr: 1,
-            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-          }}
-        >
-          <SearchIcon />
-        </IconButton>
+        {/* Right side icons - Hide some on mobile */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
+          {/* Search Icon - Hide on mobile */}
+          {!isMobile && (
+            <IconButton 
+              onClick={handleSearchClick}
+              sx={{ 
+                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+              }}
+            >
+              <SearchIcon />
+            </IconButton>
+          )}
 
-        {/* Theme Toggle */}
-        <IconButton 
-          onClick={toggleColorMode} 
-          sx={{ 
-            mr: 1,
-            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-          }}
-        >
-          {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-        </IconButton>
+          {/* Theme Toggle - Hide on mobile */}
+          {!isMobile && (
+            <IconButton 
+              onClick={handleThemeToggle}
+              sx={{ 
+                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+              }}
+            >
+              {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          )}
 
-        {/* Notifications */}
-        <IconButton
-          onClick={handleNotificationOpen}
-          sx={{ 
-            mr: 2,
-            color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-          }}
-        >
-          <Badge badgeContent={unreadNotifications} color="error">
-            <NotificationsIcon />
-          </Badge>
-        </IconButton>
-
-        {/* User Menu */}
-        <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
-          <Avatar
-            src={profile?.logo}
-            alt={profile?.business_name}
-            sx={{ width: 40, height: 40 }}
+          {/* Notifications */}
+          <IconButton
+            onClick={handleNotificationOpen}
+            sx={{ 
+              mr: isMobile ? 0.5 : 1,
+              color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+            }}
           >
-            {profile?.business_name?.charAt(0)}
-          </Avatar>
-        </IconButton>
+            <Badge badgeContent={unreadNotifications} color="error">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+
+          {/* User Menu */}
+          <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
+            <Avatar
+              src={profile?.logo}
+              alt={profile?.business_name}
+              sx={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40 }}
+            >
+              {profile?.business_name?.charAt(0)}
+            </Avatar>
+          </IconButton>
+        </Box>
 
         {/* User Dropdown Menu */}
         <Menu

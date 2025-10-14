@@ -3,9 +3,7 @@ import { useDispatch } from 'react-redux';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, useTheme } from '@mui/material';
 import { Notifications, DarkMode, LightMode, Menu as MenuIcon, Logout } from '@mui/icons-material';
-import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 
 interface UniversityHeaderProps { onMenuClick: () => void }
@@ -15,7 +13,6 @@ const UniversityHeader: React.FC<UniversityHeaderProps> = ({ onMenuClick }) => {
   const { mode, toggleColorMode } = useThemeMode();
   const dispatch = useDispatch();
   const isDark = mode === 'dark';
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   return (

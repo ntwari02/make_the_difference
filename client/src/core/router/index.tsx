@@ -19,9 +19,7 @@ import LoginPage from '../../modules/auth/pages/LoginPage';
 import RegisterPage from '../../modules/auth/pages/RegisterPage';
 
 // Auth components
-import ForgotPasswordPage from '../../modules/auth/pages/ForgotPasswordPage';
-import ResetPasswordPage from '../../modules/auth/pages/ResetPasswordPage';
-import SecurityQuestionsPage from '../../modules/auth/pages/SecurityQuestionsPage';
+// Removed password reset/security questions pages
 // Login/Register pages removed
 
 // Main pages
@@ -207,15 +205,7 @@ const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   // Keep remaining auth utilities under /auth
-  {
-    path: '/auth',
-    element: <AuthLayout />,
-    children: [
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'reset-password/:token', element: <ResetPasswordPage /> },
-      { path: 'security-questions', element: <SecurityQuestionsPage /> },
-    ],
-  },
+  // Removed /auth password reset routes (forgot/reset/security-questions)
   // Public browse route
   {
     path: '/browse',

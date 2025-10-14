@@ -6,11 +6,9 @@ import SmartRedirect from './shared/components/ui/SmartRedirect';
 import LandingPage from '../modules/landing/pages/LandingPage';
 
 // Auth Pages
-import ForgotPasswordPage from '../modules/auth/pages/ForgotPasswordPage';
 import LoginPage from '../modules/auth/pages/LoginPage';
 import RegisterPage from '../modules/auth/pages/RegisterPage';
-import ResetPasswordPage from '../modules/auth/pages/ResetPasswordPage';
-import SecurityQuestionsPage from '../modules/auth/pages/SecurityQuestionsPage';
+// Removed password reset and security question pages
 
 // E-commerce Pages
 import CarListingPage from '../modules/ecommerce/pages/CarListingPage';
@@ -30,9 +28,7 @@ const App: React.FC = () => {
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/auth/security-questions" element={<SecurityQuestionsPage />} />
+        {/* Removed forgot/reset/security-questions routes */}
 
         {/* E-commerce Routes */}
         <Route path="/cars" element={<CarListingPage />} />

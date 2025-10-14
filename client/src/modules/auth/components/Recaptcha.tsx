@@ -1,4 +1,5 @@
 import React from 'react';
+import { ENV } from '../../../core/config/environment';
 
 declare global {
   interface Window {
@@ -11,7 +12,7 @@ interface Props {
 }
 
 const Recaptcha: React.FC<Props> = ({ onToken }) => {
-  const siteKey = (import.meta as any).env.VITE_RECAPTCHA_SITE_KEY;
+  const siteKey = ENV.RECAPTCHA_SITE_KEY;
 
   React.useEffect(() => {
     if (!siteKey) return;

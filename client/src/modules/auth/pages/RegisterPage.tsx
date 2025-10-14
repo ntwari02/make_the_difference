@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import type { RootState } from '../../../core/store';
 import { registerUser } from '../../../core/store/auth/authSlice';
+import { redirectToDashboard } from '../../../core/utils/roleRedirect';
 import {
   Box, Paper, Typography, TextField, InputAdornment, IconButton, Button, Stack, MenuItem
 } from '@mui/material';
@@ -13,7 +14,7 @@ import Recaptcha from '../components/Recaptcha';
 const RegisterPage: React.FC = () => {
   const dispatch = useDispatch<any>();
   const navigate = useNavigate();
-  const { isLoading, error } = useSelector((s: RootState) => s.auth);
+  const { isLoading, error, isAuthenticated, user } = useSelector((s: RootState) => s.auth);
 
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
@@ -26,6 +27,13 @@ const RegisterPage: React.FC = () => {
   const [phone, setPhone] = React.useState('');
   const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<1 | 2>(1);
+
+  // Redirect to login after successful registration
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      redirectToDashboard(user, navigate);
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const emailError = email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Enter a valid email' : '';
   const passwordErrors: string[] = [];
@@ -52,11 +60,22 @@ const RegisterPage: React.FC = () => {
       return;
     }
     if (!isValid) return;
+    // Get reCAPTCHA token with 4 second timeout
+    let tokenToUse: string | null = recaptchaToken;
+    try {
+      if (!tokenToUse && (window as any).grecaptcha && (import.meta as any).env.VITE_RECAPTCHA_SITE_KEY) {
+        const tokenPromise = (window as any).grecaptcha.execute((import.meta as any).env.VITE_RECAPTCHA_SITE_KEY, { action: 'submit' });
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('reCAPTCHA timeout')), 4000));
+        tokenToUse = await Promise.race([tokenPromise, timeoutPromise]) as string;
+        setRecaptchaToken(tokenToUse);
+      }
+    } catch (_) {}
     const payload: any = { email, password, first_name: firstName, last_name: lastName, phone, role };
-    if (recaptchaToken) payload.recaptcha_token = recaptchaToken;
+    if (tokenToUse) payload.recaptcha_token = tokenToUse;
     const action = await dispatch(registerUser(payload));
     if (registerUser.fulfilled.match(action)) {
-      navigate('/login');
+      // Redirect to login page with success message
+      navigate('/login?registered=true');
     }
   };
 

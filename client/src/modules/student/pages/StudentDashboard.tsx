@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import { School as CourseIcon, Schedule as ScheduleIcon, WorkspacePremium as CertIcon, TrendingUp as TrendingIcon } from '@mui/icons-material';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, PieChart, Pie, Cell } from 'recharts';
 import StudentLayout from '../components/layout/StudentLayout';
+import SecurityQuestionsSetupModal from '../../auth/components/SecurityQuestionsSetupModal';
+import { api } from '../../../core/services/api/apiClient';
 import { studentApi } from '../services/studentApi';
 
 const StudentDashboard: React.FC = () => {
@@ -13,6 +15,7 @@ const StudentDashboard: React.FC = () => {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [recs, setRecs] = useState<any[]>([]);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [showSQSetup, setShowSQSetup] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +40,19 @@ const StudentDashboard: React.FC = () => {
     };
     load();
   }, []);
+
+  // Security questions setup is no longer required
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const resp = await api.get('/security-questions/check');
+  //       const has = !!resp?.data?.data?.hasQuestions;
+  //       if (!has) setShowSQSetup(true);
+  //     } catch (_) {
+  //       // If endpoint requires auth and fails, ignore; prompt will not show
+  //     }
+  //   })();
+  // }, []);
 
   const mockRecs = recs.length ? recs : [
     { id: 'c1', title: 'Intro to JavaScript', thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop' },
@@ -87,6 +103,7 @@ const StudentDashboard: React.FC = () => {
   return (
     <StudentLayout>
       <Box sx={{ display: 'grid', gap: 2 }}>
+        <SecurityQuestionsSetupModal open={showSQSetup} onClose={() => setShowSQSetup(false)} onSaved={() => setShowSQSetup(false)} />
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>

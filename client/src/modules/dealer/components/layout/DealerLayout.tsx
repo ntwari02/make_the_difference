@@ -73,12 +73,12 @@ const DealerLayout: React.FC<DealerLayoutProps> = ({ children }) => {
         <Box
           sx={{
             flexGrow: 1,
-            mt: '64px', // Header height
+            mt: isMobile ? '56px' : '64px', // Responsive header height
             width: '100%',
             maxWidth: '100%',
-            pl: 2,
-            pr: 3,
-            py: 2,
+            pl: isMobile ? 1 : 2,
+            pr: isMobile ? 1 : 3,
+            py: isMobile ? 1 : 2,
           }}
         >
           {children}

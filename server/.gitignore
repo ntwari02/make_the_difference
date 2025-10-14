@@ -1,0 +1,52 @@
+# Node and build artifacts (root, server, client)
+node_modules/
+**/node_modules/
+dist/
+build/
+.cache/
+
+.env 
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+**/logs/
+*.log
+
+# Coverage
+coverage/
+**/coverage/
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# TypeScript
+**/*.tsbuildinfo
+
+# Frontend specific (client)
+client/.vite/
+client/.next/
+client/.nuxt/
+client/.svelte-kit/
+client/.angular/
+client/.storybook/
+client/out/
+client/.cache/
+client/.parcel-cache/
+client/public/build/
+client/.sass-cache/
+
+# Backend specific (server)
+server/tmp/
+server/.tmp/
+server/.cache/
+server/uploads/
+
+

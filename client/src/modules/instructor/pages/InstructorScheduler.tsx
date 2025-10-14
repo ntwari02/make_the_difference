@@ -573,7 +573,7 @@ const InstructorScheduler: React.FC = () => {
         
         {/* Add Availability Dialog */}
         <Dialog open={showAddAvailability} onClose={() => setShowAddAvailability(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Add Schedule</DialogTitle>
+          <DialogTitle component="div"><Typography component="h2" variant="h6">Add Schedule</Typography></DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
               <Grid container spacing={2}>
@@ -631,13 +631,13 @@ const InstructorScheduler: React.FC = () => {
         <Dialog open={showAppointmentDetails} onClose={() => setShowAppointmentDetails(false)} maxWidth="sm" fullWidth>
           {selectedAppointment && (
             <>
-              <DialogTitle>
+              <DialogTitle component="div">
                 <Box display="flex" alignItems="center" gap={2}>
                   <Avatar src={selectedAppointment.student.avatar}>
                     {selectedAppointment.student.name.charAt(0)}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6">{selectedAppointment.student.name}</Typography>
+                    <Typography component="h2" variant="h6">{selectedAppointment.student.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {selectedAppointment.student.email}
                     </Typography>
@@ -692,7 +692,7 @@ const InstructorScheduler: React.FC = () => {
 
         {/* Analytics Dialog */}
         <Dialog open={showAnalytics} onClose={() => setShowAnalytics(false)} maxWidth="lg" fullWidth>
-          <DialogTitle>Schedule Analytics</DialogTitle>
+          <DialogTitle component="div"><Typography component="h2" variant="h6">Schedule Analytics</Typography></DialogTitle>
           <DialogContent sx={{ p: 0 }}>
             <SchedulerAnalytics 
               data={analyticsData}
