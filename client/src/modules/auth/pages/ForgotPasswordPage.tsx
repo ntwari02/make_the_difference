@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Alert, Stack, InputAdornment, Card, CardContent, Divider } from '@mui/material';
+import { Box, Typography, TextField, Button, Alert, Stack, InputAdornment, Card, CardContent, Divider, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { Email, Send } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -18,6 +19,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [options, setOptions] = useState<Array<{ method: string; name: string; description: string }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [emailValue, setEmailValue] = useState<string>('');
+  const [open, setOpen] = useState(true);
   const { register, handleSubmit, formState: { errors, isValid }, reset } = useForm<FormData>({
     resolver: yupResolver(schema) as any,
     mode: 'onChange',
@@ -40,8 +42,12 @@ const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', p: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>Forgot Password</Typography>
+    <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6" fontWeight={700}>Forgot Password</Typography>
+        <IconButton onClick={() => setOpen(false)} size="small"><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Enter your email to receive password reset instructions.
       </Typography>
@@ -123,7 +129,8 @@ const ForgotPasswordPage: React.FC = () => {
           </Button>
         </Stack>
       </Box>
-    </Box>
+      </DialogContent>
+    </Dialog>
   );
 };
 
