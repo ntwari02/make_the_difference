@@ -12,8 +12,8 @@ PORT=3001
 
 ### CORS Configuration
 ```
-CORS_ORIGINS=https://reagle-x.onrender.com,*.onrender.com
-FRONTEND_URL=https://reagle-x.onrender.com
+CORS_ORIGINS=https://www.reaglex.com,https://reaglex.com,https://reagle-x.onrender.com,*.onrender.com
+FRONTEND_URL=https://www.reaglex.com
 RENDER_EXTERNAL_URL=https://reagle-x.onrender.com
 ```
 
@@ -100,14 +100,52 @@ The frontend will automatically use `/api` as the base URL in production. If you
 VITE_API_BASE_URL=https://your-backend-url.com/api
 ```
 
+## Domain Configuration
+
+### For Custom Domains (like reaglex.com)
+If you're using a custom domain instead of the default Render subdomain:
+
+1. **Update CORS_ORIGINS** to include your custom domain:
+   ```
+   CORS_ORIGINS=https://www.reaglex.com,https://reaglex.com,https://reagle-x.onrender.com,*.onrender.com
+   ```
+
+2. **Update FRONTEND_URL** to your custom domain:
+   ```
+   FRONTEND_URL=https://www.reaglex.com
+   ```
+
+3. **Update reCAPTCHA domain** in Google reCAPTCHA console to include your custom domain
+
+### For Default Render Subdomain
+If you're using the default Render subdomain (reagle-x.onrender.com), use:
+```
+CORS_ORIGINS=https://reagle-x.onrender.com,*.onrender.com
+FRONTEND_URL=https://reagle-x.onrender.com
+```
+
 ## Troubleshooting
 
-1. **CORS Errors**: Ensure `CORS_ORIGINS`, `FRONTEND_URL`, and `RENDER_EXTERNAL_URL` are set correctly
+1. **CORS Errors**: 
+   - Ensure `CORS_ORIGINS` includes your actual frontend domain
+   - Check that `FRONTEND_URL` matches your frontend domain
+   - For custom domains, include both `www` and non-`www` versions
+   - Example: `CORS_ORIGINS=https://www.reaglex.com,https://reaglex.com`
+
 2. **Network Errors**: Check that the frontend is using the correct API base URL
+
 3. **Database Connection**: Verify database credentials and connection string
+
 4. **File Uploads**: Ensure upload directory exists and has proper permissions
+
 5. **reCAPTCHA Errors**: 
    - Ensure both `RECAPTCHA_SECRET_KEY` and `VITE_RECAPTCHA_SITE_KEY` are set
    - Verify the site key matches your domain in Google reCAPTCHA console
    - Check browser console for reCAPTCHA loading errors
    - In development, reCAPTCHA is automatically disabled
+   - **Important**: Update reCAPTCHA domain settings in Google console to include your custom domain
+
+6. **Domain Mismatch Issues**:
+   - If using custom domain, update all environment variables accordingly
+   - Check that CORS allows your actual frontend domain
+   - Verify reCAPTCHA is configured for the correct domain
