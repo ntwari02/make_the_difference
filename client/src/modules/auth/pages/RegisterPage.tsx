@@ -60,18 +60,11 @@ const RegisterPage: React.FC = () => {
       return;
     }
     if (!isValid) return;
-    // Get reCAPTCHA token with 4 second timeout
-    let tokenToUse: string | null = recaptchaToken;
-    try {
-      if (!tokenToUse && (window as any).grecaptcha && (import.meta as any).env.VITE_RECAPTCHA_SITE_KEY) {
-        const tokenPromise = (window as any).grecaptcha.execute((import.meta as any).env.VITE_RECAPTCHA_SITE_KEY, { action: 'submit' });
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('reCAPTCHA timeout')), 4000));
-        tokenToUse = await Promise.race([tokenPromise, timeoutPromise]) as string;
-        setRecaptchaToken(tokenToUse);
-      }
-    } catch (_) {}
+    
+    // Use the token from Recaptcha component (same as login)
     const payload: any = { email, password, first_name: firstName, last_name: lastName, phone, role };
-    if (tokenToUse) payload.recaptcha_token = tokenToUse;
+    if (recaptchaToken) payload.recaptcha_token = recaptchaToken;
+    
     const action = await dispatch(registerUser(payload));
     if (registerUser.fulfilled.match(action)) {
       // Redirect to login page with success message

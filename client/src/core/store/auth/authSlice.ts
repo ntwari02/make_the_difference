@@ -120,63 +120,93 @@ export const oauthLogin = createAsyncThunk(
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (credentials: RegisterCredentials, { rejectWithValue, dispatch }) => {
-    try {
-      console.log('📝 Attempting registration with real backend API:', { 
-        email: credentials.email, 
-        firstName: credentials.first_name,
-        role: credentials.role 
-      });
-      
-      const response = await api.post('/auth/register', {
-        email: credentials.email,
-        password: credentials.password,
-        first_name: credentials.first_name,
-        last_name: credentials.last_name,
-        phone: credentials.phone,
-        role: credentials.role || 'student',
-        recaptcha_token: (credentials as any).recaptcha_token
-      });
-      
-      console.log('✅ Registration response from backend:', response.data);
-      
-      const { id, email, role, is_verified } = response.data;
-      
-      // Skip auto-login for now to avoid timeout issues
-      console.log('ℹ️ Skipping auto-login after registration - user can login manually');
-      
-      const user = {
-        id,
-        email,
-        first_name: credentials.first_name,
-        last_name: credentials.last_name,
-        phone: credentials.phone || '',
-        role,
-        is_verified,
-        is_active: true,
-        preferences: {
-          currency: 'USD',
-          language: 'en',
-          notifications: {
-            sms: true,
-            push: true,
-            email: true,
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS = [1000, 2000, 3000]; // Exponential backoff: 1s, 2s, 3s
+    
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`📝 Registration attempt ${attempt + 1}/${MAX_RETRIES + 1}:`, { 
+          email: credentials.email, 
+          firstName: credentials.first_name,
+          role: credentials.role 
+        });
+        
+        const response = await api.post('/auth/register', {
+          email: credentials.email,
+          password: credentials.password,
+          first_name: credentials.first_name,
+          last_name: credentials.last_name,
+          phone: credentials.phone,
+          role: credentials.role || 'student',
+          recaptcha_token: (credentials as any).recaptcha_token
+        }, {
+          timeout: 4000 // Added timeout to match login implementation
+        });
+        
+        console.log('✅ Registration response from backend:', response.data);
+        
+        const { id, email, role, is_verified } = response.data;
+        
+        // Skip auto-login for now to avoid timeout issues
+        console.log('ℹ️ Skipping auto-login after registration - user can login manually');
+        
+        const user = {
+          id,
+          email,
+          first_name: credentials.first_name,
+          last_name: credentials.last_name,
+          phone: credentials.phone || '',
+          role,
+          is_verified,
+          is_active: true,
+          preferences: {
+            currency: 'USD',
+            language: 'en',
+            notifications: {
+              sms: true,
+              push: true,
+              email: true,
+            },
           },
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      console.log('✅ Registration successful, user created:', user);
-      
-      return { 
-        user,
-        isAuthenticated: false, // User needs to login manually after registration
-        accessToken: null,
-        refreshToken: null
-      };
-    } catch (error: any) {
-      console.error('❌ Registration failed:', error.response?.data || error.message);
-      return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        console.log('✅ Registration successful, user created:', user);
+        
+        return { 
+          user,
+          isAuthenticated: false, // User needs to login manually after registration
+          accessToken: null,
+          refreshToken: null
+        };
+      } catch (error: any) {
+        console.error(`❌ Registration attempt ${attempt + 1} failed:`, {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          fullError: error
+        });
+
+        // Check if it's a timeout error and we have retries left
+        const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
+        
+        if (isTimeout && attempt < MAX_RETRIES) {
+          console.log(`⏳ Timeout on attempt ${attempt + 1}, retrying in ${RETRY_DELAYS[attempt]}ms...`);
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
+          continue; // Try again
+        }
+
+        // If it's the last attempt or not a timeout, return the error
+        if (isTimeout) {
+          return rejectWithValue('Registration is taking longer than expected. Please check your connection and try again.');
+        }
+
+        return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
+      }
     }
   }
 );
