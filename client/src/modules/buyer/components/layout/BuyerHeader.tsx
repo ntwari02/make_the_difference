@@ -28,6 +28,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 
 interface BuyerHeaderProps {
   onMenuClick: () => void;
@@ -38,6 +40,7 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { mode, toggleColorMode } = useThemeMode();
+  const dispatch = useDispatch();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
@@ -60,13 +63,11 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
     setNotificationAnchor(null);
   };
 
-  const handleLogout = () => {
-    if (window.confirm('⚠️ Are you sure you want to logout? This will clear all session data.')) {
-      localStorage.clear();
-      sessionStorage.clear();
-      alert('✅ Logged out successfully! Redirecting to login...');
-      navigate('/auth/login');
+  const handleLogout = async () => {
+    if (window.confirm('⚠️ Are you sure you want to logout?')) {
+      try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {}
       handleMenuClose();
+      window.location.assign('/');
     }
   };
 

@@ -132,7 +132,7 @@ apiClient.interceptors.response.use(
         removeFromStorage(STORAGE_KEYS.USER_DATA);
         
         // Redirect to login page
-        window.location.href = '/auth/login';
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }

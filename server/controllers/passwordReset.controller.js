@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { ok, badRequest, notFound, internalError } = require('../utils/response');
 const securityQuestionsService = require('../services/securityQuestions.service');
+const Email = require('../services/email.service');
 
 class PasswordResetController {
     /**
@@ -134,15 +135,19 @@ class PasswordResetController {
                 [resetToken, resetExpires, userId]
             );
 
-            // TODO: Send email with reset link
-            // For now, return the token (in production, this should be sent via email)
-            return ok(res, {
-                data: {
-                    resetToken, // Remove this in production
-                    expiresAt: resetExpires,
-                    message: 'Password reset email sent (token returned for testing)'
-                }
-            }, 'Password reset email sent');
+            // Send email with reset link
+            const appUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
+            const link = `${appUrl}/auth/reset-password/${resetToken}`;
+            await Email.sendMail({
+                to: email,
+                subject: 'Reset your password',
+                html: `<p>We received a request to reset your password.</p>
+                       <p>Click the link below to choose a new password:</p>
+                       <p><a href="${link}">${link}</a></p>
+                       <p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`
+            });
+
+            return ok(res, { data: { sent: true, expiresAt: resetExpires } }, 'Password reset email sent');
         } catch (error) {
             return internalError(res, error.message);
         }

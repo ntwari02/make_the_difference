@@ -87,7 +87,7 @@ app.use('/api/service-fees', require('./routes/service-fee.routes'));
 app.use('/api/competitive', require('./routes/competitive-features.routes'));
 app.use('/api/advertising', require('./routes/advertising.routes'));
 app.use('/api/dealers', require('./routes/dealer.routes'));
-app.use('/api/moderators', require('./routes/moderator.routes'));
+app.use('/api/moderators', require('./routes/moderator.routes'));  
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
@@ -97,14 +97,9 @@ app.use('/api/password-reset', require('./routes/passwordReset.routes'));
 const staticDir = path.join(__dirname, 'public');
 app.use(express.static(staticDir));
 
-// SPA fallback: send index.html for all non-API routes that don't exist as static files
-app.get('*', (req, res, next) => {
-  // Skip API routes
-  if (req.path.startsWith('/api/')) return next();
+// SPA fallback: send index.html for all non-API routes that don't exist as static files (Express 5 compatible)
+app.get(/^\/(?!api\/).*/, (req, res, next) => {
 
-  // If this looks like a static asset request (has an extension or is under /assets/),
-  // don't return index.html when the file is missing — return 404 instead so the
-  // browser doesn't receive HTML where it expects CSS/JS (which causes MIME errors).
   const looksLikeAsset = req.path.startsWith('/assets/') || path.extname(req.path) !== '';
   const filePath = path.join(staticDir, req.path);
 

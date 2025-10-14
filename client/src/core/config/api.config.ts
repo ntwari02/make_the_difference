@@ -10,8 +10,8 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Auth endpoints
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
+    LOGIN: '/',
+    REGISTER: '/',
     REFRESH: '/auth/refresh',
     LOGOUT: '/auth/logout',
     VERIFY_EMAIL: '/auth/verify-email',

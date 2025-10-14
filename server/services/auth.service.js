@@ -4,7 +4,9 @@ const crypto = require('crypto');
 const { executeQuery } = require('../config/database');
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev_access_secret';
-const REFRESH_TTL_SECONDS = Number(process.env.JWT_REFRESH_TTL_SECONDS || 60 * 60 * 24 * 30);
+const DEFAULT_REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const LONG_REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const REFRESH_TTL_SECONDS = Number(process.env.JWT_REFRESH_TTL_SECONDS || DEFAULT_REFRESH_TTL_SECONDS);
 const ACCESS_TTL_SECONDS = Number(process.env.JWT_ACCESS_TTL_SECONDS || 60 * 15);
 
 function generateRandomToken(bytes = 64) {
@@ -23,16 +25,17 @@ function signAccessToken(user) {
   return { token, expiresIn: ACCESS_TTL_SECONDS };
 }
 
-async function createRefreshSession(userId) {
+async function createRefreshSession(userId, opts = {}) {
   const refreshToken = generateRandomToken(48);
   const tokenHash = sha256Hex(refreshToken);
+  const ttl = opts.long ? LONG_REFRESH_TTL_SECONDS : REFRESH_TTL_SECONDS;
   await executeQuery(
     'INSERT INTO user_sessions (id, user_id, token_hash, expires_at, created_at) VALUES (UUID(), ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), NOW())',
-    [userId, tokenHash, REFRESH_TTL_SECONDS]
+    [userId, tokenHash, ttl]
   );
   return {
     refreshToken,
-    refreshExpiresIn: REFRESH_TTL_SECONDS
+    refreshExpiresIn: ttl
   };
 }
 
@@ -61,6 +64,23 @@ async function logLoginAttempt({ userId = null, identifier, success, failureReas
 }
 
 module.exports = {
+  async getOrCreateOAuthUser({ email, firstName = '', lastName = '', provider }) {
+    if (!email) throw new Error('Email is required from provider');
+    const rows = await executeQuery('SELECT id, email, role FROM users WHERE email = ? LIMIT 1', [email]);
+    if (rows[0]) return rows[0];
+    await executeQuery(
+      'INSERT INTO users (id, email, password, first_name, last_name, role, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, NULL, ?, ?, ?, TRUE, TRUE, NOW(), NOW())',
+      [email, firstName, lastName, 'student']
+    );
+    const users = await executeQuery('SELECT id, email, role FROM users WHERE email = ? LIMIT 1', [email]);
+    return users[0];
+  },
+
+  async issueTokensForUser(user) {
+    const { token: accessToken, expiresIn: accessExpiresIn } = signAccessToken(user);
+    const { refreshToken, refreshExpiresIn } = await createRefreshSession(user.id);
+    return { accessToken, accessExpiresIn, refreshToken, refreshExpiresIn };
+  },
   async registerUser({ email, password, firstName, lastName, phone, role = 'student' }) {
     const passwordHash = await bcrypt.hash(password, 10);
     await executeQuery(
@@ -71,7 +91,7 @@ module.exports = {
     return users[0];
   },
 
-  async authenticateUser(identifier, password) {
+  async authenticateUser(identifier, password, { remember = false } = {}) {
     const user = await findUserByIdentifier(identifier);
     if (!user) {
       await logLoginAttempt({ identifier, success: false, failureReason: 'invalid_credentials' });
@@ -93,7 +113,7 @@ module.exports = {
     await executeQuery('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
     const { token: accessToken, expiresIn: accessExpiresIn } = signAccessToken(user);
-    const { refreshToken, refreshExpiresIn } = await createRefreshSession(user.id);
+    const { refreshToken, refreshExpiresIn } = await createRefreshSession(user.id, { long: !!remember });
 
     return {
       success: true,

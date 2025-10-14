@@ -1,4 +1,6 @@
 import React from 'react';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { AppBar, Toolbar, IconButton, Typography, Box, Avatar, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Notifications, DarkMode, LightMode, Logout } from '@mui/icons-material';
@@ -14,6 +16,7 @@ interface VisaHeaderProps {
 const VisaHeader: React.FC<VisaHeaderProps> = ({ onMenuClick }) => {
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeMode();
+  const dispatch = useDispatch();
   const isDark = mode === 'dark';
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -32,11 +35,14 @@ const VisaHeader: React.FC<VisaHeaderProps> = ({ onMenuClick }) => {
           <IconButton color="inherit" aria-label="Notifications">
             <Notifications />
           </IconButton>
-          <IconButton color="inherit" aria-label="Logout" onClick={() => { dispatch(logoutUser() as any); navigate('/auth/login'); }}>
+          <IconButton color="inherit" aria-label="Logout" onClick={() => { dispatch(logoutUser() as any); navigate('/'); }}>
             <Logout />
           </IconButton>
           <IconButton color="inherit" aria-label="Profile">
             <Avatar sx={{ width: 32, height: 32 }} />
+          </IconButton>
+          <IconButton color="inherit" aria-label="Logout" onClick={async () => { try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {} window.location.assign('/'); }}>
+            <span style={{ width: 0, height: 0 }} />
           </IconButton>
         </Box>
       </Toolbar>

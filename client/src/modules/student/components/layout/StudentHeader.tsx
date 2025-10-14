@@ -75,7 +75,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onMenuClick }) => {
           <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon>
           Favorites
         </MenuItem>
-        <MenuItem onClick={() => { dispatch(logoutUser() as any); setAnchorEl(null); navigate('/auth/login'); }}>
+        <MenuItem onClick={async () => { try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {} finally { setAnchorEl(null); window.location.assign('/'); } }}>
           <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
           Logout
         </MenuItem>

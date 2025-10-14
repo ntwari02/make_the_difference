@@ -17,6 +17,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [options, setOptions] = useState<Array<{ method: string; name: string; description: string }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const [emailValue, setEmailValue] = useState<string>('');
   const { register, handleSubmit, formState: { errors, isValid }, reset } = useForm<FormData>({
     resolver: yupResolver(schema) as any,
     mode: 'onChange',
@@ -31,6 +32,7 @@ const ForgotPasswordPage: React.FC = () => {
       const available = resp?.data?.data?.options || [];
       setOptions(available);
       setSubmitted(true);
+      setEmailValue(email);
       reset();
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Failed to initiate password reset');
@@ -64,14 +66,14 @@ const ForgotPasswordPage: React.FC = () => {
                         variant="contained"
                         onClick={async () => {
                           try {
-                            await api.post('/auth/forgot-password', { email: (document.querySelector('input[name="email"]') as HTMLInputElement)?.value });
+                            await api.post('/password-reset/email', { email: emailValue });
                             alert('If an account exists, a reset email has been sent.');
                           } catch (e: any) {
                             alert(e?.response?.data?.error || 'Failed to send email reset link');
                           }
                         }}
                       >
-                        Send email reset link
+                        Send OTP to email
                       </Button>
                     )}
                     {opt.method === 'security_questions' && (
@@ -79,7 +81,7 @@ const ForgotPasswordPage: React.FC = () => {
                         variant="outlined"
                         href={`/auth/security-questions`}
                       >
-                        Answer security questions
+                        Use security questions
                       </Button>
                     )}
                   </Stack>

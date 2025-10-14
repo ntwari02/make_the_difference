@@ -529,7 +529,7 @@ const DealerDashboard: React.FC = () => {
     
     if (!token) {
       console.warn('No access token found, redirecting to login');
-      navigate('/auth/login');
+      navigate('/');
     }
   }, [navigate]);
 
@@ -542,7 +542,7 @@ const DealerDashboard: React.FC = () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
       console.warn('No token available for API calls');
-      navigate('/auth/login');
+      navigate('/');
       return;
     }
     
@@ -559,7 +559,7 @@ const DealerDashboard: React.FC = () => {
         if (err.response?.status === 401 || err.response?.status === 403) {
           console.warn('Auth error on profile fetch, redirecting to login');
           logout();
-          navigate('/auth/login');
+          navigate('/');
           return null;
         }
         throw err;
@@ -700,7 +700,7 @@ filter(Boolean) : []
         } else {
           alert('Your session has expired. Please login again.');
           await logout();
-          navigate('/auth/login');
+          navigate('/');
         }
         return;
       }
@@ -749,7 +749,7 @@ filter(Boolean) : []
               try {
                 await logout();
               } finally {
-                navigate('/auth/login');
+                navigate('/');
               }
             }}
           >

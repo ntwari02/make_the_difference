@@ -18,30 +18,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   allowedRoles,
   requiredPermissions = [],
-  fallbackPath = '/auth/login',
+  fallbackPath = '/login',
 }) => {
   const location = useLocation();
   const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
-
-  // Fallback to localStorage if Redux store hasn't been hydrated
+  
+  // Read only canonical keys used by the app
   const lsUser = React.useMemo(() => {
     if (user) return user;
     try {
-      // Prefer canonical key first
       const canonical = localStorage.getItem('user_data');
-      const legacy = localStorage.getItem('user') || localStorage.getItem('userData');
-      const parsedCanonical = canonical ? JSON.parse(canonical) : null;
-      const parsedLegacy = legacy ? JSON.parse(legacy) : null;
-
-      // If both exist and conflict, trust canonical and heal legacy
-      if (parsedCanonical && parsedLegacy && parsedCanonical.role !== parsedLegacy.role) {
-        try {
-          localStorage.setItem('user', JSON.stringify(parsedCanonical));
-          localStorage.setItem('userData', JSON.stringify(parsedCanonical));
-        } catch {}
-        return parsedCanonical;
-      }
-      return parsedCanonical || parsedLegacy;
+      return canonical ? JSON.parse(canonical) : null;
     } catch {
       return null;
     }
@@ -53,8 +40,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Loading fullScreen text="Checking authentication..." />;
   }
 
-  // Redirect to login if not authenticated
-  if ((!isAuthenticated || !lsUser) && !hasToken) {
+  // Redirect to login if not authenticated: require BOTH user and token
+  if (isLoading === false && (!isAuthenticated || !lsUser || !hasToken)) {
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 

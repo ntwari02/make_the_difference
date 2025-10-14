@@ -44,7 +44,7 @@ const InstructorHeader: React.FC<InstructorHeaderProps> = ({ onMenuClick }) => {
           <IconButton color="inherit" aria-label="Notifications">
             <NotificationsIcon />
           </IconButton>
-          <IconButton color="inherit" aria-label="Logout" onClick={() => { dispatch(logoutUser() as any); navigate('/auth/login'); }}>
+          <IconButton color="inherit" aria-label="Logout" onClick={async () => { try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {} window.location.assign('/'); }}>
             <LogoutIcon />
           </IconButton>
           <IconButton color="inherit" aria-label="Profile">

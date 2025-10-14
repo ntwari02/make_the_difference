@@ -1,4 +1,6 @@
 const AuthService = require('../services/auth.service');
+const Magic = require('../services/magic-link.service');
+const Email = require('../services/email.service');
 const { validateEmail, validatePasswordStrength, sanitizeName } = require('../utils/validators');
 
 module.exports = {
@@ -46,6 +48,45 @@ module.exports = {
     }
   },
 
+  async requestMagicLink(req, res) {
+    try {
+      const { email } = req.body || {};
+      if (!email) return res.status(400).json({ error: 'Email required' });
+      const { token, expiresAt } = Magic.create(email);
+      const appUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
+      const link = `${appUrl}/login?token=${token}`;
+      await Email.sendMail({
+        to: email,
+        subject: 'Your magic sign-in link',
+        html: `<p>Click to sign in: <a href="${link}">${link}</a></p><p>This link expires in 10 minutes.</p>`,
+      });
+      return res.json({ status: 'sent', expires_at: expiresAt });
+    } catch (e) {
+      return res.status(500).json({ error: 'Could not initiate magic link' });
+    }
+  },
+
+  async consumeMagicLink(req, res) {
+    try {
+      const { token } = req.body || {};
+      if (!token) return res.status(400).json({ error: 'Missing token' });
+      const email = Magic.consume(token);
+      if (!email) return res.status(400).json({ error: 'Invalid or expired token' });
+      // Ensure user exists (create if not) and issue tokens
+      const user = await AuthService.getOrCreateOAuthUser({ email, firstName: '', lastName: '', provider: 'magic' });
+      const tokens = await AuthService.issueTokensForUser(user);
+      return res.json({
+        access_token: tokens.accessToken,
+        access_expires_in: tokens.accessExpiresIn,
+        refresh_token: tokens.refreshToken,
+        refresh_expires_in: tokens.refreshExpiresIn,
+        user: { id: user.id, email: user.email, role: user.role }
+      });
+    } catch (e) {
+      return res.status(500).json({ error: 'Magic link login failed' });
+    }
+  },
+
   async login(req, res) {
     try {
       const { identifier, password } = req.body || {};
@@ -53,7 +94,7 @@ module.exports = {
         return res.status(400).json({ error: 'Identifier and password are required' });
       }
 
-      const result = await AuthService.authenticateUser(String(identifier).trim(), String(password));
+      const result = await AuthService.authenticateUser(String(identifier).trim(), String(password), { remember: !!req.body.remember_me });
 
       if (!result.success) {
         return res.status(result.status || 401).json({ error: result.error || 'Invalid credentials' });

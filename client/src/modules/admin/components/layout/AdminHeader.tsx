@@ -1,4 +1,6 @@
 import React from 'react';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, useTheme } from '@mui/material';
 import { Notifications, DarkMode, LightMode, Menu as MenuIcon } from '@mui/icons-material';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
@@ -8,6 +10,7 @@ interface AdminHeaderProps { onMenuClick: () => void }
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeMode();
+  const dispatch = useDispatch();
   const isDark = mode === 'dark';
 
   return (
@@ -26,6 +29,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
           </IconButton>
           <IconButton color="inherit" aria-label="Profile">
             <Avatar sx={{ width: 32, height: 32 }} />
+          </IconButton>
+          <IconButton color="inherit" aria-label="Logout" onClick={async () => { try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {} window.location.assign('/'); }}>
+            <span style={{ width: 0, height: 0 }} />
           </IconButton>
         </Box>
       </Toolbar>

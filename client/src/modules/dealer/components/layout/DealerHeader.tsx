@@ -31,6 +31,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../../core/store';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 import { clearProfile } from '../../store/dealerSlice';
+import { logoutUser } from '../../../../core/store/auth/authSlice';
 
 interface DealerHeaderProps {
   onMenuClick: () => void;
@@ -66,30 +67,12 @@ const DealerHeader: React.FC<DealerHeaderProps> = ({ onMenuClick }) => {
     setNotificationAnchor(null);
   };
 
-  const handleLogout = () => {
-    // Use the session debug approach - clear all storage
-    if (window.confirm('⚠️ Are you sure you want to logout? This will clear all session data.')) {
-      console.log('🚪 Logging out - clearing all storage...');
-      
-      // Clear all localStorage
-      localStorage.clear();
-      
-      // Clear all sessionStorage
-      sessionStorage.clear();
-      
-      // Clear Redux state
+  const handleLogout = async () => {
+    if (window.confirm('⚠️ Are you sure you want to logout?')) {
+      try { await (dispatch as any)(logoutUser()).unwrap(); } catch (_) {}
       dispatch(clearProfile());
-      
-      console.log('✅ All storage cleared, redirecting to login...');
-      
-      // Show success message
-      alert('✅ Logged out successfully! Redirecting to login...');
-      
-      // Redirect to login
-      navigate('/auth/login');
-      
-      // Close menu
       handleMenuClose();
+      window.location.assign('/');
     }
   };
 

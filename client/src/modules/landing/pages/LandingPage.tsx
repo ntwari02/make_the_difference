@@ -1132,7 +1132,7 @@ const GetStartedSection: React.FC = () => {
   const { isDarkMode } = useTheme();
 
   const handleGetStarted = () => {
-    navigate('/auth/login');
+    navigate('/login');
   };
 
   const handleLearnMore = () => {

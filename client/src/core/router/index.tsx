@@ -15,19 +15,21 @@ import { ENV } from '../config/environment';
 
 // Layout components
 import AuthLayout from '../../shared/components/layout/AuthLayout';
-
-// Auth components
 import LoginPage from '../../modules/auth/pages/LoginPage';
 import RegisterPage from '../../modules/auth/pages/RegisterPage';
+
+// Auth components
 import ForgotPasswordPage from '../../modules/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '../../modules/auth/pages/ResetPasswordPage';
 import SecurityQuestionsPage from '../../modules/auth/pages/SecurityQuestionsPage';
+// Login/Register pages removed
 
 // Main pages
 import LandingPage from '../../modules/landing/pages/LandingPage';
 
 // Error page
 import ErrorPage from '../../shared/components/ui/ErrorPage';
+import SmartRedirect from '../../shared/components/ui/SmartRedirect';
 import ProtectedRoute from './ProtectedRoute';
 
 // Dealer pages
@@ -202,30 +204,16 @@ const router = createBrowserRouter([
   },
   
   // Auth routes
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
+  // Keep remaining auth utilities under /auth
   {
     path: '/auth',
     element: <AuthLayout />,
     children: [
-      {
-        path: 'login',
-        element: <LoginPage />,
-      },
-      {
-        path: 'register',
-        element: <RegisterPage />,
-      },
-      {
-        path: 'forgot-password',
-        element: <ForgotPasswordPage />,
-      },
-      {
-        path: 'reset-password/:token',
-        element: <ResetPasswordPage />,
-      },
-      {
-        path: 'security-questions',
-        element: <SecurityQuestionsPage />,
-      },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password/:token', element: <ResetPasswordPage /> },
+      { path: 'security-questions', element: <SecurityQuestionsPage /> },
     ],
   },
   // Public browse route
@@ -892,7 +880,7 @@ const router = createBrowserRouter([
   // Catch all route
   {
     path: '*',
-    element: <ErrorPage />,
+    element: <SmartRedirect />,
   },
 ]);
 

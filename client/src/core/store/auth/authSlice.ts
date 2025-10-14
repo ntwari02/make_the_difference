@@ -60,6 +60,23 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// Handle OAuth login (data returned via postMessage)
+export const oauthLogin = createAsyncThunk(
+  'auth/oauthLogin',
+  async (payload: { access_token: string; refresh_token: string; user: { id: string; email: string; role: any } }, { rejectWithValue }) => {
+    try {
+      const { access_token, refresh_token, user } = payload;
+      setToStorage(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+      setToStorage(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+      setToStorage(STORAGE_KEYS.USER_DATA, user);
+      setToStorage('last_login', new Date().toISOString());
+      return { access_token, refresh_token, user };
+    } catch (e) {
+      return rejectWithValue('OAuth login failed');
+    }
+  }
+);
+
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (credentials: RegisterCredentials, { rejectWithValue }) => {
@@ -261,6 +278,15 @@ const authSlice = createSlice({
       // Login
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
+      })
+      // OAuth login
+      .addCase(oauthLogin.fulfilled, (state, action) => {
+        state.isAuthenticated = true;
+        state.accessToken = action.payload.access_token;
+        state.refreshToken = action.payload.refresh_token;
+        state.user = action.payload.user;
+        state.lastLogin = new Date().toISOString();
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
