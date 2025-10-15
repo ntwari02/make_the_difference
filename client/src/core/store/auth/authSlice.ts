@@ -41,8 +41,7 @@ export const loginUser = createAsyncThunk(
         const loginPayload = {
           identifier: credentials.email,
           password: credentials.password,
-          remember_me: credentials.remember_me,
-          recaptcha_token: credentials.recaptcha_token
+          remember_me: credentials.remember_me
         };
 
         // Use 4 second timeout for login to match reCAPTCHA timeout
@@ -137,8 +136,7 @@ export const registerUser = createAsyncThunk(
           first_name: credentials.first_name,
           last_name: credentials.last_name,
           phone: credentials.phone,
-          role: credentials.role || 'student',
-          recaptcha_token: (credentials as any).recaptcha_token
+          role: credentials.role || 'student'
         }, {
           timeout: 4000 // Added timeout to match login implementation
         });

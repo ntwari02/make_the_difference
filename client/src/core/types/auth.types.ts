@@ -49,7 +49,6 @@ export interface LoginCredentials {
   email: string;
   password: string;
   remember_me?: boolean;
-  recaptcha_token?: string; // v3 token
 }
 
 export interface RegisterCredentials {
@@ -59,7 +58,6 @@ export interface RegisterCredentials {
   last_name: string;
   phone?: string;
   role?: UserRole;
-  recaptcha_token?: string; // v3 token
 }
 
 export interface AuthResponse {

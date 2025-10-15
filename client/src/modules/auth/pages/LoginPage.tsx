@@ -8,7 +8,6 @@ import { loginUser, setLoading } from '../../../core/store/auth/authSlice';
 import { Box, Paper, Typography, TextField, InputAdornment, IconButton, Button, Stack, FormControlLabel, Checkbox } from '@mui/material';
 import { Email as EmailIcon, Visibility, VisibilityOff, Lock as LockIcon } from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import Recaptcha from '../components/Recaptcha';
 import { oauthLogin } from '../../../core/store/auth/authSlice';
 import { redirectToDashboard } from '../../../core/utils/roleRedirect';
 
@@ -23,7 +22,6 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [remember, setRemember] = React.useState(true);
   const [touched, setTouched] = React.useState<{ email?: boolean; password?: boolean }>({});
-  const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
   const [retryAttempt, setRetryAttempt] = React.useState(0);
   // Removed inline forgot-password modal and flows
 
@@ -108,7 +106,6 @@ const LoginPage: React.FC = () => {
       setRetryAttempt(0);
     
     const payload: any = { email, password, remember_me: remember };
-    if (recaptchaToken) payload.recaptcha_token = recaptchaToken;
     
     // Dispatch login with optimistic UI
     dispatch(loginUser(payload));
@@ -125,7 +122,6 @@ const LoginPage: React.FC = () => {
       >
         <Paper elevation={0} sx={{ width: '100%', maxWidth: 440, p: 4, borderRadius: 3, backdropFilter: 'blur(10px)', border: '1px solid rgba(0,0,0,0.06)', position: 'relative' }}>
         <Stack spacing={3} alignItems="stretch">
-          <Recaptcha onToken={setRecaptchaToken} />
           <Box sx={{ textAlign: 'center' }}>
             <Box sx={{ width: 56, height: 56, borderRadius: 3, display: 'grid', placeItems: 'center', mx: 'auto', mb: 1.5, background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: '#fff', fontSize: 26, boxShadow: '0 10px 30px rgba(59,130,246,0.35)' }}>↪</Box>
             <Typography variant="h5" fontWeight={800} gutterBottom>Sign in with email</Typography>
@@ -182,8 +178,6 @@ const LoginPage: React.FC = () => {
                   ) : 'Get Started'}
                 </Button>
               </motion.div>
-              {/* Placeholder: set recaptcha token from widget */}
-              <input type="hidden" value={recaptchaToken || ''} readOnly />
               {error && (
                 <Box sx={{ textAlign: 'center', mt: 2 }}>
                   <Typography variant="body2" color="error" sx={{ mb: 2 }}>

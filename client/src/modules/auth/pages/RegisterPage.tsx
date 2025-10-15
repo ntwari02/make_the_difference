@@ -9,7 +9,6 @@ import {
   Box, Paper, Typography, TextField, InputAdornment, IconButton, Button, Stack, MenuItem, Alert
 } from '@mui/material';
 import { Email as EmailIcon, Visibility, VisibilityOff, Lock as LockIcon, Person as PersonIcon, WorkspacePremium as RoleIcon, Phone as PhoneIcon } from '@mui/icons-material';
-import Recaptcha from '../components/Recaptcha';
 
 const RegisterPage: React.FC = () => {
   const dispatch = useDispatch<any>();
@@ -25,8 +24,6 @@ const RegisterPage: React.FC = () => {
   const [role, setRole] = React.useState('student');
   const [touched, setTouched] = React.useState<{ email?: boolean; password?: boolean; confirm?: boolean; first?: boolean; last?: boolean; role?: boolean; phone?: boolean }>({});
   const [phone, setPhone] = React.useState('');
-  const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
-  const [recaptchaError, setRecaptchaError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<1 | 2>(1);
 
   // Redirect to login after successful registration
@@ -62,9 +59,7 @@ const RegisterPage: React.FC = () => {
     }
     if (!isValid) return;
     
-    // Use the token from Recaptcha component (same as login)
     const payload: any = { email, password, first_name: firstName, last_name: lastName, phone, role };
-    if (recaptchaToken) payload.recaptcha_token = recaptchaToken;
     
     const action = await dispatch(registerUser(payload));
     if (registerUser.fulfilled.match(action)) {
@@ -79,16 +74,6 @@ const RegisterPage: React.FC = () => {
       <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
       <Paper elevation={0} sx={{ width: '100%', maxWidth: 520, p: 4, borderRadius: 3, backdropFilter: 'blur(10px)', border: '1px solid rgba(0,0,0,0.06)', position: 'relative' }}>
         <Stack spacing={3}>
-          <Recaptcha onToken={setRecaptchaToken} onError={setRecaptchaError} />
-          {recaptchaError && (
-            <Alert severity="warning" sx={{ fontSize: '12px' }}>
-              reCAPTCHA Warning: {recaptchaError}
-              <br />
-              <Button size="small" onClick={() => window.location.reload()}>
-                Refresh Page
-              </Button>
-            </Alert>
-          )}
           <Box sx={{ textAlign: 'center' }}>
             <Box sx={{ width: 56, height: 56, borderRadius: 3, display: 'grid', placeItems: 'center', mx: 'auto', mb: 1.5, background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: '#fff', fontSize: 26, boxShadow: '0 10px 30px rgba(59,130,246,0.35)' }}>＋</Box>
             <Typography variant="h5" fontWeight={800} gutterBottom>Create your account</Typography>
@@ -147,8 +132,6 @@ const RegisterPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Placeholder: set recaptcha token from widget */}
-              <input type="hidden" value={recaptchaToken || ''} readOnly />
               {error && <Typography variant="body2" color="error">{error}</Typography>}
             </Stack>
           </Box>

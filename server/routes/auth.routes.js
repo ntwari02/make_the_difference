@@ -7,7 +7,7 @@ const { verifyRecaptcha } = require('../middlewares/recaptcha.middleware');
 const router = Router();
 
 // Public routes
-router.post('/register', verifyRecaptcha, AuthController.register);
+router.post('/register', AuthController.register); // reCAPTCHA temporarily disabled
 router.post('/login', verifyRecaptcha, AuthController.login);
 router.post('/refresh', AuthController.refresh);
 router.post('/logout', AuthController.logout);
