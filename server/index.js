@@ -85,11 +85,19 @@ app.use('/api/visa', require('./routes/visa.routes'));
 app.use('/api/visa-officer', require('./routes/visa-officer.routes'));
 app.use('/api/service-fees', require('./routes/service-fee.routes'));
 app.use('/api/competitive', require('./routes/competitive-features.routes'));
+// Notifications path aliases for frontend compatibility
+app.use('/api/notifications', (req, res, next) => {
+  // Delegate to competitive routes by adjusting URL
+  req.url = '/notifications' + (req.url || '');
+  return require('./routes/competitive-features.routes')(req, res, next);
+});
 app.use('/api/advertising', require('./routes/advertising.routes'));
 app.use('/api/dealers', require('./routes/dealer.routes'));
+app.use('/api/seller', require('./routes/seller.routes'));
 app.use('/api/moderators', require('./routes/moderator.routes'));  
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/user', require('./routes/user.routes'));
 // Removed password reset and security-questions routes
 
 // Serve built client (single-service deployment)

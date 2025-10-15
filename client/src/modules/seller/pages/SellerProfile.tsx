@@ -63,10 +63,29 @@ const SellerProfile: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.seller.profile);
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [uiLoading, setUiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uiError, setUiError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Load seller profile on mount if not in store
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        dispatch(setLoading(true));
+        const data = await sellerApi.profile.getProfile();
+        if (!mounted) return;
+        dispatch(setProfile(data));
+      } catch (e: any) {
+        dispatch(setError(e?.response?.data?.message || 'Failed to load profile'));
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+    if (!profile) load();
+    return () => { mounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [formData, setFormData] = useState<ProfileFormData>({
     business_name: '',
@@ -85,6 +104,7 @@ const SellerProfile: React.FC = () => {
     business_hours: {},
     services: [],
   });
+  const [original, setOriginal] = useState<Partial<ProfileFormData> | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -105,8 +125,32 @@ const SellerProfile: React.FC = () => {
         business_hours: profile.business_hours || {},
         services: profile.services || [],
       });
+      setOriginal({
+        business_name: profile.business_name || '',
+        business_type: profile.business_type || '',
+        description: profile.description || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        country: profile.country || '',
+        postal_code: profile.postal_code || '',
+        phone: profile.phone || '',
+        email: profile.email || '',
+        website: profile.website || '',
+        logo: profile.logo || '',
+        images: profile.images || [],
+        business_hours: profile.business_hours || {},
+        services: profile.services || [],
+      });
     }
   }, [profile]);
+
+  // Auto-hide success message after a short delay
+  useEffect(() => {
+    if (!success) return;
+    const id = setTimeout(() => setSuccess(null), 3000);
+    return () => clearTimeout(id);
+  }, [success]);
 
   const handleInputChange = (field: keyof ProfileFormData, value: any) => {
     setFormData(prev => ({
@@ -115,18 +159,42 @@ const SellerProfile: React.FC = () => {
     }));
   };
 
+  const buildDiff = (): Partial<ProfileFormData> => {
+    if (!original) return formData;
+    const diff: any = {};
+    const keys: (keyof ProfileFormData)[] = ['business_name','business_type','description','address','city','state','country','postal_code','phone','email','website','logo','images','business_hours','services'];
+    keys.forEach((k) => {
+      const curr = (formData as any)[k];
+      const prev = (original as any)[k];
+      const isObj = typeof curr === 'object';
+      const changed = isObj ? JSON.stringify(curr) !== JSON.stringify(prev) : curr !== prev;
+      if (changed) diff[k] = curr;
+    });
+    return diff;
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      setError(null);
+      setUiError(null);
       setSuccess(null);
 
-      const updatedProfile = await sellerApi.profile.updateProfile(formData);
+      const payload = buildDiff();
+      const updatedProfile = await sellerApi.profile.updateProfile(payload);
       dispatch(setProfile(updatedProfile));
       setSuccess('Profile updated successfully!');
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      setError('Failed to update profile. Please try again.');
+      // Surface detailed error info for easier debugging
+      const err: any = error;
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message;
+      const validationErrors = err?.response?.data?.errors;
+      let details = '';
+      if (validationErrors && Array.isArray(validationErrors)) {
+        details = '\n' + validationErrors.map((e: any) => `${e.param || e.field || 'field'}: ${e.msg || e.message || 'invalid'}`).join('\n');
+      }
+      console.error('Failed to update profile:', { status, serverMsg, data: err?.response?.data });
+      setUiError(`Failed to update profile${status ? ` (HTTP ${status})` : ''}: ${serverMsg || 'Unknown error.'}${details}`);
     } finally {
       setSaving(false);
     }
@@ -197,9 +265,9 @@ const SellerProfile: React.FC = () => {
         </Box>
 
         {/* Alerts */}
-        {error && (
+        {uiError && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
+            {uiError}
           </Alert>
         )}
         {success && (
@@ -420,21 +488,35 @@ const SellerProfile: React.FC = () => {
                   Set your business hours for each day of the week
                 </Typography>
                 <Grid container spacing={2}>
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <Grid item xs={12} sm={6} md={4} key={day}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Typography variant="body2" sx={{ minWidth: 80 }}>
                           {day}:
                         </Typography>
-                        <TextField
-                          size="small"
-                          placeholder="9:00 AM - 6:00 PM"
-                          value={formData.business_hours[day] || ''}
-                          onChange={(e) => handleInputChange('business_hours', {
-                            ...formData.business_hours,
-                            [day]: e.target.value
-                          })}
-                        />
+                <TextField
+                  size="small"
+                  type="time"
+                  value={(formData.business_hours[day]?.open) || ''}
+                  onChange={(e) => handleInputChange('business_hours', {
+                    ...formData.business_hours,
+                    [day]: { ...(formData.business_hours[day] || {}), open: e.target.value }
+                  })}
+                  inputProps={{ step: 300 }}
+                  sx={{ width: 120 }}
+                />
+                <Typography variant="body2">to</Typography>
+                <TextField
+                  size="small"
+                  type="time"
+                  value={(formData.business_hours[day]?.close) || ''}
+                  onChange={(e) => handleInputChange('business_hours', {
+                    ...formData.business_hours,
+                    [day]: { ...(formData.business_hours[day] || {}), close: e.target.value }
+                  })}
+                  inputProps={{ step: 300 }}
+                  sx={{ width: 120 }}
+                />
                       </Box>
                     </Grid>
                   ))}

@@ -394,6 +394,22 @@ class SmartNotificationsService {
     }
   }
 
+  // Mark all notifications as read
+  async markAllAsRead(userId) {
+    try {
+      const query = `
+        UPDATE notifications
+        SET is_read = 1, read_at = NOW()
+        WHERE user_id = ? AND is_read = 0
+      `;
+      await executeQuery(query, [userId]);
+      return true;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw new Error('Failed to mark all notifications as read');
+    }
+  }
+
   // Get last notification check time
   async getLastNotificationCheck(userId, type) {
     try {

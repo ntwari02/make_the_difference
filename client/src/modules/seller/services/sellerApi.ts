@@ -14,8 +14,10 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    let token = localStorage.getItem('access_token');
     if (token) {
+      // Some storages include quotes; strip them and any whitespace
+      token = token.trim().replace(/^"+|"+$/g, '');
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -29,6 +31,7 @@ export const sellerProfileApi = {
   // Get seller profile (could be user profile or seller-specific)
   getProfile: async (): Promise<SellerProfile> => {
     const tryEndpoints = [
+      '/seller/profile',
       '/auth/profile',
       '/users/me',
       '/user/profile',
@@ -65,7 +68,8 @@ export const sellerProfileApi = {
 
   // Update seller profile
   updateProfile: async (profileData: Partial<SellerProfile>): Promise<SellerProfile> => {
-    const { data } = await api.put('/user/profile', profileData);
+    // Prefer seller business profile endpoint
+    const { data } = await api.put('/seller/profile', profileData);
     return data.data || data;
   },
 };
@@ -239,7 +243,7 @@ export const reviewApi = {
 
   // Respond to review
   respondToReview: async (reviewId: string, response: string): Promise<any> => {
-    const { data } = await api.post(`/reviews/${reviewId}/respond`, { response });
+    const { data } = await api.post(`/cars/reviews/${reviewId}/respond`, { response });
     return data.data || data;
   },
 };

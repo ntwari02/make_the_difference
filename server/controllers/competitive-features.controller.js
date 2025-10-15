@@ -114,6 +114,18 @@ class CompetitiveFeaturesController {
     }
   }
 
+  // Mark all notifications as read
+  async markAllNotificationsAsRead(req, res) {
+    try {
+      const userId = req.user.id;
+      await smartNotificationsService.markAllAsRead(userId);
+      res.json({ success: true, message: 'All notifications marked as read' });
+    } catch (error) {
+      console.error('Error in markAllNotificationsAsRead:', error);
+      res.status(500).json({ success: false, message: error.message || 'Failed to mark all as read' });
+    }
+  }
+
   // Process all notifications (admin)
   async processAllNotifications(req, res) {
     try {

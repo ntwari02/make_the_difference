@@ -53,6 +53,12 @@ router.put('/notifications/:notificationId/read',
   competitiveFeaturesController.markNotificationAsRead
 );
 
+// Extra: Mark all notifications as read
+router.patch('/notifications/mark-all-read',
+  authenticate,
+  competitiveFeaturesController.markAllNotificationsAsRead
+);
+
 // Process all notifications (admin)
 router.post('/notifications/process-all',
   authenticate,

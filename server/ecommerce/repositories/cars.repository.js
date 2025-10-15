@@ -640,6 +640,96 @@ const updateReviewStatus = async (reviewId, status, reason = null) => {
 	return reviews[0] || null;
 };
 
+// Seller analytics (cars)
+const getSellerAnalyticsStats = async (sellerId, { start_date, end_date } = {}) => {
+    const params = [sellerId];
+    let dateFilter = '';
+    if (start_date && end_date) {
+        dateFilter = ' AND c.created_at BETWEEN ? AND ?';
+        params.push(start_date, end_date);
+    }
+
+    const [inventory] = await executeQuery(`
+        SELECT 
+            COUNT(*) AS total_vehicles,
+            COUNT(CASE WHEN status = 'active' THEN 1 END) AS active_listings,
+            COUNT(CASE WHEN status = 'sold' THEN 1 END) AS sold_vehicles,
+            COALESCE(ROUND(AVG(CASE WHEN status = 'active' THEN price END), 2), 0) AS average_price
+        FROM cars c
+        WHERE c.seller_id = ?${dateFilter}
+    `, params);
+
+    const salesAgg = await executeQuery(`
+        SELECT 
+            COUNT(*) AS total_sales,
+            COALESCE(ROUND(SUM(price), 2), 0) AS total_revenue,
+            COALESCE(ROUND(AVG(price), 2), 0) AS average_sale_price
+        FROM cars c
+        WHERE c.seller_id = ? AND c.status = 'sold'${dateFilter}
+    `, params);
+
+    const recentSales = await executeQuery(`
+        SELECT id, brand, model, year, price, updated_at AS sold_at
+        FROM cars
+        WHERE seller_id = ? AND status = 'sold'${dateFilter}
+        ORDER BY updated_at DESC
+        LIMIT 10
+    `, params);
+
+    const monthlySales = await executeQuery(`
+        SELECT DATE_FORMAT(updated_at, '%Y-%m') AS month,
+               COUNT(*) AS sales_count,
+               ROUND(SUM(price), 2) AS monthly_revenue
+        FROM cars
+        WHERE seller_id = ? AND status = 'sold'${dateFilter}
+        GROUP BY DATE_FORMAT(updated_at, '%Y-%m')
+        ORDER BY month ASC
+    `, params);
+
+    return {
+        inventory: inventory || { total_vehicles: 0, active_listings: 0, sold_vehicles: 0, average_price: 0 },
+        sales: salesAgg[0] || { total_sales: 0, total_revenue: 0, average_sale_price: 0 },
+        recent_sales: recentSales,
+        monthly_sales: monthlySales
+    };
+};
+
+const getSellerAnalyticsSeries = async (sellerId, { start_date, end_date } = {}) => {
+    const params = [sellerId];
+    let dateFilter = '';
+    if (start_date && end_date) {
+        dateFilter = ' AND c.updated_at BETWEEN ? AND ?';
+        params.push(start_date, end_date);
+    }
+
+    const salesByPeriod = await executeQuery(`
+        SELECT DATE_FORMAT(updated_at, '%Y-%m') AS period,
+               COUNT(*) AS sales_count,
+               ROUND(SUM(price), 2) AS total_revenue,
+               ROUND(AVG(price), 2) AS average_price
+        FROM cars c
+        WHERE c.seller_id = ? AND c.status = 'sold'${dateFilter}
+        GROUP BY DATE_FORMAT(updated_at, '%Y-%m')
+        ORDER BY period ASC
+    `, params);
+
+    const topSelling = await executeQuery(`
+        SELECT brand AS make, model, COUNT(*) AS sales_count,
+               ROUND(SUM(price), 2) AS total_revenue,
+               ROUND(AVG(price), 2) AS average_price
+        FROM cars c
+        WHERE c.seller_id = ? AND c.status = 'sold'${dateFilter}
+        GROUP BY brand, model
+        ORDER BY sales_count DESC
+        LIMIT 10
+    `, params);
+
+    return {
+        sales_by_period: salesByPeriod,
+        top_selling_models: topSelling
+    };
+};
+
 module.exports = {
 	listCars,
 	searchCars,
@@ -665,5 +755,7 @@ module.exports = {
 	forceUpdateCar,
 	forceDeleteCar,
 	getAllReviews,
-	updateReviewStatus
+	updateReviewStatus,
+	getSellerAnalyticsStats,
+	getSellerAnalyticsSeries
 };

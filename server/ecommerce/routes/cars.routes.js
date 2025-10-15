@@ -24,11 +24,18 @@ router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), v.validate
 router.delete('/:id', authenticate, authorizeRoles('seller', 'admin'), ctrl.deleteCar);
 router.get('/seller/my-cars', authenticate, authorizeRoles('seller', 'admin'), ctrl.getMyCars);
 
+// Seller analytics (cars)
+router.get('/seller/analytics/stats', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerAnalyticsStats);
+router.get('/seller/analytics', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerAnalyticsSeries);
+
 // Buyer routes (authentication required)
 router.post('/:id/favorite', authenticate, authorizeRoles('buyer', 'admin'), ctrl.addToFavorites);
 router.delete('/:id/favorite', authenticate, authorizeRoles('buyer', 'admin'), ctrl.removeFromFavorites);
 router.get('/buyer/favorites', authenticate, authorizeRoles('buyer', 'admin'), ctrl.getFavorites);
 router.post('/:id/review', authenticate, authorizeRoles('buyer', 'admin'), v.validateCreateReview, handleValidation, ctrl.createReview);
+
+// Seller review reply
+router.post('/reviews/:reviewId/respond', authenticate, authorizeRoles('seller', 'admin'), v.validateCreateReview, handleValidation, ctrl.respondToReview);
 
 // Admin routes - Full e-commerce management access
 router.patch('/:id/status', authenticate, authorizeRoles('admin'), v.validateUpdateStatus, handleValidation, ctrl.updateCarStatus);
