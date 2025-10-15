@@ -6,12 +6,9 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Avatar,
   Alert,
   Chip,
-  IconButton,
-  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -24,13 +21,7 @@ import {
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Edit as EditIcon,
-  Business as BusinessIcon,
   LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  Language as WebsiteIcon,
-  Schedule as ScheduleIcon,
   Star as StarIcon,
   CheckCircle as VerifiedIcon,
   Warning as WarningIcon,
@@ -63,7 +54,7 @@ const SellerProfile: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.seller.profile);
   const [activeTab, setActiveTab] = useState(0);
-  const [uiLoading, setUiLoading] = useState(false);
+  // const [uiLoading, setUiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -210,24 +201,7 @@ const SellerProfile: React.FC = () => {
     'Service Center',
   ];
 
-  const countries = [
-    'United States',
-    'Canada',
-    'United Kingdom',
-    'Australia',
-    'Germany',
-    'France',
-    'Italy',
-    'Spain',
-    'Netherlands',
-    'Belgium',
-    'Switzerland',
-    'Austria',
-    'Sweden',
-    'Norway',
-    'Denmark',
-    'Finland',
-  ];
+  // countries list removed (unused)
 
   const usStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -329,7 +303,7 @@ const SellerProfile: React.FC = () => {
         <Paper sx={{ mb: 3 }}>
           <Tabs
             value={activeTab}
-            onChange={(e, newValue) => setActiveTab(newValue)}
+            onChange={(_, newValue) => setActiveTab(newValue)}
             variant="fullWidth"
           >
             <Tab label="Business Information" />
@@ -345,25 +319,33 @@ const SellerProfile: React.FC = () => {
           {activeTab === 0 && (
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight={600}>
+                <Typography variant="h6" gutterBottom fontWeight={600} sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
                   Business Information
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 3,
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                  }}
+                >
+                  <Box>
                     <TextField
                       fullWidth
                       label="Business Name"
+                      size="small"
                       value={formData.business_name}
                       onChange={(e) => handleInputChange('business_name', e.target.value)}
                       required
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                  </Box>
+                  <Box>
                     <FormControl fullWidth>
                       <InputLabel>Business Type</InputLabel>
                       <Select
                         value={formData.business_type}
                         label="Business Type"
+                        size="small"
                         onChange={(e) => handleInputChange('business_type', e.target.value)}
                       >
                         {businessTypes.map((type) => (
@@ -373,28 +355,30 @@ const SellerProfile: React.FC = () => {
                         ))}
                       </Select>
                     </FormControl>
-                  </Grid>
-                  <Grid item xs={12}>
+                  </Box>
+                  <Box sx={{ gridColumn: '1 / -1' }}>
                     <TextField
                       fullWidth
                       multiline
-                      rows={4}
+                      rows={3}
                       label="Business Description"
+                      size="small"
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       placeholder="Describe your business, experience, and what makes you unique..."
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Logo URL"
+                      size="small"
                       value={formData.logo}
                       onChange={(e) => handleInputChange('logo', e.target.value)}
                       placeholder="https://example.com/logo.jpg"
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
           )}
@@ -406,24 +390,24 @@ const SellerProfile: React.FC = () => {
                 <Typography variant="h6" gutterBottom fontWeight={600}>
                   Contact Information
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
+                <Box sx={{ display: 'grid', gap: 3 }}>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Business Address"
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="City"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
+                  </Box>
+                  <Box>
                     <FormControl fullWidth>
                       <InputLabel>State</InputLabel>
                       <Select
@@ -438,32 +422,32 @@ const SellerProfile: React.FC = () => {
                         ))}
                       </Select>
                     </FormControl>
-                  </Grid>
-                  <Grid item xs={12} md={4}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Postal Code"
                       value={formData.postal_code}
                       onChange={(e) => handleInputChange('postal_code', e.target.value)}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Phone Number"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Email Address"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </Box>
+                  <Box>
                     <TextField
                       fullWidth
                       label="Website"
@@ -471,8 +455,8 @@ const SellerProfile: React.FC = () => {
                       onChange={(e) => handleInputChange('website', e.target.value)}
                       placeholder="https://yourwebsite.com"
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
           )}
@@ -487,9 +471,9 @@ const SellerProfile: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Set your business hours for each day of the week
                 </Typography>
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'grid', gap: 2 }}>
           {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
-                    <Grid item xs={12} sm={6} md={4} key={day}>
+                    <Box key={day}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Typography variant="body2" sx={{ minWidth: 80 }}>
                           {day}:
@@ -518,9 +502,9 @@ const SellerProfile: React.FC = () => {
                   sx={{ width: 120 }}
                 />
                       </Box>
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               </CardContent>
             </Card>
           )}
@@ -535,7 +519,7 @@ const SellerProfile: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Select the services your business provides
                 </Typography>
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'grid', gap: 2 }}>
                   {[
                     'Car Sales',
                     'Financing',
@@ -550,7 +534,7 @@ const SellerProfile: React.FC = () => {
                     'Extended Warranty',
                     'GAP Insurance',
                   ].map((service) => (
-                    <Grid item xs={12} sm={6} md={4} key={service}>
+                    <Box key={service}>
                       <FormControlLabel
                         control={
                           <Switch
@@ -565,9 +549,9 @@ const SellerProfile: React.FC = () => {
                         }
                         label={service}
                       />
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               </CardContent>
             </Card>
           )}
