@@ -1,28 +1,28 @@
--- Normalize existing values to UI labels first (prevents enum duplicate errors)
-ALTER TABLE sellers
-  MODIFY COLUMN business_type VARCHAR(50) NULL;
+-- Seller schema adjustments (only modify existing tables; no CREATE TABLE here)
 
--- Map legacy/lowercase to UI labels
-UPDATE sellers SET business_type = 'Dealership'          WHERE business_type IN ('dealership','dealer');
-UPDATE sellers SET business_type = 'Independent Seller'  WHERE business_type IN ('individual','independent','private','Independent seller','independent seller');
-UPDATE sellers SET business_type = 'Auto Broker'         WHERE business_type IN ('broker','car broker','auto broker');
-UPDATE sellers SET business_type = 'Car Rental'          WHERE business_type IN ('car rental','rental');
-UPDATE sellers SET business_type = 'Fleet Management'    WHERE business_type IN ('fleet management','fleet');
-UPDATE sellers SET business_type = 'Parts Dealer'        WHERE business_type IN ('parts dealer','parts');
-UPDATE sellers SET business_type = 'Service Center'      WHERE business_type IN ('service center','service');
+-- cars: columns
+ALTER TABLE cars ADD COLUMN currency CHAR(3) NOT NULL DEFAULT 'USD';
+ALTER TABLE cars ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE cars ADD COLUMN images JSON NOT NULL;
+ALTER TABLE cars ADD COLUMN features JSON NOT NULL;
+ALTER TABLE cars ADD COLUMN engine_size VARCHAR(20) NULL;
+ALTER TABLE cars ADD COLUMN horsepower INT NULL;
+ALTER TABLE cars ADD COLUMN vin VARCHAR(17) NULL;
 
--- Fallback any unknowns/nulls to a default UI label
-UPDATE sellers
-SET business_type = 'Independent Seller'
-WHERE business_type IS NULL
-   OR business_type NOT IN (
-     'Independent Seller','Dealership','Auto Broker','Car Rental',
-     'Fleet Management','Parts Dealer','Service Center'
-   );
+-- cars: indexes
+CREATE INDEX idx_cars_seller ON cars (seller_id);
+CREATE INDEX idx_cars_status ON cars (status);
+CREATE INDEX idx_cars_brand_model ON cars (brand, model);
 
--- Recreate the enum with ONLY the UI labels (no lowercase duplicates)
-ALTER TABLE sellers
-  MODIFY COLUMN business_type ENUM(
-    'Independent Seller','Dealership','Auto Broker','Car Rental',
-    'Fleet Management','Parts Dealer','Service Center'
-  ) DEFAULT 'Independent Seller';
+-- car_favorites: indexes
+CREATE UNIQUE INDEX uniq_user_car ON car_favorites (user_id, car_id);
+CREATE INDEX idx_car_fav_user ON car_favorites (user_id);
+CREATE INDEX idx_car_fav_car ON car_favorites (car_id);
+
+-- car_reviews: columns
+ALTER TABLE car_reviews ADD COLUMN status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved';
+ALTER TABLE car_reviews ADD COLUMN admin_reason VARCHAR(255) NULL;
+
+-- car_reviews: indexes
+CREATE INDEX idx_car_reviews_car ON car_reviews (car_id);
+CREATE INDEX idx_car_reviews_user ON car_reviews (user_id);

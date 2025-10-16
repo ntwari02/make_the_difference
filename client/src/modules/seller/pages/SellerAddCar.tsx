@@ -106,8 +106,29 @@ const SellerAddCar: React.FC = () => {
   const onSubmit = async (data: CarForm) => {
     setSaving(true);
     try {
-      // Compose payload expected by API. Images are preview-only here.
-      const payload = { ...data, images: [] } as any;
+      // Map UI form fields to backend's expected payload shape
+      const payload = {
+        title: data.title || `${data.make || ''} ${data.model || ''}`.trim(),
+        brand: data.make,
+        model: data.model,
+        year: data.year ? Number(data.year) : undefined,
+        mileage: data.mileage ? Number(data.mileage) : 0,
+        price: data.price ? Number(data.price) : 0,
+        currency: 'USD',
+        // Backend expects lowercase enums
+        transmission: (data.transmission || '').toString().toLowerCase() === 'automatic' ? 'automatic' : (data.transmission || '').toString().toLowerCase() === 'manual' ? 'manual' : 'manual',
+        fuel_type: (data.fuelType || '').toString().toLowerCase() || 'petrol',
+        // Provide sensible defaults for required fields not in the form yet
+        body_type: 'sedan',
+        car_condition: 'used',
+        color: 'Unknown',
+        location: data.location,
+        description: data.description || null,
+        // Images are preview-only here; send empty array for now
+        images: [],
+        // Map features array of strings; backend expects JSON array
+        features: Array.isArray(data.features) ? data.features : [],
+      } as any;
       await sellerApi.cars.createCar(payload);
       // Refresh cars list optimistically
       const listRes = await sellerApi.cars.getMyCars({ page: 1, limit: 50 });

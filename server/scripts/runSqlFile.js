@@ -56,13 +56,19 @@ async function runSqlFile(filePath) {
           console.log(`✅ Statement ${i + 1} executed successfully`);
         } catch (error) {
           console.error(`❌ Error executing statement ${i + 1}:`, error.message);
-          // Continue with other statements unless it's a critical error
+          // Continue with other statements for non-fatal, idempotent errors
           if (error.code === 'ER_TABLE_EXISTS_ERROR') {
             console.log('⚠️  Table already exists, continuing...');
           } else if (error.code === 'ER_FK_CANNOT_DROP_PARENT') {
             console.log('⚠️  Cannot drop table due to foreign key constraint, continuing...');
           } else if (error.code === 'ER_NO_SUCH_TABLE') {
             console.log('⚠️  Table does not exist, continuing...');
+          } else if (error.code === 'ER_DUP_FIELDNAME') { // 1060 Duplicate column
+            console.log('⚠️  Column already exists, continuing...');
+          } else if (error.code === 'ER_DUP_KEYNAME') { // 1061 Duplicate index name
+            console.log('⚠️  Index already exists, continuing...');
+          } else if (error.code === 'ER_CANT_CREATE_TABLE') {
+            console.log('⚠️  Cannot create table, continuing...');
           } else {
             throw error;
           }

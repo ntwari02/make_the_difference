@@ -75,6 +75,23 @@ const getSellerProfile = async (userId) => {
   };
 };
 
+const normalizeBusinessType = (value) => {
+  const v = String(value || '').trim();
+  if (!v) return null;
+  // Accept any of the known enum variants across environments
+  const allowed = new Set([
+    'dealership', 'private_seller', 'auction_house', 'rental_company',
+    'Independent Seller', 'Dealership', 'Auto Broker', 'Car Rental', 'Fleet Management', 'Parts Dealer', 'Service Center',
+    'company', 'agency', 'individual', 'nonprofit'
+  ]);
+  if (allowed.has(v)) return v;
+  // Map common aliases
+  const lower = v.toLowerCase();
+  if (lower === 'individual' || lower === 'independent') return 'private_seller';
+  if (lower === 'dealer') return 'dealership';
+  return null; // let DB accept NULL when enum mismatch to avoid truncation
+};
+
 const upsertSellerProfile = async (userId, data = {}) => {
   const existing = await executeQuery(`SELECT id FROM sellers WHERE user_id = ?`, [userId]);
   const json = (v) => (v === undefined ? null : JSON.stringify(v));
@@ -88,7 +105,7 @@ const upsertSellerProfile = async (userId, data = {}) => {
     `, [
       id, userId,
       data.business_name || 'Seller',
-      data.business_type || 'individual',
+      normalizeBusinessType(data.business_type),
       data.license_number || null,
       data.description || null,
       data.address || null,
@@ -117,7 +134,7 @@ const upsertSellerProfile = async (userId, data = {}) => {
       }
     };
     assign('business_name', data.business_name);
-    assign('business_type', data.business_type);
+    if (data.business_type !== undefined) assign('business_type', normalizeBusinessType(data.business_type));
     assign('license_number', data.license_number);
     assign('description', data.description);
     assign('address', data.address);
