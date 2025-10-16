@@ -108,6 +108,10 @@ const aiConfig = {
       error_rate: parseFloat(process.env.AI_MONITORING_ERROR_RATE || '0.05'),
       accuracy_drop: parseFloat(process.env.AI_MONITORING_ACCURACY_DROP || '0.1')
     },
+    alerting: {
+      cooldown_minutes: parseInt(process.env.AI_ALERT_COOLDOWN_MINUTES || '10'),
+      accuracy_min_samples: parseInt(process.env.AI_ACCURACY_MIN_SAMPLES || '20')
+    },
     logging: {
       level: process.env.AI_LOGGING_LEVEL || 'info',
       include_predictions: process.env.AI_LOGGING_PREDICTIONS === 'true' || false,

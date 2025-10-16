@@ -439,10 +439,15 @@ class PerformanceMonitor {
 
   async checkAccuracyAlerts(threshold) {
     try {
+      const minSamples = aiConfig.config.monitoring.alerting?.accuracy_min_samples || 20;
+      const cooldownMinutes = aiConfig.config.monitoring.alerting?.cooldown_minutes || 10;
+
       const query = `
         SELECT 
           service_name,
-          AVG(JSON_EXTRACT(metric_value, '$.accuracy')) as avg_accuracy
+          AVG(JSON_EXTRACT(metric_value, '$.accuracy')) as avg_accuracy,
+          COUNT(*) as samples,
+          MAX(timestamp) as last_sample_ts
         FROM ai_system_metrics 
         WHERE metric_type = 'accuracy' 
         AND timestamp >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
@@ -452,13 +457,34 @@ class PerformanceMonitor {
       const results = await executeQuery(query);
       
       for (const result of results) {
-        if (result.avg_accuracy < threshold) {
+        const serviceName = result.service_name;
+        const avgAccuracy = Number(result.avg_accuracy || 0);
+        const samples = Number(result.samples || 0);
+        if (!Number.isFinite(avgAccuracy) || samples < minSamples) {
+          // Skip alerting if not enough data or invalid value
+          continue;
+        }
+
+        // Cooldown check: avoid spamming alerts for the same service/type
+        const recentAlertQuery = `
+          SELECT timestamp FROM ai_system_metrics
+          WHERE metric_type = 'alert'
+            AND metric_name = ?
+            AND timestamp >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+          ORDER BY timestamp DESC
+          LIMIT 1
+        `;
+        const recent = await executeQuery(recentAlertQuery, [`${serviceName}_alert_accuracy_drop`, cooldownMinutes]);
+        const inCooldown = Array.isArray(recent) && recent.length > 0;
+        if (inCooldown) continue;
+
+        if (avgAccuracy < threshold) {
           await this.createAlert({
             type: 'accuracy_drop',
-            service: result.service_name,
-            value: result.avg_accuracy,
+            service: serviceName,
+            value: avgAccuracy,
             threshold: threshold,
-            message: `Accuracy dropped below threshold: ${(result.avg_accuracy * 100).toFixed(2)}% < ${(threshold * 100).toFixed(2)}%`
+            message: `Accuracy dropped below threshold: ${(avgAccuracy * 100).toFixed(2)}% < ${(threshold * 100).toFixed(2)}% (n=${samples})`
           });
         }
       }
