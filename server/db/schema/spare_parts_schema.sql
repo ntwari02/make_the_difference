@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS spare_parts (
     features JSON, -- Key features array
     warranty_period INT, -- in months
     warranty_type ENUM('manufacturer', 'seller', 'extended') DEFAULT 'manufacturer',
-    condition ENUM('new', 'refurbished', 'used', 'remanufactured') DEFAULT 'new',
+    `condition` ENUM('new', 'refurbished', 'used', 'remanufactured') DEFAULT 'new',
     stock_quantity INT DEFAULT 0,
     min_stock_level INT DEFAULT 5,
     max_stock_level INT DEFAULT 1000,

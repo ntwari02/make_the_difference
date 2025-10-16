@@ -83,6 +83,15 @@ app.use(rateLimit({
   },
 }));
 
+// Request logging (Morgan)
+try {
+  const morgan = require('morgan');
+  const format = process.env.MORGAN_FORMAT || (isDevelopment ? 'dev' : 'combined');
+  app.use(morgan(format));
+} catch (e) {
+  console.warn('Morgan not installed; skipping HTTP request logging');
+}
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 

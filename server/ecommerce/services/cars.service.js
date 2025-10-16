@@ -167,8 +167,13 @@ const updateCarStatus = async (carId, status, reason = null) => {
 	if (!validStatuses.includes(status)) {
 		throw new Error('Invalid status');
 	}
-
-	return carsRepo.updateCarStatus(carId, status, reason);
+    const updated = await carsRepo.updateCarStatus(carId, status, reason);
+    // If sold, set sold_at timestamp if not already set
+    if (updated && status === 'sold' && !updated.sold_at) {
+        await carsRepo.updateCar(carId, { sold_at: new Date() });
+        return carsRepo.getCarById(carId);
+    }
+    return updated;
 };
 
 const getPendingCars = async (filters = {}) => {

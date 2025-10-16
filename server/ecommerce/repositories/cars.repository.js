@@ -219,8 +219,8 @@ const updateCar = async (carId, updateData) => {
 	const allowedFields = [
 		'title', 'description', 'brand', 'model', 'year', 'mileage', 'price',
 		'currency', 'car_condition', 'fuel_type', 'transmission', 'body_type',
-		'color', 'engine_size', 'horsepower', 'vin', 'location', 'latitude',
-		'longitude', 'images', 'features', 'is_featured'
+        'color', 'engine_size', 'horsepower', 'vin', 'location', 'latitude',
+        'longitude', 'images', 'features', 'is_featured', 'sold_at'
 	];
 
 	const updateFields = [];
@@ -228,7 +228,7 @@ const updateCar = async (carId, updateData) => {
 
 	for (const [key, value] of Object.entries(updateData)) {
 		if (allowedFields.includes(key)) {
-			if (key === 'images' || key === 'features') {
+            if (key === 'images' || key === 'features') {
 				updateFields.push(`${key} = ?`);
 				params.push(JSON.stringify(value));
 			} else {

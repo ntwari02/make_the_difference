@@ -248,6 +248,22 @@ export const reviewApi = {
   },
 };
 
+// Spare parts APIs
+export const sparePartsApi = {
+  createPart: async (partData: any): Promise<any> => {
+    const { data } = await api.post('/spare-parts', partData);
+    return data.data || data;
+  },
+  getBrands: async (): Promise<Array<{ id: string; name: string }>> => {
+    const { data } = await api.get('/spare-parts/brands');
+    return (data.data || data) as any;
+  },
+  getCategories: async (): Promise<Array<{ id: string; name: string }>> => {
+    const { data } = await api.get('/spare-parts/categories');
+    return (data.data || data) as any;
+  },
+};
+
 // Main seller API object
 export const sellerApi = {
   profile: sellerProfileApi,
@@ -257,4 +273,5 @@ export const sellerApi = {
   activities: activityApi,
   favorites: favoritesApi,
   reviews: reviewApi,
+  parts: sparePartsApi,
 };
