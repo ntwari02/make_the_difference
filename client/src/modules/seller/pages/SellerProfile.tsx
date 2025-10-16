@@ -98,6 +98,25 @@ const SellerProfile: React.FC = () => {
   const [original, setOriginal] = useState<Partial<ProfileFormData> | null>(null);
 
   useEffect(() => {
+    // Load profile on mount if not in store
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await sellerApi.profile.getProfile();
+        dispatch(setProfile(data as any));
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        setError('Failed to load profile.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!profile) {
+      loadProfile();
+    }
+
     if (profile) {
       setFormData({
         business_name: profile.business_name || '',

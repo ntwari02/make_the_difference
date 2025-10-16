@@ -47,6 +47,7 @@ const SellerDashboard: React.FC = () => {
   const cars = useSelector((state: RootState) => state.seller.cars);
   const profile = useSelector((state: RootState) => state.seller.profile);
   const analytics = useSelector((state: RootState) => state.seller.analytics);
+  const stats = useSelector((state: RootState) => state.seller.stats);
 
   const [localLoading, setLocalLoading] = useState(true);
 
@@ -58,42 +59,26 @@ const SellerDashboard: React.FC = () => {
     try {
       dispatch(setSellerLoading(true));
       
-
-      const [carsRes, analyticsRes] = await Promise.allSettled([
+      // Load seller statistics and analytics using the new API
+      const [carsRes, statsRes, analyticsRes] = await Promise.allSettled([
         sellerApi.cars.getMyCars({ page: 1, limit: 50 }),
+        sellerApi.analytics.getSellerStats(),
         sellerApi.analytics.getSellerAnalytics({ period: '12m' }),
       ]);
 
       if (carsRes.status === 'fulfilled') {
         dispatch(setCars(carsRes.value.cars || []));
-        // Compute stats from cars
-        const total = (carsRes.value.cars || []).length;
-        const active = (carsRes.value.cars || []).filter((c: any) => c.status === 'active').length;
-        const sold = (carsRes.value.cars || []).filter((c: any) => c.status === 'sold').length;
-        const avgPrice = (carsRes.value.cars || []).length
-          ? Math.round((carsRes.value.cars || []).reduce((s: number, c: any) => s + (c.price || 0), 0) / (carsRes.value.cars || []).length)
-          : 0;
-        dispatch(setStats({
-          inventory: {
-            total_vehicles: total,
-            active_listings: active,
-            sold_vehicles: sold,
-            average_price: avgPrice,
-          },
-          sales: {
-            total_sales: sold,
-            total_revenue: (carsRes.value.cars || []).filter((c: any) => c.status === 'sold').reduce((s: number, c: any) => s + (c.price || 0), 0),
-            average_sale_price: sold ? Math.round((carsRes.value.cars || []).filter((c: any) => c.status === 'sold').reduce((s: number, c: any) => s + (c.price || 0), 0) / sold) : 0,
-          },
-          recent_sales: (carsRes.value.cars || []).filter((c: any) => c.status === 'sold').slice(0, 5),
-          monthly_sales: [],
-        } as any));
+      }
+
+      if (statsRes.status === 'fulfilled') {
+        dispatch(setStats(statsRes.value));
       }
 
       if (analyticsRes.status === 'fulfilled') {
         dispatch(setAnalytics(analyticsRes.value));
       }
     } catch (e: any) {
+      console.error('Error loading dashboard:', e);
       dispatch(setSellerError(e?.message || 'Failed to load dashboard'));
     } finally {
       dispatch(setSellerLoading(false));
@@ -102,12 +87,13 @@ const SellerDashboard: React.FC = () => {
   };
 
   const kpis = useMemo(() => {
-    const total = cars.length;
-    const active = cars.filter((c: any) => c.status === 'active').length;
-    const sold = cars.filter((c: any) => c.status === 'sold').length;
-    const avgPrice = total ? Math.round(cars.reduce((s: number, c: any) => s + (c.price || 0), 0) / total) : 0;
-    return { total, active, sold, avgPrice };
-  }, [cars]);
+    return {
+      total: stats?.inventory?.total_vehicles || 0,
+      active: stats?.inventory?.active_listings || 0,
+      sold: stats?.inventory?.sold_vehicles || 0,
+      avgPrice: stats?.inventory?.average_price || 0,
+    };
+  }, [stats]);
 
   // No-op: top listings UI removed for now
 
@@ -378,7 +364,7 @@ const SellerDashboard: React.FC = () => {
                 <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>Performance Score</Typography>
                 <Typography variant="caption" color="text.secondary">Close ratio</Typography>
                 <Box sx={{ display: 'grid', placeItems: 'center', height: 180 }}>
-                  <Gauge value={75} />
+                  <Gauge value={stats?.performance?.score || 0} />
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
                   <Typography variant="caption" color="text.secondary">0%</Typography>

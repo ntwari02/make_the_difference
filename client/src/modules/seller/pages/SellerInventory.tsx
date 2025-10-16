@@ -55,15 +55,7 @@ const SellerInventory: React.FC = () => {
   const [cardMenuAnchor, setCardMenuAnchor] = useState<Record<string, HTMLElement | null>>({});
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
 
-  // Sample data fallback for demo/empty states
-  const mockCars: Car[] = useMemo(() => ([
-    { id: 'm1', seller_id: 's1', title: '2019 Toyota Corolla LE', brand: 'Toyota', model: 'Corolla', year: 2019, mileage: 38500, price: 15900, status: 'active', location: 'Chicago, IL', images: ['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Silver', features: ['Bluetooth','Backup camera'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm2', seller_id: 's1', title: '2020 Honda Civic Sport', brand: 'Honda', model: 'Civic', year: 2020, mileage: 24000, price: 18750, status: 'active', location: 'Austin, TX', images: ['https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Blue', features: ['CarPlay','Heated seats'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm3', seller_id: 's1', title: '2018 Ford Focus SE', brand: 'Ford', model: 'Focus', year: 2018, mileage: 52500, price: 12990, status: 'pending', location: 'Miami, FL', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Hatchback', color: 'Red', features: ['Bluetooth'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm4', seller_id: 's1', title: '2017 BMW 330i', brand: 'BMW', model: '3 Series', year: 2017, mileage: 61000, price: 23400, status: 'draft', location: 'New York, NY', images: ['https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Black', features: ['Sunroof','Navigation'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm5', seller_id: 's1', title: '2019 Mercedes C300', brand: 'Mercedes', model: 'C-Class', year: 2019, mileage: 41000, price: 26800, status: 'active', location: 'Seattle, WA', images: ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'White', features: ['Leather','CarPlay'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm6', seller_id: 's1', title: '2021 Tesla Model 3', brand: 'Tesla', model: 'Model 3', year: 2021, mileage: 12000, price: 34900, status: 'sold', location: 'San Jose, CA', images: ['https://images.unsplash.com/photo-1511390428939-6b0f04096b4a?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Electric', transmission: 'Automatic', body_type: 'Sedan', color: 'White', features: ['Autopilot'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  ]), []);
+  // No mock fallback: show only real API data
 
   const filtered = useMemo(() => {
     return cars.filter((c) =>
@@ -82,15 +74,13 @@ const SellerInventory: React.FC = () => {
       setLoading(true);
       const res = await sellerApi.cars.getMyCars({ page: 1, limit: 100 });
       const list = res.cars || [];
-      // If API returns empty, show mock cars so the UI is illustrative
-      const withFallback = list.length > 0 ? list : mockCars;
-      setLocalCars(withFallback);
-      dispatch(setCars(withFallback));
+      setLocalCars(list);
+      dispatch(setCars(list));
     } catch (e) {
       console.error(e);
-      // On error, still show mock cars
-      setLocalCars(mockCars);
-      dispatch(setCars(mockCars));
+      // On error, show empty list to avoid mixing mock data
+      setLocalCars([]);
+      dispatch(setCars([]));
     } finally {
       setLoading(false);
     }

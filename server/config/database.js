@@ -68,6 +68,21 @@ function buildDbConfigFromEnv() {
 // MySQL Database Configuration
 const dbConfig = buildDbConfigFromEnv();
 
+// Log sanitized DB configuration for visibility (no secrets)
+try {
+  const safeInfo = {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    database: dbConfig.database,
+    user: dbConfig.user ? '[set]' : '[missing]',
+    ssl: !!dbConfig.ssl
+  };
+  console.log('🗄️  Database config:', safeInfo);
+  if (dbConfig.host === 'tramway.proxy.rlwy.net') {
+    console.warn('⚠️  DB host is set to tramway.proxy.rlwy.net which failed to resolve. Update your .env to a valid host.');
+  }
+} catch {}
+
 // Create connection pool with enhanced error handling
 const pool = mysql.createPool(dbConfig);
 

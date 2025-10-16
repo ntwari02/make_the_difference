@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
@@ -60,17 +58,7 @@ app.use(cors({
 }));
 
 // Middleware
-app.disable('x-powered-by');
-app.use(helmet({
-  contentSecurityPolicy: false, // keep simple defaults; tighten per frontend as needed
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
-
-const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-const maxReqs = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
-app.use(rateLimit({ windowMs, max: maxReqs, standardHeaders: true, legacyHeaders: false }));
-
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
@@ -87,51 +75,39 @@ app.use('/api/online-classes', require('./elearning/routes/online-classes.routes
 app.use('/api/certificates', require('./elearning/routes/certificate.routes'));
 app.use('/api/elearning-payments', require('./elearning/routes/elearning-payment.routes'));
 app.use('/api/cars', require('./ecommerce/routes/cars.routes'));
+app.use('/api/seller/analytics', require('./ecommerce/routes/seller-analytics.routes'));
 app.use('/api/recommendations', require('./ecommerce/routes/recommendations.routes'));
 app.use('/api/search', require('./ecommerce/routes/advanced-search.routes'));
 app.use('/api/payments', require('./ecommerce/routes/payment.routes'));
 app.use('/api/enhanced-payments', require('./ecommerce/routes/enhanced-payment.routes'));
 app.use('/api/spare-parts', require('./ecommerce/routes/spare-parts.routes'));
+app.use('/api/notifications', require('./routes/notifications.routes'));
+app.use('/api/activities', require('./routes/activities.routes'));
 app.use('/api/scholarships', require('./routes/scholarship.routes'));
 app.use('/api/visa', require('./routes/visa.routes'));
 app.use('/api/visa-officer', require('./routes/visa-officer.routes'));
 app.use('/api/service-fees', require('./routes/service-fee.routes'));
 app.use('/api/competitive', require('./routes/competitive-features.routes'));
-// Notifications path aliases for frontend compatibility
-app.use('/api/notifications', (req, res, next) => {
-  // Delegate to competitive routes by adjusting URL
-  req.url = '/notifications' + (req.url || '');
-  return require('./routes/competitive-features.routes')(req, res, next);
-});
 app.use('/api/advertising', require('./routes/advertising.routes'));
 app.use('/api/dealers', require('./routes/dealer.routes'));
-app.use('/api/seller', require('./routes/seller.routes'));
-app.use('/api/moderators', require('./routes/moderator.routes'));  
+app.use('/api/moderators', require('./routes/moderator.routes'));
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/user', require('./routes/user.routes'));
-// Removed password reset and security-questions routes
-
-// Centralized error handler (must be after routes)
-// Ensure we don't leak internals (SQL, stack traces)
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  const status = err.status || 500;
-  const code = err.code || 'INTERNAL_SERVER_ERROR';
-  const message = status < 500 ? (err.message || 'Request failed') : 'Unexpected error occurred';
-  if (process.env.LOG_LEVEL !== 'silent') {
-    console.error('Error:', { status, code, message: err.message, stack: err.stack });
-  }
-  res.status(status).json({ error: { code, message } });
-});
+app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
+app.use('/api/password-reset', require('./routes/passwordReset.routes'));
 
 // Serve built client (single-service deployment)
 const staticDir = path.join(__dirname, 'public');
 app.use(express.static(staticDir));
 
-// SPA fallback: send index.html for all non-API routes that don't exist as static files (Express 5 compatible)
-app.get(/^\/(?!api\/).*/, (req, res, next) => {
+// SPA fallback: send index.html for all non-API routes that don't exist as static files
+app.use((req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) return next();
 
+  // If this looks like a static asset request (has an extension or is under /assets/),
+  // don't return index.html when the file is missing — return 404 instead so the
+  // browser doesn't receive HTML where it expects CSS/JS (which causes MIME errors).
   const looksLikeAsset = req.path.startsWith('/assets/') || path.extname(req.path) !== '';
   const filePath = path.join(staticDir, req.path);
 
@@ -242,13 +218,17 @@ const gracefulShutdown = (server) => {
   try {
     // Test database connection
     const dbConnected = await testConnection();
-    
-    // Initialize AI ecosystem silently
-    try {
-      await aiInitializer.initializeAllServices();
-      await performanceMonitor.startMonitoring();
-    } catch (aiError) {
-      console.error('⚠️  AI initialization failed:', aiError.message);
+
+    // Initialize AI ecosystem only if DB is healthy
+    if (dbConnected) {
+      try {
+        await aiInitializer.initializeAllServices();
+        await performanceMonitor.startMonitoring();
+      } catch (aiError) {
+        console.error('⚠️  AI initialization failed:', aiError.message);
+      }
+    } else {
+      console.warn('⚠️  Skipping AI initialization because the database is unavailable');
     }
     
     // Start server
@@ -274,6 +254,17 @@ const gracefulShutdown = (server) => {
     // Handle graceful shutdown
     process.on('SIGTERM', gracefulShutdown(server));
     process.on('SIGINT', gracefulShutdown(server));
+    
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    });
+    
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error) => {
+      console.error('Uncaught Exception:', error);
+      process.exit(1);
+    });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

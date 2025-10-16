@@ -303,26 +303,22 @@ const updateReviewStatus = async (reviewId, status, reason = null) => {
 	return carsRepo.updateReviewStatus(reviewId, status, reason);
 };
 
-// Seller respond to a review
-const respondToReview = async (reviewId, sellerId, responseText) => {
-    // Ensure review exists and belongs to a car owned by seller
-    const review = await executeGetReviewWithCar(reviewId);
-    if (!review) return null;
-    if (review.seller_id !== sellerId) throw new Error('Unauthorized to respond to this review');
+// Seller-only: update own car status (limited statuses)
+const updateCarStatusBySeller = async (carId, sellerId, status) => {
+  const allowedStatusesForSeller = ['active', 'draft'];
+  if (!allowedStatusesForSeller.includes(status)) {
+    throw new Error('Invalid status for seller');
+  }
 
-    // Insert or update seller response
-    return carsRepo.addOrUpdateReviewResponse(reviewId, sellerId, responseText);
-};
+  const existingCar = await carsRepo.getCarById(carId);
+  if (!existingCar) {
+    throw new Error('Car not found');
+  }
+  if (existingCar.seller_id !== sellerId) {
+    throw new Error('Unauthorized to update this car status');
+  }
 
-const executeGetReviewWithCar = async (reviewId) => {
-    const { executeQuery } = require('../../config/database');
-    const rows = await executeQuery(`
-        SELECT r.id as review_id, c.seller_id
-        FROM car_reviews r
-        JOIN cars c ON r.car_id = c.id
-        WHERE r.id = ?
-    `, [reviewId]);
-    return rows[0] || null;
+  return carsRepo.updateCarStatus(carId, status, null);
 };
 
 module.exports = {
@@ -348,20 +344,5 @@ module.exports = {
 	forceUpdateCar,
 	forceDeleteCar,
 	getAllReviews,
-    updateReviewStatus,
-    respondToReview
+	updateReviewStatus
 };
-
-// Seller analytics (cars)
-const getSellerAnalyticsStats = async (sellerId, filters = {}) => {
-    const { start_date, end_date } = filters;
-    return carsRepo.getSellerAnalyticsStats(sellerId, { start_date, end_date });
-};
-
-const getSellerAnalyticsSeries = async (sellerId, filters = {}) => {
-    const { start_date, end_date } = filters;
-    return carsRepo.getSellerAnalyticsSeries(sellerId, { start_date, end_date });
-};
-
-module.exports.getSellerAnalyticsStats = getSellerAnalyticsStats;
-module.exports.getSellerAnalyticsSeries = getSellerAnalyticsSeries;

@@ -33,13 +33,16 @@ import { sellerApi } from '../services/sellerApi';
 
 type CarForm = {
   title: string;
-  make: string;
+  make: string; // maps to backend brand
   model: string;
   year: number | '';
   mileage: number | '';
-  transmission: 'Automatic' | 'Manual' | '';
-  fuelType: 'Petrol' | 'Diesel' | 'Hybrid' | 'Electric' | '';
+  transmission: 'Automatic' | 'Manual' | 'Semi-automatic' | '';
+  fuelType: 'Petrol' | 'Diesel' | 'Hybrid' | 'Electric' | 'LPG' | 'CNG' | '';
   drivetrain: 'FWD' | 'RWD' | 'AWD' | '';
+  bodyType: 'Sedan' | 'SUV' | 'Hatchback' | 'Coupe' | 'Convertible' | 'Wagon' | 'Pickup' | 'Van' | '';
+  condition: 'New' | 'Used' | 'Certified' | '';
+  color: string;
   price: number | '';
   location: string;
   description: string;
@@ -57,6 +60,9 @@ const defaultValues: CarForm = {
   transmission: '',
   fuelType: '',
   drivetrain: '',
+  bodyType: '',
+  condition: '',
+  color: '',
   price: '',
   location: '',
   description: '',
@@ -106,8 +112,32 @@ const SellerAddCar: React.FC = () => {
   const onSubmit = async (data: CarForm) => {
     setSaving(true);
     try {
-      // Compose payload expected by API. Images are preview-only here.
-      const payload = { ...data, images: [] } as any;
+      // Map UI fields to backend schema (required fields and enums)
+      const toLower = (s: string) => String(s || '').toLowerCase();
+      const payload: any = {
+        title: data.title,
+        brand: data.make,
+        model: data.model,
+        year: data.year,
+        mileage: data.mileage,
+        price: data.price,
+        currency: 'USD',
+        car_condition: toLower(data.condition),
+        fuel_type: toLower(data.fuelType),
+        transmission: toLower(data.transmission),
+        body_type: toLower(data.bodyType),
+        color: data.color,
+        location: data.location,
+        images: [],
+        features: data.features,
+      };
+
+      // Frontend guard for required fields to avoid 400s
+      for (const k of ['title','brand','model','year','mileage','price','car_condition','fuel_type','transmission','body_type','color','location']) {
+        if (payload[k] === '' || payload[k] === undefined || payload[k] === null) {
+          throw new Error(`Missing required field: ${k}`);
+        }
+      }
       await sellerApi.cars.createCar(payload);
       // Refresh cars list optimistically
       const listRes = await sellerApi.cars.getMyCars({ page: 1, limit: 50 });
@@ -233,51 +263,65 @@ const SellerAddCar: React.FC = () => {
             <CardHeader title="Create New Listing" subheader="Describe your car with rich details" />
             <CardContent>
               <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'grid', gap: 2 }}>
-                <TextField label="Listing title" {...register('title')} placeholder="E.g. Clean 2018 Honda Civic" fullWidth />
+                <TextField id="title" label="Listing title" inputProps={{ name: 'title' }} {...register('title')} placeholder="E.g. Clean 2018 Honda Civic" fullWidth />
 
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' } }}>
-                  <TextField label="Make" {...register('make')} select>
+                  <TextField id="make" label="Make" InputLabelProps={{ id: 'make-label' }} SelectProps={{ labelId: 'make-label' }} inputProps={{ name: 'make' }} {...register('make')} select>
                     {['Toyota','Honda','Ford','BMW','Mercedes','Nissan','Hyundai','Kia','Volkswagen','Audi'].map((m) => (
                       <MenuItem key={m} value={m}>{m}</MenuItem>
                     ))}
                   </TextField>
-                  <TextField label="Model" {...register('model')} placeholder="Model" />
-                  <TextField label="Year" type="number" inputProps={{ min: 1960, max: new Date().getFullYear() + 1 }} {...register('year', { valueAsNumber: true })} />
+                  <TextField id="model" label="Model" inputProps={{ name: 'model' }} {...register('model')} placeholder="Model" />
+                  <TextField id="year" label="Year" type="number" inputProps={{ name: 'year', min: 1960, max: new Date().getFullYear() + 1 }} {...register('year', { valueAsNumber: true })} />
                 </Box>
 
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' } }}>
-                  <TextField label="Mileage (km)" type="number" {...register('mileage', { valueAsNumber: true })} />
-                  <TextField label="Transmission" select {...register('transmission')}>
-                    {['Automatic','Manual'].map((v) => (
+                  <TextField id="mileage" label="Mileage (km)" type="number" inputProps={{ name: 'mileage' }} {...register('mileage', { valueAsNumber: true })} />
+                  <TextField id="transmission" label="Transmission" InputLabelProps={{ id: 'transmission-label' }} SelectProps={{ labelId: 'transmission-label' }} inputProps={{ name: 'transmission' }} select {...register('transmission')}>
+                    {['Automatic','Manual','Semi-automatic'].map((v) => (
                       <MenuItem key={v} value={v as any}>{v}</MenuItem>
                     ))}
                   </TextField>
-                  <TextField label="Fuel" select {...register('fuelType')}>
-                    {['Petrol','Diesel','Hybrid','Electric'].map((v) => (
+                  <TextField id="fuelType" label="Fuel" InputLabelProps={{ id: 'fuelType-label' }} SelectProps={{ labelId: 'fuelType-label' }} inputProps={{ name: 'fuelType' }} select {...register('fuelType')}>
+                    {['Petrol','Diesel','Hybrid','Electric','LPG','CNG'].map((v) => (
                       <MenuItem key={v} value={v as any}>{v}</MenuItem>
                     ))}
                   </TextField>
                 </Box>
 
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' } }}>
-                  <TextField label="Drivetrain" select {...register('drivetrain')}>
+                  <TextField id="bodyType" label="Body Type" InputLabelProps={{ id: 'bodyType-label' }} SelectProps={{ labelId: 'bodyType-label' }} inputProps={{ name: 'bodyType' }} select {...register('bodyType')}>
+                    {['Sedan','SUV','Hatchback','Coupe','Convertible','Wagon','Pickup','Van'].map((v) => (
+                      <MenuItem key={v} value={v as any}>{v}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField id="condition" label="Condition" InputLabelProps={{ id: 'condition-label' }} SelectProps={{ labelId: 'condition-label' }} inputProps={{ name: 'condition' }} select {...register('condition')}>
+                    {['New','Used','Certified'].map((v) => (
+                      <MenuItem key={v} value={v as any}>{v}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField id="color" label="Color" placeholder="e.g. Silver" inputProps={{ name: 'color' }} {...register('color')} />
+                </Box>
+
+                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' } }}>
+                  <TextField id="drivetrain" label="Drivetrain" InputLabelProps={{ id: 'drivetrain-label' }} SelectProps={{ labelId: 'drivetrain-label' }} inputProps={{ name: 'drivetrain' }} select {...register('drivetrain')}>
                     {['FWD','RWD','AWD'].map((v) => (
                       <MenuItem key={v} value={v as any}>{v}</MenuItem>
                     ))}
                   </TextField>
-                  <TextField label="Price (USD)" type="number" {...register('price', { valueAsNumber: true })} />
-                  <TextField label="Location" placeholder="City, Country" {...register('location')} />
+                  <TextField id="price" label="Price (USD)" type="number" inputProps={{ name: 'price' }} {...register('price', { valueAsNumber: true })} />
+                  <TextField id="location" label="Location" placeholder="City, Country" inputProps={{ name: 'location' }} {...register('location')} />
                 </Box>
 
-                <FormControlLabel control={<Switch checked={values.isNegotiable} onChange={(e) => setValue('isNegotiable', e.target.checked, { shouldDirty: true })} />} label="Price negotiable" />
+                <FormControlLabel control={<Switch inputProps={{ id: 'isNegotiable', name: 'isNegotiable' }} checked={values.isNegotiable} onChange={(e) => setValue('isNegotiable', e.target.checked, { shouldDirty: true })} />} label="Price negotiable" />
 
-                <TextField label="Description" multiline minRows={4} placeholder="Condition, service history, ownership, extras..." {...register('description')} />
+                <TextField id="description" label="Description" multiline minRows={4} placeholder="Condition, service history, ownership, extras..." inputProps={{ name: 'description' }} {...register('description')} />
 
                 <Divider textAlign="left">Images</Divider>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
                   <Button variant="outlined" startIcon={<ImageIcon />} component="label">
                     Add images
-                    <input hidden accept="image/*" multiple type="file" onChange={handleImagesSelected} />
+                    <input id="images" name="images" hidden accept="image/*" multiple type="file" onChange={handleImagesSelected} />
                   </Button>
                   <Typography variant="body2" color="text.secondary">Up to 10 images. They won’t upload until you save.</Typography>
                 </Stack>
@@ -307,7 +351,7 @@ const SellerAddCar: React.FC = () => {
                   <Tooltip title="Export CSV"><span><IconButton onClick={handleExportCSV}><DownloadIcon fontSize="small" /></IconButton></span></Tooltip>
                   <Tooltip title="Print / Save PDF"><span><IconButton onClick={handlePrint}><PrintIcon /></IconButton></span></Tooltip>
                   <Button onClick={handleReset} startIcon={<ResetIcon />}>Reset</Button>
-                  <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving || !isValid} sx={{
+                  <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving} sx={{
                     bgcolor: 'common.white', color: 'text.primary', textTransform: 'none', borderRadius: 2, px: 3,
                     '&:hover': { bgcolor: 'common.white' }, '&:active': { bgcolor: 'common.white' }, '&.Mui-disabled': { bgcolor: 'common.white' }
                   }}>Save Listing</Button>

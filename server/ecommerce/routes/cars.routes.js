@@ -23,6 +23,7 @@ router.post('/', authenticate, authorizeRoles('seller', 'admin'), v.validateCrea
 router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateCar, handleValidation, ctrl.updateCar);
 router.delete('/:id', authenticate, authorizeRoles('seller', 'admin'), ctrl.deleteCar);
 router.get('/seller/my-cars', authenticate, authorizeRoles('seller', 'admin'), ctrl.getMyCars);
+router.patch('/seller/:id/status', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateStatus, handleValidation, ctrl.updateCarStatusBySeller);
 
 // Seller analytics (cars)
 router.get('/seller/analytics/stats', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerAnalyticsStats);

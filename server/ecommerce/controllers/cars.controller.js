@@ -116,41 +116,6 @@ const createReview = async (req, res) => {
 	}
 };
 
-// Seller reply to a review
-const respondToReview = async (req, res) => {
-    try {
-        const { reviewId } = req.params;
-        const { response } = req.body || {};
-        if (!response || String(response).trim() === '') {
-            return badRequest(res, 'Response text is required');
-        }
-        const okResp = await service.respondToReview(reviewId, req.user.id, response);
-        if (!okResp) return notFound(res, 'Review not found');
-        return ok(res, { message: 'Response added' });
-    } catch (error) {
-        return res.status(400).json({ error: error.message });
-    }
-};
-
-// Seller analytics (cars)
-const getSellerAnalyticsStats = async (req, res) => {
-    try {
-        const data = await service.getSellerAnalyticsStats(req.user.id, req.query);
-        return ok(res, data);
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
-    }
-};
-
-const getSellerAnalyticsSeries = async (req, res) => {
-    try {
-        const data = await service.getSellerAnalyticsSeries(req.user.id, req.query);
-        return ok(res, data);
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
-    }
-};
-
 // Admin routes
 const updateCarStatus = async (req, res) => {
 	try {
@@ -247,6 +212,17 @@ const updateReviewStatus = async (req, res) => {
 	}
 };
 
+// Seller route: update status (active/draft) for own car
+const updateCarStatusBySeller = async (req, res) => {
+  try {
+    const car = await service.updateCarStatusBySeller(req.params.id, req.user.id, req.body.status);
+    if (!car) return notFound(res, 'Car not found or unauthorized');
+    return ok(res, car);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
 	listCars,
 	searchCars,
@@ -270,8 +246,6 @@ module.exports = {
 	forceUpdateCar,
 	forceDeleteCar,
 	getAllReviews,
-    updateReviewStatus,
-    getSellerAnalyticsStats,
-    getSellerAnalyticsSeries,
-    respondToReview
+	updateReviewStatus,
+	updateCarStatusBySeller
 };
