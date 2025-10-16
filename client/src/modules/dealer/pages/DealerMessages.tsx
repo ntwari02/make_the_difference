@@ -592,7 +592,7 @@ const DealerMessages: React.FC = () => {
                             </Box>
                             <Button
                               size="small"
-                              onClick={() => navigate(`/dealer/vehicles/${selectedMessage.vehicleId}`)}
+                              onClick={() => navigate(`/cars/${selectedMessage.vehicleId}`)}
                               sx={{ ml: 'auto' }}
                             >
                               View Vehicle

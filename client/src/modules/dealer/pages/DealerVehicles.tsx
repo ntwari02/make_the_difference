@@ -693,7 +693,7 @@ const DealerVehicles: React.FC = () => {
                           size="small"
                           variant="outlined"
                           startIcon={<ViewIcon />}
-                          onClick={() => navigate(`/dealer/vehicles/${vehicle.id}`)}
+                          onClick={() => navigate(`/cars/${vehicle.id}`)}
                           fullWidth
                         >
                           View
@@ -730,7 +730,7 @@ const DealerVehicles: React.FC = () => {
         >
           <MenuItem onClick={() => {
             if (selectedVehicleId) {
-              navigator.clipboard.writeText(`${window.location.origin}/vehicles/${selectedVehicleId}`);
+              navigator.clipboard.writeText(`${window.location.origin}/cars/${selectedVehicleId}`);
               toast.success('Link copied to clipboard');
             }
             handleMenuClose();

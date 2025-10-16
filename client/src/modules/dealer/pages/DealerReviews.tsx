@@ -555,7 +555,7 @@ const DealerReviews: React.FC = () => {
                         icon={<CarIcon />}
                         label={review.vehicleName}
                         size="small"
-                        onClick={() => navigate(`/dealer/vehicles/${review.vehicleId}`)}
+                        onClick={() => navigate(`/cars/${review.vehicleId}`)}
                         sx={{ mb: 2 }}
                       />
                     )}

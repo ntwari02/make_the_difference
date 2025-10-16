@@ -3,6 +3,7 @@ import { Box, Card, CardContent, Chip, Divider, Typography, Button, TextField, T
 import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
+import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
 import { sellerApi } from '../../seller/services/sellerApi';
 
 type CarLite = {
@@ -25,6 +26,8 @@ type CarLite = {
 const CarDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // Use a role-aware wrapper to select layout (buyer, seller, dealer, admin)
+  const Layout = (props: { children: React.ReactNode }) => <RoleAwareLayout>{props.children}</RoleAwareLayout>;
   const [car, setCar] = useState<CarLite | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -76,39 +79,46 @@ const CarDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <BuyerLayout>
+      <Layout>
         <Box sx={{ p: 3 }}>Loading…</Box>
-      </BuyerLayout>
+      </Layout>
     );
   }
 
   if (!car) {
     return (
-      <BuyerLayout>
+      <Layout>
         <Box sx={{ p: 3 }}>
           <Typography variant="h6">Car not found</Typography>
           <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/browse')}>Back to Browse</Button>
         </Box>
-      </BuyerLayout>
+      </Layout>
     );
   }
 
   return (
-    <BuyerLayout>
+    <Layout>
       <Box sx={{ p: { xs: 1, md: 3 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
             <Button size="small" onClick={() => navigate('/browse')}>Browse</Button> / {car.brand} / {car.model}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Seller-specific action */}
+            {/* RoleAwareLayout ensures layout; use a simple check for seller-only action */}
+            {((localStorage.getItem('user_data') && JSON.parse(localStorage.getItem('user_data') || '{}')?.role?.toLowerCase?.()) === 'seller') && (
+              <Button size="small" variant="outlined" onClick={() => navigate(`/seller/cars/${car.id}/edit`)}>
+                Edit Listing
+              </Button>
+            )}
             <IconButton><ShareIcon /></IconButton>
             <IconButton><FavoriteIcon /></IconButton>
           </Box>
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.9fr' }, gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.9fr' }, gap: { xs: 1.5, md: 2 } }}>
           <Box>
             <Card>
-              <Box onClick={() => setLightboxOpen(true)} component="img" src={(car.images && car.images[activeIndex]) || car.images?.[0] || 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop'} alt={car.title} sx={{ width: '100%,', height: 420, objectFit: 'cover', cursor: 'zoom-in' }} />
+              <Box onClick={() => setLightboxOpen(true)} component="img" src={(car.images && car.images[activeIndex]) || car.images?.[0] || 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop'} alt={car.title} sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, objectFit: 'cover', cursor: 'zoom-in' }} />
               <CardContent>
                 <Typography variant="h5" fontWeight={700}>{car.title}</Typography>
                 <Typography variant="body2" color="text.secondary">{car.year} · {car.brand} · {car.model}</Typography>
@@ -132,7 +142,7 @@ const CarDetails: React.FC = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>{car.description || 'No description provided.'}</Typography>
                   )}
                   {tab === 1 && (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 1, columnGap: 2, fontSize: 14 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' }, rowGap: 1, columnGap: { xs: 1.5, md: 2 }, fontSize: 14 }}>
                       <span>Year</span><span>{car.year || '—'}</span>
                       <span>Mileage</span><span>{car.mileage ? `${car.mileage.toLocaleString()} km` : '—'}</span>
                       <span>Fuel</span><span>{car.fuel || '—'}</span>
@@ -151,7 +161,7 @@ const CarDetails: React.FC = () => {
             </Card>
           </Box>
           <Box>
-            <Card sx={{ position: 'sticky', top: 16 }}>
+            <Card sx={{ position: { xs: 'static', md: 'sticky' }, top: { md: 16 } }}>
               <CardContent>
                 <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>{car.price ? `$${car.price.toLocaleString()}` : 'Contact for price'}</Typography>
                 {/* Contact Form */}
@@ -163,7 +173,7 @@ const CarDetails: React.FC = () => {
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>Monthly payment estimate</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
                   <TextField size="small" type="number" label="Down ($)" defaultValue={3000} />
                   <TextField size="small" type="number" label="APR (%)" defaultValue={5.5} />
                   <TextField size="small" type="number" label="Term (mo)" defaultValue={60} />
@@ -201,7 +211,7 @@ const CarDetails: React.FC = () => {
           </Box>
         </Box>
       </Box>
-    </BuyerLayout>
+    </Layout>
   );
 };
 

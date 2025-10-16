@@ -64,15 +64,17 @@ const listCars = async (filters) => {
 		params.push(`%${filters.location}%`);
 	}
 
-	// Add sorting
+	// Add sorting (whitelist fields and directions)
 	const validSortFields = ['price', 'year', 'mileage', 'created_at', 'rating'];
 	const sortField = validSortFields.includes(filters.sort_by) ? filters.sort_by : 'created_at';
-	const sortOrder = filters.sort_order === 'ASC' ? 'ASC' : 'DESC';
+	const sortOrder = (String(filters.sort_order || 'DESC').toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
 	query += ` ORDER BY c.${sortField} ${sortOrder}`;
 
-	// Add pagination
-	const offset = (filters.page - 1) * filters.limit;
-	query += ` LIMIT ${filters.limit} OFFSET ${offset}`;
+	// Add pagination (sanitize numbers)
+	const safeLimit = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage - 1) * safeLimit;
+	query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 
 	const cars = await executeQuery(query, params);
 	return cars;
@@ -148,7 +150,9 @@ const getCarById = async (carId) => {
 };
 
 const getCarReviews = async (carId, filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimitR = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePageR = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePageR - 1) * safeLimitR;
 	const query = `
 		SELECT 
 			cr.*,
@@ -159,7 +163,7 @@ const getCarReviews = async (carId, filters) => {
 		JOIN users u ON cr.user_id = u.id
 		WHERE cr.car_id = ?
 		ORDER BY cr.created_at DESC
-		LIMIT ${filters.limit} OFFSET ${offset}
+		LIMIT ${safeLimitR} OFFSET ${offset}
 	`;
 	
 	const reviews = await executeQuery(query, [carId]);
@@ -271,8 +275,10 @@ const getCarsBySeller = async (sellerId, filters) => {
 	query += ` ORDER BY c.created_at DESC`;
 
 	// Add pagination
-	const offset = (filters.page - 1) * filters.limit;
-	query += ` LIMIT ${filters.limit} OFFSET ${offset}`;
+	const safeLimit2 = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage2 = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage2 - 1) * safeLimit2;
+	query += ` LIMIT ${safeLimit2} OFFSET ${offset}`;
 
 	const cars = await executeQuery(query, params);
 	return cars;
@@ -298,7 +304,9 @@ const removeFromFavorites = async (userId, carId) => {
 };
 
 const getUserFavorites = async (userId, filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimitF = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePageF = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePageF - 1) * safeLimitF;
 	const query = `
 		SELECT 
 			c.*,
@@ -311,7 +319,7 @@ const getUserFavorites = async (userId, filters) => {
 		LEFT JOIN dealers d ON c.dealer_id = d.id
 		WHERE cf.user_id = ?
 		ORDER BY cf.created_at DESC
-		LIMIT ${filters.limit} OFFSET ${offset}
+		LIMIT ${safeLimitF} OFFSET ${offset}
 	`;
 	
 	const favorites = await executeQuery(query, [userId]);
@@ -351,7 +359,9 @@ const updateCarStatus = async (carId, status, reason) => {
 };
 
 const getPendingCars = async (filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimit = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage - 1) * safeLimit;
 	const query = `
 		SELECT 
 			c.*,
@@ -363,7 +373,7 @@ const getPendingCars = async (filters) => {
 		LEFT JOIN dealers d ON c.dealer_id = d.id
 		WHERE c.status = 'pending'
 		ORDER BY c.created_at ASC
-		LIMIT ${filters.limit} OFFSET ${offset}
+		LIMIT ${safeLimit} OFFSET ${offset}
 	`;
 	
 	const cars = await executeQuery(query, []);
@@ -378,7 +388,9 @@ const getSellerById = async (sellerId) => {
 
 // Admin-only repository methods - Full e-commerce management
 const getAllCars = async (filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimit = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage - 1) * safeLimit;
 	let query = `
 		SELECT 
 			c.*,
@@ -414,14 +426,19 @@ const getAllCars = async (filters) => {
 		params.push(filters.created_to);
 	}
 	
-	query += ` ORDER BY c.${filters.sort_by} ${filters.sort_order}`;
-	query += ` LIMIT ${filters.limit} OFFSET ${offset}`;
+	const validSortFieldsAll = ['price','year','mileage','created_at','updated_at','title','status','seller_id'];
+	const sortBy = validSortFieldsAll.includes(filters.sort_by) ? filters.sort_by : 'created_at';
+	const sortDir = (String(filters.sort_order || 'DESC').toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+	query += ` ORDER BY c.${sortBy} ${sortDir}`;
+	query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 	
 	return await executeQuery(query, params);
 };
 
 const getAllSellers = async (filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimit = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage - 1) * safeLimit;
 	let query = `
 		SELECT 
 			u.*,
@@ -447,14 +464,19 @@ const getAllSellers = async (filters) => {
 	}
 	
 	query += ` GROUP BY u.id`;
-	query += ` ORDER BY u.${filters.sort_by} ${filters.sort_order}`;
-	query += ` LIMIT ${filters.limit} OFFSET ${offset}`;
+	const validUserSortFields = ['created_at','first_name','last_name','email'];
+	const sortByU = validUserSortFields.includes(filters.sort_by) ? filters.sort_by : 'created_at';
+	const sortDirU = (String(filters.sort_order || 'DESC').toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+	query += ` ORDER BY u.${sortByU} ${sortDirU}`;
+	query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 	
 	return await executeQuery(query, params);
 };
 
 const getAllBuyers = async (filters) => {
-	const offset = (filters.page - 1) * filters.limit;
+	const safeLimit = Number.isFinite(Number(filters.limit)) ? Math.max(1, parseInt(filters.limit, 10)) : 20;
+	const safePage = Number.isFinite(Number(filters.page)) ? Math.max(1, parseInt(filters.page, 10)) : 1;
+	const offset = (safePage - 1) * safeLimit;
 	let query = `
 		SELECT 
 			u.*,
@@ -480,8 +502,11 @@ const getAllBuyers = async (filters) => {
 	}
 	
 	query += ` GROUP BY u.id`;
-	query += ` ORDER BY u.${filters.sort_by} ${filters.sort_order}`;
-	query += ` LIMIT ${filters.limit} OFFSET ${offset}`;
+	const validBuyerSortFields = ['created_at','first_name','last_name','email'];
+	const sortByB = validBuyerSortFields.includes(filters.sort_by) ? filters.sort_by : 'created_at';
+	const sortDirB = (String(filters.sort_order || 'DESC').toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+	query += ` ORDER BY u.${sortByB} ${sortDirB}`;
+	query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 	
 	return await executeQuery(query, params);
 };

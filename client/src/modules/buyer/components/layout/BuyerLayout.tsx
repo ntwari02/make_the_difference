@@ -18,8 +18,8 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
 
-  // Local UI state for sidebar open/close (buyer slice doesn't have one yet)
-  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(!isMobile);
+  // Local UI state for sidebar open/close (initialize closed to avoid mobile backdrop on first paint)
+  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     setSidebarOpen(!isMobile);

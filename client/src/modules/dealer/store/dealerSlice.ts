@@ -23,7 +23,7 @@ const initialState: DealerState = {
   unreadNotifications: 0,
   loading: false,
   error: null,
-  sidebarOpen: true,
+  sidebarOpen: false,
   viewMode: 'grid',
 };
 

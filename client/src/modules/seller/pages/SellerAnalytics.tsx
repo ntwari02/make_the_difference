@@ -199,7 +199,8 @@ const SellerAnalytics: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Top Selling Models</Typography>
-              <Table component={Paper} size="small">
+              <TableContainer component={Paper}>
+              <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Model</TableCell>
@@ -217,6 +218,7 @@ const SellerAnalytics: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Box>
@@ -225,7 +227,8 @@ const SellerAnalytics: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Sales by Location</Typography>
-              <Table component={Paper} size="small">
+              <TableContainer component={Paper}>
+              <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Region</TableCell>
@@ -241,6 +244,7 @@ const SellerAnalytics: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+              </TableContainer>
             </CardContent>
           </Card>
 

@@ -11,7 +11,7 @@ const COLLAPSED_DRAWER_WIDTH = 70;
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(!isMobile);
+  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(false);
 
   React.useEffect(() => { setSidebarOpen(!isMobile); }, [isMobile]);
 

@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -30,11 +29,12 @@ import {
   Select,
   Tooltip,
   Fab,
-  Alert,
   Checkbox,
   TableSortLabel,
   Pagination,
+  
 } from '@mui/material';
+//
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -50,6 +50,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../core/store';
+import type { Car } from '../types';
 import { setCars, removeCar, setLoading, setError, setViewMode } from '../store/sellerSlice';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
@@ -60,6 +61,7 @@ interface CarFilters {
   brand: string;
   minPrice: string;
   maxPrice: string;
+  category?: 'vehicles' | 'parts' | '';
 }
 
 const SellerCars: React.FC = () => {
@@ -67,7 +69,7 @@ const SellerCars: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [loading, setLoading] = useState(true);
+  // Removed unused localLoading
   const [selectedCar, setSelectedCar] = useState<any>(null);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
@@ -77,10 +79,12 @@ const SellerCars: React.FC = () => {
     brand: '',
     minPrice: '',
     maxPrice: '',
+    category: '',
   });
+  const [categoryView, setCategoryView] = useState<'vehicles' | 'parts'>('vehicles');
 
   const [page, setPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(12);
+  const [rowsPerPage] = useState<number>(12);
   const [total, setTotal] = useState<number>(0);
   const [sortBy, setSortBy] = useState<'created_at' | 'price' | 'year' | 'status'>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -89,10 +93,10 @@ const SellerCars: React.FC = () => {
 
   const cars = useSelector((state: RootState) => state.seller.cars);
   const viewMode = useSelector((state: RootState) => state.seller.viewMode);
-  const profile = useSelector((state: RootState) => state.seller.profile);
+  // Removed unused profile selector
 
   // Mock data used when API has no data or during development (all car-specific images)
-  const mockCars = useMemo(() => ([
+  const mockCars = useMemo<any[]>(() => ([
     { id: 'm1', brand: 'Toyota', model: 'Corolla', year: 2019, mileage: 38500, price: 15900, status: 'active', images: ['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm2', brand: 'Honda', model: 'Civic', year: 2020, mileage: 24000, price: 18750, status: 'active', images: ['https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm3', brand: 'Ford', model: 'Focus', year: 2018, mileage: 52500, price: 12990, status: 'pending', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop'] },
@@ -105,6 +109,9 @@ const SellerCars: React.FC = () => {
     { id: 'm10', brand: 'Nissan', model: 'Altima', year: 2019, mileage: 42000, price: 15800, status: 'rejected', images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm11', brand: 'Chevrolet', model: 'Malibu', year: 2018, mileage: 64000, price: 13900, status: 'sold', images: ['https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm12', brand: 'Volkswagen', model: 'Jetta', year: 2017, mileage: 72000, price: 11800, status: 'pending', images: ['https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop'] },
+    // Spare parts examples
+    { id: 'p1', brand: 'Brake Pads', model: 'Front set', year: 0, mileage: 0, price: 120, status: 'active', images: ['https://images.unsplash.com/photo-1617531653332-bd20c53000de?q=80&w=1200&auto=format&fit=crop'], itemType: 'part' },
+    { id: 'p2', brand: 'Engine Oil', model: '5W-30 4L', year: 0, mileage: 0, price: 45, status: 'active', images: ['https://images.unsplash.com/photo-1608222351212-38e24a92c4a5?q=80&w=1200&auto=format&fit=crop'], itemType: 'part' },
   ]), []);
 
   const brandImageMap: Record<string, string> = useMemo(() => ({
@@ -143,6 +150,47 @@ const SellerCars: React.FC = () => {
     fetchCars();
   }, [filters, page, rowsPerPage]);
 
+  // When category tab changes, reflect in filters
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, category: categoryView }));
+    setPage(1);
+  }, [categoryView]);
+
+  const toCar = (item: any): Car => {
+    const now = new Date().toISOString();
+    return {
+      id: String(item.id ?? crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+      seller_id: String(item.seller_id ?? 'mock-seller'),
+      title: String(item.title ?? `${item.brand || 'Vehicle'} ${item.model || ''}`.trim()),
+      brand: String(item.brand ?? 'Unknown'),
+      model: String(item.model ?? 'Unknown'),
+      year: Number(item.year ?? 0),
+      mileage: Number(item.mileage ?? 0),
+      price: Number(item.price ?? 0),
+      car_condition: (item.car_condition ?? 'used') as Car['car_condition'],
+      fuel_type: String(item.fuel_type ?? 'petrol'),
+      transmission: String(item.transmission ?? 'manual'),
+      body_type: String(item.body_type ?? 'sedan'),
+      color: String(item.color ?? 'Unknown'),
+      location: String(item.location ?? 'Unknown'),
+      images: Array.isArray(item.images) ? item.images : [],
+      features: Array.isArray(item.features) ? item.features : [],
+      specifications: item.specifications ?? {},
+      description: item.description,
+      vin: item.vin,
+      engine_size: item.engine_size,
+      horsepower: typeof item.horsepower === 'number' ? item.horsepower : undefined,
+      torque: item.torque,
+      status: (item.status ?? 'draft') as Car['status'],
+      created_at: String(item.created_at ?? now),
+      updated_at: String(item.updated_at ?? now),
+    };
+  };
+
+  const normalizeToCars = (list: any[]): Car[] => {
+    return list.map((it) => (it && (it as any).seller_id && (it as any).created_at ? (it as Car) : toCar(it)));
+  };
+
   const fetchCars = async () => {
     try {
       dispatch(setLoading(true));
@@ -158,22 +206,27 @@ const SellerCars: React.FC = () => {
       const response = await sellerApi.cars.getMyCars(queryParams);
       const fetched = response.cars || [];
       const list = fetched.length > 0 ? fetched : mockCars;
-      dispatch(setCars(list));
+      // Apply category filter locally for demo
+      const categoryFiltered: any[] = filters.category === 'parts'
+        ? list.filter((c: any) => c.itemType === 'part')
+        : filters.category === 'vehicles'
+          ? list.filter((c: any) => c.itemType !== 'part')
+          : list;
+      dispatch(setCars(normalizeToCars(categoryFiltered)));
       if ((response as any)?.pagination?.total && fetched.length > 0) {
         setTotal((response as any).pagination.total);
       } else {
-        setTotal(list.length);
+        setTotal(categoryFiltered.length);
       }
 
     } catch (error) {
       console.error('Failed to fetch cars:', error);
       dispatch(setError('Failed to load cars'));
       // Fallback to mock data on error
-      dispatch(setCars(mockCars));
+      dispatch(setCars(normalizeToCars(mockCars)));
       setTotal(mockCars.length);
     } finally {
       dispatch(setLoading(false));
-      setLoading(false);
     }
   };
 
@@ -236,6 +289,7 @@ const SellerCars: React.FC = () => {
       brand: '',
       minPrice: '',
       maxPrice: '',
+      category: '',
     });
   };
 
@@ -314,6 +368,8 @@ const SellerCars: React.FC = () => {
     }
   };
 
+  const isPart = (c: any) => (c as any)?.itemType === 'part';
+
   return (
     <SellerLayout>
       <Box sx={{ flexGrow: 1 }}>
@@ -335,16 +391,37 @@ const SellerCars: React.FC = () => {
               startIcon={<AddIcon />}
               onClick={handleAddCar}
             >
-              Create Listing
+              {categoryView === 'parts' ? 'Add Part' : 'Create Listing'}
             </Button>
           </Box>
         </Box>
 
+        {/* Category Tabs */}
+        <Box sx={{ display: 'none' }} />
+
         {/* Filters */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(6, minmax(0, 1fr))',
+                },
+                gap: 2,
+                alignItems: 'center',
+              }}
+            >
+              {/* Category tabs inline before search */}
+              <Box sx={{ gridColumn: { md: 'span 3' } }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button size="small" variant={categoryView === 'vehicles' ? 'contained' : 'outlined'} onClick={() => setCategoryView('vehicles')}>Vehicles</Button>
+                  <Button size="small" variant={categoryView === 'parts' ? 'contained' : 'outlined'} onClick={() => setCategoryView('parts')}>Spare Parts</Button>
+                </Box>
+              </Box>
+              <Box sx={{ gridColumn: { md: 'span 3' } }}>
                 <TextField
                   fullWidth
                   placeholder="Search listings..."
@@ -354,8 +431,8 @@ const SellerCars: React.FC = () => {
                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              </Box>
+              <Box sx={{ gridColumn: { md: 'span 2' } }}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select
@@ -371,8 +448,8 @@ const SellerCars: React.FC = () => {
                     <MenuItem value="rejected">Rejected</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              </Box>
+              <Box sx={{ gridColumn: { md: 'span 2' } }}>
                 <TextField
                   fullWidth
                   placeholder="Min Price"
@@ -380,8 +457,8 @@ const SellerCars: React.FC = () => {
                   value={filters.minPrice}
                   onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              </Box>
+              <Box sx={{ gridColumn: { md: 'span 2' } }}>
                 <TextField
                   fullWidth
                   placeholder="Max Price"
@@ -389,8 +466,8 @@ const SellerCars: React.FC = () => {
                   value={filters.maxPrice}
                   onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box sx={{ gridColumn: { md: 'span 3' } }}>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     fullWidth
@@ -413,8 +490,8 @@ const SellerCars: React.FC = () => {
                     </IconButton>
                   </Tooltip>
                 </Box>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
 
@@ -475,7 +552,7 @@ const SellerCars: React.FC = () => {
                     {car.brand} {car.model}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {car.year} • {car.mileage?.toLocaleString()} miles
+                    {isPart(car) ? 'Spare part' : `${car.year} • ${car.mileage?.toLocaleString()} miles`}
                   </Typography>
                   <Typography variant="h6" color="primary" fontWeight={700}>
                     {formatPrice(car.price)}

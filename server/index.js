@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
@@ -58,7 +60,17 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: false, // keep simple defaults; tighten per frontend as needed
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const maxReqs = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
+app.use(rateLimit({ windowMs, max: maxReqs, standardHeaders: true, legacyHeaders: false }));
+
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
@@ -99,6 +111,19 @@ app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/user', require('./routes/user.routes'));
 // Removed password reset and security-questions routes
+
+// Centralized error handler (must be after routes)
+// Ensure we don't leak internals (SQL, stack traces)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const code = err.code || 'INTERNAL_SERVER_ERROR';
+  const message = status < 500 ? (err.message || 'Request failed') : 'Unexpected error occurred';
+  if (process.env.LOG_LEVEL !== 'silent') {
+    console.error('Error:', { status, code, message: err.message, stack: err.stack });
+  }
+  res.status(status).json({ error: { code, message } });
+});
 
 // Serve built client (single-service deployment)
 const staticDir = path.join(__dirname, 'public');

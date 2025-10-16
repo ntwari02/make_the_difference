@@ -22,6 +22,8 @@ import {
   Tooltip,
   Avatar,
   TableSortLabel,
+  Menu,
+  ListItemIcon,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -31,6 +33,7 @@ import {
   Refresh as RefreshIcon,
   Edit as EditIcon,
   Visibility as ViewIcon,
+  MoreVert as MoreIcon,
 } from '@mui/icons-material';
 import SellerLayout from '../components/layout/SellerLayout';
 import { useDispatch } from 'react-redux';
@@ -49,6 +52,8 @@ const SellerInventory: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [cardMenuAnchor, setCardMenuAnchor] = useState<Record<string, HTMLElement | null>>({});
+  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Sample data fallback for demo/empty states
   const mockCars: Car[] = useMemo(() => ([
@@ -126,6 +131,26 @@ const SellerInventory: React.FC = () => {
     }
   };
 
+  const openCardMenu = (id: string, el: HTMLElement) => setCardMenuAnchor((prev) => ({ ...prev, [id]: el }));
+  const closeCardMenu = (id: string) => setCardMenuAnchor((prev) => ({ ...prev, [id]: null }));
+
+  const handleCardAction = async (id: string, action: 'publish' | 'draft' | 'delete') => {
+    try {
+      if (action === 'delete') {
+        await sellerApi.cars.deleteCar(id);
+        dispatch(removeCar(id));
+        setLocalCars((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        await sellerApi.cars.updateCarStatus(id, action === 'publish' ? 'active' : 'draft');
+        await load();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      closeCardMenu(id);
+    }
+  };
+
   const exportCSV = () => {
     const rows = (selected.length ? cars.filter((c) => selected.includes(c.id)) : filtered).map((c) => [
       c.id,
@@ -166,6 +191,39 @@ const SellerInventory: React.FC = () => {
         <Card>
           <CardHeader title="Inventory" subheader="Manage your stock, status, and exports" />
           <CardContent>
+            {/* Summary cards at top */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1.5, mb: 2 }}>
+              <Card variant="outlined">
+                <CardContent sx={{ py: 1.25 }}>
+                  <Typography variant="overline" color="text.secondary">Total</Typography>
+                  <Typography variant="h6" fontWeight={800}>{counts.total}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ borderColor: 'success.light' }}>
+                <CardContent sx={{ py: 1.25 }}>
+                  <Typography variant="overline" color="success.main">Active</Typography>
+                  <Typography variant="h6" fontWeight={800} color="success.main">{counts.active}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent sx={{ py: 1.25 }}>
+                  <Typography variant="overline" color="text.secondary">Draft</Typography>
+                  <Typography variant="h6" fontWeight={800}>{counts.draft}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ borderColor: 'warning.light' }}>
+                <CardContent sx={{ py: 1.25 }}>
+                  <Typography variant="overline" color="warning.main">Pending</Typography>
+                  <Typography variant="h6" fontWeight={800} color="warning.main">{counts.pending}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ borderColor: 'info.light' }}>
+                <CardContent sx={{ py: 1.25 }}>
+                  <Typography variant="overline" color="info.main">Sold</Typography>
+                  <Typography variant="h6" fontWeight={800} color="info.main">{counts.sold}</Typography>
+                </CardContent>
+              </Card>
+            </Box>
             <Toolbar disableGutters sx={{ display: 'flex', gap: 1, justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField size="small" placeholder="Search title, make, model" value={search} onChange={(e) => setSearch(e.target.value)} sx={{ minWidth: 260 }} />
@@ -173,20 +231,30 @@ const SellerInventory: React.FC = () => {
                   <MenuItem value="">All</MenuItem>
                   {['active','draft','pending','sold','rejected'].map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                 </TextField>
-                <Chip label={`Total ${counts.total}`} />
-                <Chip color="success" label={`Active ${counts.active}`} />
-                <Chip color="default" label={`Draft ${counts.draft}`} />
-                <Chip color="warning" label={`Pending ${counts.pending}`} />
-                <Chip color="info" label={`Sold ${counts.sold}`} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Tooltip title="Refresh"><span><IconButton onClick={load} disabled={loading}><RefreshIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Export CSV"><span><IconButton onClick={exportCSV} disabled={filtered.length === 0}><DownloadIcon /></IconButton></span></Tooltip>
                 <Button size="small" variant={viewMode === 'grid' ? 'contained' : 'outlined'} onClick={() => setViewMode('grid')}>Cards</Button>
                 <Button size="small" variant={viewMode === 'table' ? 'contained' : 'outlined'} onClick={() => setViewMode('table')}>Table</Button>
-                <Button variant="outlined" startIcon={<DraftIcon />} disabled={selected.length === 0} onClick={() => bulkUpdateStatus('draft')}>Mark Draft</Button>
-                <Button variant="contained" startIcon={<PublishIcon />} disabled={selected.length === 0} onClick={() => bulkUpdateStatus('active')}>Publish</Button>
-                <Button color="error" variant="outlined" startIcon={<DeleteIcon />} disabled={selected.length === 0} onClick={bulkDelete}>Delete</Button>
+                {/* Bulk actions condensed into a menu when selection exists */}
+                <span>
+                  <Button size="small" variant="outlined" startIcon={<MoreIcon />} disabled={selected.length === 0} onClick={(e) => setBulkMenuAnchor(e.currentTarget)}>Bulk actions</Button>
+                </span>
+                <Menu anchorEl={bulkMenuAnchor} open={Boolean(bulkMenuAnchor)} onClose={() => setBulkMenuAnchor(null)}>
+                  <MenuItem onClick={() => { setBulkMenuAnchor(null); bulkUpdateStatus('draft'); }}>
+                    <ListItemIcon><DraftIcon fontSize="small" /></ListItemIcon>
+                    Mark Draft
+                  </MenuItem>
+                  <MenuItem onClick={() => { setBulkMenuAnchor(null); bulkUpdateStatus('active'); }}>
+                    <ListItemIcon><PublishIcon fontSize="small" /></ListItemIcon>
+                    Publish
+                  </MenuItem>
+                  <MenuItem onClick={() => { setBulkMenuAnchor(null); bulkDelete(); }}>
+                    <ListItemIcon><DeleteIcon fontSize="small" /></ListItemIcon>
+                    Delete
+                  </MenuItem>
+                </Menu>
                 <Button variant="contained" onClick={() => navigate('/seller/cars/add')}>Add Vehicle</Button>
               </Box>
             </Toolbar>
@@ -222,9 +290,28 @@ const SellerInventory: React.FC = () => {
                       <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
                         {c.price ? `$${Number(c.price).toLocaleString()}` : '—'}
                       </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Button size="small" onClick={() => navigate(`/cars/${c.id}`)}>View</Button>
-                        <Button size="small" onClick={() => navigate(`/seller/cars/${c.id}/edit`)}>Edit</Button>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                          <Button size="small" onClick={() => navigate(`/cars/${c.id}`)}>View</Button>
+                          <Button size="small" onClick={() => navigate(`/seller/cars/${c.id}/edit`)}>Edit</Button>
+                        </Box>
+                        <IconButton size="small" onClick={(e) => openCardMenu(c.id, e.currentTarget)}>
+                          <MoreIcon fontSize="small" />
+                        </IconButton>
+                        <Menu anchorEl={cardMenuAnchor[c.id]} open={Boolean(cardMenuAnchor[c.id])} onClose={() => closeCardMenu(c.id)}>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'publish')}>
+                            <ListItemIcon><PublishIcon fontSize="small" /></ListItemIcon>
+                            Publish
+                          </MenuItem>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'draft')}>
+                            <ListItemIcon><DraftIcon fontSize="small" /></ListItemIcon>
+                            Mark Draft
+                          </MenuItem>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'delete')}>
+                            <ListItemIcon><DeleteIcon fontSize="small" /></ListItemIcon>
+                            Delete
+                          </MenuItem>
+                        </Menu>
                       </Box>
                     </CardContent>
                   </Card>
@@ -281,6 +368,12 @@ const SellerInventory: React.FC = () => {
                       <TableCell align="right">
                         <Tooltip title="View"><IconButton size="small" onClick={() => navigate(`/cars/${c.id}`)}><ViewIcon fontSize="small" /></IconButton></Tooltip>
                         <Tooltip title="Edit"><IconButton size="small" onClick={() => navigate(`/seller/cars/${c.id}/edit`)}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                        <Tooltip title="More"><IconButton size="small" onClick={(e) => openCardMenu(c.id, e.currentTarget)}><MoreIcon fontSize="small" /></IconButton></Tooltip>
+                        <Menu anchorEl={cardMenuAnchor[c.id]} open={Boolean(cardMenuAnchor[c.id])} onClose={() => closeCardMenu(c.id)}>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'publish')}><ListItemIcon><PublishIcon fontSize="small" /></ListItemIcon>Publish</MenuItem>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'draft')}><ListItemIcon><DraftIcon fontSize="small" /></ListItemIcon>Mark Draft</MenuItem>
+                          <MenuItem onClick={() => handleCardAction(c.id, 'delete')}><ListItemIcon><DeleteIcon fontSize="small" /></ListItemIcon>Delete</MenuItem>
+                        </Menu>
                       </TableCell>
                     </TableRow>
                   ))}

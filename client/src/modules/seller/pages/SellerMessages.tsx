@@ -16,10 +16,7 @@ import {
   Paper,
   Chip,
   Badge,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  
   FormControl,
   InputLabel,
   Select,
@@ -28,6 +25,8 @@ import {
   Pagination,
   Tooltip,
   ListItemButton,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -39,6 +38,9 @@ import {
   Delete as DeleteIcon,
   Markunread as MarkUnreadIcon,
   MarkEmailRead as MarkReadIcon,
+  AttachFile as AttachIcon,
+  Undo as UndoIcon,
+  ForwardToInbox as ForwardIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
@@ -57,6 +59,7 @@ interface Message {
   read: boolean;
   priority: 'low' | 'normal' | 'high';
   category: 'inquiry' | 'offer' | 'complaint' | 'support';
+  seen?: boolean; // for outgoing messages (seller)
 }
 
 const SellerMessages: React.FC = () => {
@@ -64,13 +67,20 @@ const SellerMessages: React.FC = () => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const [messageDialog, setMessageDialog] = useState(false);
+  const [thread, setThread] = useState<Message[]>([]);
+  
   const [filter, setFilter] = useState('inbox');
   const [searchTerm, setSearchTerm] = useState('');
   const [replyText, setReplyText] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(10);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>(
+    { open: false, message: '', severity: 'success' }
+  );
+  const [pendingSend, setPendingSend] = useState<{ timeoutId: number | null; content: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
 
   useEffect(() => {
     // Mock messages data
@@ -147,7 +157,7 @@ const SellerMessages: React.FC = () => {
 
   const handleMessageClick = (message: Message) => {
     setSelectedMessage(message);
-    setMessageDialog(true);
+    setThread([message]);
     // Mark as read when opened
     if (!message.read) {
       setMessages(prev => prev.map(m =>
@@ -157,10 +167,66 @@ const SellerMessages: React.FC = () => {
   };
 
   const handleSendReply = () => {
-    // In a real app, this would send the reply via API
-    console.log('Sending reply:', replyText);
+    if (!selectedMessage || !replyText.trim()) return;
+    // Simulate delayed send with undo option
+    const content = replyText;
+    const optimistic: Message = {
+      id: `temp-${Date.now()}`,
+      sender: { name: profile?.business_name || 'You', avatar: '', type: 'seller' },
+      subject: `Re: ${selectedMessage.subject}`,
+      message: (replyTo ? `@reply-to:${replyTo.id}\n` : '') + content + (attachments.length ? `\n\n[${attachments.length} attachment(s)]` : ''),
+      timestamp: new Date().toISOString(),
+      read: true,
+      priority: 'normal',
+      category: 'support',
+      seen: false,
+    };
+    setThread((prev) => [...prev, optimistic]);
+    setPendingSend({ timeoutId: window.setTimeout(() => {
+      // Commit send (append a seller message)
+      setMessages((prev) => [...prev, { ...optimistic, id: `${Date.now()}` }]);
+      setSnackbar({ open: true, message: 'Reply sent', severity: 'success' });
+      setPendingSend(null);
+    }, 4000), content });
+    setSnackbar({ open: true, message: 'Sending… You can undo', severity: 'info' });
     setReplyText('');
-    // You could add the reply to a conversation thread here
+    setAttachments([]);
+    setReplyTo(null);
+  };
+
+  const handleUndoSend = () => {
+    if (pendingSend?.timeoutId) {
+      clearTimeout(pendingSend.timeoutId);
+      setPendingSend(null);
+      setSnackbar({ open: true, message: 'Send undone', severity: 'success' });
+    }
+  };
+
+  const handleAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    setAttachments((prev) => [...prev, ...Array.from(files)]);
+    e.target.value = '';
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setAttachments((prev) => prev.filter((f) => f.name !== fileName));
+  };
+
+  const handleDeleteThreadMessage = (messageId: string) => {
+    // Delete a single message bubble from the open thread
+    setThread((prev) => prev.filter((m) => m.id !== messageId));
+    setSnackbar({ open: true, message: 'Message removed', severity: 'success' });
+  };
+
+  const handleForward = async () => {
+    if (!selectedMessage) return;
+    try {
+      await navigator.clipboard.writeText(`${selectedMessage.sender.name}: ${selectedMessage.message}`);
+      setSnackbar({ open: true, message: 'Message copied to clipboard for forwarding', severity: 'success' });
+    } catch {
+      setSnackbar({ open: true, message: 'Could not copy to clipboard', severity: 'error' });
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -332,15 +398,59 @@ const SellerMessages: React.FC = () => {
                     </Box>
                   </Box>
                   <Paper variant="outlined" sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}>
-                    <Typography variant="body1" paragraph>{selectedMessage.message}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Sent on {new Date(selectedMessage.timestamp).toLocaleDateString()} at {new Date(selectedMessage.timestamp).toLocaleTimeString()}
-                    </Typography>
+                    {thread.map((msg) => (
+                      <Box key={msg.id} sx={{ display: 'flex', justifyContent: msg.sender.type === 'seller' ? 'flex-end' : 'flex-start', mb: 1.5, px: { xs: 0.5, sm: 0 } }}>
+                        <Box sx={{ maxWidth: { xs: '92%', sm: '80%' }, position: 'relative', '&:hover .msg-actions': { opacity: 1 } }}>
+                          {/* Per-message actions (show on hover, responsive) */}
+                          <Box className="msg-actions" sx={{ position: 'absolute', top: -8, right: msg.sender.type === 'seller' ? -8 : 'auto', left: msg.sender.type !== 'seller' ? -8 : 'auto', display: 'flex', gap: 0.5, bgcolor: 'background.paper', borderRadius: 1, boxShadow: 1, p: 0.25, opacity: 0, transition: 'opacity 120ms ease' }}>
+                            <Tooltip title="Forward"><IconButton size="small" onClick={handleForward}><ForwardIcon fontSize="small" /></IconButton></Tooltip>
+                            {msg.sender.type !== 'seller' && (
+                              <Tooltip title="Reply to this message"><IconButton size="small" onClick={() => setReplyTo(msg)}><ReplyIcon fontSize="small" /></IconButton></Tooltip>
+                            )}
+                            {msg.sender.type === 'seller' && (
+                              <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteThreadMessage(msg.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                            )}
+                          </Box>
+                          <Paper sx={{ p: 1, bgcolor: msg.sender.type === 'seller' ? 'primary.light' : 'background.paper' }}>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.message}</Typography>
+                          </Paper>
+                          {msg.sender.type === 'seller' && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}>
+                              Sent • Not seen
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    ))}
                   </Paper>
                   <Box>
-                    <TextField fullWidth multiline rows={3} placeholder={`Reply to ${selectedMessage.sender.name}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} sx={{ mb: 1.5 }} />
+                    {/* Reply context (quote) */}
+                    {replyTo && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Chip size="small" label={`Replying to ${replyTo.sender.name}`} onDelete={() => setReplyTo(null)} />
+                        <Typography variant="caption" color="text.secondary" noWrap maxWidth={240}>
+                          {replyTo.message}
+                        </Typography>
+                      </Box>
+                    )}
+                    {/* Reply box with in-field attach icon */}
+                    <Box sx={{ position: 'relative', mb: 1.5 }}>
+                      <TextField fullWidth multiline rows={3} placeholder={`Reply to ${selectedMessage.sender.name}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} />
+                      <IconButton size="small" component="label" sx={{ position: 'absolute', right: 8, bottom: 8 }}>
+                        <AttachIcon />
+                        <input hidden multiple type="file" onChange={handleAttach} />
+                      </IconButton>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                      {attachments.map((f) => (
+                        <Chip key={f.name} label={f.name} onDelete={() => removeAttachment(f.name)} />
+                      ))}
+                    </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button variant="outlined" onClick={() => setMessageDialog(false)}>Close</Button>
+                      <Button variant="outlined" onClick={() => setSelectedMessage(null)}>Close</Button>
+                      {pendingSend && (
+                        <Button variant="text" startIcon={<UndoIcon />} onClick={handleUndoSend}>Undo</Button>
+                      )}
                       <Button variant="contained" startIcon={<SendIcon />} onClick={handleSendReply} disabled={!replyText.trim()}>Send</Button>
                     </Box>
                   </Box>
@@ -354,76 +464,13 @@ const SellerMessages: React.FC = () => {
           </Card>
         </Box>
 
-        {/* Message Detail Dialog */}
-        <Dialog
-          open={messageDialog}
-          onClose={() => setMessageDialog(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          {selectedMessage && (
-            <>
-              <DialogTitle component="div">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
-                    {selectedMessage.sender.name.charAt(0)}
-                  </Avatar>
-                  <Box>
-                    <Typography component="h2" variant="h6">
-                      {selectedMessage.sender.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedMessage.subject}
-                    </Typography>
-                  </Box>
-                </Box>
-              </DialogTitle>
-              <DialogContent dividers>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="body1" paragraph>
-                    {selectedMessage.message}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Sent on {new Date(selectedMessage.timestamp).toLocaleDateString()} at {new Date(selectedMessage.timestamp).toLocaleTimeString()}
-                  </Typography>
-                </Box>
-
-                {/* Reply Section */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Reply to {selectedMessage.sender.name}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    placeholder="Type your reply here..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={() => setMessageDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="contained"
-                      startIcon={<SendIcon />}
-                      onClick={handleSendReply}
-                      disabled={!replyText.trim()}
-                    >
-                      Send Reply
-                    </Button>
-                  </Box>
-                </Box>
-              </DialogContent>
-            </>
-          )}
-        </Dialog>
+        
       </Box>
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </SellerLayout>
   );
 };
