@@ -72,7 +72,8 @@ class PerformanceMonitor {
       await this.collectSystemMetrics(timestamp);
       
     } catch (error) {
-      console.error('❌ Error collecting metrics:', error);
+      // Reduce noise: log message only
+      console.error('❌ Error collecting metrics:', error?.message || error);
     }
   }
 

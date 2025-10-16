@@ -9,6 +9,7 @@ const router = Router();
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
 router.post('/refresh', AuthController.refresh);
+// Relaxed rate limiting for logout handled at global middleware (skip), keep route simple
 router.post('/logout', AuthController.logout);
 router.post('/magic/request', AuthController.requestMagicLink);
 router.post('/magic/consume', AuthController.consumeMagicLink);

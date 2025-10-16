@@ -20,7 +20,6 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
-import SessionDebugger from '../../../shared/components/debug/SessionDebugger';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { MoreVert as MoreIcon } from '@mui/icons-material';
 
@@ -290,7 +289,7 @@ const BuyerDashboard: React.FC = () => {
       </Box>
       
       {/* Debug Tool - Remove in Production */}
-      {process.env.NODE_ENV === 'development' && <SessionDebugger />}
+      
     </BuyerLayout>
   );
 };

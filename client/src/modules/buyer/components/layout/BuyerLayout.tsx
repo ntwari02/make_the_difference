@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Container, useTheme, useMediaQuery } from '@mui/material';
  
-import SessionDebugger from '../../../../shared/components/debug/SessionDebugger';
 import BuyerSidebar from './BuyerSidebar';
 import BuyerHeader from './BuyerHeader';
 
@@ -45,8 +44,7 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
         </Box>
       </Box>
 
-      {/* Session Debugger - Remove in Production */}
-      {process.env.NODE_ENV === 'development' && <SessionDebugger />}
+      
     </Box>
   );
 };

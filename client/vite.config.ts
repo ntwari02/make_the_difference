@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Ensure generated asset URLs are absolute from site root in production
+  base: '/',
   plugins: [react(),tailwindcss()],
   server: {
     hmr: {

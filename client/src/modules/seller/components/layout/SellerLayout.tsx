@@ -2,7 +2,6 @@ import React, { ReactNode } from 'react';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import SellerSidebar from './SellerSidebar';
 import SellerHeader from './SellerHeader';
-import SessionDebugger from '../../../../shared/components/debug/SessionDebugger';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../../core/store';
 import { setSidebarOpen } from '../../store/sellerSlice';
@@ -96,8 +95,7 @@ const SellerLayout: React.FC<SellerLayoutProps> = ({ children }) => {
         </Box>
       </Box>
 
-      {/* Session Debugger - Remove in Production */}
-      {process.env.NODE_ENV === 'development' && <SessionDebugger />}
+      
     </Box>
   );
 };

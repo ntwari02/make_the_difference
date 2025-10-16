@@ -68,7 +68,20 @@ app.use(helmet({
 
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const maxReqs = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
-app.use(rateLimit({ windowMs, max: maxReqs, standardHeaders: true, legacyHeaders: false }));
+app.use(rateLimit({
+  windowMs,
+  max: maxReqs,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Do not rate limit CORS preflight or critical auth endpoints
+  skip: (req) => {
+    const p = (req.path || '').toLowerCase();
+    if (req.method === 'OPTIONS') return true;
+    // Exempt login/logout/refresh/register to prevent UX issues during auth flows
+    if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/refresh' || p === '/api/auth/register') return true;
+    return false;
+  },
+}));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -234,10 +247,20 @@ const gracefulShutdown = (server) => {
       console.log('⚠️  Forcing server close');
       process.exit(1);
     }, 10000);
+    // Clear deferred monitor timer if present
+    if (module.exports._monitorRetryTimer) {
+      clearInterval(module.exports._monitorRetryTimer);
+      module.exports._monitorRetryTimer = null;
+    }
   };
 };
 
 // Start server after DB check
+(function(){
+  // Timer for deferred performance monitor startup when DB is down
+  // Scoped outside of the async IIFE to allow graceful shutdown cleanup
+  module.exports = { _monitorRetryTimer: null };
+})();
 (async () => {
   try {
     // Test database connection
@@ -246,7 +269,30 @@ const gracefulShutdown = (server) => {
     // Initialize AI ecosystem silently
     try {
       await aiInitializer.initializeAllServices();
-      await performanceMonitor.startMonitoring();
+      // Start performance monitoring ONLY if DB is connected to avoid ECONNRESET spam
+      if (dbConnected) {
+        await performanceMonitor.startMonitoring();
+      } else {
+        console.warn('⚠️  Skipping performance monitoring: database is not connected');
+        // Schedule periodic re-checks to start monitoring once DB recovers
+        const retryMs = Number(process.env.MONITOR_RETRY_MS || 30000);
+        const tryStart = async () => {
+          try {
+            const ok = await testConnection();
+            if (ok) {
+              await performanceMonitor.startMonitoring();
+              clearInterval(module.exports._monitorRetryTimer);
+              module.exports._monitorRetryTimer = null;
+              console.log('✅ Performance monitoring started after DB recovery');
+            } else {
+              console.log('⏳ Waiting for database to recover before starting performance monitor...');
+            }
+          } catch (e) {
+            // Keep waiting silently to avoid log spam
+          }
+        };
+        module.exports._monitorRetryTimer = setInterval(tryStart, retryMs);
+      }
     } catch (aiError) {
       console.error('⚠️  AI initialization failed:', aiError.message);
     }

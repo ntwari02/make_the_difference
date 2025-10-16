@@ -28,7 +28,6 @@ import {
   Refresh as RefreshIcon,
   MoreVert as MoreIcon,
 } from '@mui/icons-material';
-import SessionDebugger from '../../../shared/components/debug/SessionDebugger';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../core/store';
@@ -568,7 +567,7 @@ const DealerDashboard: React.FC = () => {
       </Box>
       
       {/* Debug Tool - Remove in Production */}
-      {process.env.NODE_ENV === 'development' && <SessionDebugger />}
+      
     </DealerLayout>
   );
 };
