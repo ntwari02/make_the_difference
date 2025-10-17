@@ -268,6 +268,30 @@ const getBrands = async (req, res) => {
   }
 };
 
+// Create brand
+const createBrand = async (req, res) => {
+  try {
+    const { name, description, logo_url, website, country, is_oem } = req.body;
+    if (!name) return badRequest(res, 'Brand name is required');
+    const result = await sparePartsService.createBrand({ name, description, logo_url, website, country, is_oem });
+    return ok(res, result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Create category
+const createCategory = async (req, res) => {
+  try {
+    const { name, description, parent_id, icon, sort_order } = req.body;
+    if (!name) return badRequest(res, 'Category name is required');
+    const result = await sparePartsService.createCategory({ name, description, parent_id, icon, sort_order });
+    return ok(res, result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // Add to wishlist
 const addToWishlist = async (req, res) => {
   try {
@@ -422,6 +446,69 @@ const createPriceAlert = async (req, res) => {
   }
 };
 
+// Get seller's spare parts
+const getSellerSpareParts = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const { page = 1, limit = 20, status, search, sort_by = 'created_at', sort_order = 'DESC' } = req.query;
+
+    const result = await sparePartsService.getSellerSpareParts(sellerId, {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      status,
+      search,
+      sort_by,
+      sort_order
+    });
+
+    return ok(res, result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Update seller's spare part
+const updateSellerSparePart = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const { partId } = req.params;
+    const partData = req.body;
+
+    const result = await sparePartsService.updateSellerSparePart(partId, sellerId, partData);
+
+    return ok(res, {
+      part_id: result.id,
+      message: 'Spare part updated successfully',
+      status: result.status
+    });
+  } catch (error) {
+    if (error.message === 'Spare part not found' || error.message === 'Unauthorized') {
+      return notFound(res, error.message);
+    }
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete seller's spare part
+const deleteSellerSparePart = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const { partId } = req.params;
+
+    await sparePartsService.deleteSellerSparePart(partId, sellerId);
+
+    return ok(res, {
+      message: 'Spare part deleted successfully',
+      part_id: partId
+    });
+  } catch (error) {
+    if (error.message === 'Spare part not found' || error.message === 'Unauthorized') {
+      return notFound(res, error.message);
+    }
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // Get seller analytics
 const getSellerAnalytics = async (req, res) => {
   try {
@@ -499,12 +586,17 @@ module.exports = {
   checkVehicleCompatibility,
   getPriceComparison,
   createSparePart,
+  getSellerSpareParts,
+  updateSellerSparePart,
+  deleteSellerSparePart,
   processSparePartsPurchase,
   processBundlePurchase,
   processInstallationServicePayment,
   processMaintenancePlanSubscription,
   getCategories,
   getBrands,
+  createBrand,
+  createCategory,
   addToWishlist,
   removeFromWishlist,
   getUserWishlist,

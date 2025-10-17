@@ -162,6 +162,17 @@ const updateCarStatus = async (req, res) => {
 	}
 };
 
+// Seller-specific status update
+const updateSellerCarStatus = async (req, res) => {
+	try {
+		const car = await service.updateSellerCarStatus(req.params.id, req.user.id, req.body.status);
+		if (!car) return notFound(res, 'Car not found or unauthorized');
+		return ok(res, car);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
 const getPendingCars = async (req, res) => {
 	try {
 		const cars = await service.getPendingCars(req.query);
@@ -261,6 +272,7 @@ module.exports = {
 	getFavorites,
 	createReview,
 	updateCarStatus,
+	updateSellerCarStatus,
 	getPendingCars,
 	// Admin methods
 	getAllCars,

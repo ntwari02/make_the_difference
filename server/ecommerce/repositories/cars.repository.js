@@ -173,13 +173,19 @@ const getCarReviews = async (carId, filters) => {
 // Seller repository methods
 const createCar = async (carData) => {
     const carId = require('crypto').randomUUID();
+    
+    // Calculate total price if not provided
+    const quantity = carData.quantity || 1;
+    const unitPrice = carData.unitPrice || carData.price || 0;
+    const totalPrice = carData.totalPrice || (quantity * unitPrice);
+    
 	const query = `
 		INSERT INTO cars (
 			id, title, description, brand, model, year, mileage, price, currency,
-			car_condition, fuel_type, transmission, body_type, color, engine_size,
-			horsepower, vin, location, latitude, longitude, images, features,
+			quantity, total_price, car_condition, fuel_type, transmission, body_type, color, engine_size,
+			horsepower, vin, location, latitude, longitude, number_of_seats, images, features,
 			status, is_featured, seller_id, dealer_id
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`;
 	
 	const params = [
@@ -192,6 +198,8 @@ const createCar = async (carData) => {
 		carData.mileage,
 		carData.price,
 		carData.currency || 'USD',
+		quantity,
+		totalPrice,
 		carData.car_condition,
 		carData.fuel_type,
 		carData.transmission,
@@ -203,6 +211,7 @@ const createCar = async (carData) => {
 		carData.location,
 		carData.latitude || null,
 		carData.longitude || null,
+		carData.number_of_seats || 5,
 		JSON.stringify(carData.images || []),
 		JSON.stringify(carData.features || []),
 		carData.status || 'pending',
@@ -218,9 +227,9 @@ const createCar = async (carData) => {
 const updateCar = async (carId, updateData) => {
 	const allowedFields = [
 		'title', 'description', 'brand', 'model', 'year', 'mileage', 'price',
-		'currency', 'car_condition', 'fuel_type', 'transmission', 'body_type',
+		'currency', 'quantity', 'total_price', 'car_condition', 'fuel_type', 'transmission', 'body_type',
         'color', 'engine_size', 'horsepower', 'vin', 'location', 'latitude',
-        'longitude', 'images', 'features', 'is_featured', 'sold_at'
+        'longitude', 'number_of_seats', 'images', 'features', 'is_featured', 'sold_at'
 	];
 
 	const updateFields = [];

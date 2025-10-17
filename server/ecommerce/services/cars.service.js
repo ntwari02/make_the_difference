@@ -67,9 +67,20 @@ const createCar = async (sellerId, carData) => {
 		}
 	}
 
-	// Set default status based on seller verification
-	const seller = await carsRepo.getSellerById(sellerId);
-	const defaultStatus = seller?.is_verified ? 'active' : 'pending';
+	// Set default quantity if not provided
+	if (!carData.quantity) {
+		carData.quantity = 1;
+	}
+
+	// Calculate total price if not provided
+	if (!carData.totalPrice) {
+		const unitPrice = carData.unitPrice || carData.price || 0;
+		carData.totalPrice = carData.quantity * unitPrice;
+	}
+
+	// Set default status - assume seller is verified for better performance
+	// Remove seller lookup to speed up the process
+	const defaultStatus = 'pending'; // Will be reviewed by admin
 
 	return carsRepo.createCar({
 		...carData,
@@ -174,6 +185,35 @@ const updateCarStatus = async (carId, status, reason = null) => {
         return carsRepo.getCarById(carId);
     }
     return updated;
+};
+
+// Seller-specific status update
+const updateSellerCarStatus = async (carId, sellerId, status) => {
+	// Check if car exists and belongs to seller
+	const existingCar = await carsRepo.getCarById(carId);
+	if (!existingCar) {
+		throw new Error('Car not found');
+	}
+	if (existingCar.seller_id !== sellerId) {
+		throw new Error('Unauthorized to update this car');
+	}
+
+	// Validate status
+	const validStatuses = ['active', 'pending', 'sold', 'inactive'];
+	if (!validStatuses.includes(status)) {
+		throw new Error('Invalid status');
+	}
+
+	// Update status
+	const updated = await carsRepo.updateCarStatus(carId, status);
+	
+	// If sold, set sold_at timestamp
+	if (updated && status === 'sold' && !updated.sold_at) {
+		await carsRepo.updateCar(carId, { sold_at: new Date() });
+		return carsRepo.getCarById(carId);
+	}
+	
+	return updated;
 };
 
 const getPendingCars = async (filters = {}) => {
@@ -344,6 +384,7 @@ module.exports = {
 	getUserFavorites,
 	createReview,
 	updateCarStatus,
+	updateSellerCarStatus,
 	getPendingCars,
 	// Admin methods
 	getAllCars,

@@ -21,6 +21,7 @@ router.get('/:id/reviews', ctrl.getCarReviews);
 // Seller routes (authentication required)
 router.post('/', authenticate, authorizeRoles('seller', 'admin'), v.validateCreateCar, handleValidation, ctrl.createCar);
 router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateCar, handleValidation, ctrl.updateCar);
+router.patch('/:id/status', authenticate, authorizeRoles('seller', 'admin'), ctrl.updateSellerCarStatus);
 router.delete('/:id', authenticate, authorizeRoles('seller', 'admin'), ctrl.deleteCar);
 router.get('/seller/my-cars', authenticate, authorizeRoles('seller', 'admin'), ctrl.getMyCars);
 

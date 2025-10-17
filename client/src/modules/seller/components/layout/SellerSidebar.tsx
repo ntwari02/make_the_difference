@@ -13,19 +13,7 @@ import {
   Avatar,
   Tooltip,
 } from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  DirectionsCar as CarIcon,
-  AddCircleOutline as AddIcon,
-  BarChart as AnalyticsIcon,
-  Settings as SettingsIcon,
-  Person as ProfileIcon,
-  Message as MessageIcon,
-  NotificationsActive as NotificationIcon,
-  Payment as PaymentIcon,
-  Star as ReviewIcon,
-  Inventory as InventoryIcon,
-} from '@mui/icons-material';
+// Removed Material icons to use emoji-only labels
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../core/store';
@@ -40,20 +28,21 @@ interface SellerSidebarProps {
 interface MenuItem {
   title: string;
   path: string;
-  icon: React.ReactElement;
   badge?: number;
 }
 
 const menuItems: MenuItem[] = [
-  { title: 'Workspace', path: '/seller/dashboard', icon: <DashboardIcon /> },
-  { title: 'Inventory', path: '/seller/cars', icon: <InventoryIcon /> },
-  { title: 'Create Listing', path: '/seller/cars/add', icon: <AddIcon /> },
-  { title: 'Insights', path: '/seller/analytics', icon: <AnalyticsIcon /> },
-  { title: 'Messages', path: '/seller/messages', icon: <MessageIcon />, badge: 3 },
-  { title: 'Reviews', path: '/seller/reviews', icon: <ReviewIcon /> },
-  { title: 'Payouts', path: '/seller/payments', icon: <PaymentIcon /> },
-  { title: 'Profile', path: '/seller/profile', icon: <ProfileIcon /> },
-  { title: 'Settings', path: '/seller/settings', icon: <SettingsIcon /> },
+  { title: '🧰 Workspace', path: '/seller/dashboard' },
+  { title: '📦 Inventory', path: '/seller/cars' },
+  { title: '🚗 Create Vehicle', path: '/seller/cars/add' },
+  { title: '🔧 Spare Parts', path: '/seller/parts' },
+  { title: '➕ Add Spare Part', path: '/seller/parts/add' },
+  { title: '📊 Insights', path: '/seller/analytics' },
+  { title: '💬 Messages', path: '/seller/messages', badge: 3 },
+  { title: '⭐ Reviews', path: '/seller/reviews' },
+  { title: '💸 Payouts', path: '/seller/payments' },
+  { title: '👤 Profile', path: '/seller/profile' },
+  { title: '⚙️ Settings', path: '/seller/settings' },
 ];
 
 const SellerSidebar: React.FC<SellerSidebarProps> = ({
@@ -88,6 +77,7 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
         {menuItems.map((item) => {
           const isActive = isActivePath(item.path);
           const showBadge = item.badge && item.badge > 0;
+          const emoji = item.title.split(' ')[0] || '';
 
           return (
             <Tooltip
@@ -120,24 +110,24 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
                     '&:hover': {
                       bgcolor: 'primary.dark',
                     },
-                    '& .MuiListItemIcon-root': {
-                      color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.primary.contrastText,
-                    },
                   },
                 }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 2 : 'auto',
-                    justifyContent: 'center',
-                    color: theme.palette.mode === 'dark'
-                      ? (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)')
-                      : (isActive ? theme.palette.primary.main : theme.palette.text.secondary),
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
+                {!open && (
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 24,
+                      mr: 'auto',
+                      fontSize: 18,
+                    }}
+                    aria-hidden
+                  >
+                    {emoji}
+                  </Box>
+                )}
                 {open && (
                   <>
                     <ListItemText

@@ -27,6 +27,9 @@ import {
   Add as AddIcon,
   Refresh as RefreshIcon,
   Info as InfoIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -49,6 +52,7 @@ const SellerDashboard: React.FC = () => {
   const analytics = useSelector((state: RootState) => state.seller.analytics);
 
   const [localLoading, setLocalLoading] = useState(true);
+  const [recentListings, setRecentListings] = useState<any[]>([]);
 
   useEffect(() => {
     load();
@@ -102,20 +106,66 @@ const SellerDashboard: React.FC = () => {
   };
 
   const kpis = useMemo(() => {
-    const total = cars.length;
-    const active = cars.filter((c: any) => c.status === 'active').length;
-    const sold = cars.filter((c: any) => c.status === 'sold').length;
-    const avgPrice = total ? Math.round(cars.reduce((s: number, c: any) => s + (c.price || 0), 0) / total) : 0;
+    const carsArray = cars || [];
+    const total = carsArray.length;
+    const active = carsArray.filter((c: any) => c.status === 'active').length;
+    const sold = carsArray.filter((c: any) => c.status === 'sold').length;
+    const avgPrice = total ? Math.round(carsArray.reduce((s: number, c: any) => s + (c.price || 0), 0) / total) : 0;
     return { total, active, sold, avgPrice };
   }, [cars]);
 
+  // Update recent listings when cars data changes
+  useEffect(() => {
+    if (cars && cars.length > 0) {
+      const recent = [...cars]
+        .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+        .slice(0, 8);
+      setRecentListings(recent);
+    }
+  }, [cars]);
+
+  // Handle car actions
+  const handleViewCar = (carId: string) => {
+    navigate(`/cars/${carId}`);
+  };
+
+  const handleEditCar = (carId: string) => {
+    navigate(`/seller/cars/add?edit=${carId}`);
+  };
+
+  const handleDeleteCar = async (carId: string) => {
+    if (window.confirm('Are you sure you want to delete this car listing?')) {
+      try {
+        await sellerApi.cars.deleteCar(carId);
+        // Refresh the dashboard data
+        await load();
+      } catch (error) {
+        console.error('Failed to delete car:', error);
+        alert('Failed to delete car listing. Please try again.');
+      }
+    }
+  };
+
+  const handleToggleFeatured = async (carId: string, currentFeatured: boolean) => {
+    try {
+      await sellerApi.cars.updateCar(carId, { is_featured: !currentFeatured });
+      // Refresh the dashboard data
+      await load();
+    } catch (error) {
+      console.error('Failed to update car:', error);
+      alert('Failed to update car listing. Please try again.');
+    }
+  };
+
   // No-op: top listings UI removed for now
 
-  const salesData = (analytics?.sales_by_period || []).map((p: { period: string; sales_count: number; total_revenue: number }) => ({
-    period: p.period,
-    sales: p.sales_count,
-    revenue: p.total_revenue,
-  }));
+  const salesData = Array.isArray(analytics?.sales_by_period) 
+    ? analytics.sales_by_period.map((p: { period: string; sales_count: number; total_revenue: number }) => ({
+        period: p.period,
+        sales: p.sales_count,
+        revenue: p.total_revenue,
+      }))
+    : [];
 
   // Beautiful mock data fallback for charts when analytics are unavailable
   const mockSalesData = [
@@ -132,7 +182,7 @@ const SellerDashboard: React.FC = () => {
     { period: 'Nov', sales: 16, revenue: 28500 },
     { period: 'Dec', sales: 18, revenue: 32000 },
   ];
-  const chartData = salesData.length > 0 ? salesData : mockSalesData;
+  const chartData = Array.isArray(salesData) && salesData.length > 0 ? salesData : mockSalesData;
 
   // Polished segmented semicircle gauge
   const Gauge: React.FC<{ value: number; size?: number }> = ({ value, size = 220 }) => {
@@ -357,7 +407,7 @@ const SellerDashboard: React.FC = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" fontWeight={600}>Revenue & Sales</Typography>
-                  <Chip size="small" label={`${salesData.length} periods`} />
+                  <Chip size="small" label={`${Array.isArray(salesData) ? salesData.length : 0} periods`} />
                 </Box>
                  <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -418,58 +468,116 @@ const SellerDashboard: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Listings Table */}
+        {/* Recent Listings Table */}
         <Card sx={{ mt: 3, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper' }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" fontWeight={600}>Recent Listings</Typography>
-              <Button size="small" onClick={() => navigate('/seller/cars')}>Manage Listings</Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => navigate('/seller/cars/add')}>
+                  Add New
+                </Button>
+                <Button size="small" onClick={() => navigate('/seller/cars')}>Manage All</Button>
+              </Box>
             </Box>
-            <TableContainer component={Paper}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Vehicle</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="right">Price</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {cars.slice(0, 8).map((car: any) => (
-                    <TableRow key={car.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar variant="rounded" src={car.images?.[0]} sx={{ width: 48, height: 48 }}>
-                            <CarIcon />
-                          </Avatar>
-                          <Box>
-                            <Typography fontWeight={600}>{car.brand} {car.model}</Typography>
-                            <Typography variant="caption" color="text.secondary">{car.year}</Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip size="small" label={car.status} color={car.status === 'active' ? 'success' : car.status === 'sold' ? 'info' : 'default'} />
-                      </TableCell>
-                      <TableCell align="right">${(car.price || 0).toLocaleString()}</TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="View">
-                          <IconButton size="small" onClick={() => navigate(`/cars/${car.id}`)}>
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Boost">
-                          <IconButton size="small" onClick={() => navigate('/seller/analytics')}>
-                            <TrendingUpIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
+            
+            {recentListings.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <CarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>No Listings Yet</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Start by adding your first car listing to see it here.
+                </Typography>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/seller/cars/add')}>
+                  Add Your First Listing
+                </Button>
+              </Box>
+            ) : (
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Vehicle</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Created</TableCell>
+                      <TableCell align="right">Price</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {recentListings.map((car: any) => (
+                      <TableRow key={car.id} hover>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar variant="rounded" src={car.images?.[0]} sx={{ width: 48, height: 48 }}>
+                              <CarIcon />
+                            </Avatar>
+                            <Box>
+                              <Typography fontWeight={600}>{car.title || `${car.brand} ${car.model}`}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {car.brand} {car.model} • {car.year}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip 
+                              size="small" 
+                              label={car.status} 
+                              color={car.status === 'active' ? 'success' : car.status === 'sold' ? 'info' : 'default'} 
+                            />
+                            {car.is_featured && (
+                              <Chip size="small" label="Featured" color="warning" icon={<StarIcon />} />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary">
+                            {car.created_at ? new Date(car.created_at).toLocaleDateString() : 'Unknown'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography fontWeight={600}>${(car.price || 0).toLocaleString()}</Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Tooltip title="View Listing">
+                              <IconButton size="small" onClick={() => handleViewCar(car.id)}>
+                                <ViewIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Edit">
+                              <IconButton size="small" onClick={() => handleEditCar(car.id)}>
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={car.is_featured ? "Remove Featured" : "Make Featured"}>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleToggleFeatured(car.id, car.is_featured)}
+                                color={car.is_featured ? "warning" : "default"}
+                              >
+                                <StarIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleDeleteCar(car.id)}
+                                color="error"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardContent>
         </Card>
       </Box>
