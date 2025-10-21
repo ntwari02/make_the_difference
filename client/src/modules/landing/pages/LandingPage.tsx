@@ -258,7 +258,7 @@ const FeaturesSection: React.FC = () => {
     {
       icon: <DirectionsCar sx={{ fontSize: 40 }} />,
       title: 'E-Commerce Hub',
-      description: 'Buy and sell cars, spare parts, and automotive services with secure payment processing and verification.',
+      description: 'Buy and sell cars and automotive services with secure payment processing and verification.',
       color: '#3b82f6',
       benefits: ['2,500+ Cars', 'Secure Payments', 'Quality Assurance', '24/7 Support'],
     },

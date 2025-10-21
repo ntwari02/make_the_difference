@@ -2,16 +2,62 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
-dotenv.config();
+dotenv.config({ debug: false, override: false });
 
 const { testConnection } = require('./config/database');
 const aiInitializer = require('./ai/services/ai-initializer.service');
 const performanceMonitor = require('./ai/services/performance-monitor.service');
 
 const app = express();
+
+// Morgan logging middleware
+app.use(morgan('combined', {
+  skip: function (req, res) { 
+    // Skip logging for static assets and health checks
+    return req.url.includes('/assets/') || req.url === '/health';
+  }
+}));
+
+// Custom morgan token for authentication debugging
+morgan.token('auth', function (req, res) {
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    // Show first 20 chars of token for debugging
+    return token.substring(0, 20) + '...';
+  }
+  return 'no-token';
+});
+
+morgan.token('user-role', function (req, res) {
+  return req.user ? req.user.role : 'no-user';
+});
+
+// Detailed logging for API routes
+app.use('/api', morgan(':method :url :status :response-time ms - :auth - :user-role'));
+
+// Error logging middleware for 403 errors
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (res.statusCode === 403) {
+      console.log('🚫 403 FORBIDDEN ERROR:');
+      console.log('  URL:', req.url);
+      console.log('  Method:', req.method);
+      console.log('  Headers:', req.headers);
+      console.log('  User:', req.user);
+      console.log('  Body:', req.body);
+      console.log('  Response:', data);
+      console.log('  ======================================');
+    }
+    originalSend.call(this, data);
+  };
+  next();
+});
 
 // CORS configuration
 const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
@@ -68,11 +114,33 @@ app.use(helmet({
 
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const maxReqs = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
+
+// Enhanced rate limiting with different limits for authenticated users
 app.use(rateLimit({
   windowMs,
-  max: maxReqs,
+  max: (req) => {
+    // Higher limits for authenticated users
+    if (req.user && req.user.id) {
+      // Sellers and admins get higher limits for dashboard operations
+      if (req.user.role === 'seller' || req.user.role === 'admin') {
+        return maxReqs * 3; // 3x limit for sellers/admins
+      }
+      // Regular authenticated users get 2x limit
+      return maxReqs * 2;
+    }
+    // Unauthenticated users get standard limit
+    return maxReqs;
+  },
   standardHeaders: true,
   legacyHeaders: false,
+  // IPv6-safe key generator using helper from express-rate-limit
+  keyGenerator: (req) => {
+    const ipKey = (rateLimit.ipKeyGenerator ? rateLimit.ipKeyGenerator(req) : req.ip);
+    if (req.user && req.user.id) {
+      return `${ipKey}-${req.user.id}`;
+    }
+    return ipKey;
+  },
   // Do not rate limit CORS preflight or critical auth endpoints
   skip: (req) => {
     const p = (req.path || '').toLowerCase();
@@ -81,6 +149,26 @@ app.use(rateLimit({
     if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/refresh' || p === '/api/auth/register') return true;
     return false;
   },
+  // Custom message for rate limit exceeded
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later.',
+      retryAfter: Math.ceil(windowMs / 1000)
+    }
+  },
+  // Custom handler for rate limit exceeded
+  handler: (req, res) => {
+    const retryAfter = Math.ceil(windowMs / 1000);
+    res.set('Retry-After', retryAfter.toString());
+    res.status(429).json({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests, please try again later.',
+        retryAfter: retryAfter
+      }
+    });
+  }
 }));
 
 // Request logging (Morgan)
@@ -92,8 +180,8 @@ try {
   console.warn('Morgan not installed; skipping HTTP request logging');
 }
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -114,6 +202,10 @@ app.use('/api/search', require('./ecommerce/routes/advanced-search.routes'));
 app.use('/api/payments', require('./ecommerce/routes/payment.routes'));
 app.use('/api/enhanced-payments', require('./ecommerce/routes/enhanced-payment.routes'));
 app.use('/api/spare-parts', require('./ecommerce/routes/spare-parts.routes'));
+app.use('/api/spare-parts-working', require('./ecommerce/routes/spare-parts-working.routes'));
+app.use('/api/spare-parts-analytics', require('./ecommerce/routes/spare-parts-analytics.routes'));
+app.use('/api/spare-parts-recommendations', require('./ecommerce/routes/spare-parts-recommendations.routes'));
+app.use('/api/spare-parts-notifications', require('./ecommerce/routes/spare-parts-notifications.routes'));
 app.use('/api/scholarships', require('./routes/scholarship.routes'));
 app.use('/api/visa', require('./routes/visa.routes'));
 app.use('/api/visa-officer', require('./routes/visa-officer.routes'));
@@ -131,8 +223,22 @@ app.use('/api/seller', require('./routes/seller.routes'));
 app.use('/api/moderators', require('./routes/moderator.routes'));  
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/admin/database', require('./routes/admin-database'));
 app.use('/api/user', require('./routes/user.routes'));
 // Removed password reset and security-questions routes
+
+// Static serving for uploaded images
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+// Serve uploads under /uploads for direct image access
+app.use('/uploads', express.static(uploadsDir, {
+  maxAge: '7d',
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+  }
+}));
 
 // Centralized error handler (must be after routes)
 // Ensure we don't leak internals (SQL, stack traces)

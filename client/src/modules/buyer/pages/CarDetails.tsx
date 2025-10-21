@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
 import { sellerApi } from '../../seller/services/sellerApi';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
 
 type CarLite = {
   id: string;
@@ -118,7 +119,7 @@ const CarDetails: React.FC = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.9fr' }, gap: { xs: 1.5, md: 2 } }}>
           <Box>
             <Card>
-              <Box onClick={() => setLightboxOpen(true)} component="img" src={(car.images && car.images[activeIndex]) || car.images?.[0] || 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop'} alt={car.title} sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, objectFit: 'cover', cursor: 'zoom-in' }} />
+              <Box onClick={() => setLightboxOpen(true)} component="img" src={getImageUrl((car.images && car.images[activeIndex]) || car.images?.[0])} alt={car.title} sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, objectFit: 'cover', cursor: 'zoom-in' }} />
               <CardContent>
                 <Typography variant="h5" fontWeight={700}>{car.title}</Typography>
                 <Typography variant="body2" color="text.secondary">{car.year} · {car.brand} · {car.model}</Typography>
@@ -127,7 +128,7 @@ const CarDetails: React.FC = () => {
                   <Box sx={{ mt: 2, display: 'flex', gap: 1, overflowX: 'auto' }}>
                     {car.images.map((src, idx) => (
                       <Box key={idx} onClick={() => setActiveIndex(idx)} sx={{ width: 72, height: 48, borderRadius: 1, overflow: 'hidden', cursor: 'pointer', outline: idx === activeIndex ? '2px solid #1976d2' : '1px solid rgba(0,0,0,0.12)' }}>
-                        <img src={src} alt={`thumb-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getImageUrl(src)} alt={`thumb-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </Box>
                     ))}
                   </Box>

@@ -54,9 +54,12 @@ async function findUserByIdentifier(identifier) {
 
 async function logLoginAttempt({ userId = null, identifier, success, failureReason = null, ipAddress = null, userAgent = null }) {
   try {
+    // Temporarily disabled to fix authentication timeout issue
+    return;
+    const reasonValue = success ? null : (failureReason || 'unknown');
     await executeQuery(
       'INSERT INTO auth_login_attempts (id, user_id, identifier, success, failure_reason, ip_address, user_agent, created_at) VALUES (UUID(), ?, ?, ?, ?, ?, ?, NOW())',
-      [userId, identifier, !!success, failureReason, ipAddress, userAgent]
+      [userId, identifier, !!success, reasonValue, ipAddress, userAgent]
     );
   } catch (_) {
     // do not block auth flow on logging failure

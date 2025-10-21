@@ -61,7 +61,7 @@ interface CarFilters {
   brand: string;
   minPrice: string;
   maxPrice: string;
-  category?: 'vehicles' | 'parts' | '';
+  category?: 'vehicles' | '';
 }
 
 const SellerCars: React.FC = () => {
@@ -81,7 +81,7 @@ const SellerCars: React.FC = () => {
     maxPrice: '',
     category: '',
   });
-  const [categoryView, setCategoryView] = useState<'vehicles' | 'parts'>('vehicles');
+  const [categoryView, setCategoryView] = useState<'vehicles'>('vehicles');
 
   const [page, setPage] = useState<number>(1);
   const [rowsPerPage] = useState<number>(12);
@@ -109,9 +109,6 @@ const SellerCars: React.FC = () => {
     { id: 'm10', brand: 'Nissan', model: 'Altima', year: 2019, mileage: 42000, price: 15800, status: 'rejected', images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm11', brand: 'Chevrolet', model: 'Malibu', year: 2018, mileage: 64000, price: 13900, status: 'sold', images: ['https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200&auto=format&fit=crop'] },
     { id: 'm12', brand: 'Volkswagen', model: 'Jetta', year: 2017, mileage: 72000, price: 11800, status: 'pending', images: ['https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop'] },
-    // Spare parts examples
-    { id: 'p1', brand: 'Brake Pads', model: 'Front set', year: 0, mileage: 0, price: 120, status: 'active', images: ['https://images.unsplash.com/photo-1617531653332-bd20c53000de?q=80&w=1200&auto=format&fit=crop'], itemType: 'part' },
-    { id: 'p2', brand: 'Engine Oil', model: '5W-30 4L', year: 0, mileage: 0, price: 45, status: 'active', images: ['https://images.unsplash.com/photo-1608222351212-38e24a92c4a5?q=80&w=1200&auto=format&fit=crop'], itemType: 'part' },
   ]), []);
 
   const brandImageMap: Record<string, string> = useMemo(() => ({
@@ -207,11 +204,9 @@ const SellerCars: React.FC = () => {
       const fetched = response.cars || [];
       const list = fetched.length > 0 ? fetched : mockCars;
       // Apply category filter locally for demo
-      const categoryFiltered: any[] = filters.category === 'parts'
-        ? list.filter((c: any) => c.itemType === 'part')
-        : filters.category === 'vehicles'
-          ? list.filter((c: any) => c.itemType !== 'part')
-          : list;
+      const categoryFiltered: any[] = filters.category === 'vehicles'
+        ? list.filter((c: any) => c.itemType !== 'part')
+        : list;
       dispatch(setCars(normalizeToCars(categoryFiltered)));
       if ((response as any)?.pagination?.total && fetched.length > 0) {
         setTotal((response as any).pagination.total);
@@ -368,7 +363,6 @@ const SellerCars: React.FC = () => {
     }
   };
 
-  const isPart = (c: any) => (c as any)?.itemType === 'part';
 
   return (
     <SellerLayout>
@@ -391,7 +385,7 @@ const SellerCars: React.FC = () => {
               startIcon={<AddIcon />}
               onClick={handleAddCar}
             >
-              {categoryView === 'parts' ? 'Add Part' : 'Create Listing'}
+              {categoryView === 'vehicles' ? 'Create Listing' : 'Create Listing'}
             </Button>
           </Box>
         </Box>
@@ -417,8 +411,7 @@ const SellerCars: React.FC = () => {
               {/* Category tabs inline before search */}
               <Box sx={{ gridColumn: { md: 'span 3' } }}>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button size="small" variant={categoryView === 'vehicles' ? 'contained' : 'outlined'} onClick={() => setCategoryView('vehicles')}>Vehicles</Button>
-                  <Button size="small" variant={categoryView === 'parts' ? 'contained' : 'outlined'} onClick={() => setCategoryView('parts')}>Spare Parts</Button>
+                  <Button size="small" variant="contained" onClick={() => setCategoryView('vehicles')}>Vehicles</Button>
                 </Box>
               </Box>
               <Box sx={{ gridColumn: { md: 'span 3' } }}>
@@ -552,7 +545,7 @@ const SellerCars: React.FC = () => {
                     {car.brand} {car.model}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {isPart(car) ? 'Spare part' : `${car.year} • ${car.mileage?.toLocaleString()} miles`}
+                    {`${car.year} • ${car.mileage?.toLocaleString()} miles`}
                   </Typography>
                   <Typography variant="h6" color="primary" fontWeight={700}>
                     {formatPrice(car.price)}

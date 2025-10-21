@@ -1,1026 +1,1477 @@
 const { executeQuery } = require('../../config/database');
-const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 
 class SparePartsService {
   constructor() {
-    this.supportedPaymentMethods = [
-      'stripe', 'paypal', 'apple_pay', 'google_pay', 
-      'crypto', 'bnpl', 'financing', 'bank_transfer', 'mobile_money'
-    ];
-    this._sparePartsColumns = null;
+    this.tableName = 'spare_parts';
+    this.categoriesTable = 'spare_parts_categories';
+    this.brandsTable = 'spare_parts_brands';
+    this.inventoryTable = 'spare_parts_inventory';
+    this.compatibilityTable = 'spare_parts_vehicle_compatibility';
+    this.priceComparisonTable = 'spare_parts_price_comparison';
+    this.bundlesTable = 'spare_parts_bundles';
+    this.bundleItemsTable = 'spare_parts_bundle_items';
+    this.installationServicesTable = 'spare_parts_installation_services';
+    this.warehousesTable = 'warehouses';
   }
 
-  // Advanced search with AI-powered compatibility
+  // Validate image paths - ensure they are file paths, not base64 data
+  validateImagePaths(images) {
+    if (!Array.isArray(images)) {
+      return [];
+    }
+
+    return images.filter(imagePath => {
+      if (typeof imagePath !== 'string') {
+        console.warn('Invalid image path type:', typeof imagePath);
+        return false;
+      }
+
+      // Reject base64 data URLs
+      if (imagePath.startsWith('data:image/')) {
+        console.warn('Base64 image data detected and rejected. Use file upload endpoints instead.');
+        return false;
+      }
+
+      // Accept file paths (local or external URLs)
+      if (imagePath.startsWith('/uploads/') || imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return true;
+      }
+
+      console.warn('Invalid image path format:', imagePath);
+      return false;
+    });
+  }
+
+  // ==================== CORE CRUD OPERATIONS ====================
+
+  async createSparePart(sparePartData) {
+    const {
+      sku,
+      name,
+      description,
+      category_id,
+      brand_id,
+      price,
+      currency = 'USD',
+      seller_id,
+      images = [],
+      vehicle_compatibility = [],
+      inventory_data = {},
+      installation_services = [],
+      quantity_available = 0,
+      quantity_reserved = 0,
+      reorder_point = 10,
+      max_stock_level = null,
+      cost_price = null,
+      markup_percentage = null,
+      weight = null,
+      dimensions = null,
+      warranty_period_months = 12,
+      requires_installation = false
+    } = sparePartData;
+
+    // Validate images - ensure they are file paths, not base64 data
+    const validatedImages = this.validateImagePaths(images);
+
+    try {
+      // Generate SKU if not provided
+      const finalSku = sku || await this.generateSKU(name, brand_id);
+      
+      // Create spare part with inventory fields
+      const sparePartId = uuidv4();
+      const insertQuery = `
+        INSERT INTO ${this.tableName} 
+        (id, sku, name, description, category_id, brand_id, price, currency, seller_id, images, 
+         quantity_available, quantity_reserved, reorder_point, max_stock_level, cost_price, 
+         markup_percentage, weight, dimensions, warranty_period_months, requires_installation,
+         status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
+      `;
+      
+      await executeQuery(insertQuery, [
+        sparePartId, finalSku, name, description, category_id, brand_id, price, currency, seller_id, JSON.stringify(validatedImages),
+        quantity_available, quantity_reserved, reorder_point, max_stock_level, cost_price,
+        markup_percentage, weight ? JSON.stringify(weight) : null, dimensions ? JSON.stringify(dimensions) : null,
+        warranty_period_months, requires_installation
+      ]);
+
+      // Add vehicle compatibility
+      if (vehicle_compatibility.length > 0) {
+        await this.addVehicleCompatibility(sparePartId, vehicle_compatibility);
+      }
+
+      // Add inventory data (for additional inventory tracking if needed)
+      if (Object.keys(inventory_data).length > 0) {
+        await this.updateInventory(sparePartId, inventory_data);
+      }
+
+      // Add installation services
+      if (installation_services.length > 0) {
+        await this.addInstallationServices(sparePartId, installation_services);
+      }
+
+      return await this.getSparePartById(sparePartId);
+    } catch (error) {
+      console.error('Error creating spare part:', error);
+      throw new Error(`Failed to create spare part: ${error.message}`);
+    }
+  }
+
+  async getSparePartById(id) {
+    try {
+      const query = `
+        SELECT 
+          sp.*,
+          c.name as category_name,
+          c.parent_category_id as category_parent_id,
+          b.name as brand_name,
+          b.logo_url as brand_logo,
+          s.business_name as seller_name,
+          s.rating as seller_rating,
+          s.review_count as seller_review_count
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        LEFT JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        LEFT JOIN sellers s ON sp.seller_id = s.id
+        WHERE sp.id = ?
+      `;
+      
+      const result = await executeQuery(query, [id]);
+      if (result.length === 0) {
+        throw new Error('Spare part not found');
+      }
+
+      const sparePart = result[0];
+      
+      // Get vehicle compatibility
+      sparePart.vehicle_compatibility = await this.getVehicleCompatibility(id);
+      
+      // Get price comparisons
+      sparePart.price_comparisons = await this.getPriceComparisons(id);
+      
+      // Get installation services
+      sparePart.installation_services = await this.getInstallationServices(id);
+
+      return sparePart;
+    } catch (error) {
+      console.error('Error getting spare part:', error);
+      throw new Error(`Failed to get spare part: ${error.message}`);
+    }
+  }
+
+  async updateSparePart(id, updateData) {
+    try {
+      const {
+        name,
+        description,
+        category_id,
+        brand_id,
+        price,
+        currency,
+        status,
+        images,
+        vehicle_compatibility,
+        inventory_data,
+        installation_services,
+        quantity_available,
+        quantity_reserved,
+        reorder_point,
+        max_stock_level,
+        cost_price,
+        markup_percentage,
+        weight,
+        dimensions,
+        warranty_period_months,
+        requires_installation
+      } = updateData;
+
+      // Update basic fields
+      const updateFields = [];
+      const updateValues = [];
+
+      if (name !== undefined) {
+        updateFields.push('name = ?');
+        updateValues.push(name);
+      }
+      if (description !== undefined) {
+        updateFields.push('description = ?');
+        updateValues.push(description);
+      }
+      if (category_id !== undefined) {
+        updateFields.push('category_id = ?');
+        updateValues.push(category_id);
+      }
+      if (brand_id !== undefined) {
+        updateFields.push('brand_id = ?');
+        updateValues.push(brand_id);
+      }
+      if (price !== undefined) {
+        updateFields.push('price = ?');
+        updateValues.push(price);
+      }
+      if (currency !== undefined) {
+        updateFields.push('currency = ?');
+        updateValues.push(currency);
+      }
+      if (status !== undefined) {
+        updateFields.push('status = ?');
+        updateValues.push(status);
+      }
+      if (images !== undefined) {
+        updateFields.push('images = ?');
+        updateValues.push(JSON.stringify(this.validateImagePaths(images || [])));
+      }
+      if (quantity_available !== undefined) {
+        updateFields.push('quantity_available = ?');
+        updateValues.push(quantity_available);
+      }
+      if (quantity_reserved !== undefined) {
+        updateFields.push('quantity_reserved = ?');
+        updateValues.push(quantity_reserved);
+      }
+      if (reorder_point !== undefined) {
+        updateFields.push('reorder_point = ?');
+        updateValues.push(reorder_point);
+      }
+      if (max_stock_level !== undefined) {
+        updateFields.push('max_stock_level = ?');
+        updateValues.push(max_stock_level);
+      }
+      if (cost_price !== undefined) {
+        updateFields.push('cost_price = ?');
+        updateValues.push(cost_price);
+      }
+      if (markup_percentage !== undefined) {
+        updateFields.push('markup_percentage = ?');
+        updateValues.push(markup_percentage);
+      }
+      if (weight !== undefined) {
+        updateFields.push('weight = ?');
+        updateValues.push(weight ? JSON.stringify(weight) : null);
+      }
+      if (dimensions !== undefined) {
+        updateFields.push('dimensions = ?');
+        updateValues.push(dimensions ? JSON.stringify(dimensions) : null);
+      }
+      if (warranty_period_months !== undefined) {
+        updateFields.push('warranty_period_months = ?');
+        updateValues.push(warranty_period_months);
+      }
+      if (requires_installation !== undefined) {
+        updateFields.push('requires_installation = ?');
+        updateValues.push(requires_installation);
+      }
+
+      if (updateFields.length > 0) {
+        updateFields.push('updated_at = NOW()');
+        updateValues.push(id);
+
+        const updateQuery = `
+          UPDATE ${this.tableName} 
+          SET ${updateFields.join(', ')}
+          WHERE id = ?
+        `;
+        await executeQuery(updateQuery, updateValues);
+      }
+
+      // Update vehicle compatibility
+      if (vehicle_compatibility !== undefined) {
+        await this.updateVehicleCompatibility(id, vehicle_compatibility);
+      }
+
+      // Update inventory
+      if (inventory_data !== undefined) {
+        await this.updateInventory(id, inventory_data);
+      }
+
+      // Update installation services
+      if (installation_services !== undefined) {
+        await this.updateInstallationServices(id, installation_services);
+      }
+
+      return await this.getSparePartById(id);
+    } catch (error) {
+      console.error('Error updating spare part:', error);
+      throw new Error(`Failed to update spare part: ${error.message}`);
+    }
+  }
+
+  async deleteSparePart(id) {
+    try {
+      // Update basic fields
+        // Soft delete by setting status to inactive
+        const updateQuery = `
+          UPDATE ${this.tableName} 
+          SET status = 'inactive', updated_at = NOW()
+          WHERE id = ?
+        `;
+        
+        const result = await executeQuery(updateQuery, [id]);
+        
+        if (result.affectedRows === 0) {
+          throw new Error('Spare part not found');
+        }
+
+        return { success: true, message: 'Spare part deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting spare part:', error);
+      throw new Error(`Failed to delete spare part: ${error.message}`);
+    }
+  }
+
+  // ==================== ADVANCED SEARCH AND FILTERING ====================
+
   async searchSpareParts(searchParams) {
     try {
+      // Ensure MySQL sort buffer is optimized for large queries
+      try {
+        await executeQuery('SET SESSION sort_buffer_size = 8388608'); // 8MB
+        await executeQuery('SET SESSION read_rnd_buffer_size = 4194304'); // 4MB
+        await executeQuery('SET SESSION join_buffer_size = 4194304'); // 4MB
+      } catch (e) { 
+        console.warn('Could not set MySQL session variables:', e.message);
+      }
+
+      // Ensure supporting indexes exist (best-effort, runs once per process)
+      if (!this._indexesEnsured) {
+        try {
+          // Create composite index for seller_id + created_at (most important for sorting)
+          const sellerCreatedIdx = await executeQuery(
+            `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_spare_parts_seller_created'`,
+            [this.tableName]
+          );
+          if ((sellerCreatedIdx[0]?.cnt || 0) === 0) {
+            await executeQuery(`CREATE INDEX idx_spare_parts_seller_created ON ${this.tableName} (seller_id, created_at DESC)`);
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          // Create composite index for seller_id + quantity + created_at
+          const idxCheck = await executeQuery(
+            `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_spare_parts_seller_qty_created'`,
+            [this.tableName]
+          );
+          if ((idxCheck[0]?.cnt || 0) === 0) {
+            await executeQuery(`CREATE INDEX idx_spare_parts_seller_qty_created ON ${this.tableName} (seller_id, quantity_available, created_at DESC)`);
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          const catIdx = await executeQuery(
+            `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_spare_parts_category'`,
+            [this.tableName]
+          );
+          if ((catIdx[0]?.cnt || 0) === 0) {
+            await executeQuery(`CREATE INDEX idx_spare_parts_category ON ${this.tableName} (category_id)`);
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          const brandIdx = await executeQuery(
+            `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_spare_parts_brand'`,
+            [this.tableName]
+          );
+          if ((brandIdx[0]?.cnt || 0) === 0) {
+            await executeQuery(`CREATE INDEX idx_spare_parts_brand ON ${this.tableName} (brand_id)`);
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          // Create index for status filtering
+          const statusIdx = await executeQuery(
+            `SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_spare_parts_status'`,
+            [this.tableName]
+          );
+          if ((statusIdx[0]?.cnt || 0) === 0) {
+            await executeQuery(`CREATE INDEX idx_spare_parts_status ON ${this.tableName} (status)`);
+          }
+        } catch (e) { /* ignore */ }
+        this._indexesEnsured = true;
+      }
       const {
         query,
         category_id,
         brand_id,
-        vehicle_make,
-        vehicle_model,
-        vehicle_year,
+        seller_id,
         price_min,
         price_max,
-        condition,
-        in_stock_only = true,
+        vehicle_make,
+        vehicle_model,
+        vehicle_year_from,
+        vehicle_year_to,
+        engine_type,
+        fuel_type,
+        transmission_type,
+        availability_status = 'in_stock',
         sort_by = 'relevance',
         sort_order = 'DESC',
         page = 1,
         limit = 20,
-        features = [],
-        compatibility_threshold = 0.8
+        location_radius,
+        user_latitude,
+        user_longitude
       } = searchParams;
 
-      let sql = `
-        SELECT DISTINCT
-          sp.*,
-          spc.name as category_name,
-          spb.name as brand_name,
-          spb.logo_url as brand_logo,
-          u.first_name as seller_name,
-          u.rating as seller_rating,
+      const offset = (page - 1) * limit;
+      const conditions = [];
+      const queryParams = [];
+      
+
+      // Basic search conditions
+      if (query) {
+        conditions.push(`(sp.name LIKE ? OR sp.description LIKE ? OR sp.sku LIKE ?)`);
+        const searchTerm = `%${query}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm);
+      }
+
+      if (category_id) {
+        conditions.push(`sp.category_id = ?`);
+        queryParams.push(category_id);
+      }
+
+      if (brand_id) {
+        conditions.push(`sp.brand_id = ?`);
+        queryParams.push(brand_id);
+      }
+
+      if (seller_id && seller_id !== 'undefined' && seller_id !== 'null') {
+        conditions.push(`sp.seller_id = ?`);
+        queryParams.push(seller_id);
+      }
+
+      if (price_min !== undefined) {
+        conditions.push(`sp.price >= ?`);
+        queryParams.push(price_min);
+      }
+
+      if (price_max !== undefined) {
+        conditions.push(`sp.price <= ?`);
+        queryParams.push(price_max);
+      }
+
+      // Vehicle compatibility conditions
+      if (vehicle_make || vehicle_model || vehicle_year_from || vehicle_year_to || engine_type || fuel_type || transmission_type) {
+        const vehicleConditions = [];
+        
+        if (vehicle_make) {
+          vehicleConditions.push(`vc.vehicle_make = ?`);
+          queryParams.push(vehicle_make);
+        }
+        
+        if (vehicle_model) {
+          vehicleConditions.push(`vc.vehicle_model = ?`);
+          queryParams.push(vehicle_model);
+        }
+        
+        if (vehicle_year_from) {
+          vehicleConditions.push(`vc.vehicle_year_to >= ?`);
+          queryParams.push(vehicle_year_from);
+        }
+        
+        if (vehicle_year_to) {
+          vehicleConditions.push(`vc.vehicle_year_from <= ?`);
+          queryParams.push(vehicle_year_to);
+        }
+        
+        if (engine_type) {
+          vehicleConditions.push(`vc.engine_type = ?`);
+          queryParams.push(engine_type);
+        }
+        
+        if (fuel_type) {
+          vehicleConditions.push(`vc.fuel_type = ?`);
+          queryParams.push(fuel_type);
+        }
+        
+        if (transmission_type) {
+          vehicleConditions.push(`vc.transmission_type = ?`);
+          queryParams.push(transmission_type);
+        }
+
+        if (vehicleConditions.length > 0) {
+          conditions.push(`sp.id IN (
+            SELECT DISTINCT spare_part_id 
+            FROM ${this.compatibilityTable} vc 
+            WHERE ${vehicleConditions.join(' AND ')}
+          )`);
+        }
+      }
+
+      // Availability status - only add if explicitly requested
+      if (availability_status === 'in_stock') {
+        conditions.push(`sp.quantity_available > 0`);
+      } else if (availability_status === 'low_stock') {
+        conditions.push(`sp.quantity_available > 0 AND sp.quantity_available <= sp.reorder_point`);
+      } else if (availability_status === 'out_of_stock') {
+        conditions.push(`(sp.quantity_available = 0 OR sp.quantity_available IS NULL)`);
+      }
+      // Note: Removed default availability condition to prevent parameter mismatches
+
+      // Location-based filtering is disabled since warehouses table was dropped
+      if (location_radius && user_latitude && user_longitude) {
+        console.warn('Location-based filtering is not available - warehouses table not found');
+      }
+
+      // Build the main query
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      
+      // Sorting
+      let orderBy = 'sp.created_at DESC';
+      let orderByParams = [];
+      
+      if (sort_by === 'price') {
+        orderBy = `sp.price ${sort_order}`;
+      } else if (sort_by === 'name') {
+        orderBy = `sp.name ${sort_order}`;
+      } else if (sort_by === 'rating') {
+        orderBy = `d.rating ${sort_order}`;
+      } else if (sort_by === 'relevance' && query) {
+        orderBy = `
           CASE 
-            WHEN sp.discount_percentage > 0 AND (sp.discount_expires_at IS NULL OR sp.discount_expires_at > NOW()) 
-            THEN sp.price * (1 - sp.discount_percentage / 100)
-            ELSE sp.price
-          END as final_price,
-          CASE 
-            WHEN sp.discount_percentage > 0 AND (sp.discount_expires_at IS NULL OR sp.discount_expires_at > NOW()) 
-            THEN sp.price * (sp.discount_percentage / 100)
-            ELSE 0
-          END as discount_amount,
-          spvc.compatibility_confidence,
-          spi.quantity_available,
-          (SELECT AVG(rating) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as avg_rating,
-          (SELECT COUNT(*) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as review_count
-        FROM spare_parts sp
-        LEFT JOIN spare_parts_categories spc ON sp.category_id = spc.id
-        LEFT JOIN spare_parts_brands spb ON sp.brand_id = spb.id
-        LEFT JOIN users u ON sp.seller_id = u.id
-        LEFT JOIN spare_parts_vehicle_compatibility spvc ON sp.id = spvc.spare_part_id
-        LEFT JOIN spare_parts_inventory spi ON sp.id = spi.spare_part_id
-        WHERE sp.status = 'active'
+            WHEN sp.name LIKE ? THEN 1
+            WHEN sp.description LIKE ? THEN 2
+            WHEN sp.sku LIKE ? THEN 3
+            ELSE 4
+          END, sp.created_at DESC
+        `;
+        // Add parameters for the ORDER BY CASE statement
+        const searchTerm = `%${query}%`;
+        orderByParams = [searchTerm, searchTerm, searchTerm];
+      }
+
+      // Build the main query with proper parameter handling
+      const searchQuery = `
+        SELECT
+          sp.id,
+          sp.sku,
+          sp.name,
+          sp.description,
+          sp.category_id,
+          sp.brand_id,
+          sp.images,
+          sp.price,
+          sp.currency,
+          sp.seller_id,
+          sp.status,
+          sp.created_at,
+          sp.updated_at,
+          c.name as category_name,
+          b.name as brand_name,
+          sp.quantity_available,
+          sp.quantity_reserved,
+          sp.reorder_point,
+          sp.max_stock_level,
+          sp.last_restocked_at,
+          sp.last_sold_at
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        LEFT JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        ${whereClause}
+        GROUP BY sp.id
+        ORDER BY ${orderBy}
+        LIMIT ${limit} OFFSET ${offset}
       `;
 
-      const params = [];
-      let paramCount = 0;
-
-      // Text search
-      if (query) {
-        sql += ` AND (
-          MATCH(sp.name, sp.description, sp.part_number, sp.oem_number) AGAINST(? IN NATURAL LANGUAGE MODE)
-          OR sp.name LIKE ?
-          OR sp.part_number LIKE ?
-          OR sp.oem_number LIKE ?
-        )`;
-        const searchTerm = `%${query}%`;
-        params.push(query, searchTerm, searchTerm, searchTerm);
+      // Combine all parameters in the correct order
+      // First add WHERE clause parameters, then ORDER BY parameters (LIMIT/OFFSET now use string interpolation)
+      const finalQueryParams = [...queryParams];
+      if (orderByParams.length > 0) {
+        finalQueryParams.push(...orderByParams);
       }
-
-      // Category filter
-      if (category_id) {
-        sql += ` AND sp.category_id = ?`;
-        params.push(category_id);
+      
+      // COMPREHENSIVE PARAMETER VALIDATION AND DEBUGGING
+      console.log('=== COMPREHENSIVE MYSQL DEBUG ===');
+      console.log('Search params:', JSON.stringify(searchParams, null, 2));
+      console.log('Conditions:', conditions);
+      console.log('Where clause:', whereClause);
+      console.log('Order by:', orderBy);
+      console.log('QueryParams (WHERE):', queryParams);
+      console.log('OrderByParams:', orderByParams);
+      console.log('Final Parameters:', finalQueryParams);
+      console.log('Parameter count:', finalQueryParams.length);
+      
+      // Count placeholders in the query
+      const placeholderCount = (searchQuery.match(/\?/g) || []).length;
+      console.log('Placeholder count in query:', placeholderCount);
+      console.log('Parameter vs Placeholder match:', finalQueryParams.length === placeholderCount ? '✅ MATCH' : '❌ MISMATCH');
+      
+      // Validate each parameter
+      finalQueryParams.forEach((param, index) => {
+        console.log(`Parameter ${index}:`, typeof param, param === null ? 'NULL' : param === undefined ? 'UNDEFINED' : param);
+      });
+      
+      console.log('Final query:', searchQuery);
+      console.log('================================');
+      
+      // PARAMETER VALIDATION AND SANITIZATION
+      const sanitizedParams = finalQueryParams.map(param => {
+        if (param === null || param === undefined) {
+          console.warn('Found null/undefined parameter, converting to empty string');
+          return '';
+        }
+        if (typeof param === 'string' && (param === 'undefined' || param === 'null')) {
+          console.warn('Found string "undefined"/"null", converting to empty string');
+          return '';
+        }
+        return param;
+      });
+      
+      // PARAMETER COUNT VALIDATION
+      if (sanitizedParams.length !== placeholderCount) {
+        console.error('PARAMETER MISMATCH DETECTED!');
+        console.error('Expected parameters:', placeholderCount);
+        console.error('Actual parameters:', sanitizedParams.length);
+        console.error('Query:', searchQuery);
+        console.error('Parameters:', sanitizedParams);
+        
+        // Try to fix the mismatch by adjusting parameters
+        if (sanitizedParams.length < placeholderCount) {
+          console.log('Adding missing parameters...');
+          while (sanitizedParams.length < placeholderCount) {
+            sanitizedParams.push('');
+          }
+        } else if (sanitizedParams.length > placeholderCount) {
+          console.log('Removing excess parameters...');
+          sanitizedParams.splice(placeholderCount);
+        }
+        console.log('Adjusted parameters:', sanitizedParams);
       }
-
-      // Brand filter
-      if (brand_id) {
-        sql += ` AND sp.brand_id = ?`;
-        params.push(brand_id);
-      }
-
-      // Vehicle compatibility
-      if (vehicle_make && vehicle_model && vehicle_year) {
-        sql += ` AND spvc.vehicle_make = ? AND spvc.vehicle_model = ? 
-                 AND ? BETWEEN spvc.vehicle_year_from AND spvc.vehicle_year_to
-                 AND spvc.compatibility_confidence >= ?`;
-        params.push(vehicle_make, vehicle_model, vehicle_year, compatibility_threshold);
-      }
-
-      // Price range
-      if (price_min) {
-        sql += ` AND sp.price >= ?`;
-        params.push(price_min);
-      }
-      if (price_max) {
-        sql += ` AND sp.price <= ?`;
-        params.push(price_max);
-      }
-
-      // Condition filter
-      if (condition) {
-        sql += ` AND sp.condition = ?`;
-        params.push(condition);
-      }
-
-      // Stock availability
-      if (in_stock_only) {
-        sql += ` AND spi.quantity_available > 0`;
-      }
-
-      // Features filter
-      if (features.length > 0) {
-        features.forEach(feature => {
-          sql += ` AND JSON_CONTAINS(sp.features, ?)`;
-          params.push(`"${feature}"`);
-        });
-      }
-
-      // Sorting
-      switch (sort_by) {
-        case 'price_low':
-          sql += ` ORDER BY final_price ASC`;
+      
+      // MULTIPLE EXECUTION ATTEMPTS WITH FALLBACKS
+      let results;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          attempts++;
+          console.log(`Execution attempt ${attempts}/${maxAttempts}`);
+          
+          // Attempt 1: Use sanitized parameters
+          if (attempts === 1) {
+            results = await executeQuery(searchQuery, sanitizedParams);
+          }
+          // Attempt 2: Use original parameters with additional validation
+          else if (attempts === 2) {
+            const validatedParams = finalQueryParams.filter(param => 
+              param !== null && param !== undefined && param !== 'undefined' && param !== 'null'
+            );
+            console.log('Attempt 2 - Validated parameters:', validatedParams);
+            results = await executeQuery(searchQuery, validatedParams);
+          }
+          // Attempt 3: Use a simplified query without complex conditions
+          else if (attempts === 3) {
+            console.log('Attempt 3 - Using simplified query');
+            const simpleQuery = `
+              SELECT
+                sp.id,
+                sp.sku,
+                sp.name,
+                sp.description,
+                sp.category_id,
+                sp.brand_id,
+                sp.images,
+                sp.price,
+                sp.currency,
+                sp.seller_id,
+                sp.status,
+                sp.created_at,
+                sp.updated_at,
+                c.name as category_name,
+                b.name as brand_name,
+                sp.quantity_available,
+                sp.quantity_reserved,
+                sp.reorder_point,
+                sp.max_stock_level,
+                sp.last_restocked_at,
+                sp.last_sold_at
+              FROM ${this.tableName} sp
+              LEFT JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+              LEFT JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+              WHERE sp.seller_id = ?
+              GROUP BY sp.id
+              ORDER BY sp.created_at DESC
+              LIMIT ${limit} OFFSET ${offset}
+            `;
+            const simpleParams = [seller_id || ''];
+            console.log('Simple query parameters:', simpleParams);
+            results = await executeQuery(simpleQuery, simpleParams);
+          }
+          
+          console.log(`✅ Query executed successfully on attempt ${attempts}`);
           break;
-        case 'price_high':
-          sql += ` ORDER BY final_price DESC`;
-          break;
-        case 'rating':
-          sql += ` ORDER BY avg_rating DESC, review_count DESC`;
-          break;
-        case 'newest':
-          sql += ` ORDER BY sp.created_at DESC`;
-          break;
-        case 'popularity':
-          sql += ` ORDER BY sp.sales_count DESC, sp.view_count DESC`;
-          break;
-        case 'compatibility':
-          sql += ` ORDER BY spvc.compatibility_confidence DESC`;
-          break;
-        default: // relevance
-          sql += ` ORDER BY 
-            CASE WHEN ? IS NOT NULL THEN 
-              MATCH(sp.name, sp.description, sp.part_number, sp.oem_number) AGAINST(? IN NATURAL LANGUAGE MODE) * 10
-            ELSE 0 END +
-            sp.rating * 2 +
-            sp.sales_count * 0.5 +
-            sp.view_count * 0.1 DESC`;
-          params.push(query ?? null, (query ?? ''));
+          
+        } catch (error) {
+          console.error(`❌ Attempt ${attempts} failed:`, error.message);
+          if (attempts === maxAttempts) {
+            console.error('All execution attempts failed');
+            throw error;
+          }
+          console.log('Retrying with different approach...');
+        }
       }
-
-      // Pagination
-      const offset = (page - 1) * limit;
-      sql += ` LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
-
-      const results = await executeQuery(sql, params);
 
       // Get total count for pagination
-      let countSql = `
-        SELECT COUNT(DISTINCT sp.id) as total
-        FROM spare_parts sp
-        LEFT JOIN spare_parts_vehicle_compatibility spvc ON sp.id = spvc.spare_part_id
-        LEFT JOIN spare_parts_inventory spi ON sp.id = spi.spare_part_id
-        WHERE sp.status = 'active'
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM ${this.tableName} sp
+        ${whereClause}
       `;
 
-      const countParams = params.slice(0, -2); // Remove limit and offset
-      const countResult = await executeQuery(countSql, countParams);
+      const countResult = await executeQuery(countQuery, queryParams);
       const total = countResult[0].total;
 
       return {
-        parts: results,
+        spare_parts: results,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page,
+          limit,
           total,
-          pages: Math.ceil(total / limit)
-        },
-        filters_applied: searchParams
+          total_pages: Math.ceil(total / limit),
+          has_next: page * limit < total,
+          has_prev: page > 1
+        }
       };
     } catch (error) {
       console.error('Error searching spare parts:', error);
-      throw new Error('Search failed: ' + error.message);
+      throw new Error(`Failed to search spare parts: ${error.message}`);
     }
   }
 
-  // Get spare part details with enhanced information
-  async getSparePartById(partId, userId = null) {
+  // ==================== INVENTORY MANAGEMENT ====================
+
+  // Simple method to update stock in main spare_parts table
+  async updateStock(sparePartId, quantity) {
     try {
-      const sql = `
-        SELECT 
-          sp.*,
-          spc.name as category_name,
-          spc.description as category_description,
-          spb.name as brand_name,
-          spb.logo_url as brand_logo,
-          spb.website as brand_website,
-          spb.country as brand_country,
-          u.first_name as seller_name,
-          u.last_name as seller_last_name,
-          u.rating as seller_rating,
-          u.phone as seller_phone,
-          CASE 
-            WHEN sp.discount_percentage > 0 AND (sp.discount_expires_at IS NULL OR sp.discount_expires_at > NOW()) 
-            THEN sp.price * (1 - sp.discount_percentage / 100)
-            ELSE sp.price
-          END as final_price,
-          CASE 
-            WHEN sp.discount_percentage > 0 AND (sp.discount_expires_at IS NULL OR sp.discount_expires_at > NOW()) 
-            THEN sp.price * (sp.discount_percentage / 100)
-            ELSE 0
-          END as discount_amount,
-          spi.quantity_available,
-          spi.quantity_reserved,
-          spi.last_restocked_at,
-          spi.last_sold_at,
-          (SELECT AVG(rating) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as avg_rating,
-          (SELECT COUNT(*) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as review_count,
-          (SELECT COUNT(*) FROM spare_parts_wishlist WHERE spare_part_id = sp.id) as wishlist_count
-        FROM spare_parts sp
-        LEFT JOIN spare_parts_categories spc ON sp.category_id = spc.id
-        LEFT JOIN spare_parts_brands spb ON sp.brand_id = spb.id
-        LEFT JOIN users u ON sp.seller_id = u.id
-        LEFT JOIN spare_parts_inventory spi ON sp.id = spi.spare_part_id
-        WHERE sp.id = ? AND sp.status = 'active'
+      const updateQuery = `
+        UPDATE ${this.tableName} 
+        SET quantity_available = ?, updated_at = NOW()
+        WHERE id = ?
+      `;
+      
+      await executeQuery(updateQuery, [quantity, sparePartId]);
+      
+      return {
+        success: true,
+        message: `Stock updated to ${quantity} units`,
+        spare_part_id: sparePartId,
+        quantity_available: quantity
+      };
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      throw new Error(`Failed to update stock: ${error.message}`);
+    }
+  }
+
+  // Increase stock (existing + new purchases) directly on main table
+  async restockStock(sparePartId, quantityAdded, costPerUnit = null) {
+    try {
+      const updateQuery = `
+        UPDATE ${this.tableName}
+        SET quantity_available = quantity_available + ?,
+            last_restocked_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ?
       `;
 
-      const result = await executeQuery(sql, [partId]);
-      if (!result[0]) {
+      await executeQuery(updateQuery, [quantityAdded, sparePartId]);
+
+      return {
+        success: true,
+        message: `Restocked ${quantityAdded} units`,
+        spare_part_id: sparePartId,
+        quantity_added: quantityAdded
+      };
+    } catch (error) {
+      console.error('Error restocking:', error);
+      throw new Error(`Failed to restock: ${error.message}`);
+    }
+  }
+
+  async updateInventory(sparePartId, inventoryData) {
+    try {
+      const {
+        warehouse_id,
+        quantity_available,
+        quantity_reserved = 0,
+        quantity_on_order = 0,
+        reorder_point,
+        reorder_quantity
+      } = inventoryData;
+
+      // Check if inventory record exists
+      const existingQuery = `
+        SELECT id FROM ${this.inventoryTable} 
+        WHERE spare_part_id = ? AND warehouse_id = ?
+      `;
+      const existing = await executeQuery(existingQuery, [sparePartId, warehouse_id]);
+
+      if (existing.length > 0) {
+        // Update existing inventory
+        const updateQuery = `
+          UPDATE ${this.inventoryTable} 
+          SET quantity_available = ?, 
+              quantity_reserved = ?, 
+              quantity_on_order = ?, 
+              reorder_point = ?, 
+              reorder_quantity = ?,
+              updated_at = NOW()
+          WHERE spare_part_id = ? AND warehouse_id = ?
+        `;
+        await executeQuery(updateQuery, [
+          quantity_available, quantity_reserved, quantity_on_order, 
+          reorder_point, reorder_quantity, sparePartId, warehouse_id
+        ]);
+      } else {
+        // Create new inventory record
+        const insertQuery = `
+          INSERT INTO ${this.inventoryTable} 
+          (id, spare_part_id, warehouse_id, quantity_available, quantity_reserved, 
+           quantity_on_order, reorder_point, reorder_quantity, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+        await executeQuery(insertQuery, [
+          uuidv4(), sparePartId, warehouse_id, quantity_available, 
+          quantity_reserved, quantity_on_order, reorder_point, reorder_quantity
+        ]);
+      }
+
+      return { success: true, message: 'Inventory updated successfully' };
+    } catch (error) {
+      console.error('Error updating inventory:', error);
+      throw new Error(`Failed to update inventory: ${error.message}`);
+    }
+  }
+
+  async reserveInventory(sparePartId, warehouseId, quantity) {
+    try {
+      // Update basic fields
+        // Check available quantity
+        const checkQuery = `
+          SELECT quantity_available, quantity_reserved 
+          FROM ${this.inventoryTable} 
+          WHERE spare_part_id = ? AND warehouse_id = ?
+        `;
+        const inventory = await executeQuery(checkQuery, [sparePartId, warehouseId]);
+
+        if (inventory.length === 0) {
+          throw new Error('Inventory record not found');
+        }
+
+        const { quantity_available, quantity_reserved } = inventory[0];
+        const newReserved = quantity_reserved + quantity;
+
+        if (newReserved > quantity_available) {
+          throw new Error('Insufficient inventory available');
+        }
+
+        // Update reserved quantity
+        const updateQuery = `
+          UPDATE ${this.inventoryTable} 
+          SET quantity_reserved = ?, updated_at = NOW()
+          WHERE spare_part_id = ? AND warehouse_id = ?
+        `;
+        await executeQuery(updateQuery, [newReserved, sparePartId, warehouseId]);
+
+        return { success: true, reserved_quantity: newReserved };
+    } catch (error) {
+      console.error('Error reserving inventory:', error);
+      throw new Error(`Failed to reserve inventory: ${error.message}`);
+    }
+  }
+
+  async releaseInventory(sparePartId, warehouseId, quantity) {
+    try {
+      const updateQuery = `
+        UPDATE ${this.inventoryTable} 
+        SET quantity_reserved = GREATEST(0, quantity_reserved - ?),
+            updated_at = NOW()
+        WHERE spare_part_id = ? AND warehouse_id = ?
+      `;
+      
+      const result = await executeQuery(updateQuery, [quantity, sparePartId, warehouseId]);
+      
+      if (result.affectedRows === 0) {
+        throw new Error('Inventory record not found');
+      }
+
+      return { success: true, message: 'Inventory released successfully' };
+    } catch (error) {
+      console.error('Error releasing inventory:', error);
+      throw new Error(`Failed to release inventory: ${error.message}`);
+    }
+  }
+
+  async sellInventory(sparePartId, warehouseId, quantity) {
+    try {
+      // Update basic fields
+        // Check available quantity
+        const checkQuery = `
+          SELECT quantity_available, quantity_reserved 
+          FROM ${this.inventoryTable} 
+          WHERE spare_part_id = ? AND warehouse_id = ?
+        `;
+        const inventory = await executeQuery(checkQuery, [sparePartId, warehouseId]);
+
+        if (inventory.length === 0) {
+          // Fallback: decrement from main spare_parts table if no per-warehouse inventory
+          const fallbackQuery = `
+            UPDATE ${this.tableName}
+            SET quantity_available = GREATEST(0, quantity_available - ?),
+                last_sold_at = NOW(),
+                updated_at = NOW()
+            WHERE id = ?
+          `;
+          await executeQuery(fallbackQuery, [quantity, sparePartId]);
+          return { success: true };
+        }
+
+        const { quantity_available, quantity_reserved } = inventory[0];
+        const newAvailable = quantity_available - quantity;
+
+        if (newAvailable < 0) {
+          throw new Error('Insufficient inventory available');
+        }
+
+        // Update inventory
+        const updateQuery = `
+          UPDATE ${this.inventoryTable} 
+          SET quantity_available = ?, 
+              last_sold_at = NOW(),
+              updated_at = NOW()
+          WHERE spare_part_id = ? AND warehouse_id = ?
+        `;
+        await executeQuery(updateQuery, [newAvailable, sparePartId, warehouseId]);
+
+        // Also keep the main table in sync with total available
+        const syncMainQuery = `
+          UPDATE ${this.tableName}
+          SET quantity_available = GREATEST(0, quantity_available - ?),
+              last_sold_at = NOW(),
+              updated_at = NOW()
+          WHERE id = ?
+        `;
+        await executeQuery(syncMainQuery, [quantity, sparePartId]);
+
+        return { success: true, remaining_quantity: newAvailable };
+    } catch (error) {
+      console.error('Error selling inventory:', error);
+      throw new Error(`Failed to sell inventory: ${error.message}`);
+    }
+  }
+
+  async getLowStockItems(sellerId = null) {
+    try {
+      let whereClause = 'si.quantity_available <= si.reorder_point';
+      const queryParams = [];
+
+      if (sellerId) {
+        whereClause += ' AND sp.seller_id = ?';
+        queryParams.push(sellerId);
+      }
+
+      const query = `
+        SELECT 
+          sp.id,
+          sp.sku,
+          sp.name,
+          sp.price,
+          sp.currency,
+          b.name as brand_name,
+          c.name as category_name,
+          si.quantity_available,
+          si.reorder_point,
+          si.reorder_quantity,
+          w.name as warehouse_name,
+          w.city as warehouse_city
+        FROM ${this.tableName} sp
+        JOIN ${this.inventoryTable} si ON sp.id = si.spare_part_id
+        JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        JOIN ${this.warehousesTable} w ON si.warehouse_id = w.id
+        WHERE ${whereClause}
+        ORDER BY si.quantity_available ASC
+      `;
+
+      return await executeQuery(query, queryParams);
+    } catch (error) {
+      console.error('Error getting low stock items:', error);
+      throw new Error(`Failed to get low stock items: ${error.message}`);
+    }
+  }
+
+  // ==================== VEHICLE COMPATIBILITY ====================
+
+  async addVehicleCompatibility(sparePartId, compatibilityData) {
+    try {
+      const insertQuery = `
+        INSERT INTO ${this.compatibilityTable} 
+        (id, spare_part_id, vehicle_make, vehicle_model, vehicle_year_from, vehicle_year_to,
+         engine_type, engine_size, fuel_type, transmission_type, body_type, trim_level,
+         notes, compatibility_confidence, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `;
+
+      for (const compatibility of compatibilityData) {
+        await executeQuery(insertQuery, [
+          uuidv4(),
+          sparePartId,
+          compatibility.vehicle_make,
+          compatibility.vehicle_model,
+          compatibility.vehicle_year_from,
+          compatibility.vehicle_year_to,
+          compatibility.engine_type || null,
+          compatibility.engine_size || null,
+          compatibility.fuel_type || null,
+          compatibility.transmission_type || null,
+          compatibility.body_type || null,
+          compatibility.trim_level || null,
+          compatibility.notes || null,
+          compatibility.compatibility_confidence || 1.0
+        ]);
+      }
+
+      return { success: true, message: 'Vehicle compatibility added successfully' };
+    } catch (error) {
+      console.error('Error adding vehicle compatibility:', error);
+      throw new Error(`Failed to add vehicle compatibility: ${error.message}`);
+    }
+  }
+
+  async getVehicleCompatibility(sparePartId) {
+    try {
+      const query = `
+        SELECT * FROM ${this.compatibilityTable} 
+        WHERE spare_part_id = ?
+        ORDER BY compatibility_confidence DESC, vehicle_year_from ASC
+      `;
+      return await executeQuery(query, [sparePartId]);
+    } catch (error) {
+      console.error('Error getting vehicle compatibility:', error);
+      throw new Error(`Failed to get vehicle compatibility: ${error.message}`);
+    }
+  }
+
+  async updateVehicleCompatibility(sparePartId, compatibilityData) {
+    try {
+      // Update basic fields
+        // Delete existing compatibility records
+        const deleteQuery = `DELETE FROM ${this.compatibilityTable} WHERE spare_part_id = ?`;
+        await executeQuery(deleteQuery, [sparePartId]);
+
+        // Add new compatibility records
+        if (compatibilityData.length > 0) {
+          await this.addVehicleCompatibility(sparePartId, compatibilityData);
+        }
+
+        return { success: true, message: 'Vehicle compatibility updated successfully' };
+    } catch (error) {
+      console.error('Error updating vehicle compatibility:', error);
+      throw new Error(`Failed to update vehicle compatibility: ${error.message}`);
+    }
+  }
+
+  async findCompatibleParts(vehicleData) {
+    try {
+      const {
+        vehicle_make,
+        vehicle_model,
+        vehicle_year,
+        engine_type,
+        fuel_type,
+        transmission_type
+      } = vehicleData;
+
+      const conditions = [];
+      const queryParams = [];
+
+      conditions.push(`vc.vehicle_make = ?`);
+      queryParams.push(vehicle_make);
+
+      if (vehicle_model) {
+        conditions.push(`vc.vehicle_model = ?`);
+        queryParams.push(vehicle_model);
+      }
+
+      if (vehicle_year) {
+        conditions.push(`vc.vehicle_year_from <= ? AND vc.vehicle_year_to >= ?`);
+        queryParams.push(vehicle_year, vehicle_year);
+      }
+
+      if (engine_type) {
+        conditions.push(`vc.engine_type = ?`);
+        queryParams.push(engine_type);
+      }
+
+      if (fuel_type) {
+        conditions.push(`vc.fuel_type = ?`);
+        queryParams.push(fuel_type);
+      }
+
+      if (transmission_type) {
+        conditions.push(`vc.transmission_type = ?`);
+        queryParams.push(transmission_type);
+      }
+
+      const query = `
+        SELECT
+          sp.*,
+          c.name as category_name,
+          b.name as brand_name,
+          vc.compatibility_confidence,
+          vc.vehicle_year_from,
+          vc.vehicle_year_to,
+          vc.engine_type,
+          vc.fuel_type,
+          vc.transmission_type,
+          si.quantity_available
+        FROM ${this.tableName} sp
+        JOIN ${this.compatibilityTable} vc ON sp.id = vc.spare_part_id
+        JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        LEFT JOIN ${this.inventoryTable} si ON sp.id = si.spare_part_id
+        WHERE ${conditions.join(' AND ')}
+        AND sp.status = 'active'
+        GROUP BY sp.id
+        ORDER BY vc.compatibility_confidence DESC, sp.price ASC
+      `;
+
+      return await executeQuery(query, queryParams);
+    } catch (error) {
+      console.error('Error finding compatible parts:', error);
+      throw new Error(`Failed to find compatible parts: ${error.message}`);
+    }
+  }
+
+  // ==================== PRICE COMPARISON ====================
+
+  async addPriceComparison(sparePartId, comparisonData) {
+    try {
+      const {
+        competitor_name,
+        competitor_url,
+        competitor_price,
+        competitor_currency,
+        shipping_cost = 0,
+        availability_status = 'unknown'
+      } = comparisonData;
+
+      const totalCost = competitor_price + shipping_cost;
+
+      const insertQuery = `
+        INSERT INTO ${this.priceComparisonTable} 
+        (id, spare_part_id, competitor_name, competitor_url, competitor_price,
+         competitor_currency, last_checked_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())
+      `;
+
+      await executeQuery(insertQuery, [
+        uuidv4(), sparePartId, competitor_name, competitor_url, competitor_price,
+        competitor_currency
+      ]);
+
+      return { success: true, message: 'Price comparison added successfully' };
+    } catch (error) {
+      console.error('Error adding price comparison:', error);
+      throw new Error(`Failed to add price comparison: ${error.message}`);
+    }
+  }
+
+  async getPriceComparisons(sparePartId) {
+    try {
+      const query = `
+        SELECT * FROM ${this.priceComparisonTable} 
+        WHERE spare_part_id = ?
+        ORDER BY competitor_price ASC, last_checked_at DESC
+      `;
+      return await executeQuery(query, [sparePartId]);
+    } catch (error) {
+      console.error('Error getting price comparisons:', error);
+      throw new Error(`Failed to get price comparisons: ${error.message}`);
+    }
+  }
+
+  async getPriceAnalysis(sparePartId) {
+    try {
+      const query = `
+        SELECT 
+          sp.price as our_price,
+          sp.currency as our_currency,
+          AVG(pc.competitor_price) as avg_competitor_price,
+          MIN(pc.competitor_price) as min_competitor_price,
+          MAX(pc.competitor_price) as max_competitor_price,
+          COUNT(pc.id) as competitor_count
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.priceComparisonTable} pc ON sp.id = pc.spare_part_id
+        WHERE sp.id = ?
+        GROUP BY sp.id, sp.price, sp.currency
+      `;
+
+      const result = await executeQuery(query, [sparePartId]);
+      if (result.length === 0) {
         throw new Error('Spare part not found');
       }
 
-      const part = result[0];
-
-      // Get vehicle compatibility
-      const compatibilitySql = `
-        SELECT * FROM spare_parts_vehicle_compatibility 
-        WHERE spare_part_id = ? 
-        ORDER BY compatibility_confidence DESC
-      `;
-      const compatibility = await executeQuery(compatibilitySql, [partId]);
-
-      // Get price comparison
-      const priceComparisonSql = `
-        SELECT * FROM spare_parts_price_comparison 
-        WHERE spare_part_id = ? 
-        ORDER BY total_cost ASC
-      `;
-      const priceComparison = await executeQuery(priceComparisonSql, [partId]);
-
-      // Get related parts
-      const relatedPartsSql = `
-        SELECT 
-          sp.id, sp.name, sp.price, sp.images, sp.rating,
-          CASE 
-            WHEN sp.discount_percentage > 0 AND (sp.discount_expires_at IS NULL OR sp.discount_expires_at > NOW()) 
-            THEN sp.price * (1 - sp.discount_percentage / 100)
-            ELSE sp.price
-          END as final_price
-        FROM spare_parts sp
-        WHERE sp.category_id = ? AND sp.id != ? AND sp.status = 'active'
-        ORDER BY sp.sales_count DESC, sp.rating DESC
-        LIMIT 6
-      `;
-      const relatedParts = await executeQuery(relatedPartsSql, [part.category_id, partId]);
-
-      // Get installation services
-      const installationServicesSql = `
-        SELECT 
-          spis.*,
-          u.first_name as provider_name,
-          u.rating as provider_rating
-        FROM spare_parts_installation_services spis
-        LEFT JOIN users u ON spis.service_provider_id = u.id
-        WHERE spis.spare_part_id = ? AND spis.is_active = true
-        ORDER BY spis.base_price ASC
-      `;
-      const installationServices = await executeQuery(installationServicesSql, [partId]);
-
-      // Check if user has this in wishlist
-      let inWishlist = false;
-      if (userId) {
-        const wishlistSql = 'SELECT id FROM spare_parts_wishlist WHERE user_id = ? AND spare_part_id = ?';
-        const wishlistResult = await executeQuery(wishlistSql, [userId, partId]);
-        inWishlist = wishlistResult.length > 0;
+      const analysis = result[0];
+      
+      // Calculate price competitiveness
+      if (analysis.avg_competitor_price) {
+        analysis.price_difference = analysis.our_price - analysis.avg_competitor_price;
+        analysis.price_difference_percentage = (analysis.price_difference / analysis.avg_competitor_price) * 100;
+        analysis.is_competitive = analysis.price_difference_percentage <= 10; // Within 10% is competitive
       }
 
-      // Track view
-      if (userId) {
-        await this.trackPartView(partId, userId, 'view');
-      }
-
-      return {
-        ...part,
-        compatibility,
-        price_comparison: priceComparison,
-        related_parts: relatedParts,
-        installation_services: installationServices,
-        in_wishlist: inWishlist,
-        payment_methods: this.supportedPaymentMethods
-      };
+      return analysis;
     } catch (error) {
-      console.error('Error getting spare part details:', error);
-      throw new Error('Failed to get spare part details: ' + error.message);
+      console.error('Error getting price analysis:', error);
+      throw new Error(`Failed to get price analysis: ${error.message}`);
     }
   }
 
-  // Advanced compatibility checker
-  async checkVehicleCompatibility(partId, vehicleData) {
+  // ==================== BUNDLE MANAGEMENT ====================
+
+  async createBundle(bundleData) {
     try {
       const {
-        make,
-        model,
-        year,
-        engine_type,
-        engine_size,
-        fuel_type,
-        transmission_type,
-        body_type,
-        trim_level
-      } = vehicleData;
+        name,
+        description,
+        bundle_type,
+        total_price,
+        bundle_discount,
+        currency = 'USD',
+        target_vehicle_make,
+        target_vehicle_model,
+        target_vehicle_year_from,
+        target_vehicle_year_to,
+        installation_included = false,
+        installation_cost = 0,
+        warranty_period,
+        seller_id,
+        items = []
+      } = bundleData;
 
-      const sql = `
-        SELECT 
-          spvc.*,
-          sp.name as part_name,
-          sp.part_number,
-          sp.oem_number,
-          CASE 
-            WHEN spvc.vehicle_make = ? AND spvc.vehicle_model = ? 
-                 AND ? BETWEEN spvc.vehicle_year_from AND spvc.vehicle_year_to
-            THEN 1.0
-            WHEN spvc.vehicle_make = ? AND spvc.vehicle_model = ?
-            THEN 0.8
-            WHEN spvc.vehicle_make = ?
-            THEN 0.6
-            ELSE spvc.compatibility_confidence
-          END as compatibility_score
-        FROM spare_parts_vehicle_compatibility spvc
-        LEFT JOIN spare_parts sp ON spvc.spare_part_id = sp.id
-        WHERE spvc.spare_part_id = ?
-        ORDER BY compatibility_score DESC
-      `;
+      // Update basic fields
+        // Create bundle
+        const bundleId = uuidv4();
+        const insertQuery = `
+          INSERT INTO ${this.bundlesTable} 
+          (id, name, description, bundle_type, total_price, bundle_discount, currency,
+           target_vehicle_make, target_vehicle_model, target_vehicle_year_from, target_vehicle_year_to,
+           installation_included, installation_cost, warranty_period, seller_id, status, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
+        `;
 
-      const params = [make, model, year, make, model, make, partId];
-      const results = await executeQuery(sql, params);
+        await executeQuery(insertQuery, [
+          bundleId, name, description, bundle_type, total_price, bundle_discount, currency,
+          target_vehicle_make, target_vehicle_model, target_vehicle_year_from, target_vehicle_year_to,
+          installation_included, installation_cost, warranty_period, seller_id
+        ]);
 
-      if (results.length === 0) {
-        return {
-          compatible: false,
-          confidence: 0,
-          message: 'No compatibility information available for this part'
-        };
-      }
-
-      const bestMatch = results[0];
-      const isCompatible = bestMatch.compatibility_score >= 0.8;
-
-      return {
-        compatible: isCompatible,
-        confidence: bestMatch.compatibility_score,
-        match_details: bestMatch,
-        all_matches: results,
-        recommendation: isCompatible ? 'This part is compatible with your vehicle' : 'This part may not be compatible with your vehicle'
-      };
-    } catch (error) {
-      console.error('Error checking vehicle compatibility:', error);
-      throw new Error('Compatibility check failed: ' + error.message);
-    }
-  }
-
-  // Price comparison and competitive analysis
-  async getPriceComparison(partId) {
-    try {
-      const sql = `
-        SELECT 
-          sppc.*,
-          sp.name as part_name,
-          sp.part_number,
-          sp.oem_number,
-          sp.price as our_price,
-          CASE 
-            WHEN sppc.total_cost < sp.price THEN 'lower'
-            WHEN sppc.total_cost > sp.price THEN 'higher'
-            ELSE 'same'
-          END as price_position
-        FROM spare_parts_price_comparison sppc
-        LEFT JOIN spare_parts sp ON sppc.spare_part_id = sp.id
-        WHERE sppc.spare_part_id = ?
-        ORDER BY sppc.total_cost ASC
-      `;
-
-      const results = await executeQuery(sql, [partId]);
-      
-      if (results.length === 0) {
-        return {
-          message: 'No competitive pricing data available',
-          competitors: [],
-          price_position: 'unknown'
-        };
-      }
-
-      const ourPrice = results[0].our_price;
-      const lowestCompetitor = results[0];
-      const highestCompetitor = results[results.length - 1];
-      const averageCompetitorPrice = results.reduce((sum, r) => sum + r.total_cost, 0) / results.length;
-
-      return {
-        our_price: ourPrice,
-        competitors: results,
-        lowest_competitor: lowestCompetitor,
-        highest_competitor: highestCompetitor,
-        average_competitor_price: averageCompetitorPrice,
-        price_position: ourPrice < averageCompetitorPrice ? 'competitive' : 'above_average',
-        savings_vs_highest: highestCompetitor.total_cost - ourPrice,
-        premium_vs_lowest: ourPrice - lowestCompetitor.total_cost
-      };
-    } catch (error) {
-      console.error('Error getting price comparison:', error);
-      throw new Error('Price comparison failed: ' + error.message);
-    }
-  }
-
-  // Create spare part
-  async createSparePart(partData, sellerId) {
-    try {
-      const partId = crypto.randomUUID();
-      const toJsonOrNull = (value) => (value === undefined || value === null ? null : JSON.stringify(value));
-      const toNullIfUndef = (value) => (value === undefined ? null : value);
-      const toNullIfNaN = (value) => (value === undefined || value === null || Number.isNaN(value) ? null : value);
-      const ensureSku = (sku, id) => (sku && String(sku).trim().length > 0 ? String(sku).trim() : `SKU-${id.slice(0, 8)}`);
-      
-      // Discover actual columns in DB (cache after first query)
-      if (!this._sparePartsColumns) {
-        const rows = await executeQuery('SHOW COLUMNS FROM spare_parts');
-        this._sparePartsColumns = new Set(rows.map(r => r.Field));
-      }
-
-      // Prepare candidate column/value map
-      const candidate = {
-        id: partId,
-        sku: ensureSku(partData.sku, partId),
-        name: partData.name,
-        description: toNullIfUndef(partData.description),
-        short_description: toNullIfUndef(partData.short_description),
-        category_id: partData.category_id,
-        brand_id: partData.brand_id,
-        part_number: toNullIfUndef(partData.part_number),
-        oem_number: toNullIfUndef(partData.oem_number),
-        price: partData.price,
-        currency: (partData.currency || 'USD'),
-        cost_price: toNullIfNaN(partData.cost_price),
-        msrp: toNullIfNaN(partData.msrp),
-        discount_percentage: toNullIfNaN(partData.discount_percentage),
-        discount_expires_at: toNullIfUndef(partData.discount_expires_at),
-        weight: toNullIfNaN(partData.weight),
-        dimensions: toJsonOrNull(partData.dimensions),
-        images: toJsonOrNull(Array.isArray(partData.images) ? partData.images : []),
-        specifications: toJsonOrNull(partData.specifications),
-        features: toJsonOrNull(Array.isArray(partData.features) ? partData.features : []),
-        warranty_period: toNullIfNaN(partData.warranty_period),
-        warranty_type: toNullIfUndef(partData.warranty_type || 'manufacturer'),
-        condition: toNullIfUndef(partData.condition || 'new'),
-        stock_quantity: toNullIfNaN(partData.stock_quantity ?? 0),
-        min_stock_level: toNullIfNaN(partData.min_stock_level ?? 5),
-        max_stock_level: toNullIfNaN(partData.max_stock_level ?? 1000),
-        is_installable: partData.is_installable === false ? 0 : 1,
-        installation_difficulty: toNullIfUndef(partData.installation_difficulty || 'medium'),
-        estimated_installation_time: toNullIfNaN(partData.estimated_installation_time),
-        installation_cost: toNullIfNaN(partData.installation_cost),
-        shipping_weight: toNullIfNaN(partData.shipping_weight),
-        shipping_dimensions: toJsonOrNull(partData.shipping_dimensions),
-        seller_id: sellerId,
-        status: 'pending'
-      };
-
-      // Keep only columns that exist in DB
-      const columns = Object.keys(candidate).filter(k => this._sparePartsColumns.has(k));
-      const placeholders = columns.map(() => '?').join(', ');
-      const colList = columns.map(c => `\`${c}\``).join(', ');
-      const values = columns.map(c => candidate[c]).map(v => (v === undefined ? null : v));
-
-      const sql = `INSERT INTO spare_parts (${colList}) VALUES (${placeholders})`;
-      await executeQuery(sql, values);
-
-      // Add vehicle compatibility if provided
-      if (partData.vehicle_compatibility && partData.vehicle_compatibility.length > 0) {
-        for (const compatibility of partData.vehicle_compatibility) {
-          await this.addVehicleCompatibility(partId, compatibility);
+        // Add bundle items
+        if (items.length > 0) {
+          await this.addBundleItems(bundleId, items);
         }
-      }
 
-      // Initialize inventory
-      await this.initializeInventory(partId, partData.stock_quantity || 0);
-
-      return { id: partId, ...partData };
+        return await this.getBundleById(bundleId);
     } catch (error) {
-      console.error('Error creating spare part:', error);
-      throw new Error('Failed to create spare part: ' + error.message);
+      console.error('Error creating bundle:', error);
+      throw new Error(`Failed to create bundle: ${error.message}`);
     }
   }
 
-  // Add vehicle compatibility
-  async addVehicleCompatibility(partId, compatibilityData) {
+  async addBundleItems(bundleId, items) {
     try {
-      const compatibilityId = crypto.randomUUID();
-      
-      // Validate and clean fuel_type - must be valid enum value or null
-      const validFuelTypes = ['gasoline', 'diesel', 'hybrid', 'electric', 'lpg', 'cng'];
-      let fuelType = compatibilityData.fuel_type;
-      if (fuelType && fuelType.trim() && !validFuelTypes.includes(fuelType.trim())) {
-        console.warn(`Invalid fuel_type: ${fuelType}, setting to null`);
-        fuelType = null;
-      } else if (!fuelType || fuelType.trim() === '') {
-        fuelType = null;
-      } else {
-        fuelType = fuelType.trim();
-      }
-
-      // Validate and clean transmission_type - must be valid enum value or null
-      const validTransmissionTypes = ['manual', 'automatic', 'cvt', 'semi_automatic'];
-      let transmissionType = compatibilityData.transmission_type;
-      if (transmissionType && transmissionType.trim() && !validTransmissionTypes.includes(transmissionType.trim())) {
-        console.warn(`Invalid transmission_type: ${transmissionType}, setting to null`);
-        transmissionType = null;
-      } else if (!transmissionType || transmissionType.trim() === '') {
-        transmissionType = null;
-      } else {
-        transmissionType = transmissionType.trim();
-      }
-      
-      const sql = `
-        INSERT INTO spare_parts_vehicle_compatibility (
-          id, spare_part_id, vehicle_make, vehicle_model, vehicle_year_from,
-          vehicle_year_to, engine_type, engine_size, fuel_type, transmission_type,
-          body_type, trim_level, notes, compatibility_confidence
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      const insertQuery = `
+        INSERT INTO ${this.bundleItemsTable} 
+        (id, bundle_id, spare_part_id, quantity, unit_price, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
       `;
 
-      const params = [
-        compatibilityId,
-        partId,
-        compatibilityData.vehicle_make,
-        compatibilityData.vehicle_model,
-        compatibilityData.vehicle_year_from,
-        compatibilityData.vehicle_year_to,
-        compatibilityData.engine_type || null,
-        compatibilityData.engine_size || null,
-        fuelType,
-        transmissionType,
-        compatibilityData.body_type || null,
-        compatibilityData.trim_level || null,
-        compatibilityData.notes || null,
-        compatibilityData.compatibility_confidence || 1.0
-      ];
-
-      await executeQuery(sql, params);
-      return { id: compatibilityId, ...compatibilityData };
-    } catch (error) {
-      console.error('Error adding vehicle compatibility:', error);
-      throw new Error('Failed to add vehicle compatibility: ' + error.message);
-    }
-  }
-
-  // Initialize inventory
-  async initializeInventory(partId, initialQuantity) {
-    try {
-      const inventoryId = crypto.randomUUID();
-      
-      const sql = `
-        INSERT INTO spare_parts_inventory (
-          id, spare_part_id, warehouse_id, quantity_available,
-          quantity_reserved, quantity_on_order, reorder_point, reorder_quantity
-        ) VALUES (?, ?, ?, ?, 0, 0, 5, 10)
-      `;
-
-      // Use default warehouse (would be configured in system settings)
-      const defaultWarehouseId = 'default-warehouse-id';
-      
-      await executeQuery(sql, [
-        inventoryId,
-        partId,
-        defaultWarehouseId,
-        initialQuantity
-      ]);
-
-      return { id: inventoryId, quantity_available: initialQuantity };
-    } catch (error) {
-      console.error('Error initializing inventory:', error);
-      throw new Error('Failed to initialize inventory: ' + error.message);
-    }
-  }
-
-  // Track part analytics
-  async trackPartView(partId, userId, eventType, additionalData = {}) {
-    try {
-      const analyticsId = crypto.randomUUID();
-      
-      const sql = `
-        INSERT INTO spare_parts_analytics (
-          id, spare_part_id, event_type, user_id, session_id,
-          referrer_url, user_agent, ip_address, country, city,
-          device_type, browser, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `;
-
-      const params = [
-        analyticsId,
-        partId,
-        eventType,
-        userId,
-        additionalData.session_id,
-        additionalData.referrer_url,
-        additionalData.user_agent,
-        additionalData.ip_address,
-        additionalData.country,
-        additionalData.city,
-        additionalData.device_type || 'desktop',
-        additionalData.browser
-      ];
-
-      await executeQuery(sql, params);
-
-      // Update view count
-      if (eventType === 'view') {
-        await executeQuery(
-          'UPDATE spare_parts SET view_count = view_count + 1 WHERE id = ?',
-          [partId]
-        );
+      for (const item of items) {
+        await executeQuery(insertQuery, [
+          uuidv4(), bundleId, item.spare_part_id, item.quantity, item.unit_price
+        ]);
       }
 
-      return { id: analyticsId };
+      return { success: true, message: 'Bundle items added successfully' };
     } catch (error) {
-      console.error('Error tracking part analytics:', error);
-      // Don't throw error for analytics failures
+      console.error('Error adding bundle items:', error);
+      throw new Error(`Failed to add bundle items: ${error.message}`);
     }
   }
 
-  // Get categories with hierarchy
-  async getCategories(parentId = null, maxDepth = 3, currentDepth = 0) {
+  async getBundleById(bundleId) {
     try {
-      // Prevent infinite recursion
-      if (currentDepth >= maxDepth) {
-        console.warn(`Categories recursion depth limit reached (${maxDepth})`);
-        return [];
-      }
-
-      const sql = `
+      const query = `
         SELECT 
-          spc.*,
-          (SELECT COUNT(*) FROM spare_parts WHERE category_id = spc.id AND status = 'active') as part_count,
-          (SELECT COUNT(*) FROM spare_parts_categories WHERE parent_id = spc.id) as subcategory_count
-        FROM spare_parts_categories spc
-        WHERE spc.parent_id ${parentId ? '= ?' : 'IS NULL'} AND spc.is_active = true
-        ORDER BY spc.sort_order, spc.name
-        LIMIT 50
+          b.*,
+          s.business_name as seller_name,
+          s.rating as seller_rating
+        FROM ${this.bundlesTable} b
+        LEFT JOIN sellers s ON b.seller_id = s.id
+        WHERE b.id = ?
       `;
 
-      const params = parentId ? [parentId] : [];
-      
-      // Add timeout protection
-      const categories = await Promise.race([
-        executeQuery(sql, params),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Categories query timeout')), 5000)
-        )
-      ]);
-
-      // Get subcategories for each category (with depth limit)
-      for (const category of categories) {
-        try {
-          category.subcategories = await this.getCategories(category.id, maxDepth, currentDepth + 1);
-        } catch (error) {
-          console.warn(`Failed to get subcategories for category ${category.id}:`, error.message);
-          category.subcategories = []; // Fallback to empty array
-        }
+      const result = await executeQuery(query, [bundleId]);
+      if (result.length === 0) {
+        throw new Error('Bundle not found');
       }
 
-      return categories;
+      const bundle = result[0];
+
+      // Get bundle items
+      const itemsQuery = `
+        SELECT 
+          bi.*,
+          sp.name as spare_part_name,
+          sp.sku as spare_part_sku,
+          sp.description as spare_part_description,
+          b.name as brand_name,
+          c.name as category_name
+        FROM ${this.bundleItemsTable} bi
+        JOIN ${this.tableName} sp ON bi.spare_part_id = sp.id
+        JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        WHERE bi.bundle_id = ?
+        ORDER BY bi.created_at ASC
+      `;
+
+      bundle.items = await executeQuery(itemsQuery, [bundleId]);
+
+      return bundle;
+    } catch (error) {
+      console.error('Error getting bundle:', error);
+      throw new Error(`Failed to get bundle: ${error.message}`);
+    }
+  }
+
+  // ==================== INSTALLATION SERVICES ====================
+
+  async addInstallationServices(sparePartId, services) {
+    try {
+      const insertQuery = `
+        INSERT INTO ${this.installationServicesTable} 
+        (id, spare_part_id, service_name, service_description,
+         service_price, currency, estimated_duration_hours, is_available, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+      `;
+
+      for (const service of services) {
+        await executeQuery(insertQuery, [
+          uuidv4(), sparePartId, service.service_name,
+          service.service_description, service.service_price || service.base_price, service.currency || 'USD',
+          service.estimated_duration_hours || service.estimated_duration, service.is_available !== false
+        ]);
+      }
+
+      return { success: true, message: 'Installation services added successfully' };
+    } catch (error) {
+      console.error('Error adding installation services:', error);
+      throw new Error(`Failed to add installation services: ${error.message}`);
+    }
+  }
+
+  async getInstallationServices(sparePartId) {
+    try {
+      const query = `
+        SELECT 
+          ins.*
+        FROM ${this.installationServicesTable} ins
+        WHERE ins.spare_part_id = ? AND ins.is_available = 1
+        ORDER BY ins.service_price ASC
+      `;
+      return await executeQuery(query, [sparePartId]);
+    } catch (error) {
+      console.error('Error getting installation services:', error);
+      throw new Error(`Failed to get installation services: ${error.message}`);
+    }
+  }
+
+  async updateInstallationServices(sparePartId, services) {
+    try {
+      // Update basic fields
+        // Delete existing services
+        const deleteQuery = `DELETE FROM ${this.installationServicesTable} WHERE spare_part_id = ?`;
+        await executeQuery(deleteQuery, [sparePartId]);
+
+        // Add new services
+        if (services.length > 0) {
+          await this.addInstallationServices(sparePartId, services);
+        }
+
+        return { success: true, message: 'Installation services updated successfully' };
+    } catch (error) {
+      console.error('Error updating installation services:', error);
+      throw new Error(`Failed to update installation services: ${error.message}`);
+    }
+  }
+
+  // ==================== UTILITY METHODS ====================
+
+  async generateSKU(name, brandId) {
+    try {
+      // Get brand abbreviation
+      const brandQuery = `SELECT name FROM ${this.brandsTable} WHERE id = ?`;
+      const brandResult = await executeQuery(brandQuery, [brandId]);
+      const brandName = brandResult.length > 0 ? brandResult[0].name : 'UNK';
+
+      // Generate SKU: BRAND-NAME-YYYYMMDD-HHMMSS
+      const brandAbbr = brandName.substring(0, 3).toUpperCase();
+      const nameAbbr = name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+      const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').substring(0, 12);
+
+      return `${brandAbbr}-${nameAbbr}-${timestamp}`;
+    } catch (error) {
+      console.error('Error generating SKU:', error);
+      return `SP-${Date.now()}`;
+    }
+  }
+
+  async getCategories() {
+    try {
+      const query = `
+        SELECT * FROM ${this.categoriesTable} 
+        WHERE is_active = 1
+        ORDER BY sort_order ASC, name ASC
+      `;
+      return await executeQuery(query);
     } catch (error) {
       console.error('Error getting categories:', error);
-      // Return empty array instead of throwing to prevent endpoint failure
-      return [];
+      throw new Error(`Failed to get categories: ${error.message}`);
     }
   }
 
-  // Get brands
   async getBrands() {
     try {
-      const sql = `
-        SELECT 
-          spb.*,
-          (SELECT COUNT(*) FROM spare_parts WHERE brand_id = spb.id AND status = 'active') as part_count
-        FROM spare_parts_brands spb
-        WHERE spb.is_active = true
-        ORDER BY spb.name
-        LIMIT 100
+      const query = `
+        SELECT * FROM ${this.brandsTable} 
+        WHERE is_active = 1
+        ORDER BY name ASC
       `;
-
-      // Add timeout protection
-      const brands = await Promise.race([
-        executeQuery(sql),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Brands query timeout')), 5000)
-        )
-      ]);
-      
-      return brands;
+      return await executeQuery(query);
     } catch (error) {
       console.error('Error getting brands:', error);
-      // Return empty array instead of throwing to prevent endpoint failure
-      return [];
+      throw new Error(`Failed to get brands: ${error.message}`);
     }
   }
 
-  // Create brand
-  async createBrand(brandData) {
-    const id = crypto.randomUUID();
-    const name = (brandData?.name || '').trim();
-    if (!name) {
-      throw new Error('Brand name is required');
-    }
-    const sql = `
-      INSERT INTO spare_parts_brands (id, name, description, logo_url, website, country, is_oem, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    `;
-    const params = [
-      id,
-      name,
-      brandData?.description ?? null,
-      brandData?.logo_url ?? null,
-      brandData?.website ?? null,
-      brandData?.country ?? null,
-      brandData?.is_oem ? 1 : 0,
-    ];
-    await executeQuery(sql, params);
-    return { id, name };
-  }
-
-  // Create category
-  async createCategory(categoryData) {
-    const id = crypto.randomUUID();
-    const name = (categoryData?.name || '').trim();
-    if (!name) {
-      throw new Error('Category name is required');
-    }
-    const sql = `
-      INSERT INTO spare_parts_categories (id, name, description, parent_id, icon, sort_order, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, 1)
-    `;
-    const params = [
-      id,
-      name,
-      categoryData?.description ?? null,
-      categoryData?.parent_id ?? null,
-      categoryData?.icon ?? null,
-      categoryData?.sort_order ?? 0,
-    ];
-    await executeQuery(sql, params);
-    return { id, name };
-  }
-
-  // Get seller's spare parts
-  async getSellerSpareParts(sellerId, options = {}) {
+  async getSellerStats(sellerId) {
     try {
-      const {
-        page = 1,
-        limit = 20,
-        status,
-        search,
-        sort_by = 'created_at',
-        sort_order = 'DESC'
-      } = options;
-
-      let sql = `
+      const query = `
         SELECT 
-          sp.*,
-          spc.name as category_name,
-          spb.name as brand_name,
-          spi.quantity_available,
-          spi.quantity_reserved,
-          (SELECT AVG(rating) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as avg_rating,
-          (SELECT COUNT(*) FROM spare_parts_reviews WHERE spare_part_id = sp.id AND status = 'approved') as review_count
-        FROM spare_parts sp
-        LEFT JOIN spare_parts_categories spc ON sp.category_id = spc.id
-        LEFT JOIN spare_parts_brands spb ON sp.brand_id = spb.id
-        LEFT JOIN spare_parts_inventory spi ON sp.id = spi.spare_part_id
+          COUNT(sp.id) as total_parts,
+          COUNT(CASE WHEN sp.status = 'active' THEN 1 END) as active_parts,
+          COUNT(CASE WHEN sp.status = 'inactive' THEN 1 END) as inactive_parts,
+          AVG(sp.price) as avg_price,
+          SUM(si.quantity_available) as total_inventory,
+          COUNT(CASE WHEN si.quantity_available <= si.reorder_point THEN 1 END) as low_stock_items
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.inventoryTable} si ON sp.id = si.spare_part_id
         WHERE sp.seller_id = ?
       `;
 
-      const params = [sellerId];
-
-      // Add status filter
-      if (status && status !== 'all') {
-        sql += ` AND sp.status = ?`;
-        params.push(status);
-      }
-
-      // Add search filter
-      if (search) {
-        sql += ` AND (
-          sp.name LIKE ? OR 
-          sp.description LIKE ? OR 
-          sp.part_number LIKE ? OR 
-          sp.oem_number LIKE ?
-        )`;
-        const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      }
-
-      // Add sorting
-      const validSortFields = ['created_at', 'updated_at', 'name', 'price', 'stock_quantity', 'status'];
-      const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
-      const sortDirection = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-      
-      sql += ` ORDER BY sp.${sortField} ${sortDirection}`;
-
-      // Add pagination
-      const offset = (page - 1) * limit;
-      sql += ` LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
-
-      const results = await executeQuery(sql, params);
-
-      // Get total count for pagination
-      let countSql = `
-        SELECT COUNT(*) as total
-        FROM spare_parts sp
-        WHERE sp.seller_id = ?
-      `;
-      const countParams = [sellerId];
-
-      if (status && status !== 'all') {
-        countSql += ` AND sp.status = ?`;
-        countParams.push(status);
-      }
-
-      if (search) {
-        countSql += ` AND (
-          sp.name LIKE ? OR 
-          sp.description LIKE ? OR 
-          sp.part_number LIKE ? OR 
-          sp.oem_number LIKE ?
-        )`;
-        const searchTerm = `%${search}%`;
-        countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      }
-
-      const countResult = await executeQuery(countSql, countParams);
-      const total = countResult[0].total;
-
-      return {
-        parts: results,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      };
+      const result = await executeQuery(query, [sellerId]);
+      return result[0];
     } catch (error) {
-      console.error('Error getting seller spare parts:', error);
-      throw new Error('Failed to get seller spare parts: ' + error.message);
-    }
-  }
-
-  // Update seller's spare part
-  async updateSellerSparePart(partId, sellerId, partData) {
-    try {
-      // First verify the part belongs to the seller
-      const verifySql = 'SELECT id FROM spare_parts WHERE id = ? AND seller_id = ?';
-      const verifyResult = await executeQuery(verifySql, [partId, sellerId]);
-      
-      if (verifyResult.length === 0) {
-        throw new Error('Spare part not found or unauthorized');
-      }
-
-      // Prepare update data
-      const updateFields = [];
-      const updateValues = [];
-
-      const allowedFields = [
-        'name', 'description', 'short_description', 'part_number', 'oem_number',
-        'price', 'cost_price', 'msrp', 'discount_percentage', 'discount_expires_at',
-        'weight', 'dimensions', 'images', 'specifications', 'features',
-        'warranty_period', 'warranty_type', 'condition', 'stock_quantity',
-        'min_stock_level', 'max_stock_level', 'is_installable', 'installation_difficulty',
-        'estimated_installation_time', 'installation_cost', 'shipping_weight',
-        'shipping_dimensions', 'is_featured'
-      ];
-
-      for (const field of allowedFields) {
-        if (partData[field] !== undefined) {
-          updateFields.push(`${field} = ?`);
-          
-          if (field === 'dimensions' || field === 'images' || field === 'specifications' || field === 'features' || field === 'shipping_dimensions') {
-            updateValues.push(JSON.stringify(partData[field]));
-          } else {
-            updateValues.push(partData[field]);
-          }
-        }
-      }
-
-      if (updateFields.length === 0) {
-        throw new Error('No valid fields to update');
-      }
-
-      updateFields.push('updated_at = NOW()');
-      updateValues.push(partId);
-
-      const sql = `UPDATE spare_parts SET ${updateFields.join(', ')} WHERE id = ?`;
-      await executeQuery(sql, updateValues);
-
-      // Update inventory if stock_quantity changed
-      if (partData.stock_quantity !== undefined) {
-        await executeQuery(
-          'UPDATE spare_parts_inventory SET quantity_available = ? WHERE spare_part_id = ?',
-          [partData.stock_quantity, partId]
-        );
-      }
-
-      // Get updated part
-      const updatedPart = await this.getSparePartById(partId);
-      return updatedPart;
-    } catch (error) {
-      console.error('Error updating spare part:', error);
-      throw new Error('Failed to update spare part: ' + error.message);
-    }
-  }
-
-  // Delete seller's spare part
-  async deleteSellerSparePart(partId, sellerId) {
-    try {
-      // First verify the part belongs to the seller
-      const verifySql = 'SELECT id FROM spare_parts WHERE id = ? AND seller_id = ?';
-      const verifyResult = await executeQuery(verifySql, [partId, sellerId]);
-      
-      if (verifyResult.length === 0) {
-        throw new Error('Spare part not found or unauthorized');
-      }
-
-      // Soft delete by updating status to 'deleted'
-      await executeQuery(
-        'UPDATE spare_parts SET status = ?, updated_at = NOW() WHERE id = ?',
-        ['deleted', partId]
-      );
-
-      return { id: partId, status: 'deleted' };
-    } catch (error) {
-      console.error('Error deleting spare part:', error);
-      throw new Error('Failed to delete spare part: ' + error.message);
-    }
-  }
-
-  // Get spare parts analytics
-  async getSparePartsAnalytics(sellerId, dateRange = {}) {
-    try {
-      const { start_date, end_date } = dateRange;
-      
-      let sql = `
-        SELECT 
-          DATE(spa.created_at) as date,
-          spa.event_type,
-          COUNT(*) as event_count,
-          COUNT(DISTINCT spa.user_id) as unique_users,
-          COUNT(DISTINCT spa.spare_part_id) as unique_parts
-        FROM spare_parts_analytics spa
-        LEFT JOIN spare_parts sp ON spa.spare_part_id = sp.id
-        WHERE sp.seller_id = ?
-      `;
-
-      const params = [sellerId];
-
-      if (start_date) {
-        sql += ` AND spa.created_at >= ?`;
-        params.push(start_date);
-      }
-
-      if (end_date) {
-        sql += ` AND spa.created_at <= ?`;
-        params.push(end_date);
-      }
-
-      sql += ` GROUP BY DATE(spa.created_at), spa.event_type ORDER BY date DESC`;
-
-      const analytics = await executeQuery(sql, params);
-
-      // Get top performing parts
-      const topPartsSql = `
-        SELECT 
-          sp.id, sp.name, sp.price, sp.view_count, sp.sales_count,
-          COUNT(spa.id) as total_events,
-          COUNT(CASE WHEN spa.event_type = 'view' THEN 1 END) as views,
-          COUNT(CASE WHEN spa.event_type = 'add_to_cart' THEN 1 END) as add_to_cart,
-          COUNT(CASE WHEN spa.event_type = 'purchase' THEN 1 END) as purchases
-        FROM spare_parts sp
-        LEFT JOIN spare_parts_analytics spa ON sp.id = spa.spare_part_id
-        WHERE sp.seller_id = ?
-        GROUP BY sp.id
-        ORDER BY total_events DESC
-        LIMIT 10
-      `;
-
-      const topParts = await executeQuery(topPartsSql, [sellerId]);
-
-      return {
-        analytics,
-        top_parts: topParts,
-        date_range: dateRange
-      };
-    } catch (error) {
-      console.error('Error getting spare parts analytics:', error);
-      throw new Error('Failed to get analytics: ' + error.message);
+      console.error('Error getting seller stats:', error);
+      throw new Error(`Failed to get seller stats: ${error.message}`);
     }
   }
 }

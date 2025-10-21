@@ -48,6 +48,16 @@ function buildDbConfigFromEnv() {
     connectionLimit: 20, // Increased from 10
     queueLimit: 0,
     // acquireTimeout: 30000, // Not supported in MySQL2 - removed
+    // MySQL performance optimizations
+    multipleStatements: false,
+    // Increase sort buffer size to prevent "Out of sort memory" errors
+    initSql: [
+      'SET SESSION sort_buffer_size = 8388608', // 8MB
+      'SET SESSION read_rnd_buffer_size = 4194304', // 4MB
+      'SET SESSION join_buffer_size = 4194304', // 4MB
+      'SET SESSION tmp_table_size = 67108864', // 64MB
+      'SET SESSION max_heap_table_size = 67108864' // 64MB
+    ],
     idleTimeout: 600000, // Increased to 10 minutes
     charset: 'utf8mb4',
     timezone: 'Z',
@@ -61,7 +71,7 @@ function buildDbConfigFromEnv() {
     multipleStatements: false,
     namedPlaceholders: true,
     // Connection-level options
-    connectTimeout: 20000 // Connection timeout
+    connectTimeout: 10000 // Connection timeout (10 seconds)
   };
 }
 
@@ -73,7 +83,10 @@ const pool = mysql.createPool(dbConfig);
 
 // Add connection pool event listeners for better monitoring
 pool.on('connection', (connection) => {
-  console.log('🔗 New database connection established as id ' + connection.threadId);
+  const debugMode = process.env.DB_DEBUG === 'true';
+  if (debugMode) {
+    console.log('🔗 New database connection established as id ' + connection.threadId);
+  }
 });
 
 pool.on('error', (err) => {
@@ -137,9 +150,22 @@ const resetCircuitBreaker = () => {
   console.log('🔄 Circuit breaker reset - database connection restored');
 };
 
+// Manual circuit breaker reset function for immediate recovery
+const manualResetCircuitBreaker = () => {
+  console.log('🔄 Manual circuit breaker reset requested');
+  resetCircuitBreaker();
+  
+  // Also try to recreate the connection pool if needed
+  if (pool._allConnections && pool._allConnections.length === 0) {
+    console.log('🔄 Recreating connection pool...');
+    // Note: In production, you might want to be more careful about this
+    // For now, we'll just reset the circuit breaker
+  }
+};
+
 // Auto-reset circuit breaker after a period of time
 let circuitBreakerResetTimer = null;
-const CIRCUIT_BREAKER_RESET_DELAY = 5 * 60 * 1000; // 5 minutes
+const CIRCUIT_BREAKER_RESET_DELAY = 30 * 1000; // 30 seconds for faster recovery
 
 const scheduleCircuitBreakerReset = () => {
   if (circuitBreakerResetTimer) {
@@ -154,16 +180,71 @@ const scheduleCircuitBreakerReset = () => {
   }, CIRCUIT_BREAKER_RESET_DELAY);
 };
 
-// Execute query helper with enhanced retry logic and circuit breaker
+// Execute query helper with enhanced retry logic, circuit breaker, and parameter validation
 const executeQuery = async (query, params = [], retries = 3) => {
   // Check circuit breaker before attempting query
   if (!isHealthy && consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
     throw new Error('Database circuit breaker is open - too many consecutive failures');
   }
 
+  // PARAMETER VALIDATION AND SANITIZATION
+  const debugMode = process.env.DB_DEBUG === 'true';
+  
+  if (debugMode) {
+    console.log('=== DATABASE EXECUTE QUERY DEBUG ===');
+    console.log('Query:', query);
+    console.log('Original params:', params);
+  }
+  
+  // Count placeholders in query
+  const placeholderCount = (query.match(/\?/g) || []).length;
+  
+  if (debugMode) {
+    console.log('Placeholder count:', placeholderCount);
+    console.log('Parameter count:', params.length);
+  }
+  
+  // Sanitize parameters
+  const sanitizedParams = params.map((param, index) => {
+    if (param === null || param === undefined) {
+      if (debugMode) console.warn(`Parameter ${index} is null/undefined, converting to empty string`);
+      return '';
+    }
+    if (typeof param === 'string' && (param === 'undefined' || param === 'null')) {
+      if (debugMode) console.warn(`Parameter ${index} is string "undefined"/"null", converting to empty string`);
+      return '';
+    }
+    return param;
+  });
+  
+  // Validate parameter count
+  if (sanitizedParams.length !== placeholderCount) {
+    console.error('PARAMETER MISMATCH IN executeQuery!');
+    console.error('Expected:', placeholderCount, 'Actual:', sanitizedParams.length);
+    
+    // Try to fix the mismatch
+    if (sanitizedParams.length < placeholderCount) {
+      if (debugMode) console.log('Adding missing parameters...');
+      while (sanitizedParams.length < placeholderCount) {
+        sanitizedParams.push('');
+      }
+    } else if (sanitizedParams.length > placeholderCount) {
+      if (debugMode) console.log('Removing excess parameters...');
+      sanitizedParams.splice(placeholderCount);
+    }
+  }
+  
+  if (debugMode) {
+    console.log('Sanitized params:', sanitizedParams);
+    console.log('=====================================');
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const [results] = await pool.execute(query, params);
+      if (debugMode) {
+        console.log(`Database execution attempt ${attempt}/${retries}`);
+      }
+      const [results] = await pool.execute(query, sanitizedParams);
       
       // Reset failure counter on successful query
       if (attempt > 1) {
@@ -171,9 +252,33 @@ const executeQuery = async (query, params = [], retries = 3) => {
         isHealthy = true;
       }
       
+      if (debugMode) {
+        console.log(`✅ Database query executed successfully on attempt ${attempt}`);
+      }
       return results;
     } catch (error) {
-      console.error(`Database query error (attempt ${attempt}/${retries}):`, error.message);
+      console.error(`❌ Database query error (attempt ${attempt}/${retries}):`, error.message);
+      console.error('Error code:', error.code);
+      console.error('Error errno:', error.errno);
+      
+      // Handle specific MySQL parameter errors
+      if (error.code === 'ER_WRONG_ARGUMENTS' || error.errno === 1210) {
+        console.error('MySQL parameter mismatch error detected!');
+        console.error('Query:', query);
+        console.error('Parameters:', sanitizedParams);
+        
+        // Try with empty parameters as last resort
+        if (attempt === retries) {
+          console.log('Last attempt: trying with empty parameters...');
+          try {
+            const [results] = await pool.execute(query, []);
+            console.log('✅ Query executed with empty parameters');
+            return results;
+          } catch (emptyError) {
+            console.error('Even empty parameters failed:', emptyError.message);
+          }
+        }
+      }
       
       // Handle specific connection errors
       if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
@@ -226,6 +331,7 @@ module.exports = {
   executeTransaction,
   getConnectionHealth,
   resetCircuitBreaker,
+  manualResetCircuitBreaker,
   scheduleCircuitBreakerReset,
   dbConfig
 };

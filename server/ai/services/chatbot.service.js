@@ -95,7 +95,10 @@ class AIChatbotService {
       this.carKnowledgeBase.set('models', models);
       this.carKnowledgeBase.set('features', features);
       
-      console.log('✅ Car knowledge base loaded successfully');
+      const quietMode = process.env.QUIET_STARTUP === 'true';
+      if (!quietMode) {
+        console.log('✅ Car knowledge base loaded successfully');
+      }
     } catch (error) {
       console.error('Error loading car knowledge base:', error);
       // Set empty defaults to prevent further errors
@@ -549,7 +552,10 @@ class AIChatbotService {
   async initialize() {
     try {
       await this.ensureInitialized();
-      console.log('✅ AIChatbotService initialized successfully');
+      const quietMode = process.env.QUIET_STARTUP === 'true';
+      if (!quietMode) {
+        console.log('✅ AIChatbotService initialized successfully');
+      }
       return true;
     } catch (error) {
       console.error('❌ Failed to initialize AIChatbotService:', error.message);

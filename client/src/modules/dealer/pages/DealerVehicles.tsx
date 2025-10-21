@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
 import {
   Box,
   GridLegacy as Grid,
@@ -626,7 +627,7 @@ const DealerVehicles: React.FC = () => {
                       height: viewMode === 'list' ? '100%' : 200,
                       objectFit: 'cover',
                     }}
-                    image={vehicle.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                    image={getImageUrl(vehicle.images?.[0])}
                     alt={vehicle.title}
                   />
 

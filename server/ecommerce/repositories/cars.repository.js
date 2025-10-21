@@ -174,18 +174,12 @@ const getCarReviews = async (carId, filters) => {
 const createCar = async (carData) => {
     const carId = require('crypto').randomUUID();
     
-    // Calculate total price if not provided
-    const quantity = carData.quantity || 1;
-    const unitPrice = carData.unitPrice || carData.price || 0;
-    const totalPrice = carData.totalPrice || (quantity * unitPrice);
-    
 	const query = `
 		INSERT INTO cars (
-			id, title, description, brand, model, year, mileage, price, currency,
-			quantity, total_price, car_condition, fuel_type, transmission, body_type, color, engine_size,
-			horsepower, vin, location, latitude, longitude, number_of_seats, images, features,
-			status, is_featured, seller_id, dealer_id
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			id, title, description, brand, model, year, mileage, price,
+			car_condition, fuel_type, transmission, body_type, color, location, images,
+			status, seller_id
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`;
 	
 	const params = [
@@ -197,27 +191,15 @@ const createCar = async (carData) => {
 		carData.year,
 		carData.mileage,
 		carData.price,
-		carData.currency || 'USD',
-		quantity,
-		totalPrice,
 		carData.car_condition,
 		carData.fuel_type,
 		carData.transmission,
 		carData.body_type,
 		carData.color,
-		carData.engine_size || null,
-		carData.horsepower || null,
-		carData.vin || null,
 		carData.location,
-		carData.latitude || null,
-		carData.longitude || null,
-		carData.number_of_seats || 5,
-		JSON.stringify(carData.images || []),
-		JSON.stringify(carData.features || []),
+		carData.images ? JSON.stringify(carData.images) : null,
 		carData.status || 'pending',
-		carData.is_featured || false,
-		carData.seller_id,
-		carData.dealer_id || null
+		carData.seller_id
 	];
 
     await executeQuery(query, params);

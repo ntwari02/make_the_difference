@@ -41,7 +41,6 @@ export const APP_CONSTANTS = {
     REVIEW: 'review',
     MESSAGE: 'message',
     USER: 'user',
-    SPARE_PART: 'spare_part',
     CERTIFICATE: 'certificate',
     QUIZ: 'quiz',
     LESSON: 'lesson',

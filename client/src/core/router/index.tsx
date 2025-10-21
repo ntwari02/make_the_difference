@@ -61,8 +61,7 @@ const SellerInventory = React.lazy(() => import('../../modules/seller/pages/Sell
 const SellerAddVehicle = React.lazy(() => import('../../modules/seller/pages/SellerAddVehicle')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerCarsAdvanced = React.lazy(() => import('../../modules/seller/pages/SellerCarsAdvanced')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const CreateCarPage = React.lazy(() => import('../../modules/seller/pages/CreateCarPage')) as React.LazyExoticComponent<React.ComponentType<any>>;
-const SellerAddPart = React.lazy(() => import('../../modules/seller/pages/SellerAddPart')) as React.LazyExoticComponent<React.ComponentType<any>>;
-const SellerSparePartsAdvanced = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsAdvanced')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const APITestPage = React.lazy(() => import('../../modules/seller/pages/APITestPage')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerEditCar = React.lazy(() => import('../../modules/seller/pages/SellerEditCar')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerProfile = React.lazy(() => import('../../modules/seller/pages/SellerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -70,6 +69,18 @@ const SellerMessages = React.lazy(() => import('../../modules/seller/pages/Selle
 const SellerReviews = React.lazy(() => import('../../modules/seller/pages/SellerReviews')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerPayments = React.lazy(() => import('../../modules/seller/pages/SellerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSettings = React.lazy(() => import('../../modules/seller/pages/SellerSettings')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSparePartsDashboard = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
+import SellerSparePartForm from '../../modules/seller/pages/SellerSparePartForm';
+const SellerSparePartsAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSparePartsBundles = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsBundles')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSparePartsPriceComparison = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsPriceComparison')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSparePartsInventory = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsInventory')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerSparePartsExport = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsExport')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCarsAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerCarsAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCarsBundles = React.lazy(() => import('../../modules/seller/pages/SellerCarsBundles')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCarsPriceComparison = React.lazy(() => import('../../modules/seller/pages/SellerCarsPriceComparison')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCarsInventory = React.lazy(() => import('../../modules/seller/pages/SellerCarsInventory')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCarsExport = React.lazy(() => import('../../modules/seller/pages/SellerCarsExport')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const CarDetails = React.lazy(() => import('../../modules/buyer/pages/CarDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -791,21 +802,11 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/seller/parts/add',
+    path: '/seller/api-test',
     element: (
       <ProtectedRoute allowedRoles={['seller','admin']}>
         <React.Suspense fallback={<Fallback />}>
-          <SellerAddPart />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/seller/parts',
-    element: (
-      <ProtectedRoute allowedRoles={['seller','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <SellerSparePartsAdvanced />
+          <APITestPage />
         </React.Suspense>
       </ProtectedRoute>
     ),
@@ -876,6 +877,134 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['seller','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <SellerSettings />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/add',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <SellerSparePartForm />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/:id/edit',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <SellerSparePartForm />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/bundles',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsBundles />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/price-comparison',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsPriceComparison />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/inventory',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsInventory />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/spare-parts/export',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerSparePartsExport />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+
+  // Car Management Routes
+  {
+    path: '/seller/cars/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerCarsAnalytics />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/bundles',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerCarsBundles />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/price-comparison',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerCarsPriceComparison />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/inventory',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerCarsInventory />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/cars/export',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerCarsExport />
         </React.Suspense>
       </ProtectedRoute>
     ),

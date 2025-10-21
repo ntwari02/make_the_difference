@@ -1,5 +1,33 @@
 const carsRepo = require('../repositories/cars.repository');
 
+// Validate image paths - ensure they are file paths, not base64 data
+const validateImagePaths = (images) => {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+
+  return images.filter(imagePath => {
+    if (typeof imagePath !== 'string') {
+      console.warn('Invalid image path type:', typeof imagePath);
+      return false;
+    }
+
+    // Reject base64 data URLs
+    if (imagePath.startsWith('data:image/')) {
+      console.warn('Base64 image data detected and rejected. Use file upload endpoints instead.');
+      return false;
+    }
+
+    // Accept file paths (local or external URLs)
+    if (imagePath.startsWith('/uploads/') || imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return true;
+    }
+
+    console.warn('Invalid image path format:', imagePath);
+    return false;
+  });
+};
+
 // Public services
 const listCars = async (filters = {}) => {
 	const {
@@ -57,8 +85,11 @@ const getCarReviews = async (carId, filters = {}) => {
 };
 
 // Seller services
-const createCar = async (sellerId, carData) => {
-	// Validate required fields
+const createCar = async (sellerId, carData, uploadedFiles = []) => {
+	console.log('Creating car with data:', carData);
+	console.log('Uploaded files:', uploadedFiles);
+	
+	// Validate only the truly required fields based on database schema
 	const requiredFields = ['title', 'brand', 'model', 'year', 'mileage', 'price', 'car_condition', 'fuel_type', 'transmission', 'body_type', 'color', 'location'];
 	
 	for (const field of requiredFields) {
@@ -67,26 +98,42 @@ const createCar = async (sellerId, carData) => {
 		}
 	}
 
-	// Set default quantity if not provided
-	if (!carData.quantity) {
-		carData.quantity = 1;
-	}
+	// Process uploaded files to get image paths
+	const imagePaths = uploadedFiles.map(file => {
+		// Handle both old format (filename) and new format (path)
+		if (file.path) {
+			return file.path;
+		} else if (file.filename) {
+			return `/uploads/cars/${file.filename}`;
+		}
+		return null;
+	}).filter(Boolean);
+	
+	// Validate image paths to prevent base64 storage
+	const validatedImagePaths = validateImagePaths(imagePaths);
+	console.log('Image paths:', validatedImagePaths);
 
-	// Calculate total price if not provided
-	if (!carData.totalPrice) {
-		const unitPrice = carData.unitPrice || carData.price || 0;
-		carData.totalPrice = carData.quantity * unitPrice;
-	}
+	// Set default values for optional fields - only use fields sent by client
+	const carRecord = {
+		title: carData.title,
+		brand: carData.brand,
+		model: carData.model,
+		year: parseInt(carData.year),
+		mileage: parseInt(carData.mileage),
+		price: parseFloat(carData.price),
+		car_condition: carData.car_condition,
+		fuel_type: carData.fuel_type,
+		transmission: carData.transmission,
+		body_type: carData.body_type,
+		color: carData.color,
+		location: carData.location,
+		description: carData.description || null,
+		images: validatedImagePaths.length > 0 ? validatedImagePaths : [],
+		status: carData.status || 'pending', // Default to pending for admin review
+		seller_id: sellerId
+	};
 
-	// Set default status - assume seller is verified for better performance
-	// Remove seller lookup to speed up the process
-	const defaultStatus = 'pending'; // Will be reviewed by admin
-
-	return carsRepo.createCar({
-		...carData,
-		seller_id: sellerId,
-		status: defaultStatus
-	});
+	return carsRepo.createCar(carRecord);
 };
 
 const updateCar = async (carId, sellerId, updateData) => {
@@ -102,6 +149,11 @@ const updateCar = async (carId, sellerId, updateData) => {
 	// Don't allow updating status directly
 	delete updateData.status;
 	delete updateData.seller_id;
+
+	// Validate images if provided
+	if (updateData.images !== undefined) {
+		updateData.images = validateImagePaths(updateData.images || []);
+	}
 
 	return carsRepo.updateCar(carId, updateData);
 };

@@ -42,7 +42,8 @@ const getCarReviews = async (req, res) => {
 // Seller routes
 const createCar = async (req, res) => {
 	try {
-		const car = await service.createCar(req.user.id, req.body);
+		const uploadedFiles = req.files || [];
+		const car = await service.createCar(req.user.id, req.body, uploadedFiles);
 		return created(res, car);
 	} catch (error) {
 		return res.status(400).json({ error: error.message });

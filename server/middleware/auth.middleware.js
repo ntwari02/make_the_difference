@@ -73,7 +73,7 @@ const authorizeRoles = (...allowedRoles) => {
 			return next();
 		}
 		
-		if (!allowedRoles.includes(req.user.role)) {
+		if (!allowedRoles[0].includes(req.user.role)) {
 			return res.status(403).json({ message: 'Forbidden: insufficient role' });
 		}
 		return next();

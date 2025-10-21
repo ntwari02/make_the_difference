@@ -6,7 +6,6 @@ import {
   Typography,
   TextField,
   Button,
-  Avatar,
   Alert,
   Chip,
   FormControl,
@@ -31,6 +30,7 @@ import type { RootState } from '../../../core/store';
 import { setProfile, setLoading, setError } from '../store/sellerSlice';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
+import PhotoUpload from '../../../shared/components/PhotoUpload';
 
 interface ProfileFormData {
   business_name: string;
@@ -254,17 +254,20 @@ const SellerProfile: React.FC = () => {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Avatar
-                src={formData.logo}
-                sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: 'primary.main',
-                  fontSize: '2rem',
-                }}
-              >
-                {formData.business_name?.charAt(0)}
-              </Avatar>
+              <PhotoUpload
+                images={formData.images || []}
+                onImagesChange={(images) => handleInputChange('images', images)}
+                maxImages={1}
+                maxFileSize={5}
+                entityType="profile"
+                entityId={profile?.id}
+                uploadEndpoint="/api/seller/profile/photos"
+                profileMode={true}
+                avatarSize={80}
+                showLabel={false}
+                disabled={false}
+                fallbackText={formData.business_name?.charAt(0) || 'S'}
+              />
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                   <Typography variant="h5" fontWeight={700}>
@@ -308,6 +311,7 @@ const SellerProfile: React.FC = () => {
           >
             <Tab label="Business Information" />
             <Tab label="Contact Details" />
+            <Tab label="Photos" />
             <Tab label="Business Hours" />
             <Tab label="Services" />
           </Tabs>
@@ -461,8 +465,34 @@ const SellerProfile: React.FC = () => {
             </Card>
           )}
 
-          {/* Business Hours Tab */}
+          {/* Photos Tab */}
           {activeTab === 2 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Business Photos
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Upload photos of your business, showroom, or workspace to build trust with customers.
+                </Typography>
+                <PhotoUpload
+                  images={formData.images}
+                  onImagesChange={(images) => handleInputChange('images', images)}
+                  maxImages={10}
+                  maxFileSize={5}
+                  entityType="profile"
+                  entityId={profile?.id}
+                  uploadEndpoint="/api/seller/profile/photos"
+                  label="Business Photos"
+                  description="Upload photos of your business location, showroom, or workspace"
+                  aspectRatio="16/9"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Business Hours Tab */}
+          {activeTab === 3 && (
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight={600}>
@@ -510,7 +540,7 @@ const SellerProfile: React.FC = () => {
           )}
 
           {/* Services Tab */}
-          {activeTab === 3 && (
+          {activeTab === 4 && (
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight={600}>

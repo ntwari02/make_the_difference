@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../core/store';
-import { sellerApi } from '../services/sellerApi';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
 import SellerLayout from '../components/layout/SellerLayout';
 import {
   Box,
@@ -425,7 +425,7 @@ const SellerCarsAdvanced: React.FC = () => {
                           <CardMedia
                             component="img"
                             height="200"
-                            image={car.images?.[0] || '/placeholder-car.jpg'}
+                            image={getImageUrl(car.images?.[0])}
                             alt={car.title || `${car.make} ${car.model}`}
                             sx={{ objectFit: 'cover' }}
                           />

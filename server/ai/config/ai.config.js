@@ -1,5 +1,5 @@
 const dotenv = require('dotenv');
-dotenv.config();
+dotenv.config({ debug: false });
 
 const aiConfig = {
   // AI Service Configuration
@@ -186,7 +186,10 @@ function validateConfig() {
 function initializeAIConfig() {
   try {
     validateConfig();
-    console.log('✅ AI configuration validated successfully');
+    const quietMode = process.env.QUIET_STARTUP === 'true';
+    if (!quietMode) {
+      console.log('✅ AI configuration validated successfully');
+    }
     return aiConfig;
   } catch (error) {
     console.error('❌ AI configuration validation failed:', error.message);

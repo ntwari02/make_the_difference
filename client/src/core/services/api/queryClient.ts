@@ -89,10 +89,6 @@ export const queryKeys = {
       history: ['payments', 'history'] as const,
       methods: ['payments', 'methods'] as const,
     },
-    spareParts: {
-      all: ['spare-parts'] as const,
-      list: (params: any) => ['spare-parts', 'list', params] as const,
-    },
   },
   
   // E-learning queries

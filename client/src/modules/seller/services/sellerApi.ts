@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { SellerProfile, Car, SellerStats, SellerAnalytics, Notification, Activity } from '../types';
+import { sparePartsApi } from './sparePartsApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
@@ -72,6 +73,21 @@ export const sellerProfileApi = {
     const { data } = await api.put('/seller/profile', profileData);
     return data.data || data;
   },
+
+  // Upload profile photos
+  uploadPhotos: async (profileId: string, formData: FormData): Promise<{ images: string[] }> => {
+    const { data } = await api.post(`/seller/profile/${profileId}/photos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data.data || data;
+  },
+
+  // Delete profile photo
+  deletePhoto: async (profileId: string, photoId: string): Promise<void> => {
+    await api.delete(`/seller/profile/${profileId}/photos/${photoId}`);
+  },
 };
 
 // Car Management APIs (Primary seller functionality)
@@ -101,6 +117,16 @@ export const carApi = {
   // Alternate seller path if backend exposes a nested resource
   getSellerCars: async (sellerId: string, params?: any): Promise<{ cars: Car[]; pagination?: any } | Car[]> => {
     const { data } = await api.get(`/sellers/${sellerId}/cars`, { params });
+    return data.data || data;
+  },
+
+  // Create new car listing with file uploads
+  createCarWithFiles: async (formData: FormData): Promise<Car> => {
+    const { data } = await api.post('/cars', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return data.data || data;
   },
 
@@ -265,84 +291,6 @@ export const reviewApi = {
   },
 };
 
-// Spare parts APIs
-export const sparePartsApi = {
-  // Create spare part
-  createPart: async (partData: any): Promise<any> => {
-    const { data } = await api.post('/spare-parts', partData);
-    return data.data || data;
-  },
-
-  // Get seller's spare parts
-  getMyParts: async (params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    search?: string;
-    sort_by?: string;
-    sort_order?: string;
-  }): Promise<{ parts: any[]; pagination: any }> => {
-    const { data } = await api.get('/spare-parts/seller/my-parts', { params });
-    return data.data || data;
-  },
-
-  // Update spare part
-  updatePart: async (partId: string, partData: any): Promise<any> => {
-    const { data } = await api.put(`/spare-parts/seller/${partId}`, partData);
-    return data.data || data;
-  },
-
-  // Delete spare part
-  deletePart: async (partId: string): Promise<void> => {
-    await api.delete(`/spare-parts/seller/${partId}`);
-  },
-
-  // Get single spare part details
-  getPart: async (partId: string): Promise<any> => {
-    const { data } = await api.get(`/spare-parts/${partId}`);
-    return data.data || data;
-  },
-
-  // Create brand
-  createBrand: async (payload: { name: string; description?: string; logo_url?: string; website?: string; country?: string; is_oem?: boolean; }): Promise<any> => {
-    const { data } = await api.post('/spare-parts/brands', payload);
-    return data.data || data;
-  },
-
-  // Create category
-  createCategory: async (payload: { name: string; description?: string; parent_id?: string; icon?: string; sort_order?: number; }): Promise<any> => {
-    const { data } = await api.post('/spare-parts/categories', payload);
-    return data.data || data;
-  },
-
-  // Get brands
-  getBrands: async (): Promise<Array<{ id: string; name: string }>> => {
-    const { data } = await api.get('/spare-parts/brands');
-    // API returns { brands, count } via ok() helper
-    if (data && data.brands) return data.brands;
-    if (data && data.data && data.data.brands) return data.data.brands;
-    return (data.data || data) as any;
-  },
-
-  // Get categories
-  getCategories: async (): Promise<Array<{ id: string; name: string }>> => {
-    const { data } = await api.get('/spare-parts/categories');
-    // API returns { categories, count } via ok() helper
-    if (data && data.categories) return data.categories;
-    if (data && data.data && data.data.categories) return data.data.categories;
-    return (data.data || data) as any;
-  },
-
-  // Get seller analytics
-  getAnalytics: async (params?: {
-    start_date?: string;
-    end_date?: string;
-  }): Promise<any> => {
-    const { data } = await api.get('/spare-parts/analytics/seller', { params });
-    return data.data || data;
-  },
-};
-
 // Main seller API object
 export const sellerApi = {
   profile: sellerProfileApi,
@@ -352,5 +300,5 @@ export const sellerApi = {
   activities: activityApi,
   favorites: favoritesApi,
   reviews: reviewApi,
-  parts: sparePartsApi,
+  spareParts: sparePartsApi,
 };
