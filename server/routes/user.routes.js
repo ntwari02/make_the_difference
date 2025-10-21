@@ -27,4 +27,15 @@ router.put('/profile', authenticate, async (req, res) => {
 
 module.exports = router;
 
+// Delete my account
+router.delete('/account', authenticate, async (req, res) => {
+  try {
+    const ok = await userService.deleteAccount(req.user.id);
+    if (!ok) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.json({ success: true, message: 'Account deleted' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 

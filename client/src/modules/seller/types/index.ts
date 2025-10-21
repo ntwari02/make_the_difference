@@ -65,28 +65,61 @@ export interface SellerStats {
     total_revenue: number;
     average_sale_price: number;
   };
+  performance: {
+    score: number;
+    level: string;
+  };
   recent_sales: Car[];
   monthly_sales: Array<{
     month: string;
     sales_count: number;
     monthly_revenue: number;
   }>;
+  top_models: Array<{
+    brand: string;
+    model: string;
+    total_listings: number;
+    sold_count: number;
+    avg_price: number;
+    avg_days_to_sell: number;
+  }>;
+  test_message?: string;
+  conversion_rate?: number;
 }
 
 export interface SellerAnalytics {
   sales_by_period: Array<{
     period: string;
+    total_listings: number;
     sales_count: number;
-    total_revenue: number;
-    average_price: number;
+    revenue: number;
+    avg_sale_price: number;
   }>;
   top_selling_models: Array<{
-    make: string;
+    brand: string;
     model: string;
+    total_listings: number;
     sales_count: number;
+    avg_price: number;
     total_revenue: number;
-    average_price: number;
   }>;
+  channel_performance: Array<{
+    channel: string;
+    listings: number;
+    sales: number;
+    revenue: number;
+  }>;
+  geographic_performance: Array<{
+    location: string;
+    listings: number;
+    sales: number;
+    avg_price: number;
+  }>;
+  period: {
+    type: string;
+    start_date: string;
+    end_date: string;
+  };
 }
 
 export interface Notification {

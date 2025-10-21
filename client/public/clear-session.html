@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Session Data - Reaglex Platform</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background: #dc2626;
+        }
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        .info {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .warning {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Session Data</h1>
+        
+        <div class="info">
+            <strong>What this does:</strong> This tool will clear all stored authentication data from your browser, including login tokens, user information, and session data. This will log you out completely and reset your authentication state.
+        </div>
+        
+        <div class="warning">
+            <strong>Warning:</strong> After clearing session data, you will need to log in again to access protected areas of the application.
+        </div>
+        
+        <button class="button" onclick="clearSessionData()">
+            Clear All Session Data
+        </button>
+        
+        <div id="success" class="success">
+            ✅ Session data cleared successfully! You can now close this tab and return to the application.
+        </div>
+        
+        <div class="info">
+            <strong>If you're still having issues:</strong>
+            <ul>
+                <li>Try refreshing the main application page</li>
+                <li>Clear your browser cache and cookies</li>
+                <li>Try using an incognito/private browsing window</li>
+                <li>Contact support if the problem persists</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/" style="color: #3b82f6; text-decoration: none;">← Return to Application</a>
+        </div>
+    </div>
+
+    <script>
+        function clearSessionData() {
+            try {
+                // Clear localStorage
+                localStorage.clear();
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                
+                // Clear any cookies (if accessible)
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Show success message
+                document.getElementById('success').style.display = 'block';
+                
+                console.log('✅ All session data cleared successfully');
+                
+            } catch (error) {
+                console.error('❌ Error clearing session data:', error);
+                alert('There was an error clearing session data. Please try manually clearing your browser data.');
+            }
+        }
+        
+        // Auto-clear on page load (optional)
+        // clearSessionData();
+    </script>
+</body>
+</html>

@@ -19,33 +19,40 @@ router.get('/:id', ctrl.getCar);
 router.get('/:id/reviews', ctrl.getCarReviews);
 
 // Seller routes (authentication required)
-router.post('/', authenticate, authorizeRoles('seller', 'admin'), v.validateCreateCar, handleValidation, ctrl.createCar);
-router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateCar, handleValidation, ctrl.updateCar);
+router.post('/', authenticate, authorizeRoles('seller', 'admin'), ...v.validateCreateCar, handleValidation, ctrl.createCar);
+router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), ...v.validateUpdateCar, handleValidation, ctrl.updateCar);
 router.delete('/:id', authenticate, authorizeRoles('seller', 'admin'), ctrl.deleteCar);
 router.get('/seller/my-cars', authenticate, authorizeRoles('seller', 'admin'), ctrl.getMyCars);
-router.patch('/seller/:id/status', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateStatus, handleValidation, ctrl.updateCarStatusBySeller);
+router.patch('/seller/:id/status', authenticate, authorizeRoles('seller', 'admin'), ...v.validateUpdateStatus, handleValidation, ctrl.updateCarStatusBySeller);
 
-// Seller analytics (cars)
-router.get('/seller/analytics/stats', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerAnalyticsStats);
-router.get('/seller/analytics', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerAnalyticsSeries);
+// Seller inventory management routes
+router.get('/seller/inventory/stats', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerInventoryStats);
+router.get('/seller/inventory/analytics', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerInventoryAnalytics);
+router.post('/seller/bulk-update-status', authenticate, authorizeRoles('seller', 'admin'), ctrl.bulkUpdateCarStatus);
+router.get('/seller/car-views', authenticate, authorizeRoles('seller', 'admin'), ctrl.getSellerCarViews);
+
+// Seller analytics routes are defined in /api/seller/analytics
 
 // Buyer routes (authentication required)
 router.post('/:id/favorite', authenticate, authorizeRoles('buyer', 'admin'), ctrl.addToFavorites);
 router.delete('/:id/favorite', authenticate, authorizeRoles('buyer', 'admin'), ctrl.removeFromFavorites);
 router.get('/buyer/favorites', authenticate, authorizeRoles('buyer', 'admin'), ctrl.getFavorites);
-router.post('/:id/review', authenticate, authorizeRoles('buyer', 'admin'), v.validateCreateReview, handleValidation, ctrl.createReview);
+router.post('/:id/review', authenticate, authorizeRoles('buyer', 'admin'), ...v.validateCreateReview, handleValidation, ctrl.createReview);
 
 // Seller review reply
-router.post('/reviews/:reviewId/respond', authenticate, authorizeRoles('seller', 'admin'), v.validateCreateReview, handleValidation, ctrl.respondToReview);
+// Placeholder: respondToReview controller not implemented yet
+router.post('/reviews/:reviewId/respond', authenticate, authorizeRoles('seller', 'admin'), ...v.validateCreateReview, handleValidation, (req, res) => {
+  return res.status(501).json({ success: false, message: 'Respond to review not implemented' });
+});
 
 // Admin routes - Full e-commerce management access
-router.patch('/:id/status', authenticate, authorizeRoles('admin'), v.validateUpdateStatus, handleValidation, ctrl.updateCarStatus);
+router.patch('/:id/status', authenticate, authorizeRoles('admin'), ...v.validateUpdateStatus, handleValidation, ctrl.updateCarStatus);
 router.get('/admin/pending', authenticate, authorizeRoles('admin'), ctrl.getPendingCars);
 router.get('/admin/all-cars', authenticate, authorizeRoles('admin'), ctrl.getAllCars);
 router.get('/admin/sellers', authenticate, authorizeRoles('admin'), ctrl.getAllSellers);
 router.get('/admin/buyers', authenticate, authorizeRoles('admin'), ctrl.getAllBuyers);
 router.get('/admin/analytics', authenticate, authorizeRoles('admin'), ctrl.getEcommerceAnalytics);
-router.patch('/admin/:id/force-update', authenticate, authorizeRoles('admin'), v.validateUpdateCar, handleValidation, ctrl.forceUpdateCar);
+router.patch('/admin/:id/force-update', authenticate, authorizeRoles('admin'), ...v.validateUpdateCar, handleValidation, ctrl.forceUpdateCar);
 router.delete('/admin/:id/force-delete', authenticate, authorizeRoles('admin'), ctrl.forceDeleteCar);
 router.get('/admin/reviews/all', authenticate, authorizeRoles('admin'), ctrl.getAllReviews);
 router.patch('/admin/reviews/:reviewId/status', authenticate, authorizeRoles('admin'), ctrl.updateReviewStatus);

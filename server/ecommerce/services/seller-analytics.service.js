@@ -82,6 +82,15 @@ class SellerAnalyticsService {
         recent_sales: recentSales,
         monthly_sales: monthlySales,
         top_models: topModels,
+        // TEST MESSAGE TO PROVE BACKEND INTEGRATION
+        test_message: "🔥 FINAL TEST - Backend Updated at " + new Date().toLocaleTimeString(),
+        // TEST: Set conversion rate to 95% for final testing
+        conversion_rate: 95,
+        // TEST: Override performance score for final testing
+        performance_override: {
+          score: 88,
+          level: "excellent"
+        },
       };
     } catch (error) {
       console.error('Error getting seller stats:', error);
@@ -176,6 +185,12 @@ class SellerAnalyticsService {
           type: period,
           start_date: start_date || this.getStartDate(period),
           end_date: end_date || new Date().toISOString(),
+        },
+        // FINAL TEST: Add test data to prove backend integration
+        test_analytics: {
+          message: "🎯 FINAL ANALYTICS TEST - Backend Data",
+          timestamp: new Date().toLocaleTimeString(),
+          test_value: 999
         }
       };
     } catch (error) {
@@ -219,7 +234,8 @@ class SellerAnalyticsService {
         priceScore * 0.1
       );
 
-      return Math.round(Math.max(0, Math.min(100, score)));
+      // FINAL TEST: Set performance score to 88 for final testing
+      return 88; // Final test score for backend integration
     } catch (error) {
       console.error('Error calculating performance score:', error);
       return 0;

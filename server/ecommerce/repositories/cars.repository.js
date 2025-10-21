@@ -259,9 +259,8 @@ const deleteCar = async (carId) => {
 
 const getCarsBySeller = async (sellerId, filters) => {
 	let query = `
-		SELECT c.*, d.business_name as dealer_name
+		SELECT c.*
 		FROM cars c
-		LEFT JOIN dealers d ON c.dealer_id = d.id
 		WHERE c.seller_id = ?
 	`;
 	
@@ -755,6 +754,139 @@ const getSellerAnalyticsSeries = async (sellerId, { start_date, end_date } = {})
     };
 };
 
+// Seller inventory management repository methods
+const getSellerInventoryStats = async (sellerId) => {
+    const stats = await executeQuery(`
+        SELECT 
+            COUNT(*) as total_cars,
+            COUNT(CASE WHEN status = 'active' THEN 1 END) as active_cars,
+            COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft_cars,
+            COUNT(CASE WHEN status = 'sold' THEN 1 END) as sold_cars,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_cars,
+            ROUND(AVG(price), 2) as average_price,
+            ROUND(SUM(CASE WHEN status = 'sold' THEN price ELSE 0 END), 2) as total_revenue,
+            SUM(views_count) as total_views
+        FROM cars 
+        WHERE seller_id = ?
+    `, [sellerId]);
+
+    return stats[0] || {
+        total_cars: 0,
+        active_cars: 0,
+        draft_cars: 0,
+        sold_cars: 0,
+        pending_cars: 0,
+        average_price: 0,
+        total_revenue: 0,
+        total_views: 0
+    };
+};
+
+const getSellerInventoryAnalytics = async (sellerId, filters = {}) => {
+    const { period = '30d', start_date, end_date } = filters;
+    
+    let dateCondition = '';
+    const params = [sellerId];
+    
+    if (start_date && end_date) {
+        dateCondition = 'AND created_at BETWEEN ? AND ?';
+        params.push(start_date, end_date);
+    } else {
+        const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+        dateCondition = 'AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)';
+        params.push(days);
+    }
+
+    // Cars by status over time
+    const carsByStatus = await executeQuery(`
+        SELECT 
+            DATE_FORMAT(created_at, '%Y-%m-%d') as date,
+            status,
+            COUNT(*) as count
+        FROM cars 
+        WHERE seller_id = ? ${dateCondition}
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d'), status
+        ORDER BY date ASC
+    `, params);
+
+    // Top performing cars by views
+    const topPerformingCars = await executeQuery(`
+        SELECT 
+            id, title, brand, model, year, price, views_count, status,
+            created_at
+        FROM cars 
+        WHERE seller_id = ? ${dateCondition}
+        ORDER BY views_count DESC
+        LIMIT 10
+    `, params);
+
+    // Price distribution
+    const priceDistribution = await executeQuery(`
+        SELECT 
+            CASE 
+                WHEN price < 10000 THEN 'Under $10k'
+                WHEN price < 25000 THEN '$10k - $25k'
+                WHEN price < 50000 THEN '$25k - $50k'
+                WHEN price < 100000 THEN '$50k - $100k'
+                ELSE 'Over $100k'
+            END as price_range,
+            COUNT(*) as count
+        FROM cars 
+        WHERE seller_id = ? ${dateCondition}
+        GROUP BY price_range
+        ORDER BY MIN(price) ASC
+    `, params);
+
+    return {
+        cars_by_status: carsByStatus,
+        top_performing_cars: topPerformingCars,
+        price_distribution: priceDistribution,
+        period: {
+            type: period,
+            start_date: start_date || new Date(Date.now() - (period === '7d' ? 7 : period === '30d' ? 30 : 90) * 24 * 60 * 60 * 1000).toISOString(),
+            end_date: end_date || new Date().toISOString()
+        }
+    };
+};
+
+const bulkUpdateCarStatus = async (sellerId, carIds, status) => {
+    if (!Array.isArray(carIds) || carIds.length === 0) {
+        throw new Error('Invalid car IDs');
+    }
+
+    const placeholders = carIds.map(() => '?').join(',');
+    const params = [status, sellerId, ...carIds];
+    
+    const result = await executeQuery(`
+        UPDATE cars 
+        SET status = ?, updated_at = NOW()
+        WHERE seller_id = ? AND id IN (${placeholders})
+    `, params);
+
+    return {
+        updated_count: result.affectedRows,
+        car_ids: carIds,
+        new_status: status
+    };
+};
+
+const getSellerCarViews = async (sellerId, filters = {}) => {
+    const { limit = 20 } = filters;
+    const limitNum = parseInt(limit) || 20;
+    
+    const views = await executeQuery(`
+        SELECT 
+            id, title, brand, model, year, price, views_count, status,
+            created_at, updated_at
+        FROM cars 
+        WHERE seller_id = ?
+        ORDER BY views_count DESC, updated_at DESC
+        LIMIT ?
+    `, [sellerId, limitNum]);
+
+    return views;
+};
+
 module.exports = {
 	listCars,
 	searchCars,
@@ -772,6 +904,11 @@ module.exports = {
 	updateCarStatus,
 	getPendingCars,
 	getSellerById,
+	// Seller inventory methods
+	getSellerInventoryStats,
+	getSellerInventoryAnalytics,
+	bulkUpdateCarStatus,
+	getSellerCarViews,
 	// Admin methods
 	getAllCars,
 	getAllSellers,

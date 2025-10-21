@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import type { RootState } from '../../../core/store';
-import { registerUser } from '../../../core/store/auth/authSlice';
+import { registerUser, clearAuth } from '../../../core/store/auth/authSlice';
 import { redirectToDashboard } from '../../../core/utils/roleRedirect';
 import {
   Box, Paper, Typography, TextField, InputAdornment, IconButton, Button, Stack, MenuItem, Alert
@@ -26,12 +26,24 @@ const RegisterPage: React.FC = () => {
   const [phone, setPhone] = React.useState('');
   const [step, setStep] = React.useState<1 | 2>(1);
 
-  // Redirect to login after successful registration
+  // Clear any stale auth data on mount and handle successful registration
   React.useEffect(() => {
+    // First, aggressively clear any stale authentication data
+    console.log('🧹 RegisterPage: Clearing any stale authentication data on mount');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user');
+    localStorage.removeItem('last_login');
+    sessionStorage.clear();
+    dispatch(clearAuth());
+    
+    // Only redirect if user is truly authenticated (after successful registration)
     if (isAuthenticated && user) {
+      console.log('✅ Registration successful, redirecting to dashboard');
       redirectToDashboard(user, navigate);
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, dispatch]);
 
   const emailError = email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Enter a valid email' : '';
   const passwordErrors: string[] = [];

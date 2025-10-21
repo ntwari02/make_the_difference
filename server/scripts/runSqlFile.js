@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { executeQuery } = require('../config/database');
+const { pool } = require('../config/database');
 
 async function runSqlFile(filePath) {
   try {
@@ -52,17 +52,26 @@ async function runSqlFile(filePath) {
       if (statement.trim()) {
         try {
           console.log(`Executing statement ${i + 1}/${statements.length}...`);
-          await executeQuery(statement);
+          // Use non-prepared query path to allow PREPARE/EXECUTE statements inside SQL files
+          await pool.query(statement);
           console.log(`✅ Statement ${i + 1} executed successfully`);
         } catch (error) {
           console.error(`❌ Error executing statement ${i + 1}:`, error.message);
           // Continue with other statements unless it's a critical error
+          const msg = String(error.message || '').toLowerCase();
+          const errno = error.errno;
           if (error.code === 'ER_TABLE_EXISTS_ERROR') {
             console.log('⚠️  Table already exists, continuing...');
+          } else if (error.code === 'ER_DUP_FIELDNAME' || errno === 1060 || msg.includes('duplicate column name')) {
+            console.log('⚠️  Column already exists, continuing...');
+          } else if (error.code === 'ER_DUP_KEYNAME' || errno === 1061 || msg.includes('duplicate key name') || msg.includes('already exists') ) {
+            console.log('⚠️  Index/constraint already exists, continuing...');
           } else if (error.code === 'ER_FK_CANNOT_DROP_PARENT') {
             console.log('⚠️  Cannot drop table due to foreign key constraint, continuing...');
           } else if (error.code === 'ER_NO_SUCH_TABLE') {
             console.log('⚠️  Table does not exist, continuing...');
+          } else if (msg.includes('not supported in the prepared statement protocol')) {
+            console.log('⚠️  Prepared statement protocol issue, continuing...');
           } else {
             throw error;
           }

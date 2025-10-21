@@ -29,6 +29,7 @@ import LandingPage from '../../modules/landing/pages/LandingPage';
 import ErrorPage from '../../shared/components/ui/ErrorPage';
 import SmartRedirect from '../../shared/components/ui/SmartRedirect';
 import ProtectedRoute from './ProtectedRoute';
+import AuthInitializer from '../components/AuthInitializer';
 
 // Dealer pages
 const DealerDashboard = React.lazy(() => import('../../modules/dealer/pages/DealerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -56,7 +57,7 @@ const BuyerSettings = React.lazy(() => import('../../modules/buyer/pages/BuyerSe
 
 // Seller pages
 const SellerDashboard = React.lazy(() => import('../../modules/seller/pages/SellerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
-// const SellerCars = React.lazy(() => import('../../modules/seller/pages/SellerCars')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SellerCars = React.lazy(() => import('../../modules/seller/pages/SellerCars')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerInventory = React.lazy(() => import('../../modules/seller/pages/SellerInventory')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerAddCar = React.lazy(() => import('../../modules/seller/pages/SellerAddCar')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerEditCar = React.lazy(() => import('../../modules/seller/pages/SellerEditCar')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -771,7 +772,7 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={['seller','admin']}>
         <React.Suspense fallback={<Fallback />}>
-          <SellerInventory />
+          <SellerCars />
         </React.Suspense>
       </ProtectedRoute>
     ),
@@ -882,7 +883,9 @@ const App: React.FC = () => {
         <ThemeProvider>
           <CssBaseline />
           <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <RouterProvider router={router} />
+            <AuthInitializer>
+              <RouterProvider router={router} />
+            </AuthInitializer>
           </Box>
           <Toaster
             position="top-right"

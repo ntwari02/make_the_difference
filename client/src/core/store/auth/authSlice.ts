@@ -15,12 +15,99 @@ interface AuthState {
   lastLogin: string | null;
 }
 
-// Initial state
+// Helper function to validate token and clear invalid data
+const validateAndCleanAuthData = () => {
+  const accessToken = getFromStorage(STORAGE_KEYS.ACCESS_TOKEN, null);
+  const refreshToken = getFromStorage(STORAGE_KEYS.REFRESH_TOKEN, null);
+  const userData = getFromStorage(STORAGE_KEYS.USER_DATA, null);
+  
+  console.log('🔍 Validating authentication data on app startup...');
+  console.log('- Access token exists:', !!accessToken);
+  console.log('- Refresh token exists:', !!refreshToken);
+  console.log('- User data exists:', !!userData);
+  
+  // If we have tokens but no user data, or user data is invalid, clear everything
+  if ((accessToken || refreshToken) && !userData) {
+    console.log('🧹 Clearing invalid auth data: tokens without user data');
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    localStorage.removeItem('last_login');
+    localStorage.removeItem('user'); // Also clear legacy user key
+    return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+  }
+  
+  // If we have user data but no tokens, clear user data
+  if (userData && !accessToken) {
+    console.log('🧹 Clearing invalid auth data: user data without tokens');
+    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    localStorage.removeItem('last_login');
+    localStorage.removeItem('user'); // Also clear legacy user key
+    return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+  }
+  
+  // If we have both tokens and user data, validate the user data structure
+  if (userData && accessToken) {
+    try {
+      const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
+      
+      // More comprehensive validation
+      if (!user.id || !user.email || !user.role || 
+          typeof user.id !== 'string' || 
+          typeof user.email !== 'string' || 
+          typeof user.role !== 'string') {
+        console.log('🧹 Clearing invalid auth data: incomplete or invalid user data structure');
+        console.log('- User ID:', user.id, typeof user.id);
+        console.log('- User Email:', user.email, typeof user.email);
+        console.log('- User Role:', user.role, typeof user.role);
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        localStorage.removeItem('last_login');
+        localStorage.removeItem('user'); // Also clear legacy user key
+        return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+      }
+      
+      // Validate token format (basic check)
+      if (typeof accessToken !== 'string' || accessToken.length < 10) {
+        console.log('🧹 Clearing invalid auth data: malformed access token');
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        localStorage.removeItem('last_login');
+        localStorage.removeItem('user'); // Also clear legacy user key
+        return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+      }
+      
+      console.log('✅ Authentication data validation passed');
+      console.log('- User ID:', user.id);
+      console.log('- User Email:', user.email);
+      console.log('- User Role:', user.role);
+      return { user, accessToken, refreshToken, isAuthenticated: true };
+    } catch (error) {
+      console.log('🧹 Clearing invalid auth data: corrupted user data');
+      console.log('- Parse error:', error);
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem('last_login');
+      localStorage.removeItem('user'); // Also clear legacy user key
+      return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+    }
+  }
+  
+  console.log('ℹ️ No authentication data found');
+  return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
+};
+
+// Initialize state with validation
+const validatedAuthData = validateAndCleanAuthData();
+
 const initialState: AuthState = {
-  user: getFromStorage(STORAGE_KEYS.USER_DATA, null),
-  accessToken: getFromStorage(STORAGE_KEYS.ACCESS_TOKEN, null),
-  refreshToken: getFromStorage(STORAGE_KEYS.REFRESH_TOKEN, null),
-  isAuthenticated: !!getFromStorage(STORAGE_KEYS.ACCESS_TOKEN, null),
+  user: validatedAuthData.user,
+  accessToken: validatedAuthData.accessToken,
+  refreshToken: validatedAuthData.refreshToken,
+  isAuthenticated: validatedAuthData.isAuthenticated,
   isLoading: false,
   error: null,
   lastLogin: getFromStorage('last_login', null),
@@ -205,6 +292,42 @@ export const registerUser = createAsyncThunk(
 
         return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
       }
+    }
+  }
+);
+
+export const validateToken = createAsyncThunk(
+  'auth/validateToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const accessToken = getFromStorage(STORAGE_KEYS.ACCESS_TOKEN, null);
+      
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+      
+      console.log('🔍 Validating token with backend API');
+      
+      // Call a simple endpoint to validate the token
+      const response = await api.get('/auth/validate', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      
+      console.log('✅ Token validation successful:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Token validation failed:', error.response?.data || error.message);
+      
+      // If token is invalid, clear all auth data
+      console.log('🧹 Clearing invalid auth data after token validation failure');
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem('last_login');
+      
+      return rejectWithValue(error.response?.data?.error || error.message || 'Token validation failed');
     }
   }
 );
@@ -394,6 +517,22 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.error = action.payload as string;
+      })
+      
+      // Validate token
+      .addCase(validateToken.fulfilled, (state) => {
+        // Token is valid, keep current state
+        console.log('✅ Token validation successful, maintaining auth state');
+      })
+      .addCase(validateToken.rejected, (state) => {
+        // Token is invalid, clear auth state
+        console.log('❌ Token validation failed, clearing auth state');
+        state.isAuthenticated = false;
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.error = null;
+        state.lastLogin = null;
       })
       
       // Refresh token

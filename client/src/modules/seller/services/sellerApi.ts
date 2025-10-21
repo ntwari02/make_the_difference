@@ -124,6 +124,39 @@ export const carApi = {
       throw err;
     }
   },
+
+  // Get seller inventory statistics
+  getInventoryStats: async (): Promise<any> => {
+    const { data } = await api.get('/cars/seller/inventory/stats');
+    return data.data || data;
+  },
+
+  // Get seller inventory analytics
+  getInventoryAnalytics: async (params?: {
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<any> => {
+    const { data } = await api.get('/cars/seller/inventory/analytics', { params });
+    return data.data || data;
+  },
+
+  // Bulk update car status
+  bulkUpdateStatus: async (carIds: string[], status: string): Promise<any> => {
+    const { data } = await api.post('/cars/seller/bulk-update-status', { carIds, status });
+    return data.data || data;
+  },
+
+  // Get seller car views
+  getCarViews: async (params?: {
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+    limit?: number;
+  }): Promise<any[]> => {
+    const { data } = await api.get('/cars/seller/car-views', { params });
+    return data.data || data;
+  },
 };
 
 // Analytics APIs
@@ -185,6 +218,26 @@ export const analyticsApi = {
       } as SellerAnalytics;
     }
   },
+};
+
+// Settings APIs
+export const settingsApi = {
+  getSettings: async (): Promise<any> => {
+    const { data } = await api.get('/seller/settings');
+    return data.data || data;
+  },
+  updateSettings: async (payload: any): Promise<any> => {
+    const { data } = await api.put('/seller/settings', payload);
+    return data.data || data;
+  }
+};
+
+export const userApi = {
+  deleteAccount: async (): Promise<void> => {
+    await api.delete('/seller/account', { 
+      timeout: 15000 // 15 second timeout
+    });
+  }
 };
 
 // Notification APIs
@@ -327,6 +380,59 @@ export const reviewApi = {
   },
 };
 
+// Seller Reviews APIs (reviews about the seller themselves)
+export const sellerReviewApi = {
+  // Get seller reviews
+  getSellerReviews: async (sellerId: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    reviews: any[];
+    pagination: any;
+    statistics: {
+      averageRating: number;
+      totalReviews: number;
+      ratingDistribution: Record<number, number>;
+    };
+  }> => {
+    const { data } = await api.get(`/seller/reviews/${sellerId}`, { params });
+    console.log('🔍 Raw API response:', data);
+    
+    // Extract the structured data from the response
+    if (data.success && data.data) {
+      console.log('🔍 Extracted data:', data.data);
+      return data.data;
+    } else {
+      console.log('🔍 No structured data found, returning raw data:', data);
+      return data;
+    }
+  },
+
+  // Create seller review
+  createSellerReview: async (sellerId: string, reviewData: {
+    rating: number;
+    title?: string;
+    comment?: string;
+    purchase_type?: 'car_purchase' | 'service' | 'consultation';
+    car_id?: string;
+  }): Promise<any> => {
+    const { data } = await api.post(`/seller/reviews/${sellerId}`, reviewData);
+    return data.data || data;
+  },
+
+  // Reply to seller review (seller only)
+  replyToSellerReview: async (reviewId: string, replyText: string): Promise<any> => {
+    const { data } = await api.post(`/seller/reviews/${reviewId}/reply`, { replyText });
+    return data.data || data;
+  },
+
+  // Mark review as helpful
+  markReviewHelpful: async (reviewId: string): Promise<any> => {
+    const { data } = await api.post(`/seller/reviews/${reviewId}/helpful`);
+    return data.data || data;
+  },
+};
+
 // Main seller API object
 export const sellerApi = {
   profile: sellerProfileApi,
@@ -336,4 +442,104 @@ export const sellerApi = {
   activities: activityApi,
   favorites: favoritesApi,
   reviews: reviewApi,
+  sellerReviews: sellerReviewApi,
+  settings: settingsApi,
+  user: userApi,
 };
+
+// =============================
+// Seller Messaging APIs
+// =============================
+export interface SellerConversation {
+  id: string;
+  title?: string | null;
+  type: string;
+  last_message_at?: string | null;
+  created_at?: string | null;
+  status?: string | null;
+  subject?: string | null;
+  tags?: any | null;
+  settings?: any | null;
+  other_user_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_image?: string | null;
+  other_user_role?: string | null;
+  last_message_content?: string | null;
+  last_message_sender_id?: string | null;
+  last_message_created_at?: string | null;
+  last_message_is_read?: number | boolean | null;
+  unread_count?: number | string | null;
+}
+
+export interface SellerMessage {
+  id: string;
+  content: string;
+  message_type?: string | null;
+  file_url?: string | null;
+  is_read?: boolean;
+  created_at: string;
+  sender_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_image?: string | null;
+  role?: string | null;
+}
+
+export const messagingApi = {
+  getConversations: async (
+    sellerId: string,
+    params?: { page?: number; limit?: number; folder?: 'inbox' | 'archived' | 'sent' }
+  ): Promise<{ conversations: SellerConversation[]; pagination: any }> => {
+    const { data } = await api.get(`/seller/messages/conversations/${sellerId}`, { params });
+    return data.data || data;
+  },
+
+  getConversationMessages: async (
+    conversationId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<{ messages: SellerMessage[]; pagination: any }> => {
+    const { data } = await api.get(`/seller/messages/conversations/${conversationId}/messages`, { params });
+    return data.data || data;
+  },
+
+  sendMessage: async (
+    conversationId: string,
+    body: { content: string; messageType?: string; fileUrl?: string | null }
+  ): Promise<{ messageId: string }> => {
+    const { data } = await api.post(`/seller/messages/conversations/${conversationId}/messages`, body);
+    return data.data || data;
+  },
+
+  markConversationRead: async (conversationId: string): Promise<{ success: boolean }> => {
+    const { data } = await api.put(`/seller/messages/conversations/${conversationId}/read`);
+    return data.data || data;
+  },
+
+  archiveConversation: async (conversationId: string, archive: boolean): Promise<{ success: boolean }> => {
+    const { data } = await api.put(`/seller/messages/conversations/${conversationId}/archive`, { archive });
+    return data.data || data;
+  },
+
+  deleteConversation: async (conversationId: string): Promise<{ success: boolean }> => {
+    const { data } = await api.delete(`/seller/messages/conversations/${conversationId}`);
+    return data.data || data;
+  },
+
+  bulkAction: async (
+    body: { conversationIds: string[]; action: 'mark_read' | 'archive' | 'unarchive' | 'delete' }
+  ): Promise<{ action: string; totalProcessed: number; successCount: number; failCount: number; results: Array<any> }> => {
+    const { data } = await api.post(`/seller/messages/bulk-action`, body);
+    return data.data || data;
+  },
+
+  createConversation: async (
+    body: { buyerId: string; subject?: string | null }
+  ): Promise<{ conversationId: string }> => {
+    const { data } = await api.post(`/seller/messages/conversations`, body);
+    return data.data || data;
+  },
+};
+
+// Convenient export on main sellerApi object (non-breaking)
+export const sellerMessaging = messagingApi;

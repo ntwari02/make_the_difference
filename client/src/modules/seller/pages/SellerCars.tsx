@@ -32,6 +32,9 @@ import {
   Checkbox,
   TableSortLabel,
   Pagination,
+  Grid,
+  Alert,
+  Snackbar,
   
 } from '@mui/material';
 //
@@ -90,6 +93,12 @@ const SellerCars: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchInput, setSearchInput] = useState<string>('');
+  const [inventoryStats, setInventoryStats] = useState<any>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   const cars = useSelector((state: RootState) => state.seller.cars);
   const viewMode = useSelector((state: RootState) => state.seller.viewMode);
@@ -148,7 +157,20 @@ const SellerCars: React.FC = () => {
 
   useEffect(() => {
     fetchCars();
+    fetchInventoryStats();
   }, [filters, page, rowsPerPage]);
+
+  const fetchInventoryStats = async () => {
+    try {
+      console.log('📊 Fetching inventory stats from backend...');
+      const stats = await sellerApi.cars.getInventoryStats();
+      console.log('📊 Inventory stats response:', stats);
+      setInventoryStats(stats);
+    } catch (error) {
+      console.error('❌ Failed to fetch inventory stats:', error);
+      setSnackbar({ open: true, message: 'Failed to load inventory statistics', severity: 'error' });
+    }
+  };
 
   // When category tab changes, reflect in filters
   useEffect(() => {
@@ -194,6 +216,7 @@ const SellerCars: React.FC = () => {
   const fetchCars = async () => {
     try {
       dispatch(setLoading(true));
+      console.log('🚗 Fetching cars from backend...');
 
       const queryParams = {
         page,
@@ -203,28 +226,34 @@ const SellerCars: React.FC = () => {
         ...(filters.status && { status: filters.status }),
       };
 
+      console.log('📡 API call params:', queryParams);
       const response = await sellerApi.cars.getMyCars(queryParams);
-      const fetched = response.cars || [];
-      const list = fetched.length > 0 ? fetched : mockCars;
-      // Apply category filter locally for demo
-      const categoryFiltered: any[] = filters.category === 'parts'
-        ? list.filter((c: any) => c.itemType === 'part')
-        : filters.category === 'vehicles'
-          ? list.filter((c: any) => c.itemType !== 'part')
-          : list;
-      dispatch(setCars(normalizeToCars(categoryFiltered)));
-      if ((response as any)?.pagination?.total && fetched.length > 0) {
-        setTotal((response as any).pagination.total);
+      console.log('📡 API response:', response);
+      
+      // Backend returns cars array directly, not wrapped in {cars: []}
+      const fetched = Array.isArray(response) ? response : (response.cars || []);
+      console.log('🚗 Fetched cars count:', fetched.length);
+      
+      // Use real data if available, otherwise show empty state
+      if (fetched.length > 0) {
+        console.log('✅ Using real backend data');
+        dispatch(setCars(normalizeToCars(fetched)));
+        // Handle pagination - backend might return array directly or wrapped object
+        const paginationTotal = Array.isArray(response) ? fetched.length : (response as any)?.pagination?.total;
+        setTotal(paginationTotal || fetched.length);
       } else {
-        setTotal(categoryFiltered.length);
+        console.log('⚠️ No cars found in backend, showing empty state');
+        dispatch(setCars([]));
+        setTotal(0);
       }
 
     } catch (error) {
-      console.error('Failed to fetch cars:', error);
+      console.error('❌ Failed to fetch cars:', error);
       dispatch(setError('Failed to load cars'));
-      // Fallback to mock data on error
-      dispatch(setCars(normalizeToCars(mockCars)));
-      setTotal(mockCars.length);
+      // Show empty state instead of mock data
+      dispatch(setCars([]));
+      setTotal(0);
+      setSnackbar({ open: true, message: 'Failed to load cars from backend', severity: 'error' });
     } finally {
       dispatch(setLoading(false));
     }
@@ -258,9 +287,12 @@ const SellerCars: React.FC = () => {
       dispatch(removeCar(selectedCar.id));
       setDeleteDialog(false);
       setSelectedCar(null);
+      setSnackbar({ open: true, message: 'Car deleted successfully', severity: 'success' });
+      fetchInventoryStats(); // Refresh stats after deletion
     } catch (error) {
       console.error('Failed to delete car:', error);
       dispatch(setError('Failed to delete car'));
+      setSnackbar({ open: true, message: 'Failed to delete car', severity: 'error' });
     }
   };
 
@@ -330,15 +362,32 @@ const SellerCars: React.FC = () => {
 
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
-    for (const id of ids) {
-      try {
+    try {
+      for (const id of ids) {
         await sellerApi.cars.deleteCar(id);
         dispatch(removeCar(id));
-      } catch (e) {
-        console.error('Failed to delete car', id, e);
       }
+      setSelectedIds(new Set());
+      setSnackbar({ open: true, message: `${ids.length} cars deleted successfully`, severity: 'success' });
+      fetchInventoryStats(); // Refresh stats after deletion
+    } catch (e) {
+      console.error('Failed to delete cars', e);
+      setSnackbar({ open: true, message: 'Failed to delete some cars', severity: 'error' });
     }
-    setSelectedIds(new Set());
+  };
+
+  const bulkUpdateStatus = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    try {
+      await sellerApi.cars.bulkUpdateStatus(ids, status);
+      setSelectedIds(new Set());
+      setSnackbar({ open: true, message: `${ids.length} cars updated to ${status}`, severity: 'success' });
+      fetchCars(); // Refresh cars list
+      fetchInventoryStats(); // Refresh stats
+    } catch (e) {
+      console.error('Failed to update car status', e);
+      setSnackbar({ open: true, message: 'Failed to update car status', severity: 'error' });
+    }
   };
 
   const sortedCars = useMemo(() => {
@@ -382,7 +431,10 @@ const SellerCars: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
-              onClick={fetchCars}
+              onClick={() => {
+                fetchCars();
+                fetchInventoryStats();
+              }}
             >
               Refresh
             </Button>
@@ -395,6 +447,52 @@ const SellerCars: React.FC = () => {
             </Button>
           </Box>
         </Box>
+
+        {/* Inventory Statistics */}
+        {inventoryStats && (
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography variant="overline" color="text.secondary">Total Cars</Typography>
+                  <Typography variant="h4" fontWeight={800} color="primary.main">
+                    {inventoryStats.total_cars || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography variant="overline" color="text.secondary">Active Listings</Typography>
+                  <Typography variant="h4" fontWeight={800} color="success.main">
+                    {inventoryStats.active_cars || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography variant="overline" color="text.secondary">Sold Cars</Typography>
+                  <Typography variant="h4" fontWeight={800} color="info.main">
+                    {inventoryStats.sold_cars || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography variant="overline" color="text.secondary">Total Revenue</Typography>
+                  <Typography variant="h4" fontWeight={800} color="success.main">
+                    {formatPrice(parseFloat(inventoryStats.total_revenue || '0'))}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
 
         {/* Category Tabs */}
         <Box sx={{ display: 'none' }} />
@@ -501,6 +599,30 @@ const SellerCars: React.FC = () => {
             <CardContent sx={{ py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="body2">{selectedIds.size} selected</Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button 
+                  color="success" 
+                  variant="outlined" 
+                  size="small"
+                  onClick={() => bulkUpdateStatus('active')}
+                >
+                  Mark Active
+                </Button>
+                <Button 
+                  color="warning" 
+                  variant="outlined" 
+                  size="small"
+                  onClick={() => bulkUpdateStatus('pending')}
+                >
+                  Mark Pending
+                </Button>
+                <Button 
+                  color="info" 
+                  variant="outlined" 
+                  size="small"
+                  onClick={() => bulkUpdateStatus('sold')}
+                >
+                  Mark Sold
+                </Button>
                 <Button color="error" variant="outlined" startIcon={<DeleteIcon />} onClick={bulkDelete}>Delete</Button>
               </Box>
             </CardContent>
@@ -757,6 +879,21 @@ const SellerCars: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </SellerLayout>
   );

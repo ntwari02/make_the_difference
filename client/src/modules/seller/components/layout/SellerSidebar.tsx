@@ -215,6 +215,10 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
               borderRight: theme.palette.mode === 'dark'
                 ? `1px solid rgba(255, 255, 255, 0.1)`
                 : `1px solid ${theme.palette.divider}`,
+              // Mobile drawer should start from top (no header offset)
+              top: 0,
+              height: '100%',
+              zIndex: theme.zIndex.drawer,
             },
           }}
         >

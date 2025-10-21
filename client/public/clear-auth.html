@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Authentication Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d32f2f;
+            text-align: center;
+        }
+        button {
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #b71c1c;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #2196f3;
+        }
+        .auth-data {
+            background-color: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ff9800;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Clear Authentication Data</h1>
+        <p>This tool will completely clear all authentication data and force a fresh login.</p>
+        
+        <button onclick="checkAuthData()">Check Current Auth Data</button>
+        <button onclick="clearAllAuthData()">Clear All Auth Data</button>
+        <button onclick="redirectToLogin()">Go to Login Page</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function checkAuthData() {
+            const authData = {
+                'access_token': localStorage.getItem('access_token'),
+                'refresh_token': localStorage.getItem('refresh_token'),
+                'user_data': localStorage.getItem('user_data'),
+                'user': localStorage.getItem('user'),
+                'last_login': localStorage.getItem('last_login')
+            };
+
+            const hasAuthData = Object.values(authData).some(value => value !== null);
+            
+            if (hasAuthData) {
+                showStatus(`Found authentication data:<br><div class="auth-data">${JSON.stringify(authData, null, 2)}</div>`, 'info');
+            } else {
+                showStatus('No authentication data found. You should be able to access login page.', 'success');
+            }
+        }
+
+        function clearAllAuthData() {
+            try {
+                // Clear all localStorage
+                localStorage.clear();
+                
+                // Clear all sessionStorage
+                sessionStorage.clear();
+                
+                // Clear any cookies (if any)
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                showStatus('✅ All authentication data cleared successfully!<br>You can now go to the login page.', 'success');
+                
+                // Auto-redirect to login after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+                
+            } catch (error) {
+                showStatus(`❌ Error clearing auth data: ${error.message}`, 'error');
+            }
+        }
+
+        function redirectToLogin() {
+            window.location.href = '/login';
+        }
+
+        // Check auth data on page load
+        window.onload = function() {
+            checkAuthData();
+        };
+    </script>
+</body>
+</html>

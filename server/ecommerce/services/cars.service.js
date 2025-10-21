@@ -303,6 +303,28 @@ const updateReviewStatus = async (reviewId, status, reason = null) => {
 	return carsRepo.updateReviewStatus(reviewId, status, reason);
 };
 
+// Seller inventory management services
+const getSellerInventoryStats = async (sellerId) => {
+  return carsRepo.getSellerInventoryStats(sellerId);
+};
+
+const getSellerInventoryAnalytics = async (sellerId, filters = {}) => {
+  return carsRepo.getSellerInventoryAnalytics(sellerId, filters);
+};
+
+const bulkUpdateCarStatus = async (sellerId, carIds, status) => {
+  const allowedStatusesForSeller = ['active', 'draft'];
+  if (!allowedStatusesForSeller.includes(status)) {
+    throw new Error('Invalid status for seller');
+  }
+
+  return carsRepo.bulkUpdateCarStatus(sellerId, carIds, status);
+};
+
+const getSellerCarViews = async (sellerId, filters = {}) => {
+  return carsRepo.getSellerCarViews(sellerId, filters);
+};
+
 // Seller-only: update own car status (limited statuses)
 const updateCarStatusBySeller = async (carId, sellerId, status) => {
   const allowedStatusesForSeller = ['active', 'draft'];
@@ -336,6 +358,12 @@ module.exports = {
 	createReview,
 	updateCarStatus,
 	getPendingCars,
+	// Seller inventory services
+	getSellerInventoryStats,
+	getSellerInventoryAnalytics,
+	bulkUpdateCarStatus,
+	getSellerCarViews,
+	updateCarStatusBySeller,
 	// Admin methods
 	getAllCars,
 	getAllSellers,

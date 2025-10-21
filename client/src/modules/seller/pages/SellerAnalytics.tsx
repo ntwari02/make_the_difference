@@ -1,16 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Card, CardContent, Chip, useTheme, FormControl, InputLabel, Select, MenuItem, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField, Button } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, useTheme, FormControl, InputLabel, Select, MenuItem, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField, Button, TableContainer } from '@mui/material';
 import SellerLayout from '../components/layout/SellerLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import { sellerApi } from '../services/sellerApi';
-import { setAnalytics } from '../store/sellerSlice';
+import { setAnalytics, setStats } from '../store/sellerSlice';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const SellerAnalytics: React.FC = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const analytics = useSelector((state: RootState) => state.seller.analytics);
+  const stats = useSelector((state: RootState) => state.seller.stats);
   const [period, setPeriod] = useState<'12m' | '6m' | '3m'>('12m');
   const [loading, setLoading] = useState<boolean>(true);
   const [startDate, setStartDate] = useState<string>('');
@@ -33,46 +34,66 @@ const SellerAnalytics: React.FC = () => {
   ]), []);
 
   const chartData = useMemo(() => {
-    const salesData = (analytics?.sales_by_period || []).map((p: any) => ({ period: p.period, sales: p.sales_count, revenue: p.total_revenue }));
-    return salesData.length > 0 ? salesData : mockSeries;
-  }, [analytics, mockSeries]);
+    const salesData = (analytics?.sales_by_period || []).map((p: any) => ({ period: p.period, sales: p.sales_count, revenue: p.revenue }));
+    return salesData; // Only use real backend data, no mock fallback
+  }, [analytics]);
 
   const topModels = useMemo(() => {
     const data = analytics?.top_selling_models || [];
-    if (data.length > 0) return data;
-    return [
-      { model: 'Toyota Corolla', units: 23, revenue: 345000 },
-      { model: 'Honda Civic', units: 18, revenue: 298000 },
-      { model: 'Ford Focus', units: 12, revenue: 156000 },
-    ];
+    if (data.length > 0) {
+      return data.map((model: any) => ({
+        model: `${model.brand} ${model.model}`,
+        units: model.sales_count,
+        revenue: model.total_revenue
+      }));
+    }
+    // Fallback to empty array if no data
+    return [];
   }, [analytics]);
 
   const channelData = useMemo(() => {
-    const data = (analytics as any)?.sales_by_channel || [];
-    if (data.length > 0) return data;
-    return [
-      { channel: 'Marketplace', sales: 123 },
-      { channel: 'Shop', sales: 102 },
-      { channel: 'Store', sales: 99 },
-    ];
+    const data = analytics?.channel_performance || [];
+    if (data.length > 0) {
+      return data.map((channel: any) => ({
+        channel: channel.channel,
+        sales: channel.sales
+      }));
+    }
+    // Fallback to empty array if no data
+    return [];
   }, [analytics]);
 
   const geoData = useMemo(() => {
-    const data = (analytics as any)?.sales_by_location || [];
-    if (data.length > 0) return data;
-    return [
-      { region: 'United States', revenue: 15100 },
-      { region: 'Canada', revenue: 3600 },
-      { region: 'UK', revenue: 2900 },
-    ];
+    const data = analytics?.geographic_performance || [];
+    if (data.length > 0) {
+      return data.map((location: any) => ({
+        region: location.location,
+        revenue: location.avg_price * location.sales
+      }));
+    }
+    // Fallback to empty array if no data
+    return [];
   }, [analytics]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await sellerApi.analytics.getSellerAnalytics({ period, start_date: startDate || undefined, end_date: endDate || undefined });
-        dispatch(setAnalytics(res));
+        const periodMap = { '12m': '1y', '6m': '90d', '3m': '30d' };
+        const analyticsPeriod = periodMap[period] || '30d';
+        
+        // Load both stats and analytics
+        const [statsRes, analyticsRes] = await Promise.all([
+          sellerApi.analytics.getSellerStats(),
+          sellerApi.analytics.getSellerAnalytics({ 
+            period: analyticsPeriod, 
+            start_date: startDate || undefined, 
+            end_date: endDate || undefined 
+          })
+        ]);
+        
+        dispatch(setStats(statsRes));
+        dispatch(setAnalytics(analyticsRes));
       } catch {
         // keep mock
       } finally {
@@ -105,18 +126,34 @@ const SellerAnalytics: React.FC = () => {
   };
 
   const totals = useMemo(() => {
+    // Use real stats if available, otherwise calculate from chart data
+    if (stats?.sales) {
+      return {
+        totalRevenue: Number(stats.sales.total_revenue) || 0,
+        totalSales: Number(stats.sales.total_sales) || 0,
+        avgOrderValue: Number(stats.sales.average_sale_price) || 0
+      };
+    }
+    
     const totalRevenue = chartData.reduce((s, p) => s + (p.revenue || 0), 0);
     const totalSales = chartData.reduce((s, p) => s + (p.sales || 0), 0);
     const avgOrderValue = totalSales ? Math.round(totalRevenue / totalSales) : 0;
     return { totalRevenue, totalSales, avgOrderValue };
-  }, [chartData]);
+  }, [chartData, stats]);
 
   return (
     <SellerLayout>
       <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '100%' }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h4" component="h1" fontWeight={700}>Analytics</Typography>
+          <Box>
+            <Typography variant="h4" component="h1" fontWeight={700}>Analytics</Typography>
+            {stats?.test_message && (
+              <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
+                {stats.test_message}
+              </Typography>
+            )}
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>Period</InputLabel>
@@ -134,7 +171,7 @@ const SellerAnalytics: React.FC = () => {
         </Box>
 
         {/* KPI cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
           <Card>
             <CardContent>
               <Typography variant="overline" color="text.secondary">Total Revenue</Typography>
@@ -154,6 +191,15 @@ const SellerAnalytics: React.FC = () => {
               <Typography variant="overline" color="text.secondary">Avg Order Value</Typography>
               <Typography variant="h4" fontWeight={800}>${totals.avgOrderValue.toLocaleString()}</Typography>
               <Chip size="small" label="Calculated" sx={{ mt: 1 }} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary">Performance Score</Typography>
+              <Typography variant="h4" fontWeight={800} color="success.main">
+                {stats?.performance?.score || 0}
+              </Typography>
+              <Chip size="small" label={stats?.performance?.level || 'unknown'} sx={{ mt: 1 }} />
             </CardContent>
           </Card>
         </Box>
@@ -257,7 +303,7 @@ const SellerAnalytics: React.FC = () => {
                     dataKey="value"
                     startAngle={180}
                     endAngle={0}
-                    data={[{ name: 'Converted', value: 62 }, { name: 'Remaining', value: 38 }]}
+                    data={[{ name: 'Converted', value: stats?.conversion_rate || 0 }, { name: 'Remaining', value: 100 - (stats?.conversion_rate || 0) }]}
                     cx="50%"
                     cy="100%"
                     innerRadius={60}
@@ -269,7 +315,7 @@ const SellerAnalytics: React.FC = () => {
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              <Typography variant="h4" fontWeight={800} sx={{ textAlign: 'center', mt: -6 }}>62%</Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ textAlign: 'center', mt: -6 }}>{stats?.conversion_rate || 0}%</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>Leads to Sales</Typography>
             </CardContent>
           </Card>

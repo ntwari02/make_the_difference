@@ -40,8 +40,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Loading fullScreen text="Checking authentication..." />;
   }
 
-  // Redirect to login if not authenticated: require BOTH user and token
-  if (isLoading === false && (!isAuthenticated || !lsUser || !hasToken)) {
+  // Comprehensive authentication validation
+  const hasValidToken = hasToken && localStorage.getItem('access_token') && localStorage.getItem('access_token').length > 10;
+  const hasValidUserData = lsUser && lsUser.id && lsUser.email && lsUser.role && 
+                           typeof lsUser.id === 'string' && 
+                           typeof lsUser.email === 'string' && 
+                           typeof lsUser.role === 'string';
+  
+  console.log('🔍 ProtectedRoute authentication check:');
+  console.log('- Redux isAuthenticated:', isAuthenticated);
+  console.log('- Redux isLoading:', isLoading);
+  console.log('- Has valid token:', hasValidToken);
+  console.log('- Has valid user data:', hasValidUserData);
+  console.log('- lsUser:', lsUser);
+  
+  // Redirect to login if not authenticated: require ALL conditions to be true
+  if (isLoading === false && (!isAuthenticated || !hasValidToken || !hasValidUserData)) {
+    console.log('❌ Authentication failed, redirecting to login');
+    // Clear invalid authentication data
+    if (isAuthenticated && (!hasValidToken || !hasValidUserData)) {
+      console.log('🧹 Clearing invalid authentication data from ProtectedRoute');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('user');
+      localStorage.removeItem('last_login');
+    }
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 

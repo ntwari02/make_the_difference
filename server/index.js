@@ -76,6 +76,7 @@ app.use('/api/certificates', require('./elearning/routes/certificate.routes'));
 app.use('/api/elearning-payments', require('./elearning/routes/elearning-payment.routes'));
 app.use('/api/cars', require('./ecommerce/routes/cars.routes'));
 app.use('/api/seller/analytics', require('./ecommerce/routes/seller-analytics.routes'));
+app.use('/api/seller', require('./routes/seller.routes'));
 app.use('/api/recommendations', require('./ecommerce/routes/recommendations.routes'));
 app.use('/api/search', require('./ecommerce/routes/advanced-search.routes'));
 app.use('/api/payments', require('./ecommerce/routes/payment.routes'));
@@ -93,8 +94,8 @@ app.use('/api/dealers', require('./routes/dealer.routes'));
 app.use('/api/moderators', require('./routes/moderator.routes'));
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/security-questions', require('./routes/securityQuestions.routes'));
-app.use('/api/password-reset', require('./routes/passwordReset.routes'));
+app.use('/api/user', require('./routes/user.routes'));
+// Removed legacy security-questions and password-reset routes (files no longer exist)
 
 // Serve built client (single-service deployment)
 const staticDir = path.join(__dirname, 'public');

@@ -212,6 +212,44 @@ const updateReviewStatus = async (req, res) => {
 	}
 };
 
+// Seller inventory management routes
+const getSellerInventoryStats = async (req, res) => {
+	try {
+		const stats = await service.getSellerInventoryStats(req.user.id);
+		return ok(res, stats);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getSellerInventoryAnalytics = async (req, res) => {
+	try {
+		const analytics = await service.getSellerInventoryAnalytics(req.user.id, req.query);
+		return ok(res, analytics);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const bulkUpdateCarStatus = async (req, res) => {
+	try {
+		const { carIds, status } = req.body;
+		const result = await service.bulkUpdateCarStatus(req.user.id, carIds, status);
+		return ok(res, result);
+	} catch (error) {
+		return res.status(400).json({ error: error.message });
+	}
+};
+
+const getSellerCarViews = async (req, res) => {
+	try {
+		const views = await service.getSellerCarViews(req.user.id, req.query);
+		return ok(res, views);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
 // Seller route: update status (active/draft) for own car
 const updateCarStatusBySeller = async (req, res) => {
   try {
@@ -238,6 +276,12 @@ module.exports = {
 	createReview,
 	updateCarStatus,
 	getPendingCars,
+	// Seller inventory methods
+	getSellerInventoryStats,
+	getSellerInventoryAnalytics,
+	bulkUpdateCarStatus,
+	getSellerCarViews,
+	updateCarStatusBySeller,
 	// Admin methods
 	getAllCars,
 	getAllSellers,
@@ -246,6 +290,5 @@ module.exports = {
 	forceUpdateCar,
 	forceDeleteCar,
 	getAllReviews,
-	updateReviewStatus,
-	updateCarStatusBySeller
+	updateReviewStatus
 };

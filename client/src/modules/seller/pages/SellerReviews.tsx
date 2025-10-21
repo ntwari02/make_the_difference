@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Card,
@@ -18,116 +19,137 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
-  LinearProgress,
   Pagination,
-  Button as MuiButton,
+  CircularProgress,
+  Alert,
+  LinearProgress,
+  Snackbar
 } from '@mui/material';
 import {
   Star as StarIcon,
-  Reply as ReplyIcon,
   ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
+  Reply as ReplyIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../../core/store';
+import { RootState } from '../../../core/store';
+import { sellerApi } from '../services/sellerApi';
 import SellerLayout from '../components/layout/SellerLayout';
 
-interface Review {
-  id: string;
-  buyer: {
-    name: string;
-    avatar: string;
-  };
-  car: {
-    make: string;
-    model: string;
-    year: number;
-  };
-  rating: number;
-  comment: string;
-  timestamp: string;
-  helpful: number;
-  verified: boolean;
-}
-
 const SellerReviews: React.FC = () => {
+  console.log('🚀 SellerReviews component mounted');
+  
   const profile = useSelector((state: RootState) => state.seller.profile);
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  console.log('📊 SellerReviews state:', {
+    profile,
+    user,
+    'profile?.id': profile?.id,
+    'user?.id': user?.id
+  });
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [selectedReview, setSelectedReview] = useState<any>(null);
   const [replyDialog, setReplyDialog] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [ratingFilter, setRatingFilter] = useState<number | 'all'>('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'helpful' | 'rating'>('newest');
   const [page, setPage] = useState(1);
-  const rowsPerPage = 8;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState<any>(null);
+  const [pagination, setPagination] = useState<any>(null);
+
+  // Load seller reviews from API
+  const loadReviews = async (pageNum = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Use user.id if profile.id is not available
+      const sellerId = profile?.id || user?.id;
+      if (!sellerId) {
+        throw new Error('Seller ID not found');
+      }
+
+      console.log('🔍 Loading reviews for seller ID:', sellerId);
+
+      const result = await sellerApi.sellerReviews.getSellerReviews(sellerId, {
+        page: pageNum,
+        limit: 8
+      });
+
+      console.log('📊 Reviews API response:', result);
+      console.log('📊 Reviews data:', result.reviews);
+      console.log('📊 Statistics:', result.statistics);
+      console.log('📊 Pagination:', result.pagination);
+
+      setReviews(result.reviews);
+      setStatistics(result.statistics);
+      setPagination(result.pagination);
+
+    } catch (err: any) {
+      console.error('❌ Error loading reviews:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        stack: err.stack,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      setError(err.message || 'Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Mock reviews data
-    const mockReviews: Review[] = [
-      {
-        id: '1',
-        buyer: { name: 'John Smith', avatar: '' },
-        car: { make: 'Toyota', model: 'Camry', year: 2020 },
-        rating: 5,
-        comment: 'Excellent service! The car was exactly as described and the seller was very professional.',
-        timestamp: '2024-01-15T10:30:00Z',
-        helpful: 12,
-        verified: true,
-      },
-      {
-        id: '2',
-        buyer: { name: 'Sarah Johnson', avatar: '' },
-        car: { make: 'Honda', model: 'Accord', year: 2019 },
-        rating: 4,
-        comment: 'Good experience overall. Car was in great condition and the transaction was smooth.',
-        timestamp: '2024-01-14T15:45:00Z',
-        helpful: 8,
-        verified: true,
-      },
-      {
-        id: '3',
-        buyer: { name: 'Mike Wilson', avatar: '' },
-        car: { make: 'Ford', model: 'F-150', year: 2021 },
-        rating: 5,
-        comment: 'Outstanding! The truck exceeded my expectations. Highly recommend this seller.',
-        timestamp: '2024-01-13T09:20:00Z',
-        helpful: 15,
-        verified: false,
-      },
-    ];
-    setReviews(mockReviews);
-  }, []);
+    console.log('🔄 SellerReviews useEffect triggered:', {
+      'profile?.id': profile?.id,
+      'user?.id': user?.id,
+      'profile': profile,
+      'user': user
+    });
+    loadReviews(page);
+  }, [profile?.id, user?.id, page]);
 
-  const averageRating = reviews.length ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) : 0;
-  const totalReviews = reviews.length;
+  // Use statistics from API instead of calculating from reviews
+  const averageRating = statistics?.averageRating || 0;
+  const totalReviews = statistics?.totalReviews || 0;
 
   const distribution = useMemo(() => {
-    const buckets = [0, 0, 0, 0, 0];
-    reviews.forEach((r) => { buckets[Math.round(r.rating) - 1] += 1; });
-    return buckets;
-  }, [reviews]);
+    return [
+      statistics?.ratingDistribution?.[5] || 0,  // 5 stars
+      statistics?.ratingDistribution?.[4] || 0,  // 4 stars
+      statistics?.ratingDistribution?.[3] || 0,  // 3 stars
+      statistics?.ratingDistribution?.[2] || 0,  // 2 stars
+      statistics?.ratingDistribution?.[1] || 0,  // 1 star
+    ];
+  }, [statistics?.ratingDistribution]);
 
   const filtered = useMemo(() => {
+    if (!reviews || !Array.isArray(reviews)) {
+      return [];
+    }
+    
     const base = reviews.filter((r) => {
       const okRating = ratingFilter === 'all' || Math.round(r.rating) === ratingFilter;
-      const okSearch = search === '' || r.comment.toLowerCase().includes(search.toLowerCase()) || r.buyer.name.toLowerCase().includes(search.toLowerCase());
+      const reviewerName = `${r.first_name || ''} ${r.last_name || ''}`.trim();
+      const okSearch = search === '' || 
+        (r.comment && r.comment.toLowerCase().includes(search.toLowerCase())) || 
+        reviewerName.toLowerCase().includes(search.toLowerCase());
       return okRating && okSearch;
     });
     const sorted = [...base].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'oldest':
-          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'helpful':
-          return b.helpful - a.helpful;
+          return b.helpful_count - a.helpful_count;
         case 'rating':
           return b.rating - a.rating;
         default:
@@ -137,226 +159,304 @@ const SellerReviews: React.FC = () => {
     return sorted;
   }, [reviews, ratingFilter, search, sortBy]);
 
-  const paged = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filtered.slice(start, start + rowsPerPage);
-  }, [filtered, page]);
+  // Use reviews directly since pagination is handled by API
+  const paged = filtered;
 
   const exportCsv = () => {
-    const rows: string[] = [];
-    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    rows.push('Buyer,Car,Rating,Helpful,Verified,Date,Comment');
-    filtered.forEach((r) => {
-      rows.push([
-        esc(r.buyer.name),
-        esc(`${r.car.year} ${r.car.make} ${r.car.model}`),
-        r.rating,
-        r.helpful,
-        r.verified ? 'Yes' : 'No',
-        new Date(r.timestamp).toLocaleDateString(),
-        esc(r.comment),
-      ].join(','));
-    });
-    const csv = rows.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const csvContent = [
+      ['Reviewer', 'Rating', 'Comment', 'Date', 'Helpful Votes'].join(','),
+      ...paged.map(review => [
+        `"${review.first_name} ${review.last_name}"`,
+        review.rating,
+        `"${(review.comment || '').replace(/"/g, '""')}"`,
+        new Date(review.created_at).toLocaleDateString(),
+        review.helpful_count || 0
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'seller-reviews.csv';
+    a.download = `seller-reviews-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(url);
   };
 
-  const handleReply = (review: Review) => {
-    setSelectedReview(review);
-    setReplyDialog(true);
+  const handleReply = async () => {
+    if (!selectedReview || !replyText.trim()) return;
+
+    try {
+      await sellerApi.sellerReviews.replyToReview(selectedReview.id, replyText);
+      setSuccessMessage('Reply posted successfully!');
+      setReplyDialog(false);
+      setReplyText('');
+      setSelectedReview(null);
+      loadReviews(page);
+    } catch (err: any) {
+      setError(err.message || 'Failed to post reply');
+    }
   };
 
-  const handleSendReply = () => {
-    // In a real app, this would send the reply via API
-    console.log('Sending reply to review:', selectedReview?.id, replyText);
-    setReplyText('');
-    setReplyDialog(false);
-    setSelectedReview(null);
+  const handleMarkHelpful = async (reviewId: string) => {
+    try {
+      await sellerApi.sellerReviews.markReviewHelpful(reviewId);
+      loadReviews(page);
+    } catch (err: any) {
+      setError(err.message || 'Failed to mark review as helpful');
+    }
   };
 
   return (
     <SellerLayout>
-      <Box sx={{ flexGrow: 1 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            Customer Reviews
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" fontWeight={700}>
-                {averageRating.toFixed(1)}
-              </Typography>
-              <Rating value={averageRating} readOnly precision={0.1} />
-              <Typography variant="body2" color="text.secondary">
-                {totalReviews} reviews
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Customer Reviews
+        </Typography>
 
-        {/* Filters and distribution */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
+
+        {/* Overview */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} md={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h2" color="primary">
+                    {averageRating.toFixed(1)}
+                  </Typography>
+                  <Rating value={averageRating} readOnly precision={0.1} size="large" />
+                  <Typography variant="body2" color="text.secondary">
+                    {totalReviews} reviews
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={8}>
+                <Typography variant="h6" gutterBottom>
+                  Rating Distribution
+                </Typography>
+                {[5, 4, 3, 2, 1].map((rating) => (
+                  <Box key={rating} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ minWidth: 20 }}>
+                      {rating}
+                    </Typography>
+                    <StarIcon sx={{ color: 'warning.main', fontSize: 16, mr: 1 }} />
+                    <Box sx={{ flexGrow: 1, mr: 2 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={totalReviews > 0 ? (distribution[5 - rating] / totalReviews) * 100 : 0}
+                        sx={{ height: 8, borderRadius: 4 }}
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {totalReviews > 0 ? Math.round((distribution[5 - rating] / totalReviews) * 100) : 0}%
+                    </Typography>
+                  </Box>
+                ))}
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Filters */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Filter by rating</InputLabel>
-                  <Select value={ratingFilter} label="Filter by rating" onChange={(e) => setRatingFilter(e.target.value as any)}>
-                    <MenuItem value="all">All ratings</MenuItem>
-                    <MenuItem value={5}>5 stars</MenuItem>
-                    <MenuItem value={4}>4 stars</MenuItem>
-                    <MenuItem value={3}>3 stars</MenuItem>
-                    <MenuItem value={2}>2 stars</MenuItem>
-                    <MenuItem value={1}>1 star</MenuItem>
-                  </Select>
-                </FormControl>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Filter by rating"
+                  value={ratingFilter}
+                  onChange={(e) => setRatingFilter(e.target.value as number | 'all')}
+                  size="small"
+                >
+                  <MenuItem value="all">All ratings</MenuItem>
+                  <MenuItem value={5}>5 stars</MenuItem>
+                  <MenuItem value={4}>4 stars</MenuItem>
+                  <MenuItem value={3}>3 stars</MenuItem>
+                  <MenuItem value={2}>2 stars</MenuItem>
+                  <MenuItem value={1}>1 star</MenuItem>
+                </TextField>
               </Grid>
-              <Grid item xs={12} md={5}>
-                <TextField fullWidth size="small" placeholder="Search reviews..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Search reviews..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  size="small"
+                />
               </Grid>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Sort by</InputLabel>
-                  <Select value={sortBy} label="Sort by" onChange={(e) => setSortBy(e.target.value as any)}>
-                    <MenuItem value="newest">Newest</MenuItem>
-                    <MenuItem value="oldest">Oldest</MenuItem>
-                    <MenuItem value="helpful">Most helpful</MenuItem>
-                    <MenuItem value="rating">Highest rating</MenuItem>
-                  </Select>
-                </FormControl>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Sort by"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  size="small"
+                >
+                  <MenuItem value="newest">Newest</MenuItem>
+                  <MenuItem value="oldest">Oldest</MenuItem>
+                  <MenuItem value="helpful">Most helpful</MenuItem>
+                  <MenuItem value="rating">Highest rating</MenuItem>
+                </TextField>
               </Grid>
             </Grid>
-            <Box sx={{ mt: 2 }}>
-              {([5,4,3,2,1] as const).map((stars) => {
-                const count = distribution[stars - 1];
-                const pct = totalReviews ? Math.round((count / totalReviews) * 100) : 0;
-                return (
-                  <Box key={stars} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Box sx={{ width: 64, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Typography variant="body2" sx={{ width: 20 }}>{stars}</Typography>
-                      <StarIcon fontSize="small" color="warning" />
-                    </Box>
-                    <LinearProgress variant="determinate" value={pct} sx={{ flex: 1, height: 8, borderRadius: 4 }} />
-                    <Typography variant="caption" sx={{ width: 48, textAlign: 'right' }}>{pct}%</Typography>
-                  </Box>
-                );
-              })}
-            </Box>
           </CardContent>
         </Card>
 
         {/* Reviews List */}
-        <Grid container spacing={3}>
-          {paged.map((review) => (
-            <Grid item xs={12} key={review.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', gap: 3 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-                      {review.buyer.name.charAt(0)}
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                        <Typography variant="h6" fontWeight={600}>
-                          {review.buyer.name}
-                        </Typography>
-                        <Rating value={review.rating} readOnly size="small" />
-                        <Typography variant="body2" color="text.secondary">
-                          ({review.rating}/5)
-                        </Typography>
-                        {review.verified && (
-                          <Chip label="Verified Purchase" size="small" color="success" />
-                        )}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {review.car.year} {review.car.make} {review.car.model}
-                      </Typography>
-                      <Typography variant="body1" paragraph>
-                        {review.comment}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(review.timestamp).toLocaleDateString()}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <ThumbUpIcon fontSize="small" color="action" />
-                          <Typography variant="caption" color="text.secondary">
-                            {review.helpful} found this helpful
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : paged.length === 0 ? (
+          <Card>
+            <CardContent sx={{ textAlign: 'center', p: 4 }}>
+              <Typography variant="h6" color="text.secondary">
+                No reviews found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {search || ratingFilter !== 'all' 
+                  ? 'Try adjusting your filters to see more reviews.'
+                  : 'You haven\'t received any reviews yet.'}
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          <Grid container spacing={2}>
+            {paged.map((review) => (
+              <Grid item xs={12} key={review.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar sx={{ mr: 2 }}>
+                          {review.first_name?.[0]}{review.last_name?.[0]}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle1">
+                            {review.first_name} {review.last_name}
                           </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Rating value={review.rating} readOnly size="small" />
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </Typography>
+                          </Box>
                         </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Chip
+                          icon={<ThumbUpIcon />}
+                          label={review.helpful_count || 0}
+                          size="small"
+                          onClick={() => handleMarkHelpful(review.id)}
+                          sx={{ cursor: 'pointer' }}
+                        />
                         <Button
                           size="small"
-                          startIcon={<ReplyIcon />}
-                          onClick={() => handleReply(review)}
+                          onClick={() => {
+                            setSelectedReview(review);
+                            setReplyDialog(true);
+                          }}
                         >
                           Reply
                         </Button>
                       </Box>
                     </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+
+                    {review.comment && (
+                      <Typography variant="body2" sx={{ mb: 2 }}>
+                        {review.comment}
+                      </Typography>
+                    )}
+
+                    {review.title && (
+                      <Chip
+                        label={review.title}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ mb: 2 }}
+                      />
+                    )}
+
+                    {review.seller_reply && (
+                      <Box sx={{ 
+                        bgcolor: 'grey.50', 
+                        p: 2, 
+                        borderRadius: 1, 
+                        borderLeft: 4, 
+                        borderColor: 'primary.main',
+                        mt: 2
+                      }}>
+                        <Typography variant="subtitle2" color="primary" gutterBottom>
+                          Your Reply
+                        </Typography>
+                        <Typography variant="body2">
+                          {review.seller_reply}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(review.seller_reply_date).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
         {/* Pagination and Export */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-          <Pagination page={page} onChange={(_, p) => setPage(p)} count={Math.max(1, Math.ceil(filtered.length / rowsPerPage))} color="primary" />
-          <MuiButton variant="outlined" onClick={exportCsv}>Export CSV</MuiButton>
+          <Pagination 
+            page={page} 
+            onChange={(_, p) => setPage(p)} 
+            count={pagination?.totalPages || 0} 
+            color="primary" 
+          />
+          <Button variant="outlined" onClick={exportCsv} startIcon={<DownloadIcon />}>
+            Export CSV
+          </Button>
         </Box>
 
         {/* Reply Dialog */}
-        <Dialog
-          open={replyDialog}
-          onClose={() => setReplyDialog(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          {selectedReview && (
-            <>
-              <DialogTitle>
-                Reply to Review
-              </DialogTitle>
-              <DialogContent>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Review by {selectedReview.buyer.name}:
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    "{selectedReview.comment}"
-                  </Typography>
-                </Box>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  placeholder="Write your response..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setReplyDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSendReply}
-                  disabled={!replyText.trim()}
-                >
-                  Send Reply
-                </Button>
-              </DialogActions>
-            </>
-          )}
+        <Dialog open={replyDialog} onClose={() => setReplyDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Reply to Review</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Replying to {selectedReview?.first_name} {selectedReview?.last_name}'s review
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write your reply..."
+              variant="outlined"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setReplyDialog(false)}>Cancel</Button>
+            <Button onClick={handleReply} variant="contained" disabled={!replyText.trim()}>
+              Post Reply
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </SellerLayout>

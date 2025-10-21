@@ -45,13 +45,49 @@ const SmartRedirect: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is actually authenticated before redirecting to dashboards
+    const hasValidAuth = () => {
+      const token = localStorage.getItem('access_token');
+      const userData = localStorage.getItem('user_data');
+      
+      if (!token || !userData) return false;
+      
+      try {
+        const user = JSON.parse(userData);
+        return user && user.id && user.email && user.role;
+      } catch {
+        return false;
+      }
+    };
+
     const target = normalize(pathname);
     let best = '/';
     let bestScore = -1;
+    
+    // If user is not authenticated, prioritize login/register over dashboards
+    const isAuthenticated = hasValidAuth();
+    
     for (const cand of CANDIDATES) {
       const s = similarity(target, cand);
-      if (s > bestScore) { bestScore = s; best = cand; }
+      
+      // If not authenticated and candidate is a dashboard, reduce its score
+      if (!isAuthenticated && cand.includes('/dashboard')) {
+        const reducedScore = s * 0.5; // Reduce dashboard scores by half
+        if (reducedScore > bestScore) { 
+          bestScore = reducedScore; 
+          best = cand; 
+        }
+      } else if (s > bestScore) { 
+        bestScore = s; 
+        best = cand; 
+      }
     }
+    
+    // If not authenticated and best match is a dashboard, redirect to login instead
+    if (!isAuthenticated && best.includes('/dashboard')) {
+      best = '/login';
+    }
+    
     navigate(best, { replace: true });
   }, [pathname, navigate]);
 

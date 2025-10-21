@@ -1,28 +1,39 @@
--- Normalize existing values to UI labels first (prevents enum duplicate errors)
-ALTER TABLE sellers
-  MODIFY COLUMN business_type VARCHAR(50) NULL;
+-- Seller Updates Migration - 2025-10-15
+-- This migration adds performance indexes and seller-specific features
 
--- Map legacy/lowercase to UI labels
-UPDATE sellers SET business_type = 'Dealership'          WHERE business_type IN ('dealership','dealer');
-UPDATE sellers SET business_type = 'Independent Seller'  WHERE business_type IN ('individual','independent','private','Independent seller','independent seller');
-UPDATE sellers SET business_type = 'Auto Broker'         WHERE business_type IN ('broker','car broker','auto broker');
-UPDATE sellers SET business_type = 'Car Rental'          WHERE business_type IN ('car rental','rental');
-UPDATE sellers SET business_type = 'Fleet Management'    WHERE business_type IN ('fleet management','fleet');
-UPDATE sellers SET business_type = 'Parts Dealer'        WHERE business_type IN ('parts dealer','parts');
-UPDATE sellers SET business_type = 'Service Center'      WHERE business_type IN ('service center','service');
+-- Add indexes for cars table performance optimization
+CREATE INDEX idx_cars_seller_created ON cars(seller_id, created_at);
+CREATE INDEX idx_cars_seller_status ON cars(seller_id, status);
+CREATE INDEX idx_cars_status ON cars(status);
+CREATE INDEX idx_cars_created_at ON cars(created_at);
+CREATE INDEX idx_cars_price ON cars(price);
+CREATE INDEX idx_cars_views_count ON cars(views_count);
 
--- Fallback any unknowns/nulls to a default UI label
-UPDATE sellers
-SET business_type = 'Independent Seller'
-WHERE business_type IS NULL
-   OR business_type NOT IN (
-     'Independent Seller','Dealership','Auto Broker','Car Rental',
-     'Fleet Management','Parts Dealer','Service Center'
-   );
+-- Add indexes for messaging performance optimization
+CREATE INDEX idx_conversations_status ON conversations(status);
+CREATE INDEX idx_conversations_last_message_at ON conversations(last_message_at);
+CREATE INDEX idx_messages_conversation_sender ON messages(conversation_id, sender_id);
+CREATE INDEX idx_messages_is_read ON messages(is_read);
+CREATE INDEX idx_messages_category ON messages(category);
+CREATE INDEX idx_messages_priority ON messages(priority);
+CREATE INDEX idx_conversations_subject ON conversations(subject);
+CREATE INDEX idx_conversation_participants_user_left ON conversation_participants(user_id, left_at);
+CREATE INDEX idx_conversation_participants_conversation_user_left ON conversation_participants(conversation_id, user_id, left_at);
+CREATE INDEX idx_messages_conversation_created ON messages(conversation_id, created_at);
+CREATE INDEX idx_messages_conversation_read ON messages(conversation_id, is_read);
 
--- Recreate the enum with ONLY the UI labels (no lowercase duplicates)
-ALTER TABLE sellers
-  MODIFY COLUMN business_type ENUM(
-    'Independent Seller','Dealership','Auto Broker','Car Rental',
-    'Fleet Management','Parts Dealer','Service Center'
-  ) DEFAULT 'Independent Seller';
+-- Add seller-specific columns if they don't exist
+ALTER TABLE cars ADD COLUMN views_count INT DEFAULT 0;
+ALTER TABLE cars ADD COLUMN is_featured BOOLEAN DEFAULT FALSE;
+
+-- Add seller analytics columns
+ALTER TABLE cars ADD COLUMN last_viewed_at TIMESTAMP NULL;
+ALTER TABLE cars ADD COLUMN featured_until TIMESTAMP NULL;
+
+-- Add seller inventory management columns
+ALTER TABLE cars ADD COLUMN inventory_status ENUM('in_stock', 'reserved', 'sold', 'removed') DEFAULT 'in_stock';
+ALTER TABLE cars ADD COLUMN reserve_expires_at TIMESTAMP NULL;
+ALTER TABLE cars ADD COLUMN reserve_user_id VARCHAR(36) NULL;
+
+-- Add foreign key for reserve user
+ALTER TABLE cars ADD CONSTRAINT fk_cars_reserve_user FOREIGN KEY (reserve_user_id) REFERENCES users(id) ON DELETE SET NULL;

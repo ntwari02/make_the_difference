@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import type { RootState } from '../../../core/store';
-import { loginUser, setLoading } from '../../../core/store/auth/authSlice';
+import { loginUser, setLoading, clearAuth } from '../../../core/store/auth/authSlice';
 import { Box, Paper, Typography, TextField, InputAdornment, IconButton, Button, Stack, FormControlLabel, Checkbox } from '@mui/material';
 import { Email as EmailIcon, Visibility, VisibilityOff, Lock as LockIcon } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -30,6 +30,16 @@ const LoginPage: React.FC = () => {
   const isValid = !!email && !emailError && !!password && !passwordError;
 
   useEffect(() => {
+    // First, aggressively clear any stale authentication data
+    console.log('🧹 LoginPage: Clearing any stale authentication data on mount');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user');
+    localStorage.removeItem('last_login');
+    sessionStorage.clear();
+    dispatch(clearAuth());
+
     function onMessage(ev: MessageEvent) {
       try {
         if (ev.data && ev.data.type === 'oauth_success' && ev.data.data) {
@@ -75,7 +85,21 @@ const LoginPage: React.FC = () => {
           window.history.replaceState({}, '', url);
         });
     }
+    
+    // After clearing auth data, we should NOT redirect anywhere
+    // The user should stay on the login page
+    console.log('✅ LoginPage: Auth data cleared, staying on login page');
+    
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener('loginRetryAttempt', onRetryAttempt as EventListener);
+    };
+  }, [dispatch]); // Removed isAuthenticated, user, navigate from dependencies
+
+  // Separate useEffect to handle successful login redirects
+  useEffect(() => {
     if (isAuthenticated && user) {
+      console.log('✅ Login successful, redirecting to dashboard');
       const target = nextRef.current;
       if (target) {
         // Clean the URL to avoid reusing next after navigation
@@ -91,11 +115,7 @@ const LoginPage: React.FC = () => {
         redirectToDashboard(user, navigate);
       }
     }
-    return () => {
-      window.removeEventListener('message', onMessage);
-      window.removeEventListener('loginRetryAttempt', onRetryAttempt as EventListener);
-    };
-  }, [isAuthenticated, user, navigate, dispatch]);
+  }, [isAuthenticated, user, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,6 +244,25 @@ const LoginPage: React.FC = () => {
               }}>Send magic link</Button>
               </motion.div>
             </Stack>
+          </Box>
+
+          {/* Debug: Clear Session Button */}
+          <Box sx={{ textAlign: 'center', pt: 1 }}>
+            <Button 
+              variant="text" 
+              size="small" 
+              color="error"
+              onClick={() => {
+                console.log('🧹 Manually clearing all session data...');
+                localStorage.clear();
+                sessionStorage.clear();
+                dispatch(clearAuth());
+                window.location.reload();
+              }}
+              sx={{ fontSize: '0.75rem', opacity: 0.7 }}
+            >
+              Clear Session Data
+            </Button>
           </Box>
 
           <Typography variant="body2" color="text.secondary" textAlign="center">

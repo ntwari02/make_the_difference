@@ -45,6 +45,8 @@ import {
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
+import { messagingApi, type SellerConversation, type SellerMessage, sellerMessaging } from '../services/sellerApi';
+import { STORAGE_KEYS } from '../../../core/config/constants';
 
 interface Message {
   id: string;
@@ -66,6 +68,8 @@ const SellerMessages: React.FC = () => {
   const profile = useSelector((state: RootState) => state.seller.profile);
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [serverConversations, setServerConversations] = useState<SellerConversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<SellerConversation | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [thread, setThread] = useState<Message[]>([]);
   
@@ -81,117 +85,110 @@ const SellerMessages: React.FC = () => {
   );
   const [pendingSend, setPendingSend] = useState<{ timeoutId: number | null; content: string } | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    // Mock messages data
-    const mockMessages: Message[] = [
-      {
-        id: '1',
-        sender: {
-          name: 'John Smith',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Interested in Toyota Camry',
-        message: 'Hi! I saw your Toyota Camry listing and I\'m very interested. Is it still available? Can we schedule a test drive?',
-        timestamp: '2024-01-15T10:30:00Z',
-        read: false,
-        priority: 'high',
-        category: 'inquiry'
-      },
-      {
-        id: '2',
-        sender: {
-          name: 'Sarah Johnson',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Price negotiation for Honda Accord',
-        message: 'I love the Honda Accord you have listed. Would you consider $22,000? I can pay cash.',
-        timestamp: '2024-01-14T15:45:00Z',
-        read: true,
-        priority: 'normal',
-        category: 'offer'
-      },
-      {
-        id: '3',
-        sender: {
-          name: 'Mike Wilson',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Question about vehicle history',
-        message: 'Can you provide more details about the service history? Any accidents or major repairs?',
-        timestamp: '2024-01-13T09:20:00Z',
-        read: true,
-        priority: 'normal',
-        category: 'inquiry'
-      },
-      {
-        id: '4',
-        sender: {
-          name: 'Support Team',
-          avatar: '',
-          type: 'admin'
-        },
-        subject: 'Listing approval update',
-        message: 'Your recent listing for the BMW 3 Series has been approved and is now live on the platform.',
-        timestamp: '2024-01-12T14:10:00Z',
-        read: false,
-        priority: 'normal',
-        category: 'support'
-      }
-    ];
-    setMessages(mockMessages);
-  }, []);
-
-  const filteredMessages = messages.filter(msg => {
-    const folderOk = filter === 'inbox' ? true : filter === 'archived' ? msg.read : filter === 'sent' ? msg.sender.type === 'seller' : true;
-    const matchesSearch = searchTerm === '' ||
-      msg.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.sender.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return folderOk && matchesSearch;
-  });
-
-  const unreadCount = messages.filter(msg => !msg.read).length;
-
-  const handleMessageClick = (message: Message) => {
-    setSelectedMessage(message);
-    setThread([message]);
-    // Mark as read when opened
-    if (!message.read) {
-      setMessages(prev => prev.map(m =>
-        m.id === message.id ? { ...m, read: true } : m
-      ));
+  const refreshConversations = async (folderOverride?: string) => {
+    try {
+      setIsRefreshing(true);
+      const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}';
+      const me = JSON.parse(rawUser);
+      const sellerId = me?.id;
+      if (!sellerId) return;
+      const result = await messagingApi.getConversations(sellerId, { page: 1, limit: 20, folder: (folderOverride || filter) as any });
+      setServerConversations(result.conversations || []);
+    } catch (err) {
+      console.error('Failed to refresh conversations', err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
-  const handleSendReply = () => {
-    if (!selectedMessage || !replyText.trim()) return;
-    // Simulate delayed send with undo option
+  // --- Minimal backend wiring: load conversations for current seller ---
+  useEffect(() => {
+    refreshConversations();
+  }, [filter]);
+
+  const loadConversationMessages = async (conversation: SellerConversation) => {
+    try {
+      const result = await messagingApi.getConversationMessages(conversation.id, { page: 1, limit: 100 });
+      const msgs: SellerMessage[] = result.messages || [];
+      // Map backend messages to local Message shape just for rendering in existing thread UI
+      const mapped: Message[] = msgs.map((m) => ({
+        id: m.id,
+        sender: {
+          name: m.sender_id === (JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}') || {}).id
+            ? (profile?.business_name || 'You')
+            : `${m.first_name || ''} ${m.last_name || ''}`.trim(),
+          avatar: '',
+          type: (m.sender_id === (JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}') || {}).id) ? 'seller' : 'buyer',
+        },
+        subject: conversation.subject || conversation.title || '',
+        message: m.content,
+        timestamp: m.created_at,
+        read: !!m.is_read,
+        priority: 'normal',
+        category: 'inquiry',
+        seen: false,
+      }));
+      setSelectedConversation(conversation);
+      setThread(mapped);
+      // Also update messages list to keep existing unread counters roughly meaningful
+      setMessages(mapped);
+    } catch (err: any) {
+      // If server returns 403 for not a participant, clear selection and refresh list
+      const status = err?.response?.status;
+      if (status === 403) {
+        setSelectedConversation(null);
+        setThread([]);
+        setSnackbar({ open: true, message: 'This conversation is no longer available.', severity: 'info' });
+        await refreshConversations();
+        return;
+      }
+      console.error('Failed to load messages', err);
+    }
+  };
+
+  // Remove mock: rely only on live data loaded via serverConversations + thread
+
+  const filteredConversations = serverConversations.filter(c => {
+    if (!searchTerm) return true;
+    const name = `${c.first_name || ''} ${c.last_name || ''}`.trim().toLowerCase();
+    const subject = (c.subject || c.title || '').toLowerCase();
+    return name.includes(searchTerm.toLowerCase()) || subject.includes(searchTerm.toLowerCase());
+  });
+
+  const unreadCount = serverConversations.reduce((acc, c) => acc + (Number(c.unread_count || 0) || 0), 0);
+
+  const isThreadValid = useMemo(() => {
+    if (!selectedConversation) return false;
+    return !!serverConversations.find((c) => c.id === selectedConversation.id);
+  }, [selectedConversation, serverConversations]);
+
+  const handleConversationClick = (conv: SellerConversation) => {
+    loadConversationMessages(conv);
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedConversation || !replyText.trim()) return;
+    try {
     const content = replyText;
-    const optimistic: Message = {
-      id: `temp-${Date.now()}`,
-      sender: { name: profile?.business_name || 'You', avatar: '', type: 'seller' },
-      subject: `Re: ${selectedMessage.subject}`,
-      message: (replyTo ? `@reply-to:${replyTo.id}\n` : '') + content + (attachments.length ? `\n\n[${attachments.length} attachment(s)]` : ''),
-      timestamp: new Date().toISOString(),
-      read: true,
-      priority: 'normal',
-      category: 'support',
-      seen: false,
-    };
-    setThread((prev) => [...prev, optimistic]);
-    setPendingSend({ timeoutId: window.setTimeout(() => {
-      // Commit send (append a seller message)
-      setMessages((prev) => [...prev, { ...optimistic, id: `${Date.now()}` }]);
-      setSnackbar({ open: true, message: 'Reply sent', severity: 'success' });
-      setPendingSend(null);
-    }, 4000), content });
-    setSnackbar({ open: true, message: 'Sending… You can undo', severity: 'info' });
+      await messagingApi.sendMessage(selectedConversation.id, { content });
     setReplyText('');
     setAttachments([]);
     setReplyTo(null);
+      await loadConversationMessages(selectedConversation);
+      setSnackbar({ open: true, message: 'Reply sent', severity: 'success' });
+    } catch (e: any) {
+      const status = e?.response?.status;
+      if (status === 403) {
+        setSnackbar({ open: true, message: 'You are no longer a participant. Thread closed.', severity: 'info' });
+        setSelectedConversation(null);
+        setThread([]);
+        await refreshConversations();
+        return;
+      }
+      setSnackbar({ open: true, message: 'Failed to send reply', severity: 'error' });
+    }
   };
 
   const handleUndoSend = () => {
@@ -248,10 +245,10 @@ const SellerMessages: React.FC = () => {
     }
   };
 
-  const paged = useMemo(() => {
+  const pagedConversations = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
-    return filteredMessages.slice(start, start + rowsPerPage);
-  }, [filteredMessages, page, rowsPerPage]);
+    return filteredConversations.slice(start, start + rowsPerPage);
+  }, [filteredConversations, page, rowsPerPage]);
 
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
@@ -266,19 +263,81 @@ const SellerMessages: React.FC = () => {
     else setSelectedIds(new Set());
   };
 
-  const bulkMarkRead = () => {
-    setMessages((prev) => prev.map((m) => selectedIds.has(m.id) ? { ...m, read: true } : m));
-    setSelectedIds(new Set());
+  const bulkMarkRead = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      await sellerMessaging.bulkAction({ conversationIds: ids, action: 'mark_read' });
+      // Refresh list
+      const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}';
+      const me = JSON.parse(rawUser);
+      const sellerId = me?.id;
+      if (sellerId) {
+        const result = await messagingApi.getConversations(sellerId, { page: 1, limit: 20, folder: filter as any });
+        setServerConversations(result.conversations || []);
+      }
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error('Failed to mark read', e);
+    }
   };
 
-  const bulkDelete = () => {
-    setMessages((prev) => prev.filter((m) => !selectedIds.has(m.id)));
-    setSelectedIds(new Set());
+  const bulkDelete = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      await sellerMessaging.bulkAction({ conversationIds: ids, action: 'delete' });
+      const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}';
+      const me = JSON.parse(rawUser);
+      const sellerId = me?.id;
+      if (sellerId) {
+        const result = await messagingApi.getConversations(sellerId, { page: 1, limit: 20, folder: filter as any });
+        setServerConversations(result.conversations || []);
+      }
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error('Failed to delete', e);
+    }
+  };
+
+  const bulkArchive = async (archive: boolean) => {
+    try {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      await sellerMessaging.bulkAction({ conversationIds: ids, action: archive ? 'archive' : 'unarchive' });
+      const rawUser = localStorage.getItem(STORAGE_KEYS.USER_DATA) || localStorage.getItem('user') || '{}';
+      const me = JSON.parse(rawUser);
+      const sellerId = me?.id;
+      if (sellerId) {
+        const result = await messagingApi.getConversations(sellerId, { page: 1, limit: 20, folder: filter as any });
+        setServerConversations(result.conversations || []);
+      }
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error('Failed to archive/unarchive', e);
+    }
   };
 
   return (
     <SellerLayout>
       <Box sx={{ flexGrow: 1 }}>
+        {/* Minimal backend conversation list (temporary) */}
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+          <Typography variant="overline" color="text.secondary">Server Conversations</Typography>
+          <List>
+            {(serverConversations || []).map((c) => (
+              <ListItem key={c.id} disablePadding>
+                <ListItemButton onClick={() => loadConversationMessages(c)} selected={selectedConversation?.id === c.id}>
+                  <ListItemText
+                    primary={(c.first_name || '') + ' ' + (c.last_name || '')}
+                    secondary={(c.subject || c.title || '') + (c.last_message_created_at ? ` • ${new Date(c.last_message_created_at).toLocaleString()}` : '')}
+                  />
+                  {Number(c.unread_count || 0) > 0 && <Chip size="small" label={c.unread_count} color="primary" />}
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
         {/* Three-pane layout */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '260px 1fr', lg: '280px 1.1fr 1.4fr' }, gap: 2 }}>
           {/* Folders */}
@@ -307,8 +366,8 @@ const SellerMessages: React.FC = () => {
             <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: { md: 'calc(100vh - 140px)' } }}>
               <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: 1, borderColor: 'divider' }}>
                 <Checkbox
-                  indeterminate={selectedIds.size > 0 && selectedIds.size < paged.length}
-                  checked={paged.length > 0 && selectedIds.size === paged.length}
+                  indeterminate={selectedIds.size > 0 && selectedIds.size < pagedConversations.length}
+                  checked={pagedConversations.length > 0 && selectedIds.size === pagedConversations.length}
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
                 <TextField size="small" placeholder="Search messages..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} sx={{ flex: 1 }} />
@@ -322,30 +381,33 @@ const SellerMessages: React.FC = () => {
                     <MenuItem value="support">Support</MenuItem>
                   </Select>
                 </FormControl>
+                <Tooltip title="Archive"><span><IconButton disabled={selectedIds.size === 0} onClick={() => bulkArchive(true)}><ArchiveIcon /></IconButton></span></Tooltip>
+                <Tooltip title="Unarchive"><span><IconButton disabled={selectedIds.size === 0} onClick={() => bulkArchive(false)}><UndoIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkMarkRead}><MarkReadIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
               </Box>
               <Box sx={{ overflowY: 'auto' }}>
                 <List>
-                  {paged.map((message, index) => (
-                    <React.Fragment key={message.id}>
+                  {pagedConversations.map((c, index) => (
+                    <React.Fragment key={c.id}>
                       <ListItem
-                        secondaryAction={<Checkbox edge="end" onChange={() => toggleSelectOne(message.id)} checked={selectedIds.has(message.id)} />}
+                        secondaryAction={<Checkbox edge="end" onChange={() => toggleSelectOne(c.id)} checked={selectedIds.has(c.id)} />}
                         disablePadding
                         sx={{ alignItems: 'flex-start' }}
                       >
                         <ListItemButton
-                          onClick={() => handleMessageClick(message)}
+                          onClick={() => handleConversationClick(c)}
+                          selected={selectedConversation?.id === c.id}
                           sx={{
-                            bgcolor: !message.read ? 'action.hover' : 'transparent',
+                            bgcolor: Number(c.unread_count || 0) > 0 ? 'action.hover' : 'transparent',
                             '&:hover': { bgcolor: 'action.selected' },
                             alignItems: 'flex-start'
                           }}
                         >
                           <ListItemAvatar>
-                            <Badge color="error" variant="dot" invisible={message.read}>
+                            <Badge color="error" variant="dot" invisible={!Number(c.unread_count || 0)}>
                               <Avatar sx={{ bgcolor: 'primary.main' }}>
-                                {message.sender.name.charAt(0)}
+                                {(c.first_name || '?').charAt(0)}
                               </Avatar>
                             </Badge>
                           </ListItemAvatar>
@@ -354,47 +416,46 @@ const SellerMessages: React.FC = () => {
                             secondaryTypographyProps={{ component: 'div' }}
                             primary={
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="subtitle1" component="span" fontWeight={message.read ? 400 : 600} noWrap>
-                                  {message.sender.name}
+                                <Typography variant="subtitle1" component="span" fontWeight={Number(c.unread_count || 0) > 0 ? 600 : 400} noWrap>
+                                  {(c.first_name || '') + ' ' + (c.last_name || '')}
                                 </Typography>
-                                <Chip label={message.category} size="small" color={getCategoryColor(message.category) as any} />
-                                <Chip label={message.priority} size="small" color={getPriorityColor(message.priority) as any} />
+                                {c.status && <Chip label={c.status} size="small" />}
                               </Box>
                             }
                             secondary={
                               <>
                                 <Typography variant="body2" component="span" color="text.primary" noWrap>
-                                  {message.subject}
+                                  {c.subject || c.title || ''}
                                 </Typography>
                                 <Typography variant="caption" component="span" color="text.secondary" sx={{ ml: 1 }}>
-                                  {new Date(message.timestamp).toLocaleDateString()} {new Date(message.timestamp).toLocaleTimeString()}
+                                  {c.last_message_created_at ? (new Date(c.last_message_created_at).toLocaleDateString() + ' ' + new Date(c.last_message_created_at).toLocaleTimeString()) : ''}
                                 </Typography>
                               </>
                             }
                           />
                         </ListItemButton>
                       </ListItem>
-                      {index < paged.length - 1 && <Divider />}
+                      {index < pagedConversations.length - 1 && <Divider />}
                     </React.Fragment>
                   ))}
                 </List>
               </Box>
               <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
-                <Pagination page={page} onChange={(_, p) => setPage(p)} count={Math.max(1, Math.ceil(filteredMessages.length / rowsPerPage))} color="primary" />
+                <Pagination page={page} onChange={(_, p) => setPage(p)} count={Math.max(1, Math.ceil(filteredConversations.length / rowsPerPage))} color="primary" />
               </Box>
             </CardContent>
           </Card>
 
           {/* Detail pane */}
-          <Card sx={{ display: { xs: selectedMessage ? 'block' : 'none', lg: 'block' } }}>
+          <Card sx={{ display: { xs: selectedConversation ? 'block' : 'none', lg: 'block' } }}>
             <CardContent sx={{ height: { md: 'calc(100vh - 140px)' }, display: 'flex', flexDirection: 'column' }}>
-              {selectedMessage ? (
+              {selectedConversation ? (
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>{selectedMessage.sender.name.charAt(0)}</Avatar>
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>{(selectedConversation.first_name || '?').charAt(0)}</Avatar>
                     <Box>
-                      <Typography variant="h6">{selectedMessage.sender.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{selectedMessage.subject}</Typography>
+                      <Typography variant="h6">{(selectedConversation.first_name || '') + ' ' + (selectedConversation.last_name || '')}</Typography>
+                      <Typography variant="body2" color="text.secondary">{selectedConversation.subject || selectedConversation.title || ''}</Typography>
                     </Box>
                   </Box>
                   <Paper variant="outlined" sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}>
@@ -435,7 +496,7 @@ const SellerMessages: React.FC = () => {
                     )}
                     {/* Reply box with in-field attach icon */}
                     <Box sx={{ position: 'relative', mb: 1.5 }}>
-                      <TextField fullWidth multiline rows={3} placeholder={`Reply to ${selectedMessage.sender.name}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} />
+                      <TextField fullWidth multiline rows={3} placeholder={`Reply to ${(selectedConversation.first_name || '')}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} disabled={!isThreadValid || isRefreshing} />
                       <IconButton size="small" component="label" sx={{ position: 'absolute', right: 8, bottom: 8 }}>
                         <AttachIcon />
                         <input hidden multiple type="file" onChange={handleAttach} />
@@ -447,11 +508,11 @@ const SellerMessages: React.FC = () => {
                       ))}
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button variant="outlined" onClick={() => setSelectedMessage(null)}>Close</Button>
+                      <Button variant="outlined" onClick={() => setSelectedConversation(null)}>Close</Button>
                       {pendingSend && (
                         <Button variant="text" startIcon={<UndoIcon />} onClick={handleUndoSend}>Undo</Button>
                       )}
-                      <Button variant="contained" startIcon={<SendIcon />} onClick={handleSendReply} disabled={!replyText.trim()}>Send</Button>
+                      <Button variant="contained" startIcon={<SendIcon />} onClick={handleSendReply} disabled={!replyText.trim() || !isThreadValid || isRefreshing}>Send</Button>
                     </Box>
                   </Box>
                 </>

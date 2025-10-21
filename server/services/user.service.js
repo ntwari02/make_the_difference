@@ -1,4 +1,4 @@
-const { executeQuery } = require('../config/database');
+const { executeQuery, executeTransaction } = require('../config/database');
 
 const getProfileByUserId = async (userId) => {
   const rows = await executeQuery(`
@@ -74,6 +74,34 @@ const updateProfileByUserId = async (userId, updates = {}) => {
 module.exports = {
   getProfileByUserId,
   updateProfileByUserId,
+  // Delete current user's account and related seller data
+  deleteAccount: async (userId) => {
+    const queries = [
+      { query: 'DELETE FROM user_sessions WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM notifications WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_devices WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_login_attempts WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_password_history WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_social_accounts WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_totp_backup_codes WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM auth_totp WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM privacy_consents WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM rbac_user_roles WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM ai_conversations WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM ai_user_profiles WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM car_favorites WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM car_reviews WHERE user_id = ?', params: [userId] },
+      // Remove favorites and reviews on cars owned by this seller
+      { query: 'DELETE cf FROM car_favorites cf JOIN cars c ON cf.car_id = c.id WHERE c.seller_id = ?', params: [userId] },
+      { query: 'DELETE cr FROM car_reviews cr JOIN cars c ON cr.car_id = c.id WHERE c.seller_id = ?', params: [userId] },
+      { query: 'DELETE FROM cars WHERE seller_id = ?', params: [userId] },
+      { query: 'DELETE FROM seller_settings WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM sellers WHERE user_id = ?', params: [userId] },
+      { query: 'DELETE FROM users WHERE id = ?', params: [userId] },
+    ];
+    await executeTransaction(queries);
+    return true;
+  },
 };
 
 
