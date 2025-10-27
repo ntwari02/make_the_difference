@@ -67,13 +67,15 @@ router.post('/', authenticate, authorizeRoles('seller', 'admin'), upload.array('
       
       for (const file of uploadedFiles) {
         try {
-          const timestamp = Date.now() + Math.random();
+          const timestamp = Date.now();
+          const random = Math.floor(Math.random() * 10000);
           const baseName = (file.originalname || 'image')
             .toLowerCase()
             .replace(/[^a-z0-9\.\-_]+/g, '-')
             .replace(/-+/g, '-')
-            .replace(/^-|-$|\.+$/g, '');
-          const filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
+            .replace(/^-|-$|\.+$/g, '')
+            .replace(/\.(jpg|jpeg|png|gif|webp)$/i, ''); // Remove existing extension
+          const filename = `${timestamp}-${random}-${baseName || 'image'}.webp`;
           const outPath = path.join(carDir, filename);
 
           await sharp(file.buffer)
@@ -92,19 +94,34 @@ router.post('/', authenticate, authorizeRoles('seller', 'admin'), upload.array('
 
           const imagePath = `/uploads/cars/${carId}/${filename}`;
           imagePaths.push(imagePath);
-          console.log('✅ Processed image:', filename);
+                console.log('✅ Processed image:', filename);
+          console.log('📄 Saved to:', outPath);
+          console.log('🔗 Image path:', imagePath);
         } catch (fileError) {
           console.error(`❌ Failed to process file ${file.originalname}:`, fileError);
         }
       }
       
+      // Verify files exist on disk
+      console.log('🔍 Verifying uploaded files...');
+      for (const imagePath of imagePaths) {
+        const fullPath = path.join(uploadsRoot, imagePath.replace('/uploads/', ''));
+        if (fs.existsSync(fullPath)) {
+          console.log('✅ File exists:', fullPath);
+        } else {
+          console.error('❌ File missing:', fullPath);
+        }
+      }
+      
       carData.tempCarId = carId; // Pass the ID to createCar
+      console.log('🆔 Using temp ID for car:', carId);
     }
     
     // Create car WITH image paths if they were processed
     const createdCar = await service.createCar(req.user.id, { ...carData, images: imagePaths }, uploadedFiles);
     
     console.log('✅ Created car:', createdCar.id, 'with', imagePaths.length, 'images');
+    console.log('📸 Car images in DB:', createdCar.images);
     
     res.status(201).json({
       success: true,

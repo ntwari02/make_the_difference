@@ -92,6 +92,15 @@ const SellerInventory: React.FC = () => {
       console.log('Extracted cars:', list);
       console.log('Total cars:', list.length);
       
+      // Log images for each car
+      list.forEach(car => {
+        console.log(`Car ${car.id} (${car.title}):`, {
+          imagesCount: Array.isArray(car.images) ? car.images.length : 0,
+          images: car.images,
+          firstImage: Array.isArray(car.images) && car.images.length > 0 ? car.images[0] : 'N/A'
+        });
+      });
+      
       // Only use real data from API, don't fallback to mock data
       setLocalCars(list);
       dispatch(setCars(list));
@@ -282,7 +291,8 @@ const SellerInventory: React.FC = () => {
                     <Box sx={{ position: 'relative' }}>
                       <Avatar
                         variant="rounded"
-                        src={c.images && c.images.length > 0 ? c.images[0] : undefined}
+                        src={c.images && Array.isArray(c.images) && c.images.length > 0 ? c.images[0] : undefined}
+                        imgProps={{ onError: () => console.log('Failed to load image for car:', c.id) }}
                         sx={{ width: '100%', height: 180, bgcolor: 'grey.100' }}
                       >
                         {c.brand || c.title?.split(' ')[0] || 'Car'}

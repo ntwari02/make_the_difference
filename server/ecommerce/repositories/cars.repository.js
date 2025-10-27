@@ -13,33 +13,45 @@ const convertImageUrls = (images, req = null) => {
 	}
 	
 	// Determine base URL from environment or request
-	let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+	let baseUrl = process.env.API_URL || process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3001';
 	
-	// If we have a request object, try to use the protocol and host
-	if (req && req.protocol && req.get('host')) {
+	// Prefer environment variable for production (https://www.reaglex.com)
+	if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') {
+		baseUrl = 'https://www.reaglex.com';
+		console.log('Using production baseUrl:', baseUrl);
+	} else if (req && req.protocol && req.get('host')) {
+		// Use request protocol and host for dynamic detection
 		baseUrl = `${req.protocol}://${req.get('host')}`;
+		console.log('Using baseUrl from request:', baseUrl);
+	} else {
+		// Fallback
+		console.log('Using default baseUrl:', baseUrl);
 	}
 	
-	console.log('Converting images with baseUrl:', baseUrl);
-	
 	const converted = images.map(img => {
-		console.log('Processing image:', img, 'Type:', typeof img);
+		// Skip null, undefined, or empty strings
+		if (!img || typeof img !== 'string' || img.trim() === '') {
+			console.warn('Skipping empty/invalid image:', img);
+			return null;
+		}
+		
 		// If already an absolute URL, return as is
-		if (img && typeof img === 'string' && (img.startsWith('http://') || img.startsWith('https://'))) {
+		if (img.startsWith('http://') || img.startsWith('https://')) {
+			console.log('Already absolute URL:', img);
 			return img;
 		}
+		
 		// Convert relative paths to absolute URLs
-		if (img && typeof img === 'string' && img.startsWith('/uploads/')) {
+		if (img.startsWith('/uploads/')) {
 			const fullUrl = `${baseUrl}${img}`;
-			console.log('Converted:', img, '->', fullUrl);
+			console.log('Converted relative path:', img, '->', fullUrl);
 			return fullUrl;
 		}
+		
 		// If path doesn't start with /, add /uploads/
-		if (img && typeof img === 'string' && !img.startsWith('/')) {
-			return `${baseUrl}/uploads/${img}`;
-		}
-		console.warn('Skipping invalid image:', img);
-		return img;
+		const fullUrl = `${baseUrl}/uploads/${img}`;
+		console.log('Added /uploads/ prefix:', img, '->', fullUrl);
+		return fullUrl;
 	}).filter(Boolean); // Remove any null/undefined values
 	
 	console.log('Final converted URLs:', converted);
@@ -53,23 +65,39 @@ const parseCarFields = (car) => {
 	// Parse images JSON string to array
 	if (car.images) {
 		try {
-			console.log(`Raw images for car ${car.id}:`, car.images, 'Type:', typeof car.images);
-			car.images = typeof car.images === 'string' ? JSON.parse(car.images) : car.images;
-			console.log(`Parsed images for car ${car.id}:`, car.images);
+			// Parse JSON if it's a string
+			if (typeof car.images === 'string') {
+				console.log(`📝 Parsing JSON for car ${car.id}:`, car.images);
+				try {
+					car.images = JSON.parse(car.images);
+				} catch (parseError) {
+					console.error(`❌ Failed to parse images JSON for car ${car.id}:`, parseError);
+					// Try to treat it as a single path string
+					if (car.images.includes('/uploads/')) {
+						car.images = [car.images];
+					} else {
+						car.images = [];
+					}
+				}
+			}
+			
+			console.log(`📦 Parsed images for car ${car.id} (${car.title}):`, car.images);
+			
 			// Ensure it's an array
 			if (!Array.isArray(car.images)) {
-				console.warn(`Car ${car.id} images is not an array:`, typeof car.images);
-				car.images = [];
+				console.warn(`⚠️ Car ${car.id} images is not an array:`, typeof car.images, car.images);
+				car.images = Array.isArray(car.images) ? car.images : [];
 			}
+			
 			// Convert relative paths to absolute URLs
 			car.images = convertImageUrls(car.images);
-			console.log(`Converted images for car ${car.id}:`, car.images);
+			console.log(`✅ Converted images for car ${car.id} (${car.title}):`, car.images);
 		} catch (e) {
-			console.warn('Failed to parse images JSON:', e);
+			console.error(`❌ Failed to process images for car ${car.id}:`, e);
 			car.images = [];
 		}
 	} else {
-		console.log(`Car ${car.id} has no images field`);
+		console.log(`⚠️ Car ${car.id} (${car.title}) has no images field`);
 		car.images = [];
 	}
 	

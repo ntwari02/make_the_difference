@@ -78,10 +78,12 @@ const getMyCars = async (req, res) => {
 		const convertImageUrls = (images) => {
 			if (!Array.isArray(images)) return images || [];
 			
-			let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+			let baseUrl = process.env.API_URL || process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3001';
 			
-			// Use request protocol and host if available
-			if (req && req.protocol && req.get('host')) {
+			// Prefer production URL in production environment
+			if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') {
+				baseUrl = 'https://www.reaglex.com';
+			} else if (req && req.protocol && req.get('host')) {
 				baseUrl = `${req.protocol}://${req.get('host')}`;
 			}
 			

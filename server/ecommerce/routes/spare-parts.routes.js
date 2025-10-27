@@ -370,7 +370,7 @@ if (false) { // Original conditional code below for reference
 }
 
 // Route to get thumbnail URLs for images (always available)
-router.get('/:id/images/thumbnails', async (req, res) => {
+  router.get('/:id/images/thumbnails', async (req, res) => {
     try {
       const sparePartId = req.params.id;
       const part = await sparePartsService.getSparePartById(sparePartId);
@@ -389,84 +389,84 @@ router.get('/:id/images/thumbnails', async (req, res) => {
     } catch (error) {
       res.status(400).json({ success: false, message: error.message || 'Failed to get thumbnails' });
     }
-});
+  });
 
 // Delete images route (always available)
-router.delete('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
-  try {
-    const sparePartId = req.params.id;
-    const { imageUrls } = req.body;
-    
-    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
-      return res.status(400).json({ success: false, message: 'Image URLs array is required' });
-    }
-    
-    // Basic ownership check (admin can bypass)
-    if (req.user.role !== 'admin') {
-      const part = await sparePartsService.getSparePartById(sparePartId);
-      if (!part || part.seller_id !== req.user.id) {
-        return res.status(403).json({ success: false, message: 'Not allowed to delete images for this spare part' });
+  router.delete('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+    try {
+      const sparePartId = req.params.id;
+      const { imageUrls } = req.body;
+      
+      if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+        return res.status(400).json({ success: false, message: 'Image URLs array is required' });
       }
-    }
-    
-    const part = await sparePartsService.getSparePartById(sparePartId);
-    if (!part) {
-      return res.status(404).json({ success: false, message: 'Spare part not found' });
-    }
-    
-    const existingImages = Array.isArray(part.images)
-      ? part.images
-      : (typeof part.images === 'string' ? (JSON.parse(part.images || '[]') || []) : []);
-    
-    // Filter out the images to be deleted
-    const updatedImages = existingImages.filter(imageUrl => !imageUrls.includes(imageUrl));
-    
-    // Delete files from filesystem
-    const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
-    const deletedFiles = [];
-    const errors = [];
-    
-    for (const imageUrl of imageUrls) {
-      try {
-        if (imageUrl.startsWith('/uploads/spare-parts/')) {
-          const filePath = path.join(uploadsRoot, imageUrl.replace('/uploads/', ''));
-          const thumbnailPath = filePath.replace(/([^/]+)$/, 'thumb-$1');
-          
-          // Delete main image
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            deletedFiles.push(imageUrl);
-          }
-          
-          // Delete thumbnail
-          if (fs.existsSync(thumbnailPath)) {
-            fs.unlinkSync(thumbnailPath);
-            deletedFiles.push(imageUrl.replace(/([^/]+)$/, 'thumb-$1'));
-          }
+      
+      // Basic ownership check (admin can bypass)
+      if (req.user.role !== 'admin') {
+        const part = await sparePartsService.getSparePartById(sparePartId);
+        if (!part || part.seller_id !== req.user.id) {
+          return res.status(403).json({ success: false, message: 'Not allowed to delete images for this spare part' });
         }
-      } catch (fileError) {
-        console.error(`Failed to delete file ${imageUrl}:`, fileError);
-        errors.push(`Failed to delete ${imageUrl}: ${fileError.message}`);
       }
+      
+      const part = await sparePartsService.getSparePartById(sparePartId);
+      if (!part) {
+        return res.status(404).json({ success: false, message: 'Spare part not found' });
+      }
+      
+      const existingImages = Array.isArray(part.images)
+        ? part.images
+        : (typeof part.images === 'string' ? (JSON.parse(part.images || '[]') || []) : []);
+      
+      // Filter out the images to be deleted
+      const updatedImages = existingImages.filter(imageUrl => !imageUrls.includes(imageUrl));
+      
+      // Delete files from filesystem
+      const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+      const deletedFiles = [];
+      const errors = [];
+      
+      for (const imageUrl of imageUrls) {
+        try {
+          if (imageUrl.startsWith('/uploads/spare-parts/')) {
+            const filePath = path.join(uploadsRoot, imageUrl.replace('/uploads/', ''));
+            const thumbnailPath = filePath.replace(/([^/]+)$/, 'thumb-$1');
+            
+            // Delete main image
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              deletedFiles.push(imageUrl);
+            }
+            
+            // Delete thumbnail
+            if (fs.existsSync(thumbnailPath)) {
+              fs.unlinkSync(thumbnailPath);
+              deletedFiles.push(imageUrl.replace(/([^/]+)$/, 'thumb-$1'));
+            }
+          }
+        } catch (fileError) {
+          console.error(`Failed to delete file ${imageUrl}:`, fileError);
+          errors.push(`Failed to delete ${imageUrl}: ${fileError.message}`);
+        }
+      }
+      
+      // Update database
+      await sparePartsService.updateSparePart(sparePartId, { images: updatedImages });
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully deleted ${deletedFiles.length} image(s)`, 
+        data: { 
+          deleted_images: imageUrls,
+          remaining_images: updatedImages,
+          errors: errors.length > 0 ? errors : undefined
+        } 
+      });
+    } catch (error) {
+      console.error('Image deletion failed:', error);
+      res.status(400).json({ success: false, message: error.message || 'Failed to delete images' });
     }
-    
-    // Update database
-    await sparePartsService.updateSparePart(sparePartId, { images: updatedImages });
-    
-    res.json({ 
-      success: true, 
-      message: `Successfully deleted ${deletedFiles.length} image(s)`, 
-      data: { 
-        deleted_images: imageUrls,
-        remaining_images: updatedImages,
-        errors: errors.length > 0 ? errors : undefined
-      } 
-    });
-  } catch (error) {
-    console.error('Image deletion failed:', error);
-    res.status(400).json({ success: false, message: error.message || 'Failed to delete images' });
-  }
-});
+  });
 
 // Update spare part
 router.put('/:id', authenticateToken, authorizeRoles(['seller', 'admin']), validateSparePart, async (req, res) => {
@@ -676,10 +676,12 @@ router.get('/', authenticateToken, authorizeRoles(['seller', 'admin']), async (r
                 part.images = typeof part.images === 'string' ? JSON.parse(part.images) : part.images;
                 
                 // Convert relative paths to absolute URLs
-                let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+                let baseUrl = process.env.API_URL || process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3001';
                 
-                // Use request protocol and host if available
-                if (req && req.protocol && req.get('host')) {
+                // Prefer production URL in production
+                if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') {
+                  baseUrl = 'https://www.reaglex.com';
+                } else if (req && req.protocol && req.get('host')) {
                   baseUrl = `${req.protocol}://${req.get('host')}`;
                 }
                 
@@ -735,10 +737,12 @@ router.get('/', authenticateToken, authorizeRoles(['seller', 'admin']), async (r
       if (!Array.isArray(images)) return images || [];
       
       // Determine base URL from environment or request
-      let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+      let baseUrl = process.env.API_URL || process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3001';
       
-      // Use request protocol and host if available
-      if (req && req.protocol && req.get('host')) {
+      // Prefer production URL in production
+      if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') {
+        baseUrl = 'https://www.reaglex.com';
+      } else if (req && req.protocol && req.get('host')) {
         baseUrl = `${req.protocol}://${req.get('host')}`;
       }
       
@@ -834,7 +838,7 @@ router.get('/categories', async (req, res) => {
     } catch (error) {
       console.log('Main service failed, using simple service for categories');
       try {
-        categories = await sparePartsSimpleService.getCategories();
+      categories = await sparePartsSimpleService.getCategories();
       } catch (simpleError) {
         console.log('Simple service failed, using mock data for categories');
         // Mock categories data as fallback
@@ -895,7 +899,7 @@ router.get('/brands', async (req, res) => {
     } catch (error) {
       console.log('Main service failed, using simple service for brands');
       try {
-        brands = await sparePartsSimpleService.getBrands();
+      brands = await sparePartsSimpleService.getBrands();
       } catch (simpleError) {
         console.log('Simple service failed, using mock data for brands');
         // Mock brands data as fallback

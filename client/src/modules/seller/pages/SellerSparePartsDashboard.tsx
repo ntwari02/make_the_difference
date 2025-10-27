@@ -557,9 +557,9 @@ const SellerSparePartsDashboard: React.FC = () => {
           case 'delete':
             if (window.confirm(`⚠️ WARNING: Are you sure you want to permanently delete "${part.name}"?\n\nThis action CANNOT be undone. All data related to this part will be permanently removed including:\n- Product details\n- Images\n- Inventory records\n- Vehicle compatibility\n- Price comparisons\n- Installation services\n\nThis is a permanent deletion.`)) {
               try {
-                await sellerApi.spareParts.delete(part.id);
+              await sellerApi.spareParts.delete(part.id);
                 toast.success(`"${part.name}" has been permanently deleted`);
-                await fetchSpareParts();
+              await fetchSpareParts();
               } catch (deleteError: any) {
                 console.error('Error deleting part:', deleteError);
                 toast.error(deleteError?.response?.data?.message || 'Failed to delete part. Please try again.');
