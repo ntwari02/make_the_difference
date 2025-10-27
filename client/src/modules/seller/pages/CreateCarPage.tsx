@@ -86,6 +86,9 @@ const CreateCarPage: React.FC = () => {
     year: '',
     price: '',
     mileage: '',
+    quantity: '1',
+    total: '',
+    number_of_seats: '5',
     car_condition: 'used',
     fuel_type: 'petrol',
     transmission: 'automatic',
@@ -95,15 +98,40 @@ const CreateCarPage: React.FC = () => {
     description: '',
     images: [] as File[],
   });
+  
+  // Separate state for image preview URLs (base64 strings)
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  // Mock dashboard stats
-  const dashboardStats = {
-    totalCars: 24,
-    activeCars: 18,
-    totalViews: 1250,
-    totalFavorites: 89,
-    avgPrice: 28500,
-    conversionRate: 3.2,
+  // Real dashboard stats
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCars: 0,
+    activeCars: 0,
+    totalViews: 0,
+    totalFavorites: 0,
+    avgPrice: 0,
+    conversionRate: 0,
+  });
+  
+  // Fetch real dashboard stats
+  const fetchDashboardStats = async () => {
+    try {
+      const stats = await sellerApi.analytics.getSellerStats();
+      console.log('Dashboard stats from API:', stats);
+      
+          if (stats && stats.inventory) {
+        setDashboardStats({
+          totalCars: Number(stats.inventory.total_vehicles || 0),
+          activeCars: Number(stats.inventory.active_listings || 0),
+          totalViews: Number(stats.inventory.total_views || 0),
+          totalFavorites: Number(stats.inventory.total_favorites || 0),
+          avgPrice: Math.round(Number(stats.inventory.average_price || 0)),
+          conversionRate: Number(stats.inventory.conversion_rate || 0),
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      // Keep default values on error
+    }
   };
 
   // Real-time data fetching functions
@@ -360,10 +388,23 @@ const CreateCarPage: React.FC = () => {
   );
 
   const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
+    setFormData(prev => {
+      const newValue = event.target.value;
+      const updated = {
+        ...prev,
+        [field]: newValue
+      };
+      
+      // Auto-calculate total when quantity or price changes
+      if (field === 'quantity' || field === 'price') {
+        const quantity = parseFloat(updated.quantity) || 0;
+        const price = parseFloat(updated.price) || 0;
+        const total = quantity * price;
+        updated.total = total > 0 ? total.toFixed(2) : '';
+      }
+      
+      return updated;
+    });
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -423,8 +464,14 @@ const CreateCarPage: React.FC = () => {
     setLoading(true);
     try {
       // Validate required fields
-      if (!formData.title || !formData.brand || !formData.model || !formData.year || !formData.price || !formData.mileage || !formData.transmission || !formData.body_type || !formData.color || !formData.location) {
+      if (!formData.title || !formData.brand || !formData.model || !formData.year || !formData.price || !formData.quantity || !formData.mileage || !formData.transmission || !formData.body_type || !formData.color || !formData.location) {
         toast.error('Please fill in all required fields');
+        return;
+      }
+
+      // Validate quantity is at least 1
+      if (parseInt(formData.quantity) < 1) {
+        toast.error('Quantity must be at least 1');
         return;
       }
 
@@ -437,6 +484,9 @@ const CreateCarPage: React.FC = () => {
       submitData.append('model', formData.model);
       submitData.append('year', formData.year);
       submitData.append('price', formData.price);
+      submitData.append('quantity', formData.quantity);
+      submitData.append('total', formData.total);
+      submitData.append('number_of_seats', formData.number_of_seats);
       submitData.append('mileage', formData.mileage);
       submitData.append('car_condition', formData.car_condition);
       submitData.append('fuel_type', formData.fuel_type);
@@ -447,18 +497,26 @@ const CreateCarPage: React.FC = () => {
       submitData.append('description', formData.description || '');
       submitData.append('status', 'active');
       
-      // Add image files
-      formData.images.forEach((file: File) => {
+      // Convert base64 images back to File objects for submission
+      const base64Images = imagePreviews.filter(url => url.startsWith('data:image'));
+      
+      for (let i = 0; i < base64Images.length; i++) {
+        const base64 = base64Images[i];
+        // Convert base64 to blob and then to File
+        const response = await fetch(base64);
+        const blob = await response.blob();
+        const file = new File([blob], `car-image-${i + 1}.jpg`, { type: 'image/jpeg' });
         submitData.append('images', file);
-      });
+      }
       
-      console.log('Submitting FormData with files:', formData.images.length);
+      console.log('Submitting FormData with files:', base64Images.length);
       
-      // Call the API with FormData
-      const createdCar = await sellerApi.cars.createCarWithFiles(submitData);
+      // Call the API with FormData (returns immediately now - images process in background)
+      await sellerApi.cars.createCarWithFiles(submitData);
       
+      // Show success and redirect immediately (don't wait for background processing)
       toast.success('Car listing created successfully!');
-
+      
       // Reset form
       setFormData({
         title: '',
@@ -476,9 +534,12 @@ const CreateCarPage: React.FC = () => {
         description: '',
         images: [],
       });
+      setImagePreviews([]);
       
-      // Refresh the recent cars data to show the new listing
-      await fetchRecentCars();
+      // Navigate to cars list immediately for fast user experience
+      setTimeout(() => {
+        navigate('/seller/cars');
+      }, 500);
 
     } catch (error: any) {
       console.error('Error creating car:', error);
@@ -501,6 +562,7 @@ const CreateCarPage: React.FC = () => {
     try {
       // Refresh all data
       await Promise.all([
+        fetchDashboardStats(),
         fetchRecentCars(),
         fetchSalesHistory()
       ]);
@@ -514,6 +576,7 @@ const CreateCarPage: React.FC = () => {
 
   // Fetch data on component mount and when tabs change
   useEffect(() => {
+    fetchDashboardStats();
     fetchRecentCars();
     if (activeTab === 2) { // Sales History tab
       fetchSalesHistory();
@@ -650,7 +713,7 @@ const CreateCarPage: React.FC = () => {
           />
           <MetricCard
             title="Conversion"
-            value={`${dashboardStats.conversionRate}%`}
+            value={`${Number(dashboardStats.conversionRate || 0).toFixed(1)}%`}
             change={5}
             icon={<TrendingUpIcon sx={{ fontSize: 20 }} />}
             color="secondary.main"
@@ -772,6 +835,32 @@ const CreateCarPage: React.FC = () => {
                   required
                 />
               </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  type="number"
+                  value={formData.quantity}
+                  onChange={handleInputChange('quantity')}
+                  placeholder="1"
+                  required
+                  inputProps={{ min: 1 }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Total Price ($)"
+                  type="number"
+                  value={formData.total}
+                  disabled
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  helperText="Auto-calculated from quantity × price"
+                />
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -801,7 +890,7 @@ const CreateCarPage: React.FC = () => {
                     <MenuItem value="cng">CNG</MenuItem>
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     select
@@ -815,6 +904,17 @@ const CreateCarPage: React.FC = () => {
                   <MenuItem value="cvt">CVT</MenuItem>
                     <MenuItem value="semi-automatic">Semi-Automatic</MenuItem>
                   </TextField>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Number of Seats"
+                    type="number"
+                    value={formData.number_of_seats}
+                    onChange={handleInputChange('number_of_seats')}
+                    inputProps={{ min: 2, max: 16 }}
+                    required
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -868,14 +968,10 @@ const CreateCarPage: React.FC = () => {
                 </Grid>
               <Grid item xs={12}>
                 <PhotoUpload
-                  images={formData.images.map(file => URL.createObjectURL(file))}
+                  images={imagePreviews}
                   onImagesChange={(imageUrls) => {
-                    // Convert URLs back to File objects for form submission
-                    const files = imageUrls.map(url => {
-                      // This is a simplified approach - in production you'd want to maintain File objects
-                      return new File([], 'image.jpg', { type: 'image/jpeg' });
-                    });
-                    setFormData(prev => ({ ...prev, images: files }));
+                    // Update image preview URLs (base64 strings)
+                    setImagePreviews(imageUrls);
                   }}
                   maxImages={10}
                   maxFileSize={5}
@@ -912,6 +1008,7 @@ const CreateCarPage: React.FC = () => {
                         description: '',
                         images: [],
                       });
+                      setImagePreviews([]);
                     }}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >

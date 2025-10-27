@@ -391,7 +391,7 @@ const SellerSparePartForm: React.FC = () => {
               images={formData.images}
               onImagesChange={(images) => handleInputChange('images', images)}
               maxImages={8}
-              maxFileSize={5}
+              maxFileSize={15}
               entityType="spare-part"
               entityId={id}
               uploadEndpoint={isEdit && id ? `/api/seller/spare-parts/${id}/images` : undefined}

@@ -37,6 +37,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -115,6 +116,10 @@ const SellerSparePartsDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // 12 items per page for grid
   // Per-card menus will manage their own anchors; no global menu state
   const [viewOpen, setViewOpen] = useState(false);
   const [viewPart, setViewPart] = useState<any | null>(null);
@@ -138,9 +143,10 @@ const SellerSparePartsDashboard: React.FC = () => {
         sellerApi.spareParts.getBrands()
       ]);
       
-      const parts = partsResponse.data || [];
-      const categories = categoriesResponse.data || [];
-      const brands = brandsResponse.data || [];
+      // Handle response structure: { success: true, data: [...], pagination: {...} }
+      const parts = partsResponse?.data || partsResponse || [];
+      const categories = categoriesResponse?.data || categoriesResponse || [];
+      const brands = brandsResponse?.data || brandsResponse || [];
       
       // Create lookup maps for better performance
       const categoryMap = new Map(categories.map((cat: any) => [cat.id, cat]));
@@ -325,7 +331,13 @@ const SellerSparePartsDashboard: React.FC = () => {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+    setCurrentPage(1); // Reset to first page when switching tabs
   };
+  
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const handleCreatePart = () => {
     navigate('/seller/spare-parts/add');
@@ -396,6 +408,18 @@ const SellerSparePartsDashboard: React.FC = () => {
     
     return matchesSearch && matchesStatus;
   });
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredSpareParts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSpareParts = filteredSpareParts.slice(startIndex, endIndex);
+  
+  // Handle page change
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const StatCard: React.FC<{ 
     title: string; 
@@ -531,10 +555,15 @@ const SellerSparePartsDashboard: React.FC = () => {
             await fetchSpareParts();
             break;
           case 'delete':
-            if (window.confirm(`Are you sure you want to delete "${part.name}"?`)) {
-              await sellerApi.spareParts.delete(part.id);
-              toast.success('Part deleted');
-              await fetchSpareParts();
+            if (window.confirm(`⚠️ WARNING: Are you sure you want to permanently delete "${part.name}"?\n\nThis action CANNOT be undone. All data related to this part will be permanently removed including:\n- Product details\n- Images\n- Inventory records\n- Vehicle compatibility\n- Price comparisons\n- Installation services\n\nThis is a permanent deletion.`)) {
+              try {
+                await sellerApi.spareParts.delete(part.id);
+                toast.success(`"${part.name}" has been permanently deleted`);
+                await fetchSpareParts();
+              } catch (deleteError: any) {
+                console.error('Error deleting part:', deleteError);
+                toast.error(deleteError?.response?.data?.message || 'Failed to delete part. Please try again.');
+              }
             }
             break;
           case 'restock':
@@ -1041,10 +1070,25 @@ const SellerSparePartsDashboard: React.FC = () => {
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
               gap: 3 
             }}>
-              {filteredSpareParts.map((part) => (
+              {paginatedSpareParts.map((part) => (
                 <PartCard part={part} key={part.id} />
               ))}
             </Box>
+
+            {/* Pagination */}
+            {filteredSpareParts.length > itemsPerPage && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
 
             {filteredSpareParts.length === 0 && (
               <Box sx={{ textAlign: 'center', py: 8 }}>

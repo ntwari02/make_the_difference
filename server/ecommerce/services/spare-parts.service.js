@@ -1,5 +1,7 @@
 const { executeQuery } = require('../../config/database');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
 
 class SparePartsService {
   constructor() {
@@ -73,27 +75,41 @@ class SparePartsService {
 
     // Validate images - ensure they are file paths, not base64 data
     const validatedImages = this.validateImagePaths(images);
+    
+    // Helper function to parse integer values (convert empty strings to default)
+    const parseInteger = (value, defaultValue = 0) => {
+      if (value === '' || value === null || value === undefined || value === 'null' || value === 'undefined') return defaultValue;
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? defaultValue : parsed;
+    };
+    
+    // Parse and sanitize only the fields actually used by client
+    const parsedQuantityAvailable = parseInteger(quantity_available, 0);
+    const parsedQuantityReserved = parseInteger(quantity_reserved, 0);
+    const parsedReorderPoint = parseInteger(reorder_point, 10);
+    const parsedWarrantyPeriod = parseInteger(warranty_period_months, 12);
 
     try {
       // Generate SKU if not provided
       const finalSku = sku || await this.generateSKU(name, brand_id);
       
-      // Create spare part with inventory fields
+      // Create spare part - only using fields actually sent by client
       const sparePartId = uuidv4();
       const insertQuery = `
         INSERT INTO ${this.tableName} 
         (id, sku, name, description, category_id, brand_id, price, currency, seller_id, images, 
-         quantity_available, quantity_reserved, reorder_point, max_stock_level, cost_price, 
-         markup_percentage, weight, dimensions, warranty_period_months, requires_installation,
+         quantity_available, quantity_reserved, reorder_point, warranty_period_months, requires_installation,
          status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
       `;
       
       await executeQuery(insertQuery, [
         sparePartId, finalSku, name, description, category_id, brand_id, price, currency, seller_id, JSON.stringify(validatedImages),
-        quantity_available, quantity_reserved, reorder_point, max_stock_level, cost_price,
-        markup_percentage, weight ? JSON.stringify(weight) : null, dimensions ? JSON.stringify(dimensions) : null,
-        warranty_period_months, requires_installation
+        parsedQuantityAvailable, 
+        parsedQuantityReserved, 
+        parsedReorderPoint, 
+        parsedWarrantyPeriod, 
+        requires_installation
       ]);
 
       // Add vehicle compatibility
@@ -299,21 +315,65 @@ class SparePartsService {
 
   async deleteSparePart(id) {
     try {
-      // Update basic fields
-        // Soft delete by setting status to inactive
-        const updateQuery = `
-          UPDATE ${this.tableName} 
-          SET status = 'inactive', updated_at = NOW()
-          WHERE id = ?
-        `;
-        
-        const result = await executeQuery(updateQuery, [id]);
-        
-        if (result.affectedRows === 0) {
-          throw new Error('Spare part not found');
-        }
+      // First, check if the spare part exists
+      const checkQuery = `SELECT id, name FROM ${this.tableName} WHERE id = ?`;
+      const existingPart = await executeQuery(checkQuery, [id]);
+      
+      if (!existingPart || existingPart.length === 0) {
+        throw new Error('Spare part not found');
+      }
 
-        return { success: true, message: 'Spare part deleted successfully' };
+      console.log(`Deleting spare part: ${existingPart[0].name} (ID: ${id})`);
+
+      // Delete related records in other tables
+      // 1. Delete vehicle compatibility records
+      const deleteCompatibilityQuery = `DELETE FROM ${this.compatibilityTable} WHERE spare_part_id = ?`;
+      await executeQuery(deleteCompatibilityQuery, [id]);
+      console.log('Deleted vehicle compatibility records');
+
+      // 2. Delete from bundles items
+      const deleteBundleItemsQuery = `DELETE FROM ${this.bundleItemsTable} WHERE spare_part_id = ?`;
+      await executeQuery(deleteBundleItemsQuery, [id]);
+      console.log('Deleted bundle items');
+
+      // 3. Delete inventory records
+      const deleteInventoryQuery = `DELETE FROM ${this.inventoryTable} WHERE spare_part_id = ?`;
+      await executeQuery(deleteInventoryQuery, [id]);
+      console.log('Deleted inventory records');
+
+      // 4. Delete price comparison records
+      const deletePriceComparisonQuery = `DELETE FROM ${this.priceComparisonTable} WHERE spare_part_id = ?`;
+      await executeQuery(deletePriceComparisonQuery, [id]);
+      console.log('Deleted price comparison records');
+
+      // 5. Delete installation services
+      const deleteInstallationQuery = `DELETE FROM ${this.installationServicesTable} WHERE spare_part_id = ?`;
+      await executeQuery(deleteInstallationQuery, [id]);
+      console.log('Deleted installation services');
+
+      // 6. Delete the spare part images from disk
+      const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+      const partDir = path.join(uploadsRoot, 'spare-parts', id);
+      
+      try {
+        if (fs.existsSync(partDir)) {
+          fs.rmSync(partDir, { recursive: true, force: true });
+          console.log('Deleted image directory');
+        }
+      } catch (fsError) {
+        console.warn('Could not delete image directory:', fsError.message);
+      }
+
+      // 7. Finally, delete the spare part record itself
+      const deleteQuery = `DELETE FROM ${this.tableName} WHERE id = ?`;
+      const result = await executeQuery(deleteQuery, [id]);
+      
+      if (result.affectedRows === 0) {
+        throw new Error('Failed to delete spare part');
+      }
+
+      console.log(`Successfully deleted spare part: ${existingPart[0].name}`);
+      return { success: true, message: `Spare part "${existingPart[0].name}" deleted successfully` };
     } catch (error) {
       console.error('Error deleting spare part:', error);
       throw new Error(`Failed to delete spare part: ${error.message}`);

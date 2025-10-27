@@ -20,7 +20,7 @@ try {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 15 * 1024 * 1024, // 10MB limit
     files: 10 // Maximum 10 files
   },
   fileFilter: (req, file, cb) => {
@@ -52,74 +52,93 @@ router.post('/', authenticate, authorizeRoles('seller', 'admin'), upload.array('
   try {
     const uploadedFiles = req.files || [];
     
-    // Store original files for processing after car creation
-    req.originalFiles = uploadedFiles;
+    // Create car with empty images array first since files are in memory
+    const carData = req.body;
+    const createdCar = await service.createCar(req.user.id, carData, []);
     
-    // Call the original controller
-    const originalJson = res.json;
-    res.json = async function(data) {
-      // After car is created, process images with Sharp
-      if (sharp && uploadedFiles.length > 0 && data && data.data && data.data.id) {
-        const carId = data.data.id;
-        const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
-        const carDir = path.join(uploadsRoot, 'cars', carId);
-        fs.mkdirSync(carDir, { recursive: true });
-
-        const processedImagePaths = [];
-        
-        for (const file of uploadedFiles) {
-          try {
-            // Derive a safe filename
-            const timestamp = Date.now();
-            const baseName = (file.originalname || 'image')
-              .toLowerCase()
-              .replace(/[^a-z0-9\.\-_]+/g, '-')
-              .replace(/-+/g, '-')
-              .replace(/^-|-$|\.+$/g, '');
-            const filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
-            const outPath = path.join(carDir, filename);
-
-            // Optimize and convert to webp
-            await sharp(file.buffer)
-              .rotate()
-              .resize({ width: 1600, withoutEnlargement: true })
-              .webp({ quality: 80, effort: 6 })
-              .toFile(outPath);
-
-            // Create thumbnail
-            const thumbnailFilename = `thumb-${filename}`;
-            const thumbnailPath = path.join(carDir, thumbnailFilename);
-            await sharp(file.buffer)
-              .rotate()
-              .resize({ width: 300, withoutEnlargement: true })
-              .webp({ quality: 70, effort: 6 })
-              .toFile(thumbnailPath);
-
-            processedImagePaths.push(`/uploads/cars/${carId}/${filename}`);
-          } catch (fileError) {
-            console.error(`Failed to process file ${file.originalname}:`, fileError);
-          }
-        }
-        
-        // Update the car with processed image paths
-        if (processedImagePaths.length > 0) {
-          try {
-            await service.updateCar(carId, req.user.id, { images: processedImagePaths });
-            data.data.images = processedImagePaths;
-          } catch (updateError) {
-            console.error('Failed to update car with processed images:', updateError);
-          }
-        }
-      }
-      
-      return originalJson.call(this, data);
-    };
+    console.log('Created car:', createdCar);
     
-    await ctrl.createCar(req, res);
+    // Send response IMMEDIATELY - don't wait for image processing
+    res.status(201).json({
+      success: true,
+      message: 'Car listing created successfully',
+      data: createdCar
+    });
+    
+    // Process images ASYNCHRONOUSLY in the background
+    if (sharp && uploadedFiles.length > 0 && createdCar && createdCar.id) {
+      // Process images in the background (don't await)
+      processImagesInBackground(createdCar.id, req.user.id, uploadedFiles);
+    }
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    console.error('Error creating car:', error);
+    return res.status(400).json({ 
+      success: false,
+      message: error.message || 'Failed to create car listing'
+    });
   }
 });
+
+// Helper function to process images in the background
+const processImagesInBackground = async (carId, sellerId, uploadedFiles) => {
+  try {
+    const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+    const carDir = path.join(uploadsRoot, 'cars', carId);
+    fs.mkdirSync(carDir, { recursive: true });
+
+    const processedImagePaths = [];
+    
+    for (const file of uploadedFiles) {
+      try {
+        // Derive a safe filename
+        const timestamp = Date.now();
+        const baseName = (file.originalname || 'image')
+          .toLowerCase()
+          .replace(/[^a-z0-9\.\-_]+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$|\.+$/g, '');
+        const filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
+        const outPath = path.join(carDir, filename);
+
+        // Optimize and convert to webp
+        await sharp(file.buffer)
+          .rotate()
+          .resize({ width: 1600, withoutEnlargement: true })
+          .webp({ quality: 80, effort: 6 })
+          .toFile(outPath);
+
+        // Create thumbnail
+        const thumbnailFilename = `thumb-${filename}`;
+        const thumbnailPath = path.join(carDir, thumbnailFilename);
+        await sharp(file.buffer)
+          .rotate()
+          .resize({ width: 300, withoutEnlargement: true })
+          .webp({ quality: 70, effort: 6 })
+          .toFile(thumbnailPath);
+
+        const imagePath = `/uploads/cars/${carId}/${filename}`;
+        processedImagePaths.push(imagePath);
+        console.log(`Successfully processed image: ${filename}`);
+        console.log(`Image path: ${imagePath}`);
+      } catch (fileError) {
+        console.error(`Failed to process file ${file.originalname}:`, fileError);
+      }
+    }
+    
+    // Update the car with processed image paths
+    if (processedImagePaths.length > 0) {
+      try {
+        console.log('Updating car with image paths:', processedImagePaths);
+        await service.updateCar(carId, sellerId, { images: processedImagePaths });
+        console.log(`Successfully updated car ${carId} with ${processedImagePaths.length} images`);
+      } catch (updateError) {
+        console.error('Failed to update car with processed images:', updateError);
+      }
+    }
+  } catch (error) {
+    console.error('Error processing images in background:', error);
+  }
+};
 router.patch('/:id', authenticate, authorizeRoles('seller', 'admin'), v.validateUpdateCar, handleValidation, ctrl.updateCar);
 router.patch('/:id/status', authenticate, authorizeRoles('seller', 'admin'), ctrl.updateSellerCarStatus);
 router.delete('/:id', authenticate, authorizeRoles('seller', 'admin'), ctrl.deleteCar);

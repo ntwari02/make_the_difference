@@ -28,8 +28,8 @@ const ImageUpload = ({ sparePartId, onUploadSuccess }) => {
       return;
     }
     
-    // Validate file sizes (5MB limit)
-    const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    // Validate file sizes (10MB limit)
+    const oversizedFiles = files.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       alert(`Files too large: ${oversizedFiles.map(f => f.name).join(', ')}`);
       return;
@@ -576,7 +576,7 @@ const handleImageError = (error, operation) => {
   console.error(`Image ${operation} error:`, error);
   
   if (error.code === 'LIMIT_FILE_SIZE') {
-    return { success: false, message: 'File too large. Maximum size is 5MB.' };
+    return { success: false, message: 'File too large. Maximum size is 10MB.' };
   }
   
   if (error.code === 'LIMIT_FILE_COUNT') {

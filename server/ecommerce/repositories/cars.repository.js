@@ -1,5 +1,71 @@
 const { executeQuery } = require('../../config/database');
 
+// Helper function to convert relative image paths to absolute URLs
+const convertImageUrls = (images) => {
+	if (!Array.isArray(images)) return images;
+	
+	const baseUrl = process.env.API_URL || 'http://localhost:3001';
+	const converted = images.map(img => {
+		// If already an absolute URL, return as is
+		if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+			return img;
+		}
+		// Convert relative paths to absolute URLs
+		if (img && img.startsWith('/uploads/')) {
+			return `${baseUrl}${img}`;
+		}
+		// If path doesn't start with /, add /uploads/
+		if (img && !img.startsWith('/')) {
+			return `${baseUrl}/uploads/${img}`;
+		}
+		return img;
+	}).filter(Boolean); // Remove any null/undefined values
+	
+	console.log('Converted image URLs:', converted);
+	return converted;
+};
+
+// Helper function to parse JSON fields from database
+const parseCarFields = (car) => {
+	if (!car) return car;
+	
+	// Parse images JSON string to array
+	if (car.images) {
+		try {
+			car.images = typeof car.images === 'string' ? JSON.parse(car.images) : car.images;
+			// Convert relative paths to absolute URLs
+			car.images = convertImageUrls(car.images);
+		} catch (e) {
+			console.warn('Failed to parse images JSON:', e);
+			car.images = [];
+		}
+	} else {
+		car.images = [];
+	}
+	
+	// Parse features JSON string to array
+	if (car.features) {
+		try {
+			car.features = typeof car.features === 'string' ? JSON.parse(car.features) : car.features;
+		} catch (e) {
+			console.warn('Failed to parse features JSON:', e);
+			car.features = [];
+		}
+	}
+	
+	// Parse specifications JSON string to object
+	if (car.specifications) {
+		try {
+			car.specifications = typeof car.specifications === 'string' ? JSON.parse(car.specifications) : car.specifications;
+		} catch (e) {
+			console.warn('Failed to parse specifications JSON:', e);
+			car.specifications = {};
+		}
+	}
+	
+	return car;
+};
+
 // Public repository methods
 const listCars = async (filters) => {
 	let query = `
@@ -77,7 +143,8 @@ const listCars = async (filters) => {
 	query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 
 	const cars = await executeQuery(query, params);
-	return cars;
+	// Parse JSON fields for each car
+	return cars.map(parseCarFields);
 };
 
 const searchCars = async (searchTerm, filters) => {
@@ -124,7 +191,8 @@ const searchCars = async (searchTerm, filters) => {
 	query += ` ORDER BY c.created_at DESC LIMIT 50`;
 
 	const cars = await executeQuery(query, params);
-	return cars;
+	// Parse JSON fields for each car
+	return cars.map(parseCarFields);
 };
 
 const getCarById = async (carId) => {
@@ -146,7 +214,8 @@ const getCarById = async (carId) => {
 	`;
 	
 	const cars = await executeQuery(query, [carId]);
-	return cars[0] || null;
+	const car = cars[0] || null;
+	return parseCarFields(car);
 };
 
 const getCarReviews = async (carId, filters) => {
@@ -176,10 +245,10 @@ const createCar = async (carData) => {
     
 	const query = `
 		INSERT INTO cars (
-			id, title, description, brand, model, year, mileage, price,
-			car_condition, fuel_type, transmission, body_type, color, location, images,
+			id, title, description, brand, model, year, mileage, price, quantity, total_price,
+			car_condition, fuel_type, transmission, body_type, number_of_seats, color, location, images,
 			status, seller_id
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`;
 	
 	const params = [
@@ -191,10 +260,13 @@ const createCar = async (carData) => {
 		carData.year,
 		carData.mileage,
 		carData.price,
+		carData.quantity || 1,
+		carData.total_price || 0,
 		carData.car_condition,
 		carData.fuel_type,
 		carData.transmission,
 		carData.body_type,
+		carData.number_of_seats || 5,
 		carData.color,
 		carData.location,
 		carData.images ? JSON.stringify(carData.images) : null,
@@ -217,6 +289,22 @@ const updateCar = async (carId, updateData) => {
 	const updateFields = [];
 	const params = [];
 
+	// Check if price or quantity is being updated to auto-calculate total_price
+	let shouldUpdateTotal = false;
+	let quantity = updateData.quantity;
+	let price = updateData.price;
+
+	// If updating price or quantity, calculate total
+	if (updateData.price !== undefined || updateData.quantity !== undefined) {
+		shouldUpdateTotal = true;
+		// Get existing values if not being updated
+		if (quantity === undefined && price === undefined) {
+			// Both fields exist in update, calculate from them
+			quantity = updateData.quantity;
+			price = updateData.price;
+		}
+	}
+
 	for (const [key, value] of Object.entries(updateData)) {
 		if (allowedFields.includes(key)) {
             if (key === 'images' || key === 'features') {
@@ -227,6 +315,18 @@ const updateCar = async (carId, updateData) => {
 				params.push(value);
 			}
 		}
+	}
+
+	// Auto-calculate total_price if price or quantity was updated
+	if (shouldUpdateTotal && (price !== undefined || quantity !== undefined)) {
+		const car = await getCarById(carId);
+		const finalQuantity = quantity !== undefined ? quantity : (car.quantity || 1);
+		const finalPrice = price !== undefined ? price : (car.price || 0);
+		const calculatedTotal = finalQuantity * finalPrice;
+		
+		updateFields.push('total_price = ?');
+		params.push(calculatedTotal);
+		console.log(`Auto-calculated total_price: ${calculatedTotal} (qty: ${finalQuantity} × price: ${finalPrice})`);
 	}
 
 	if (updateFields.length === 0) {
@@ -272,7 +372,8 @@ const getCarsBySeller = async (sellerId, filters) => {
 	query += ` LIMIT ${safeLimit2} OFFSET ${offset}`;
 
 	const cars = await executeQuery(query, params);
-	return cars;
+	// Parse JSON fields for each car
+	return cars.map(parseCarFields);
 };
 
 // Buyer repository methods
@@ -670,8 +771,18 @@ const getSellerAnalyticsStats = async (sellerId, { start_date, end_date } = {}) 
             COUNT(*) AS total_vehicles,
             COUNT(CASE WHEN status = 'active' THEN 1 END) AS active_listings,
             COUNT(CASE WHEN status = 'sold' THEN 1 END) AS sold_vehicles,
-            COALESCE(ROUND(AVG(CASE WHEN status = 'active' THEN price END), 2), 0) AS average_price
+            COALESCE(ROUND(AVG(CASE WHEN status = 'active' THEN price END), 2), 0) AS average_price,
+            COALESCE(SUM(views_count), 0) AS total_views,
+            COALESCE(ROUND((COUNT(CASE WHEN status = 'sold' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2), 0) AS conversion_rate
         FROM cars c
+        WHERE c.seller_id = ?${dateFilter}
+    `, params);
+    
+    // Get total favorites count
+    const [favoritesCount] = await executeQuery(`
+        SELECT COUNT(*) AS total_favorites
+        FROM car_favorites cf
+        INNER JOIN cars c ON cf.car_id = c.id
         WHERE c.seller_id = ?${dateFilter}
     `, params);
 
@@ -703,7 +814,12 @@ const getSellerAnalyticsStats = async (sellerId, { start_date, end_date } = {}) 
     `, params);
 
     return {
-        inventory: inventory || { total_vehicles: 0, active_listings: 0, sold_vehicles: 0, average_price: 0 },
+        inventory: {
+            ...(inventory || { total_vehicles: 0, active_listings: 0, sold_vehicles: 0, average_price: 0 }),
+            total_views: inventory?.total_views || 0,
+            total_favorites: favoritesCount?.total_favorites || 0,
+            conversion_rate: inventory?.conversion_rate || 0
+        },
         sales: salesAgg[0] || { total_sales: 0, total_revenue: 0, average_sale_price: 0 },
         recent_sales: recentSales,
         monthly_sales: monthlySales

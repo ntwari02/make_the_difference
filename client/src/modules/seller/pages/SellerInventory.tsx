@@ -24,6 +24,8 @@ import {
   TableSortLabel,
   Menu,
   ListItemIcon,
+  Alert,
+  LinearProgress,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -48,6 +50,7 @@ const SellerInventory: React.FC = () => {
 
   const [cars, setLocalCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [search, setSearch] = useState('');
@@ -55,15 +58,6 @@ const SellerInventory: React.FC = () => {
   const [cardMenuAnchor, setCardMenuAnchor] = useState<Record<string, HTMLElement | null>>({});
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
 
-  // Sample data fallback for demo/empty states
-  const mockCars: Car[] = useMemo(() => ([
-    { id: 'm1', seller_id: 's1', title: '2019 Toyota Corolla LE', brand: 'Toyota', model: 'Corolla', year: 2019, mileage: 38500, price: 15900, status: 'active', location: 'Chicago, IL', images: ['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Silver', features: ['Bluetooth','Backup camera'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm2', seller_id: 's1', title: '2020 Honda Civic Sport', brand: 'Honda', model: 'Civic', year: 2020, mileage: 24000, price: 18750, status: 'active', location: 'Austin, TX', images: ['https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Blue', features: ['CarPlay','Heated seats'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm3', seller_id: 's1', title: '2018 Ford Focus SE', brand: 'Ford', model: 'Focus', year: 2018, mileage: 52500, price: 12990, status: 'pending', location: 'Miami, FL', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Hatchback', color: 'Red', features: ['Bluetooth'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm4', seller_id: 's1', title: '2017 BMW 330i', brand: 'BMW', model: '3 Series', year: 2017, mileage: 61000, price: 23400, status: 'draft', location: 'New York, NY', images: ['https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'Black', features: ['Sunroof','Navigation'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm5', seller_id: 's1', title: '2019 Mercedes C300', brand: 'Mercedes', model: 'C-Class', year: 2019, mileage: 41000, price: 26800, status: 'active', location: 'Seattle, WA', images: ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Petrol', transmission: 'Automatic', body_type: 'Sedan', color: 'White', features: ['Leather','CarPlay'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'm6', seller_id: 's1', title: '2021 Tesla Model 3', brand: 'Tesla', model: 'Model 3', year: 2021, mileage: 12000, price: 34900, status: 'sold', location: 'San Jose, CA', images: ['https://images.unsplash.com/photo-1511390428939-6b0f04096b4a?q=80&w=1200&auto=format&fit=crop'], car_condition: 'used', fuel_type: 'Electric', transmission: 'Automatic', body_type: 'Sedan', color: 'White', features: ['Autopilot'], specifications: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  ]), []);
 
   const filtered = useMemo(() => {
     return cars.filter((c) =>
@@ -80,17 +74,33 @@ const SellerInventory: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log('Fetching cars from API...');
       const res = await sellerApi.cars.getMyCars({ page: 1, limit: 100 });
-      const list = res.cars || [];
-      // If API returns empty, show mock cars so the UI is illustrative
-      const withFallback = list.length > 0 ? list : mockCars;
-      setLocalCars(withFallback);
-      dispatch(setCars(withFallback));
-    } catch (e) {
-      console.error(e);
-      // On error, still show mock cars
-      setLocalCars(mockCars);
-      dispatch(setCars(mockCars));
+      console.log('API response:', res);
+      
+      // Handle different response formats
+      let list: Car[] = [];
+      if (Array.isArray(res)) {
+        list = res;
+      } else if (res?.cars && Array.isArray(res.cars)) {
+        list = res.cars;
+      } else if (res?.data && Array.isArray(res.data)) {
+        list = res.data;
+      }
+      
+      console.log('Extracted cars:', list);
+      console.log('Total cars:', list.length);
+      
+      // Only use real data from API, don't fallback to mock data
+      setLocalCars(list);
+      dispatch(setCars(list));
+    } catch (e: any) {
+      console.error('Error fetching cars:', e);
+      setError(e?.response?.data?.message || 'Failed to load cars. Please try again.');
+      // Don't fallback to mock - show empty state
+      setLocalCars([]);
+      dispatch(setCars([]));
     } finally {
       setLoading(false);
     }
@@ -190,6 +200,12 @@ const SellerInventory: React.FC = () => {
       <Box sx={{ width: '100%', display: 'grid', gap: 2 }}>
         <Card>
           <CardHeader title="Inventory" subheader="Manage your stock, status, and exports" />
+          {loading && <LinearProgress />}
+          {error && (
+            <Alert severity="error" sx={{ m: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
           <CardContent>
             {/* Summary cards at top */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1.5, mb: 2 }}>
@@ -316,9 +332,24 @@ const SellerInventory: React.FC = () => {
                     </CardContent>
                   </Card>
                 ))}
-                {filtered.length === 0 && (
+                {!loading && filtered.length === 0 && (
                   <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary', gridColumn: '1 / -1' }}>
-                    No cars match your filters.
+                    <Typography variant="h6" gutterBottom>
+                      {cars.length === 0 ? 'No cars yet' : 'No cars match your filters'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {cars.length === 0 ? 'Start by adding your first car listing' : 'Try adjusting your search or filter criteria'}
+                    </Typography>
+                    {cars.length === 0 && (
+                      <Button variant="contained" onClick={() => navigate('/seller/cars/add')} sx={{ mt: 2 }}>
+                        Add Your First Car
+                      </Button>
+                    )}
+                  </Box>
+                )}
+                {loading && (
+                  <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary', gridColumn: '1 / -1' }}>
+                    <Typography variant="body2">Loading cars...</Typography>
                   </Box>
                 )}
               </Box>
@@ -377,11 +408,25 @@ const SellerInventory: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && (
+                  {!loading && filtered.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={8}>
                         <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
-                          No cars match your filters.
+                          <Typography variant="h6" gutterBottom>
+                            {cars.length === 0 ? 'No cars yet' : 'No cars match your filters'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {cars.length === 0 ? 'Start by adding your first car listing' : 'Try adjusting your search or filter criteria'}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={8}>
+                        <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
+                          <Typography variant="body2">Loading cars...</Typography>
                         </Box>
                       </TableCell>
                     </TableRow>

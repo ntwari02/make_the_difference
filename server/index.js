@@ -206,6 +206,7 @@ app.use('/api/spare-parts-working', require('./ecommerce/routes/spare-parts-work
 app.use('/api/spare-parts-analytics', require('./ecommerce/routes/spare-parts-analytics.routes'));
 app.use('/api/spare-parts-recommendations', require('./ecommerce/routes/spare-parts-recommendations.routes'));
 app.use('/api/spare-parts-notifications', require('./ecommerce/routes/spare-parts-notifications.routes'));
+app.use('/api/orders', require('./ecommerce/routes/orders.routes'));
 app.use('/api/scholarships', require('./routes/scholarship.routes'));
 app.use('/api/visa', require('./routes/visa.routes'));
 app.use('/api/visa-officer', require('./routes/visa-officer.routes'));

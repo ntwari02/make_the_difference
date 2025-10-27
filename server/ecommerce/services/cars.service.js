@@ -114,13 +114,20 @@ const createCar = async (sellerId, carData, uploadedFiles = []) => {
 	console.log('Image paths:', validatedImagePaths);
 
 	// Set default values for optional fields - only use fields sent by client
+	const quantity = parseInt(carData.quantity) || 1;
+	const price = parseFloat(carData.price);
+	const total_price = quantity * price; // Calculate total
+	
 	const carRecord = {
 		title: carData.title,
 		brand: carData.brand,
 		model: carData.model,
 		year: parseInt(carData.year),
 		mileage: parseInt(carData.mileage),
-		price: parseFloat(carData.price),
+		price: price,
+		quantity: quantity,
+		total_price: total_price,
+		number_of_seats: parseInt(carData.number_of_seats) || 5,
 		car_condition: carData.car_condition,
 		fuel_type: carData.fuel_type,
 		transmission: carData.transmission,

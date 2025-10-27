@@ -67,10 +67,10 @@ const SellerProfile = React.lazy(() => import('../../modules/seller/pages/Seller
 const SellerAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerMessages = React.lazy(() => import('../../modules/seller/pages/SellerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerReviews = React.lazy(() => import('../../modules/seller/pages/SellerReviews')) as React.LazyExoticComponent<React.ComponentType<any>>;
-const SellerPayments = React.lazy(() => import('../../modules/seller/pages/SellerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSettings = React.lazy(() => import('../../modules/seller/pages/SellerSettings')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSparePartsDashboard = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
 import SellerSparePartForm from '../../modules/seller/pages/SellerSparePartForm';
+const SellerOrders = React.lazy(() => import('../../modules/seller/pages/SellerOrders')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSparePartsAnalytics = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsAnalytics')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSparePartsBundles = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsBundles')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SellerSparePartsPriceComparison = React.lazy(() => import('../../modules/seller/pages/SellerSparePartsPriceComparison')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -852,16 +852,6 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/seller/payments',
-    element: (
-      <ProtectedRoute allowedRoles={['seller','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <SellerPayments />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
     path: '/seller/profile',
     element: (
       <ProtectedRoute allowedRoles={['seller','admin']}>
@@ -953,6 +943,16 @@ const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={['seller','admin']}>
         <React.Suspense fallback={<Fallback />}>
           <SellerSparePartsExport />
+        </React.Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/seller/orders',
+    element: (
+      <ProtectedRoute allowedRoles={['seller','admin']}>
+        <React.Suspense fallback={<Fallback />}>
+          <SellerOrders />
         </React.Suspense>
       </ProtectedRoute>
     ),
