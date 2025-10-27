@@ -73,7 +73,46 @@ const deleteCar = async (req, res) => {
 const getMyCars = async (req, res) => {
 	try {
 		const cars = await service.getCarsBySeller(req.user.id, req.query);
-		return ok(res, cars);
+		
+		// Convert image URLs to absolute URLs
+		const convertImageUrls = (images) => {
+			if (!Array.isArray(images)) return images || [];
+			
+			let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+			
+			// Use request protocol and host if available
+			if (req && req.protocol && req.get('host')) {
+				baseUrl = `${req.protocol}://${req.get('host')}`;
+			}
+			
+			return images.map(img => {
+				if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+					return img;
+				}
+				if (img && img.startsWith('/uploads/')) {
+					return `${baseUrl}${img}`;
+				}
+				return img;
+			}).filter(Boolean);
+		};
+		
+		// Process each car's images
+		const carsWithAbsoluteUrls = Array.isArray(cars) ? cars.map(car => {
+			if (car.images) {
+				try {
+					car.images = typeof car.images === 'string' ? JSON.parse(car.images) : car.images;
+					car.images = convertImageUrls(car.images);
+				} catch (e) {
+					console.warn('Failed to parse images JSON:', e);
+					car.images = [];
+				}
+			} else {
+				car.images = [];
+			}
+			return car;
+		}) : cars;
+		
+		return ok(res, carsWithAbsoluteUrls);
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}

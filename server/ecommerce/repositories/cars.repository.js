@@ -1,10 +1,17 @@
 const { executeQuery } = require('../../config/database');
 
 // Helper function to convert relative image paths to absolute URLs
-const convertImageUrls = (images) => {
+const convertImageUrls = (images, req = null) => {
 	if (!Array.isArray(images)) return images;
 	
-	const baseUrl = process.env.API_URL || 'http://localhost:3001';
+	// Determine base URL from environment or request
+	let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+	
+	// If we have a request object, try to use the protocol and host
+	if (req && req.protocol && req.get('host')) {
+		baseUrl = `${req.protocol}://${req.get('host')}`;
+	}
+	
 	const converted = images.map(img => {
 		// If already an absolute URL, return as is
 		if (img && (img.startsWith('http://') || img.startsWith('https://'))) {

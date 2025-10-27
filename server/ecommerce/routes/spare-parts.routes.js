@@ -520,13 +520,53 @@ router.get('/', authenticateToken, authorizeRoles(['seller', 'admin']), async (r
           
           const spareParts = await executeQuery(simpleQuery, simpleParams);
           
+          // Parse JSON fields and convert image URLs for each spare part
+          const parseSparePartFields = (part) => {
+            if (!part) return part;
+            
+            // Parse images JSON string to array and convert to absolute URLs
+            if (part.images) {
+              try {
+                part.images = typeof part.images === 'string' ? JSON.parse(part.images) : part.images;
+                
+                // Convert relative paths to absolute URLs
+                let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+                
+                // Use request protocol and host if available
+                if (req && req.protocol && req.get('host')) {
+                  baseUrl = `${req.protocol}://${req.get('host')}`;
+                }
+                
+                part.images = part.images.map(img => {
+                  if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+                    return img;
+                  }
+                  if (img && img.startsWith('/uploads/')) {
+                    return `${baseUrl}${img}`;
+                  }
+                  return img;
+                }).filter(Boolean);
+              } catch (e) {
+                console.warn('Failed to parse images JSON:', e);
+                part.images = [];
+              }
+            } else {
+              part.images = [];
+            }
+            
+            return part;
+          };
+          
+          // Process each spare part
+          const processedSpareParts = spareParts.map(parseSparePartFields);
+          
           // Get count for pagination
           const countQuery = `SELECT COUNT(*) as total FROM spare_parts sp WHERE sp.seller_id = ?`;
           const countResult = await executeQuery(countQuery, [searchParams.seller_id || '']);
           const total = countResult[0].total;
           
           result = {
-            spare_parts: spareParts,
+            spare_parts: processedSpareParts,
             pagination: {
               page: searchParams.page,
               limit: searchParams.limit,
@@ -544,9 +584,48 @@ router.get('/', authenticateToken, authorizeRoles(['seller', 'admin']), async (r
       }
     }
     
+    // Helper function to convert image URLs
+    const convertImageUrls = (images) => {
+      if (!Array.isArray(images)) return images || [];
+      
+      // Determine base URL from environment or request
+      let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
+      
+      // Use request protocol and host if available
+      if (req && req.protocol && req.get('host')) {
+        baseUrl = `${req.protocol}://${req.get('host')}`;
+      }
+      
+      return images.map(img => {
+        if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+          return img;
+        }
+        if (img && img.startsWith('/uploads/')) {
+          return `${baseUrl}${img}`;
+        }
+        return img;
+      }).filter(Boolean);
+    };
+    
+    // Parse and convert image URLs for all spare parts
+    const processedSpareParts = result.spare_parts.map(part => {
+      if (part.images) {
+        try {
+          part.images = typeof part.images === 'string' ? JSON.parse(part.images) : part.images;
+          part.images = convertImageUrls(part.images);
+        } catch (e) {
+          console.warn('Failed to parse images JSON:', e);
+          part.images = [];
+        }
+      } else {
+        part.images = [];
+      }
+      return part;
+    });
+    
     res.json({
       success: true,
-      data: result.spare_parts,
+      data: processedSpareParts,
       pagination: result.pagination
     });
   } catch (error) {
