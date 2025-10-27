@@ -221,9 +221,18 @@ if (multer && sharp) {
       return res.status(400).json({ success: false, message: error.message || 'Failed to upload images' });
     }
   });
+} else {
+  // Fallback route when multer or sharp is not available
+  router.post('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+    return res.status(503).json({ 
+      success: false, 
+      message: 'Image upload service temporarily unavailable. Please ensure multer and sharp are installed.' 
+    });
+  });
+}
 
-  // Route to get thumbnail URLs for images
-  router.get('/:id/images/thumbnails', async (req, res) => {
+// Route to get thumbnail URLs for images (always available)
+router.get('/:id/images/thumbnails', async (req, res) => {
     try {
       const sparePartId = req.params.id;
       const part = await sparePartsService.getSparePartById(sparePartId);
@@ -242,85 +251,84 @@ if (multer && sharp) {
     } catch (error) {
       res.status(400).json({ success: false, message: error.message || 'Failed to get thumbnails' });
     }
-  });
+});
 
-  // Route to delete specific images
-  router.delete('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
-    try {
-      const sparePartId = req.params.id;
-      const { imageUrls } = req.body;
-      
-      if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
-        return res.status(400).json({ success: false, message: 'Image URLs array is required' });
-      }
-      
-      // Basic ownership check (admin can bypass)
-      if (req.user.role !== 'admin') {
-        const part = await sparePartsService.getSparePartById(sparePartId);
-        if (!part || part.seller_id !== req.user.id) {
-          return res.status(403).json({ success: false, message: 'Not allowed to delete images for this spare part' });
-        }
-      }
-      
-      const part = await sparePartsService.getSparePartById(sparePartId);
-      if (!part) {
-        return res.status(404).json({ success: false, message: 'Spare part not found' });
-      }
-      
-      const existingImages = Array.isArray(part.images)
-        ? part.images
-        : (typeof part.images === 'string' ? (JSON.parse(part.images || '[]') || []) : []);
-      
-      // Filter out the images to be deleted
-      const updatedImages = existingImages.filter(imageUrl => !imageUrls.includes(imageUrl));
-      
-      // Delete files from filesystem
-      const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
-      const deletedFiles = [];
-      const errors = [];
-      
-      for (const imageUrl of imageUrls) {
-        try {
-          if (imageUrl.startsWith('/uploads/spare-parts/')) {
-            const filePath = path.join(uploadsRoot, imageUrl.replace('/uploads/', ''));
-            const thumbnailPath = filePath.replace(/([^/]+)$/, 'thumb-$1');
-            
-            // Delete main image
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-              deletedFiles.push(imageUrl);
-            }
-            
-            // Delete thumbnail
-            if (fs.existsSync(thumbnailPath)) {
-              fs.unlinkSync(thumbnailPath);
-              deletedFiles.push(imageUrl.replace(/([^/]+)$/, 'thumb-$1'));
-            }
-          }
-        } catch (fileError) {
-          console.error(`Failed to delete file ${imageUrl}:`, fileError);
-          errors.push(`Failed to delete ${imageUrl}: ${fileError.message}`);
-        }
-      }
-      
-      // Update database
-      await sparePartsService.updateSparePart(sparePartId, { images: updatedImages });
-      
-      res.json({ 
-        success: true, 
-        message: `Successfully deleted ${deletedFiles.length} image(s)`, 
-        data: { 
-          deleted_images: imageUrls,
-          remaining_images: updatedImages,
-          errors: errors.length > 0 ? errors : undefined
-        } 
-      });
-    } catch (error) {
-      console.error('Image deletion failed:', error);
-      res.status(400).json({ success: false, message: error.message || 'Failed to delete images' });
+// Delete images route (always available)
+router.delete('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sparePartId = req.params.id;
+    const { imageUrls } = req.body;
+    
+    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+      return res.status(400).json({ success: false, message: 'Image URLs array is required' });
     }
-  });
-}
+    
+    // Basic ownership check (admin can bypass)
+    if (req.user.role !== 'admin') {
+      const part = await sparePartsService.getSparePartById(sparePartId);
+      if (!part || part.seller_id !== req.user.id) {
+        return res.status(403).json({ success: false, message: 'Not allowed to delete images for this spare part' });
+      }
+    }
+    
+    const part = await sparePartsService.getSparePartById(sparePartId);
+    if (!part) {
+      return res.status(404).json({ success: false, message: 'Spare part not found' });
+    }
+    
+    const existingImages = Array.isArray(part.images)
+      ? part.images
+      : (typeof part.images === 'string' ? (JSON.parse(part.images || '[]') || []) : []);
+    
+    // Filter out the images to be deleted
+    const updatedImages = existingImages.filter(imageUrl => !imageUrls.includes(imageUrl));
+    
+    // Delete files from filesystem
+    const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+    const deletedFiles = [];
+    const errors = [];
+    
+    for (const imageUrl of imageUrls) {
+      try {
+        if (imageUrl.startsWith('/uploads/spare-parts/')) {
+          const filePath = path.join(uploadsRoot, imageUrl.replace('/uploads/', ''));
+          const thumbnailPath = filePath.replace(/([^/]+)$/, 'thumb-$1');
+          
+          // Delete main image
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            deletedFiles.push(imageUrl);
+          }
+          
+          // Delete thumbnail
+          if (fs.existsSync(thumbnailPath)) {
+            fs.unlinkSync(thumbnailPath);
+            deletedFiles.push(imageUrl.replace(/([^/]+)$/, 'thumb-$1'));
+          }
+        }
+      } catch (fileError) {
+        console.error(`Failed to delete file ${imageUrl}:`, fileError);
+        errors.push(`Failed to delete ${imageUrl}: ${fileError.message}`);
+      }
+    }
+    
+    // Update database
+    await sparePartsService.updateSparePart(sparePartId, { images: updatedImages });
+    
+    res.json({ 
+      success: true, 
+      message: `Successfully deleted ${deletedFiles.length} image(s)`, 
+      data: { 
+        deleted_images: imageUrls,
+        remaining_images: updatedImages,
+        errors: errors.length > 0 ? errors : undefined
+      } 
+    });
+  } catch (error) {
+    console.error('Image deletion failed:', error);
+    res.status(400).json({ success: false, message: error.message || 'Failed to delete images' });
+  }
+});
 
 // Update spare part
 router.put('/:id', authenticateToken, authorizeRoles(['seller', 'admin']), validateSparePart, async (req, res) => {
