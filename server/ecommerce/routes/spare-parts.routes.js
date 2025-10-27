@@ -13,6 +13,12 @@ try {
 } catch (e) {
   // Dependencies may not be installed yet; route will error if used until installed
 }
+
+// Create multer upload middleware if multer is available
+const upload = multer ? multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 10 }
+}) : null;
 const { authenticateToken, authorizeRoles } = require('../../middleware/auth.middleware');
 const { validateSparePart, validateInventory, validateVehicleCompatibility } = require('../../middleware/spare-parts-validation.middleware');
 const { executeQuery } = require('../../config/database');
@@ -106,7 +112,139 @@ router.post('/', authenticateToken, authorizeRoles(['seller', 'admin']), validat
 
 // ==================== IMAGE UPLOAD ROUTE ====================
 // Upload images for a spare part; saves optimized images to /uploads/spare-parts/:id
-if (multer && sharp) {
+// This route is always registered, but checks for sharp/multer availability at runtime
+
+const imageUploadHandler = async (req, res) => {
+  try {
+    const sparePartId = req.params.id;
+    
+    // Validate spare part ID format
+    if (!sparePartId || typeof sparePartId !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid spare part ID' });
+    }
+    
+    // Check if sharp is available for image processing
+    if (!sharp) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Image upload service temporarily unavailable. Please ensure sharp is installed.' 
+      });
+    }
+    
+    // Basic ownership check (admin can bypass)
+    if (req.user.role !== 'admin') {
+      const part = await sparePartsService.getSparePartById(sparePartId);
+      if (!part || part.seller_id !== req.user.id) {
+        return res.status(403).json({ success: false, message: 'Not allowed to upload images for this spare part' });
+      }
+    }
+
+    const files = req.files || [];
+    if (files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
+    }
+
+    // Validate file types
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const invalidFiles = files.filter(file => !allowedMimeTypes.includes(file.mimetype));
+    if (invalidFiles.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid file types. Only images are allowed. Invalid files: ${invalidFiles.map(f => f.originalname).join(', ')}` 
+      });
+    }
+
+    const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+    const partDir = path.join(uploadsRoot, 'spare-parts', sparePartId);
+    
+    // Ensure directory exists
+    fs.mkdirSync(partDir, { recursive: true });
+
+    const publicUrls = [];
+    const errors = [];
+    
+    for (const file of files) {
+      try {
+        // Derive a safe filename
+        const timestamp = Date.now();
+        const baseName = (file.originalname || 'image')
+          .toLowerCase()
+          .replace(/[^a-z0-9\.\-_]+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$|\.+$/g, '');
+        const filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
+        const outPath = path.join(partDir, filename);
+
+        // Optimize and convert to webp (lossy, quality 80) and max width 1600
+        await sharp(file.buffer)
+          .rotate()
+          .resize({ width: 1600, withoutEnlargement: true })
+          .webp({ quality: 80, effort: 6 })
+          .toFile(outPath);
+
+        // Also create a thumbnail version (300px max width)
+        const thumbnailFilename = `thumb-${filename}`;
+        const thumbnailPath = path.join(partDir, thumbnailFilename);
+        await sharp(file.buffer)
+          .rotate()
+          .resize({ width: 300, withoutEnlargement: true })
+          .webp({ quality: 70, effort: 6 })
+          .toFile(thumbnailPath);
+
+        // Build public URL served by /uploads static
+        const publicUrl = `/uploads/spare-parts/${sparePartId}/${filename}`;
+        publicUrls.push(publicUrl);
+      } catch (fileError) {
+        console.error(`Failed to process file ${file.originalname}:`, fileError);
+        errors.push(`Failed to process ${file.originalname}: ${fileError.message}`);
+      }
+    }
+
+    if (publicUrls.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No files were successfully processed', 
+        errors: errors 
+      });
+    }
+
+    // Persist image URLs by appending to existing images array
+    const part = await sparePartsService.getSparePartById(sparePartId);
+    const existingImages = Array.isArray(part.images)
+      ? part.images
+      : (typeof part.images === 'string' ? (JSON.parse(part.images || '[]') || []) : []); 
+    const updatedImages = [...existingImages, ...publicUrls];
+
+    await sparePartsService.updateSparePart(sparePartId, { images: updatedImages });
+
+    return res.status(201).json({ 
+      success: true, 
+      message: `Successfully uploaded ${publicUrls.length} image(s)`, 
+      data: { 
+        images: publicUrls, 
+        all_images: updatedImages,
+        errors: errors.length > 0 ? errors : undefined
+      } 
+    });
+  } catch (error) {
+    console.error('Image upload failed:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Failed to upload images' });
+  }
+};
+
+// Register the route with multer middleware if available, otherwise return an error
+if (upload) {
+  router.post('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), upload.array('images', 10), imageUploadHandler);
+} else {
+  router.post('/:id/images', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+    return res.status(503).json({ 
+      success: false, 
+      message: 'Image upload service temporarily unavailable. Please ensure multer is installed.' 
+    });
+  });
+}
+
+if (false) { // Original conditional code below for reference
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 15 * 1024 * 1024, files: 10 } // 10MB per file, up to 10 files
