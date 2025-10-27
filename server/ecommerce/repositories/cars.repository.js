@@ -2,7 +2,15 @@ const { executeQuery } = require('../../config/database');
 
 // Helper function to convert relative image paths to absolute URLs
 const convertImageUrls = (images, req = null) => {
-	if (!Array.isArray(images)) return images;
+	if (!Array.isArray(images)) {
+		console.warn('convertImageUrls received non-array:', typeof images, images);
+		return images || [];
+	}
+	
+	if (images.length === 0) {
+		console.warn('convertImageUrls received empty array');
+		return [];
+	}
 	
 	// Determine base URL from environment or request
 	let baseUrl = process.env.API_URL || process.env.BASE_URL || 'http://localhost:3001';
@@ -12,23 +20,29 @@ const convertImageUrls = (images, req = null) => {
 		baseUrl = `${req.protocol}://${req.get('host')}`;
 	}
 	
+	console.log('Converting images with baseUrl:', baseUrl);
+	
 	const converted = images.map(img => {
+		console.log('Processing image:', img, 'Type:', typeof img);
 		// If already an absolute URL, return as is
-		if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+		if (img && typeof img === 'string' && (img.startsWith('http://') || img.startsWith('https://'))) {
 			return img;
 		}
 		// Convert relative paths to absolute URLs
-		if (img && img.startsWith('/uploads/')) {
-			return `${baseUrl}${img}`;
+		if (img && typeof img === 'string' && img.startsWith('/uploads/')) {
+			const fullUrl = `${baseUrl}${img}`;
+			console.log('Converted:', img, '->', fullUrl);
+			return fullUrl;
 		}
 		// If path doesn't start with /, add /uploads/
-		if (img && !img.startsWith('/')) {
+		if (img && typeof img === 'string' && !img.startsWith('/')) {
 			return `${baseUrl}/uploads/${img}`;
 		}
+		console.warn('Skipping invalid image:', img);
 		return img;
 	}).filter(Boolean); // Remove any null/undefined values
 	
-	console.log('Converted image URLs:', converted);
+	console.log('Final converted URLs:', converted);
 	return converted;
 };
 
@@ -39,14 +53,23 @@ const parseCarFields = (car) => {
 	// Parse images JSON string to array
 	if (car.images) {
 		try {
+			console.log(`Raw images for car ${car.id}:`, car.images, 'Type:', typeof car.images);
 			car.images = typeof car.images === 'string' ? JSON.parse(car.images) : car.images;
+			console.log(`Parsed images for car ${car.id}:`, car.images);
+			// Ensure it's an array
+			if (!Array.isArray(car.images)) {
+				console.warn(`Car ${car.id} images is not an array:`, typeof car.images);
+				car.images = [];
+			}
 			// Convert relative paths to absolute URLs
 			car.images = convertImageUrls(car.images);
+			console.log(`Converted images for car ${car.id}:`, car.images);
 		} catch (e) {
 			console.warn('Failed to parse images JSON:', e);
 			car.images = [];
 		}
 	} else {
+		console.log(`Car ${car.id} has no images field`);
 		car.images = [];
 	}
 	

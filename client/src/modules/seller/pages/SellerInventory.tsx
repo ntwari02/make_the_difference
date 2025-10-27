@@ -282,10 +282,10 @@ const SellerInventory: React.FC = () => {
                     <Box sx={{ position: 'relative' }}>
                       <Avatar
                         variant="rounded"
-                        src={c.images?.[0]}
+                        src={c.images && c.images.length > 0 ? c.images[0] : undefined}
                         sx={{ width: '100%', height: 180, bgcolor: 'grey.100' }}
                       >
-                        {c.brand}
+                        {c.brand || c.title?.split(' ')[0] || 'Car'}
                       </Avatar>
                       <Checkbox
                         checked={selected.includes(c.id)}
