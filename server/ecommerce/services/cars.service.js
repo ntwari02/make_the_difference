@@ -135,9 +135,10 @@ const createCar = async (sellerId, carData, uploadedFiles = []) => {
 		color: carData.color,
 		location: carData.location,
 		description: carData.description || null,
-		images: validatedImagePaths.length > 0 ? validatedImagePaths : [],
+		images: validatedImagePaths.length > 0 ? validatedImagePaths : carData.images || [],
 		status: carData.status || 'pending', // Default to pending for admin review
-		seller_id: sellerId
+		seller_id: sellerId,
+		tempId: carData.tempCarId // Pass the temp ID
 	};
 
 	return carsRepo.createCar(carRecord);

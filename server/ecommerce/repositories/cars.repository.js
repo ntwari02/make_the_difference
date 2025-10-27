@@ -271,7 +271,8 @@ const getCarReviews = async (carId, filters) => {
 
 // Seller repository methods
 const createCar = async (carData) => {
-    const carId = require('crypto').randomUUID();
+    const carId = carData.tempId || require('crypto').randomUUID();
+    console.log('Creating car with ID:', carId);
     
 	const query = `
 		INSERT INTO cars (
@@ -305,6 +306,7 @@ const createCar = async (carData) => {
 	];
 
     await executeQuery(query, params);
+    console.log('✅ Car created successfully with images:', carData.images);
     return { id: carId, ...carData };
 };
 

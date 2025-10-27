@@ -51,25 +51,66 @@ router.get('/:id/reviews', ctrl.getCarReviews);
 router.post('/', authenticate, authorizeRoles('seller', 'admin'), upload.array('images', 10), v.validateCreateCar, handleValidation, async (req, res) => {
   try {
     const uploadedFiles = req.files || [];
-    
-    // Create car with empty images array first since files are in memory
     const carData = req.body;
-    const createdCar = await service.createCar(req.user.id, carData, []);
     
-    console.log('Created car:', createdCar);
+    console.log('🚗 Creating car with', uploadedFiles.length, 'uploaded files');
     
-    // Send response IMMEDIATELY - don't wait for image processing
+    // Process images IMMEDIATELY if files are uploaded
+    let imagePaths = [];
+    if (sharp && uploadedFiles.length > 0) {
+      const carId = require('crypto').randomUUID();
+      const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+      const carDir = path.join(uploadsRoot, 'cars', carId);
+      fs.mkdirSync(carDir, { recursive: true });
+      
+      console.log('📁 Processing', uploadedFiles.length, 'images for car', carId);
+      
+      for (const file of uploadedFiles) {
+        try {
+          const timestamp = Date.now() + Math.random();
+          const baseName = (file.originalname || 'image')
+            .toLowerCase()
+            .replace(/[^a-z0-9\.\-_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$|\.+$/g, '');
+          const filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
+          const outPath = path.join(carDir, filename);
+
+          await sharp(file.buffer)
+            .rotate()
+            .resize({ width: 1600, withoutEnlargement: true })
+            .webp({ quality: 80, effort: 6 })
+            .toFile(outPath);
+
+          const thumbnailFilename = `thumb-${filename}`;
+          const thumbnailPath = path.join(carDir, thumbnailFilename);
+          await sharp(file.buffer)
+            .rotate()
+            .resize({ width: 300, withoutEnlargement: true })
+            .webp({ quality: 70, effort: 6 })
+            .toFile(thumbnailPath);
+
+          const imagePath = `/uploads/cars/${carId}/${filename}`;
+          imagePaths.push(imagePath);
+          console.log('✅ Processed image:', filename);
+        } catch (fileError) {
+          console.error(`❌ Failed to process file ${file.originalname}:`, fileError);
+        }
+      }
+      
+      carData.tempCarId = carId; // Pass the ID to createCar
+    }
+    
+    // Create car WITH image paths if they were processed
+    const createdCar = await service.createCar(req.user.id, { ...carData, images: imagePaths }, uploadedFiles);
+    
+    console.log('✅ Created car:', createdCar.id, 'with', imagePaths.length, 'images');
+    
     res.status(201).json({
       success: true,
       message: 'Car listing created successfully',
       data: createdCar
     });
-    
-    // Process images ASYNCHRONOUSLY in the background
-    if (sharp && uploadedFiles.length > 0 && createdCar && createdCar.id) {
-      // Process images in the background (don't await)
-      processImagesInBackground(createdCar.id, req.user.id, uploadedFiles);
-    }
   } catch (error) {
     console.error('Error creating car:', error);
     return res.status(400).json({ 
@@ -128,12 +169,15 @@ const processImagesInBackground = async (carId, sellerId, uploadedFiles) => {
     // Update the car with processed image paths
     if (processedImagePaths.length > 0) {
       try {
-        console.log('Updating car with image paths:', processedImagePaths);
-        await service.updateCar(carId, sellerId, { images: processedImagePaths });
-        console.log(`Successfully updated car ${carId} with ${processedImagePaths.length} images`);
+        console.log('🖼️ Updating car with image paths:', processedImagePaths);
+        const updatedCar = await service.updateCar(carId, sellerId, { images: processedImagePaths });
+        console.log(`✅ Successfully updated car ${carId} with ${processedImagePaths.length} images`);
+        console.log('📸 Updated car images:', updatedCar?.images);
       } catch (updateError) {
-        console.error('Failed to update car with processed images:', updateError);
+        console.error('❌ Failed to update car with processed images:', updateError);
       }
+    } else {
+      console.log('⚠️ No processed image paths to update');
     }
   } catch (error) {
     console.error('Error processing images in background:', error);
