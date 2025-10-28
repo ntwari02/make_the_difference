@@ -58,7 +58,7 @@ const SellerProfile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // Load seller profile on mount if not in store
+  // Load seller profile on mount - always reload to get latest images
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -66,14 +66,16 @@ const SellerProfile: React.FC = () => {
         dispatch(setLoading(true));
         const data = await sellerApi.profile.getProfile();
         if (!mounted) return;
+        console.log('✅ Loaded profile with images:', data?.images);
         dispatch(setProfile(data));
       } catch (e: any) {
+        console.error('❌ Failed to load profile:', e);
         dispatch(setError(e?.response?.data?.message || 'Failed to load profile'));
       } finally {
         dispatch(setLoading(false));
       }
     };
-    if (!profile) load();
+    load(); // Always reload to get latest data
     return () => { mounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -153,7 +155,8 @@ const SellerProfile: React.FC = () => {
   const buildDiff = (): Partial<ProfileFormData> => {
     if (!original) return formData;
     const diff: any = {};
-    const keys: (keyof ProfileFormData)[] = ['business_name','business_type','description','address','city','state','country','postal_code','phone','email','website','logo','images','business_hours','services'];
+    // Exclude images from diff since they are uploaded directly via PhotoUpload component
+    const keys: (keyof ProfileFormData)[] = ['business_name','business_type','description','address','city','state','country','postal_code','phone','email','website','logo','business_hours','services'];
     keys.forEach((k) => {
       const curr = (formData as any)[k];
       const prev = (original as any)[k];
@@ -254,20 +257,33 @@ const SellerProfile: React.FC = () => {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <PhotoUpload
-                images={formData.images || []}
-                onImagesChange={(images) => handleInputChange('images', images)}
-                maxImages={1}
-                maxFileSize={5}
-                entityType="profile"
-                entityId={profile?.id}
-                uploadEndpoint="/api/seller/profile/photos"
-                profileMode={true}
-                avatarSize={80}
-                showLabel={false}
-                disabled={false}
-                fallbackText={formData.business_name?.charAt(0) || 'S'}
-              />
+              {/* Profile Photo */}
+              <Box>
+                <PhotoUpload
+                  images={formData.images && formData.images.length > 0 ? [formData.images[0]] : []}
+                  onImagesChange={(newProfileImage) => {
+                    // Profile mode: replace the first image in the array
+                    const firstImage = newProfileImage.length > 0 ? newProfileImage[0] : null;
+                    // If we have a new profile image, replace the first image, otherwise keep the rest
+                    const updatedImages = firstImage ? [firstImage, ...formData.images.slice(1)] : formData.images.slice(1);
+                    handleInputChange('images', updatedImages);
+                    if (original) {
+                      setOriginal({ ...original, images: updatedImages });
+                    }
+                  }}
+                  maxImages={1}
+                  maxFileSize={5}
+                  uploadEndpoint="/api/seller/profile/images"
+                  entityId={profile?.user_id || profile?.id}
+                  entityType="profile"
+                  disabled={saving}
+                  profileMode={true}
+                  avatarSize={100}
+                  showLabel={false}
+                  fallbackText={formData.business_name?.[0]?.toUpperCase() || 'B'}
+                />
+              </Box>
+              {/* Business Info */}
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                   <Typography variant="h5" fontWeight={700}>
@@ -470,22 +486,31 @@ const SellerProfile: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight={600}>
-                  Business Photos
+                  Profile Photos
                 </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Upload photos of your business, showroom, or workspace to build trust with customers.
+                <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
+                  Upload photos of your business, showroom, or team. Add up to 10 photos.
                 </Typography>
                 <PhotoUpload
                   images={formData.images}
-                  onImagesChange={(images) => handleInputChange('images', images)}
+                  onImagesChange={(images) => {
+                    handleInputChange('images', images);
+                    // Update original to reflect changes immediately
+                    if (original) {
+                      setOriginal({ ...original, images });
+                    }
+                  }}
                   maxImages={10}
                   maxFileSize={5}
+                  uploadEndpoint="/api/seller/profile/images"
+                  entityId={profile?.user_id || profile?.id}
                   entityType="profile"
-                  entityId={profile?.id}
-                  uploadEndpoint="/api/seller/profile/photos"
-                  label="Business Photos"
-                  description="Upload photos of your business location, showroom, or workspace"
+                  disabled={saving}
+                  showPreview={true}
+                  previewHeight={150}
                   aspectRatio="16/9"
+                  label="Business Photos"
+                  description="Add photos to showcase your business"
                 />
               </CardContent>
             </Card>

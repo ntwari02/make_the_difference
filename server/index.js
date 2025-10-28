@@ -241,6 +241,14 @@ app.use('/uploads', express.static(uploadsDir, {
   }
 }));
 
+// Also expose uploads under /api/uploads and /api/images to work with dev proxies
+app.use('/api/uploads', express.static(uploadsDir, {
+  maxAge: '7d'
+}));
+app.use('/api/images', express.static(uploadsDir, {
+  maxAge: '7d'
+}));
+
 // Centralized error handler (must be after routes)
 // Ensure we don't leak internals (SQL, stack traces)
 // eslint-disable-next-line no-unused-vars

@@ -75,8 +75,9 @@ export const sellerProfileApi = {
   },
 
   // Upload profile photos
-  uploadPhotos: async (profileId: string, formData: FormData): Promise<{ images: string[] }> => {
-    const { data } = await api.post(`/seller/profile/${profileId}/photos`, formData, {
+  uploadPhotos: async (_profileId: string, formData: FormData): Promise<{ images: string[] }> => {
+    // Backend uses authenticated user id; no path param
+    const { data } = await api.post(`/seller/profile/photos`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

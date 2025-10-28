@@ -32,6 +32,7 @@ import type { RootState } from '../../../../core/store';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 import { clearProfile } from '../../store/sellerSlice';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
+import { sellerApi } from '../../services/sellerApi';
 
 interface SellerHeaderProps {
   onMenuClick: () => void;
@@ -50,6 +51,23 @@ const SellerHeader: React.FC<SellerHeaderProps> = ({ onMenuClick }) => {
   const profile = useSelector((state: RootState) => state.seller.profile);
   const unreadNotifications = useSelector((state: RootState) => state.seller.unreadNotifications);
   const notifications = useSelector((state: RootState) => state.seller.notifications);
+  
+  // Get cached profile image immediately from localStorage for instant display
+  const [instantAvatarSrc, setInstantAvatarSrc] = React.useState<string | undefined>(undefined);
+  
+  React.useEffect(() => {
+    try {
+      const cache = localStorage.getItem('seller_profile_cache');
+      if (cache) {
+        const p = JSON.parse(cache);
+        const img = Array.isArray(p?.images) && p.images.length ? p.images[0] : null;
+        if (img) {
+          const src = img.startsWith('data:') ? img : (img.startsWith('/uploads') || img.startsWith('http')) ? img : `/uploads/${img.replace(/^\/+/, '')}`;
+          setInstantAvatarSrc(src);
+        }
+      }
+    } catch {}
+  }, []);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -75,6 +93,27 @@ const SellerHeader: React.FC<SellerHeaderProps> = ({ onMenuClick }) => {
       window.location.assign('/');
     }
   };
+
+  // Ensure header has profile data immediately after login/navigation
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        if (!profile) {
+          const data = await sellerApi.profile.getProfile();
+          if (!mounted) return;
+          // Avoid circular import of slice actions here; header should be light-weight
+          // Instead, rely on localStorage for header avatar immediately after login
+          // and set a minimal cache for the session
+          try {
+            localStorage.setItem('seller_profile_cache', JSON.stringify(data));
+          } catch {}
+        }
+      } catch {}
+    };
+    load();
+    return () => { mounted = false; };
+  }, [profile]);
 
   const handleNavigateToProfile = () => {
     navigate('/seller/profile');
@@ -204,7 +243,23 @@ const SellerHeader: React.FC<SellerHeaderProps> = ({ onMenuClick }) => {
         {/* User Menu */}
         <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
           <Avatar
-            src={profile?.logo}
+            src={
+              (() => {
+                // Priority 1: Redux profile images
+                if (Array.isArray(profile?.images) && profile?.images?.length > 0) {
+                  const img = profile!.images[0];
+                  if (img.startsWith('data:')) return img;
+                  if (img.startsWith('/uploads') || img.startsWith('http')) return img;
+                  return `/uploads/${img.replace(/^\/+/, '')}`;
+                }
+                // Priority 2: Instant cached image
+                if (instantAvatarSrc) return instantAvatarSrc;
+                // Priority 3: Redux logo
+                if (profile?.logo) return profile.logo;
+                // Fallback
+                return undefined;
+              })()
+            }
             alt={profile?.business_name}
             sx={{ width: 40, height: 40 }}
           >

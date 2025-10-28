@@ -59,6 +59,19 @@ export const loginUser = createAsyncThunk(
         setToStorage('last_login', new Date().toISOString());
 
         console.log('✅ Login successful, tokens stored');
+        
+        // Pre-fetch seller profile immediately after login to show avatar instantly
+        if (user?.role === 'seller') {
+          console.log('📥 Pre-fetching seller profile for instant avatar...');
+          import('../../../modules/seller/services/sellerApi').then(({ sellerApi }) => {
+            sellerApi.profile.getProfile().then(profile => {
+              try {
+                localStorage.setItem('seller_profile_cache', JSON.stringify(profile));
+                console.log('✅ Seller profile cached for instant avatar display');
+              } catch {}
+            }).catch(err => console.warn('Failed to pre-fetch seller profile:', err));
+          }).catch(err => console.warn('Failed to import sellerApi:', err));
+        }
 
         return { access_token, refresh_token, user };
       } catch (error: any) {
@@ -138,7 +151,7 @@ export const registerUser = createAsyncThunk(
           phone: credentials.phone,
           role: credentials.role || 'student'
         }, {
-          timeout: 4000 // Added timeout to match login implementation
+          timeout: 30000 // 30 seconds for registration to allow for database operations
         });
         
         console.log('✅ Registration response from backend:', response.data);

@@ -141,6 +141,7 @@ const InstructorMessages: React.FC = () => {
                             {c.unread && <Chip size="small" label="Unread" color="primary" />}
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: 'div' }}
                         secondary={<Typography variant="body2" color="text.secondary" noWrap>{c.subject}</Typography>}
                       />
                     </ListItemButton>

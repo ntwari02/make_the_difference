@@ -85,13 +85,15 @@ module.exports = {
     return { accessToken, accessExpiresIn, refreshToken, refreshExpiresIn };
   },
   async registerUser({ email, password, firstName, lastName, phone, role = 'student' }) {
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Faster hash rounds to reduce registration latency while remaining secure
+    const passwordHash = await bcrypt.hash(password, 8);
+    const id = crypto.randomUUID();
     await executeQuery(
-      'INSERT INTO users (id, email, password, first_name, last_name, phone, role, is_verified, is_active, created_at, updated_at) VALUES (UUID(), ?, ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
-      [email, passwordHash, firstName, lastName, phone, role]
+      'INSERT INTO users (id, email, password, first_name, last_name, phone, role, is_verified, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, FALSE, TRUE, NOW(), NOW())',
+      [id, email, passwordHash, firstName, lastName, phone, role]
     );
-    const users = await executeQuery('SELECT id, email, role, is_verified FROM users WHERE email = ? LIMIT 1', [email]);
-    return users[0];
+    // Avoid extra round-trip: return what the controller needs
+    return { id, email, role, is_verified: 0 };
   },
 
   async authenticateUser(identifier, password, { remember = false } = {}) {

@@ -160,7 +160,7 @@ const InstructorProfile: React.FC = () => {
                     <ListItemAvatar>
                       <Avatar>{rv.n.charAt(0)}</Avatar>
                     </ListItemAvatar>
-                    <ListItemText primary={rv.n} secondary={
+                    <ListItemText primary={rv.n} secondaryTypographyProps={{ component: 'div' }} secondary={
                       <Box>
                         <Rating value={rv.r} readOnly size="small" />
                         <Typography variant="body2" color="text.secondary">{rv.t}</Typography>

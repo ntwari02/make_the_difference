@@ -102,7 +102,11 @@ const StudentMessages: React.FC = () => {
                         <ListItemAvatar>
                           <Avatar>{c.name.substring(0,1)}</Avatar>
                         </ListItemAvatar>
-                        <ListItemText primary={<Typography fontWeight={700}>{c.name}</Typography>} secondary={<Typography variant="caption" color="text.secondary">{c.lastMessage}</Typography>} />
+                        <ListItemText 
+                          primary={<Typography fontWeight={700}>{c.name}</Typography>} 
+                          secondaryTypographyProps={{ component: 'div' }}
+                          secondary={<Typography variant="caption" color="text.secondary">{c.lastMessage}</Typography>} 
+                        />
                         {c.unread ? <Chip size="small" color="error" label={c.unread} /> : null}
                       </ListItem>
                       <Divider sx={{ my: 0.5 }} />

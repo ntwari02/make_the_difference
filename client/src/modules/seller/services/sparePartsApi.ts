@@ -416,15 +416,7 @@ export const sparePartsApi = {
     return response.data;
   },
 
-  async getTopSellingParts(params?: {
-    period?: '1m' | '3m' | '6m' | '1y';
-    start_date?: string;
-    end_date?: string;
-    limit?: number;
-  }) {
-    const response = await api.get('/spare-parts-analytics/top-selling', { params });
-    return response.data;
-  },
+  
 
   async getInventoryInsights() {
     const response = await api.get('/spare-parts-analytics/inventory-insights');

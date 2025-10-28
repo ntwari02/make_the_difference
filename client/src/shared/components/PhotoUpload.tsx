@@ -119,8 +119,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
         },
       });
 
-      console.log('PhotoUpload: Upload response:', response.data);
-      return response.data.data?.images || response.data.images || [];
+      const uploaded = response.data?.data?.images || response.data?.images || [];
+      if (!Array.isArray(uploaded) || uploaded.length === 0) {
+        throw new Error('Upload succeeded but no images returned');
+      }
+      return uploaded;
     } catch (error: any) {
       console.error('PhotoUpload: Upload error:', error);
       if (error.response?.status === 401) {
@@ -205,10 +208,88 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
     e.preventDefault();
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imageToRemove = images[index];
+    console.log('🗑️ Attempting to delete image:', imageToRemove);
+    console.log('📝 All images:', images);
+    
+    // Remove from local state immediately for better UX
     const newImages = images.filter((_, i) => i !== index);
     onImagesChange(newImages);
-    toast.success('Image removed');
+    
+    // If we have an upload endpoint, delete from server
+    if (uploadEndpoint && imageToRemove && !imageToRemove.startsWith('data:')) {
+      try {
+        const token = localStorage.getItem('access_token') || 
+                      localStorage.getItem('token') || 
+                      localStorage.getItem('authToken') || 
+                      localStorage.getItem('accessToken') || 
+                      localStorage.getItem('userToken');
+
+        if (!token) {
+          console.warn('No auth token found, deleting locally only');
+          toast.success('Image removed');
+          return;
+        }
+
+        const cleanToken = token.trim().replace(/^"+|"+$/g, '');
+        
+        // Convert upload endpoint to delete endpoint
+        // Use the exact same endpoint for DELETE
+        const deleteEndpoint = uploadEndpoint;
+        console.log('🌐 Sending DELETE to:', deleteEndpoint);
+        console.log('📦 Request data:', { imageUrls: [imageToRemove] });
+        
+        const response = await axios({
+          method: 'DELETE',
+          url: deleteEndpoint,
+          headers: {
+            'Authorization': `Bearer ${cleanToken}`,
+            'Content-Type': 'application/json',
+          },
+          data: {
+            imageUrls: [imageToRemove]
+          }
+        });
+        
+        console.log('✅ Delete response:', response.data);
+        
+        console.log('✅ Image deleted successfully from server');
+        toast.success('Image deleted successfully');
+        
+        // Reload the profile to get updated image list from server
+        try {
+          // Reload the profile from the API to get the latest images
+          const token = localStorage.getItem('access_token') || 
+                        localStorage.getItem('token') || 
+                        localStorage.getItem('authToken') || 
+                        localStorage.getItem('accessToken') || 
+                        localStorage.getItem('userToken');
+          
+          if (token) {
+            const cleanToken = token.trim().replace(/^"+|"+$/g, '');
+            const profileResponse = await axios.get('/api/seller/profile', {
+              headers: { 'Authorization': `Bearer ${cleanToken}` }
+            });
+            
+            const updatedImages = profileResponse.data?.data?.images || [];
+            console.log('🔄 Updated images from server:', updatedImages);
+            onImagesChange(updatedImages);
+          }
+        } catch (reloadErr) {
+          console.error('Failed to reload profile:', reloadErr);
+        }
+      } catch (error: any) {
+        console.error('❌ Failed to delete image from server:', error);
+        console.error('Error response:', error.response?.data);
+        toast.error(error.response?.data?.message || 'Failed to delete image');
+        // Revert to original images if delete failed
+        onImagesChange(images);
+      }
+    } else {
+      console.log('ℹ️ No upload endpoint or base64 image, deleting locally only');
+      toast.success('Image removed');
+    }
   };
 
   const openPreview = (image: string, index: number) => {
@@ -261,7 +342,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             {images.length > 0 ? (
               <Box
                 component="img"
-                src={images[0].startsWith('data:') ? images[0] : `/api/images/${images[0]}`}
+                src={
+                  images[0].startsWith('data:')
+                    ? images[0]
+                    : (images[0].startsWith('/uploads') || images[0].startsWith('http'))
+                      ? images[0]
+                      : `/uploads/${images[0].replace(/^\/+/, '')}`
+                }
                 alt="Profile"
                 sx={{
                   width: '100%',
@@ -365,7 +452,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             <Box sx={{ textAlign: 'center' }}>
               <Box
                 component="img"
-                src={previewDialog.image.startsWith('data:') ? previewDialog.image : `/api/images/${previewDialog.image}`}
+                src={
+                  previewDialog.image.startsWith('data:')
+                    ? previewDialog.image
+                    : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
+                      ? previewDialog.image
+                      : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
+                }
                 alt="Profile Preview"
                 sx={{
                   maxWidth: '100%',
@@ -483,13 +576,25 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
               >
                 <Box
                   component="img"
-                  src={image.startsWith('data:') ? image : `/api/images/${image}`}
+                  src={
+                    image.startsWith('data:')
+                      ? image
+                      : (image.startsWith('/uploads') || image.startsWith('http'))
+                        ? image
+                        : `/uploads/${image.replace(/^\/+/, '')}`
+                  }
                   alt={`Upload ${index + 1}`}
                   sx={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     display: 'block',
+                  }}
+                  onError={(e: any) => {
+                    console.error('❌ Failed to load image:', image, e);
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Successfully loaded:', image);
                   }}
                 />
                 
@@ -563,7 +668,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           <Box sx={{ textAlign: 'center' }}>
             <Box
               component="img"
-              src={previewDialog.image.startsWith('data:') ? previewDialog.image : `/api/images/${previewDialog.image}`}
+              src={
+                previewDialog.image.startsWith('data:')
+                  ? previewDialog.image
+                  : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
+                    ? previewDialog.image
+                    : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
+              }
               alt="Preview"
               sx={{
                 maxWidth: '100%',

@@ -1,20 +1,20 @@
-const db = require('../db/connection');
+const { executeQuery } = require('../config/database');
 
 class VisaOfficerService {
   // Get visa officer dashboard
   async getDashboard(userId) {
     try {
-      const [pendingCount] = await db.execute(
+      const pendingCount = await executeQuery(
         `SELECT COUNT(*) as count FROM visa_applications WHERE status = 'under_review'`
       );
 
-      const [todayCount] = await db.execute(
+      const todayCount = await executeQuery(
         `SELECT COUNT(*) as count FROM visa_applications 
          WHERE DATE(updated_at) = CURDATE() AND reviewed_by = ?`,
         [userId]
       );
 
-      const [weeklyStats] = await db.execute(
+      const weeklyStats = await executeQuery(
         `SELECT 
            COUNT(*) as total_reviewed,
            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
@@ -24,7 +24,7 @@ class VisaOfficerService {
         [userId]
       );
 
-      const [recentApplications] = await db.execute(
+      const recentApplications = await executeQuery(
         `SELECT va.*, vs.title as service_title, vs.country, vs.visa_type,
                 u.first_name, u.last_name, u.email
          FROM visa_applications va
@@ -83,7 +83,7 @@ class VisaOfficerService {
         queryParams.push(filters.reviewed_by);
       }
 
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT va.*, vs.title as service_title, vs.country, vs.visa_type,
                 u.first_name, u.last_name, u.email,
                 reviewer.first_name as reviewer_first_name, reviewer.last_name as reviewer_last_name
@@ -105,7 +105,7 @@ class VisaOfficerService {
       });
 
       // Get total count
-      const [countResult] = await db.execute(
+      const countResult = await executeQuery(
         `SELECT COUNT(*) as total FROM visa_applications va
          JOIN visa_services vs ON va.visa_service_id = vs.id
          ${whereClause}`,
@@ -129,7 +129,7 @@ class VisaOfficerService {
   // Get visa application by ID
   async getVisaApplicationById(applicationId) {
     try {
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT va.*, vs.title as service_title, vs.country, vs.visa_type, vs.description,
                 u.first_name, u.last_name, u.email, u.phone, u.date_of_birth, u.nationality,
                 reviewer.first_name as reviewer_first_name, reviewer.last_name as reviewer_last_name
@@ -164,7 +164,7 @@ class VisaOfficerService {
         timestamp: new Date().toISOString()
       };
 
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
              review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
@@ -189,7 +189,7 @@ class VisaOfficerService {
         timestamp: new Date().toISOString()
       };
 
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET status = 'under_review',
              review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
@@ -214,7 +214,7 @@ class VisaOfficerService {
         timestamp: new Date().toISOString()
       };
 
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
              review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
@@ -239,7 +239,7 @@ class VisaOfficerService {
         timestamp: new Date().toISOString()
       };
 
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET status = 'rejected', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
              review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
@@ -278,7 +278,7 @@ class VisaOfficerService {
         queryParams.push(endDate);
       }
 
-      const [statusStats] = await db.execute(
+      const statusStats = await executeQuery(
         `SELECT 
            status,
            COUNT(*) as count
@@ -288,7 +288,7 @@ class VisaOfficerService {
         queryParams
       );
 
-      const [periodStats] = await db.execute(
+      const periodStats = await executeQuery(
         `SELECT 
            DATE_FORMAT(submitted_at, '${dateFormat}') as period,
            COUNT(*) as total_applications,
@@ -302,7 +302,7 @@ class VisaOfficerService {
         queryParams
       );
 
-      const [countryStats] = await db.execute(
+      const countryStats = await executeQuery(
         `SELECT 
            vs.country,
            COUNT(*) as applications,
@@ -338,7 +338,7 @@ class VisaOfficerService {
         orderClause = 'ORDER BY va.submitted_at ASC';
       }
 
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT va.*, vs.title as service_title, vs.country, vs.visa_type, vs.processing_time_days,
                 u.first_name, u.last_name, u.email,
                 DATEDIFF(NOW(), va.submitted_at) as days_pending
@@ -358,7 +358,7 @@ class VisaOfficerService {
       });
 
       // Get total count
-      const [countResult] = await db.execute(
+      const countResult = await executeQuery(
         'SELECT COUNT(*) as total FROM visa_applications WHERE status = "under_review"'
       );
 
@@ -381,7 +381,7 @@ class VisaOfficerService {
     try {
       const offset = (page - 1) * limit;
 
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT va.*, vs.title as service_title, vs.country, vs.visa_type,
                 u.first_name, u.last_name, u.email,
                 reviewer.first_name as reviewer_first_name, reviewer.last_name as reviewer_last_name
@@ -403,7 +403,7 @@ class VisaOfficerService {
       });
 
       // Get total count
-      const [countResult] = await db.execute(
+      const countResult = await executeQuery(
         'SELECT COUNT(*) as total FROM visa_applications WHERE status = ?',
         [status]
       );
@@ -432,7 +432,7 @@ class VisaOfficerService {
         timestamp: new Date().toISOString()
       };
 
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
          WHERE id = ?`,
@@ -448,7 +448,7 @@ class VisaOfficerService {
   // Get application history
   async getApplicationHistory(applicationId) {
     try {
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT review_comments FROM visa_applications WHERE id = ?`,
         [applicationId]
       );
@@ -468,7 +468,7 @@ class VisaOfficerService {
     try {
       const placeholders = applicationIds.map(() => '?').join(',');
       
-      const [result] = await db.execute(
+      const result = await executeQuery(
         `UPDATE visa_applications 
          SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
              review_comments = JSON_ARRAY_APPEND(COALESCE(review_comments, JSON_ARRAY()), '$', ?)
@@ -498,7 +498,7 @@ class VisaOfficerService {
         queryParams.push(endDate);
       }
 
-      const [metrics] = await db.execute(
+      const metrics = await executeQuery(
         `SELECT 
            COUNT(*) as total_reviewed,
            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
@@ -509,7 +509,7 @@ class VisaOfficerService {
         queryParams
       );
 
-      const [dailyStats] = await db.execute(
+      const dailyStats = await executeQuery(
         `SELECT 
            DATE(reviewed_at) as date,
            COUNT(*) as reviewed_count,
@@ -557,7 +557,7 @@ class VisaOfficerService {
         queryParams.push(filters.end_date);
       }
 
-      const [rows] = await db.execute(
+      const rows = await executeQuery(
         `SELECT va.id, va.status, va.submitted_at, va.reviewed_at,
                 vs.title as service_title, vs.country, vs.visa_type,
                 u.first_name, u.last_name, u.email,

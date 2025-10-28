@@ -192,6 +192,7 @@ const BuyerMessages: React.FC = () => {
                         ) : (
                           <IconButton size="small" onClick={(e) => { e.stopPropagation(); setConvList((list) => list.map((x) => x.id === c.id ? { ...x, starred: true } : x)); }}><StarBorderIcon fontSize="small" sx={{ color: 'text.disabled' }} /></IconButton>
                         )}</Box>}
+                        secondaryTypographyProps={{ component: 'div' }}
                         secondary={<Typography variant="body2" color="text.secondary" noWrap>{c.lastMessage}</Typography>}
                       />
                     </ListItemButton>

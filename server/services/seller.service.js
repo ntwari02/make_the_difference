@@ -3,11 +3,72 @@ const { executeQuery } = require('../config/database');
 const safeParse = (value, fallback) => {
   try {
     if (value === null || value === undefined) return fallback;
+    
+    // MySQL JSON columns return parsed objects/arrays
+    if (typeof value === 'object') {
+      // If already an array, return it
+      if (Array.isArray(value)) return value;
+      // If it's an object but fallback is array, return fallback
+      return fallback;
+    }
+    
+    // Handle string values
     const s = String(value).trim();
     if (s === '' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') return fallback;
-    return JSON.parse(s);
+    
+    try {
+      const parsed = JSON.parse(s);
+      // Ensure we return an array for images
+      if (Array.isArray(parsed)) return parsed;
+      // If it's a single path, wrap in array
+      if (typeof parsed === 'string' && (/^(?:\/uploads\b|https?:\/\/)/i.test(parsed))) {
+        return [parsed];
+      }
+      return fallback;
+    } catch {
+      // If it's a single path or URL, wrap as array
+      if (/^(?:\/uploads\b|https?:\/\/)/i.test(s)) {
+        return [s];
+      }
+      return fallback;
+    }
   } catch (_) {
     return fallback;
+  }
+};
+
+const safeJsonStringify = (value) => {
+  // Return null for empty values instead of empty JSON strings
+  if (value === null || value === undefined) return null;
+  if (value === '') return null;
+  
+  // Filter out base64 data URLs - only keep file paths
+  if (Array.isArray(value)) {
+    const filtered = value.filter(item => {
+      // Keep only file paths, not base64 data URLs
+      return typeof item === 'string' && !item.startsWith('data:');
+    });
+    // Return empty array instead of null to avoid MySQL errors
+    if (filtered.length === 0) return JSON.stringify([]);
+    try {
+      return JSON.stringify(filtered);
+    } catch (_) {
+      return JSON.stringify([]);
+    }
+  }
+  
+  // For objects, return empty object string instead of null
+  if (typeof value === 'object' && Object.keys(value).length === 0) {
+    return '{}';
+  }
+  
+  try {
+    const str = JSON.stringify(value);
+    // Only return null for empty strings, not for empty objects or arrays
+    if (str === '""') return null;
+    return str;
+  } catch (_) {
+    return null;
   }
 };
 
@@ -35,7 +96,6 @@ const getSellerProfile = async (userId) => {
       s.services,
       s.status,
       s.is_verified,
-      s.verification_documents,
       s.created_at,
       s.updated_at,
       u.first_name,
@@ -68,7 +128,6 @@ const getSellerProfile = async (userId) => {
     services: safeParse(s.services, []),
     status: s.status,
     is_verified: !!s.is_verified,
-    verification_documents: safeParse(s.verification_documents, []),
     created_at: s.created_at,
     updated_at: s.updated_at,
     contact_name: [s.first_name, s.last_name].filter(Boolean).join(' ')
@@ -77,19 +136,28 @@ const getSellerProfile = async (userId) => {
 
 const normalizeBusinessType = (value) => {
   const v = String(value || '').trim();
-  if (!v) return null;
-  // Accept any of the known enum variants across environments
-  const allowed = new Set([
-    'dealership', 'private_seller', 'auction_house', 'rental_company',
-    'Independent Seller', 'Dealership', 'Auto Broker', 'Car Rental', 'Fleet Management', 'Parts Dealer', 'Service Center',
-    'company', 'agency', 'individual', 'nonprofit'
+  if (!v) return 'Independent Seller'; // Default to 'Independent Seller' (matching DB enum)
+  
+  // Database enum values (exact case)
+  const dbEnum = new Set([
+    'Independent Seller', 'Dealership', 'Auto Broker', 'Car Rental', 
+    'Fleet Management', 'Parts Dealer', 'Service Center'
   ]);
-  if (allowed.has(v)) return v;
-  // Map common aliases
+  
+  // If exact match with database enum, return it
+  if (dbEnum.has(v)) return v;
+  
+  // Map common aliases and lowercase variants to database enum values
   const lower = v.toLowerCase();
-  if (lower === 'individual' || lower === 'independent') return 'private_seller';
-  if (lower === 'dealer') return 'dealership';
-  return null; // let DB accept NULL when enum mismatch to avoid truncation
+  if (lower === 'dealership' || lower === 'dealer') return 'Dealership';
+  if (lower === 'independent' || lower === 'individual' || lower === 'private_seller') return 'Independent Seller';
+  if (lower === 'auction_house' || lower === 'auto broker') return 'Auto Broker';
+  if (lower === 'car rental' || lower === 'rental_company' || lower === 'rental') return 'Car Rental';
+  if (lower === 'fleet management' || lower === 'fleet') return 'Fleet Management';
+  if (lower === 'parts dealer' || lower === 'parts') return 'Parts Dealer';
+  if (lower === 'service center' || lower === 'service' || lower === 'agency') return 'Service Center';
+  
+  return 'Independent Seller'; // Default fallback to match database default
 };
 
 const upsertSellerProfile = async (userId, data = {}) => {
@@ -100,8 +168,8 @@ const upsertSellerProfile = async (userId, data = {}) => {
     await executeQuery(`
       INSERT INTO sellers (
         id, user_id, business_name, business_type, license_number, description, address, city, state, country, postal_code,
-        phone, email, website, logo, images, business_hours, services, status, is_verified, verification_documents
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        phone, email, website, logo, images, business_hours, services, status, is_verified
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id, userId,
       data.business_name || 'Seller',
@@ -117,41 +185,54 @@ const upsertSellerProfile = async (userId, data = {}) => {
       data.email || null,
       data.website || null,
       data.logo || null,
-      json(data.images),
-      json(data.business_hours),
-      json(data.services),
+      safeJsonStringify(data.images),
+      safeJsonStringify(data.business_hours),
+      safeJsonStringify(data.services),
       data.status || 'active',
-      data.is_verified ? 1 : 0,
-      json(data.verification_documents)
+      data.is_verified ? 1 : 0
     ]);
   } else {
     const fields = [];
     const params = [];
     const assign = (col, val, isJson = false) => {
-      if (val !== undefined) {
+      // Skip if value is undefined
+      if (val === undefined) return;
+      
+      if (isJson) {
+        // For JSON fields, process through safeJsonStringify
+        const jsonValue = safeJsonStringify(val);
+        // For UPDATE, if the result is an empty array "[]", skip the update
+        if (jsonValue === null || jsonValue === '[]') return;
         fields.push(`${col} = ?`);
-        params.push(isJson ? json(val) : val);
+        params.push(jsonValue);
+      } else {
+        fields.push(`${col} = ?`);
+        params.push(val);
       }
     };
-    assign('business_name', data.business_name);
+    
+    // Only process fields that are explicitly provided in the data object
+    // This prevents database errors from fields we don't want to update
+    if (data.business_name !== undefined) assign('business_name', data.business_name);
     if (data.business_type !== undefined) assign('business_type', normalizeBusinessType(data.business_type));
-    assign('license_number', data.license_number);
-    assign('description', data.description);
-    assign('address', data.address);
-    assign('city', data.city);
-    assign('state', data.state);
-    assign('country', data.country);
-    assign('postal_code', data.postal_code);
-    assign('phone', data.phone);
-    assign('email', data.email);
-    assign('website', data.website);
-    assign('logo', data.logo);
-    assign('images', data.images, true);
-    assign('business_hours', data.business_hours, true);
-    assign('services', data.services, true);
-    assign('status', data.status);
+    if (data.license_number !== undefined) assign('license_number', data.license_number);
+    if (data.description !== undefined) assign('description', data.description);
+    if (data.address !== undefined) assign('address', data.address);
+    if (data.city !== undefined) assign('city', data.city);
+    if (data.state !== undefined) assign('state', data.state);
+    if (data.country !== undefined) assign('country', data.country);
+    if (data.postal_code !== undefined) assign('postal_code', data.postal_code);
+    if (data.phone !== undefined) assign('phone', data.phone);
+    if (data.email !== undefined) assign('email', data.email);
+    if (data.website !== undefined) assign('website', data.website);
+    if (data.logo !== undefined) assign('logo', data.logo);
+    if (data.images !== undefined) assign('images', data.images, true);
+    if (data.business_hours !== undefined) assign('business_hours', data.business_hours, true);
+    if (data.services !== undefined) assign('services', data.services, true);
+    if (data.status !== undefined) assign('status', data.status);
     if (data.is_verified !== undefined) assign('is_verified', data.is_verified ? 1 : 0);
-    assign('verification_documents', data.verification_documents, true);
+    // Skip verification_documents entirely in user updates - admin-only field
+    
     if (fields.length > 0) {
       params.push(userId);
       await executeQuery(`UPDATE sellers SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`, params);
