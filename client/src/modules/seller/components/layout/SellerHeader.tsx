@@ -33,6 +33,7 @@ import { useThemeMode } from '../../../../core/theme/ThemeProvider';
 import { clearProfile } from '../../store/sellerSlice';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
 import { sellerApi } from '../../services/sellerApi';
+import getImageUrl from '../../../../shared/utils/imageUtils';
 
 interface SellerHeaderProps {
   onMenuClick: () => void;
@@ -62,7 +63,7 @@ const SellerHeader: React.FC<SellerHeaderProps> = ({ onMenuClick }) => {
         const p = JSON.parse(cache);
         const img = Array.isArray(p?.images) && p.images.length ? p.images[0] : null;
         if (img) {
-          const src = img.startsWith('data:') ? img : (img.startsWith('/uploads') || img.startsWith('http')) ? img : `/uploads/${img.replace(/^\/+/, '')}`;
+          const src = img.startsWith('data:') ? img : getImageUrl(img);
           setInstantAvatarSrc(src);
         }
       }
@@ -249,13 +250,12 @@ const SellerHeader: React.FC<SellerHeaderProps> = ({ onMenuClick }) => {
                 if (Array.isArray(profile?.images) && profile?.images?.length > 0) {
                   const img = profile!.images[0];
                   if (img.startsWith('data:')) return img;
-                  if (img.startsWith('/uploads') || img.startsWith('http')) return img;
-                  return `/uploads/${img.replace(/^\/+/, '')}`;
+                  return getImageUrl(img);
                 }
                 // Priority 2: Instant cached image
                 if (instantAvatarSrc) return instantAvatarSrc;
                 // Priority 3: Redux logo
-                if (profile?.logo) return profile.logo;
+                if (profile?.logo) return getImageUrl(profile.logo as any);
                 // Fallback
                 return undefined;
               })()

@@ -155,7 +155,17 @@ const SellerProfile: React.FC = () => {
   const buildDiff = (): Partial<ProfileFormData> => {
     if (!original) return formData;
     const diff: any = {};
-    // Exclude images from diff since they are uploaded directly via PhotoUpload component
+    // Include images in diff - filter out base64, only keep file paths
+    const imagePaths = (formData.images || []).filter((img: string) => 
+      img && !img.startsWith('data:') && (img.startsWith('/uploads/') || img.startsWith('http'))
+    );
+    const originalImagePaths = (original.images || []).filter((img: string) => 
+      img && !img.startsWith('data:') && (img.startsWith('/uploads/') || img.startsWith('http'))
+    );
+    if (JSON.stringify(imagePaths) !== JSON.stringify(originalImagePaths)) {
+      diff.images = imagePaths;
+    }
+    
     const keys: (keyof ProfileFormData)[] = ['business_name','business_type','description','address','city','state','country','postal_code','phone','email','website','logo','business_hours','services'];
     keys.forEach((k) => {
       const curr = (formData as any)[k];

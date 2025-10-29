@@ -976,9 +976,13 @@ const CreateCarPage: React.FC = () => {
                   maxImages={10}
                   maxFileSize={5}
                   entityType="car"
+                  entityId={undefined}
+                  uploadEndpoint={undefined}
                   label="Car Images"
                   description="Upload clear photos of the car from different angles (exterior, interior, engine, etc.)"
                   aspectRatio="16/9"
+                  hideOverlayActions={false}
+                  replaceOnUpload={true}
                 />
               </Grid>
               <Grid item xs={12}>

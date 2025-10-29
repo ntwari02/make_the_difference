@@ -42,6 +42,10 @@ interface PhotoUploadProps {
   avatarSize?: number; // Size for profile avatar
   showLabel?: boolean; // Whether to show the label
   fallbackText?: string; // Text to show when no image (e.g., business name initial)
+  // New props
+  hideOverlayActions?: boolean; // Hide edit/delete overlay in grid mode
+  replaceOnUpload?: boolean; // Replace existing images with the newly uploaded one(s)
+  newestFirst?: boolean; // When appending, place new images first
 }
 
 const PhotoUpload: React.FC<PhotoUploadProps> = ({
@@ -63,6 +67,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
   avatarSize = 80,
   showLabel = true,
   fallbackText = '',
+  hideOverlayActions = false,
+  replaceOnUpload = false,
+  newestFirst = false,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -72,6 +79,16 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
     index: -1,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Resolve image src to support production deployments behind a different origin
+  const publicBase = (import.meta as any)?.env?.VITE_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') || '';
+  const resolveSrc = (raw: string) => {
+    if (!raw) return raw;
+    if (raw.startsWith('data:')) return raw;
+    if (raw.startsWith('http')) return raw;
+    if (raw.startsWith('/uploads')) return `${publicBase}${raw}`;
+    return `${publicBase}/uploads/${raw.replace(/^\/+/, '')}`;
+  };
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -154,10 +171,12 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
       }
     }
 
-    // Check if adding these files would exceed maxImages
-    if (images.length + files.length > maxImages) {
-      toast.error(`Maximum ${maxImages} images allowed`);
-      return;
+    // If not replacing, check capacity
+    if (!replaceOnUpload && maxImages > 0) {
+      if (images.length + files.length > maxImages) {
+        toast.error(`Maximum ${maxImages} images allowed`);
+        return;
+      }
     }
 
     setUploading(true);
@@ -174,7 +193,15 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
         newImageUrls = await Promise.all(files.map(convertToBase64));
       }
 
-      onImagesChange([...images, ...newImageUrls]);
+      // Replacement or ordering strategy
+      if (replaceOnUpload || maxImages === 1) {
+        const latest = newImageUrls[newImageUrls.length - 1];
+        onImagesChange(latest ? [latest] : []);
+      } else {
+        const combined = newestFirst ? [...newImageUrls, ...images] : [...images, ...newImageUrls];
+        const limited = maxImages > 0 ? combined.slice(0, maxImages) : combined;
+        onImagesChange(limited);
+      }
       toast.success(`${files.length} image(s) uploaded successfully!`);
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -342,13 +369,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             {images.length > 0 ? (
               <Box
                 component="img"
-                src={
-                  images[0].startsWith('data:')
-                    ? images[0]
-                    : (images[0].startsWith('/uploads') || images[0].startsWith('http'))
-                      ? images[0]
-                      : `/uploads/${images[0].replace(/^\/+/, '')}`
-                }
+                src={resolveSrc(images[0])}
                 alt="Profile"
                 sx={{
                   width: '100%',
@@ -452,13 +473,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             <Box sx={{ textAlign: 'center' }}>
               <Box
                 component="img"
-                src={
-                  previewDialog.image.startsWith('data:')
-                    ? previewDialog.image
-                    : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
-                      ? previewDialog.image
-                      : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
-                }
+                src={resolveSrc(previewDialog.image)}
                 alt="Profile Preview"
                 sx={{
                   maxWidth: '100%',
@@ -576,13 +591,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
               >
                 <Box
                   component="img"
-                  src={
-                    image.startsWith('data:')
-                      ? image
-                      : (image.startsWith('/uploads') || image.startsWith('http'))
-                        ? image
-                        : `/uploads/${image.replace(/^\/+/, '')}`
-                  }
+                  src={resolveSrc(image)}
                   alt={`Upload ${index + 1}`}
                   sx={{
                     width: '100%',
@@ -599,52 +608,54 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
                 />
                 
                 {/* Overlay Actions */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: 0,
-                    transition: 'opacity 0.3s ease',
-                    '&:hover': {
-                      opacity: 1,
-                    },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="View">
-                      <IconButton
-                        size="small"
-                        sx={{ color: 'white' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openPreview(image, index);
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Remove">
-                      <IconButton
-                        size="small"
-                        sx={{ color: 'white' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage(index);
-                        }}
-                        disabled={disabled}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                {!hideOverlayActions && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                      '&:hover': {
+                        opacity: 1,
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title="View">
+                        <IconButton
+                          size="small"
+                          sx={{ color: 'white' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openPreview(image, index);
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Remove">
+                        <IconButton
+                          size="small"
+                          sx={{ color: 'white' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage(index);
+                          }}
+                          disabled={disabled}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
-                </Box>
+                )}
               </Box>
             ))}
           </Box>
@@ -668,13 +679,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           <Box sx={{ textAlign: 'center' }}>
             <Box
               component="img"
-              src={
-                previewDialog.image.startsWith('data:')
-                  ? previewDialog.image
-                  : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
-                    ? previewDialog.image
-                    : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
-              }
+              src={resolveSrc(previewDialog.image)}
               alt="Preview"
               sx={{
                 maxWidth: '100%',

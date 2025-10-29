@@ -91,6 +91,21 @@ export const sellerProfileApi = {
   },
 };
 
+// Seller Settings APIs
+export const sellerSettingsApi = {
+  getSettings: async (): Promise<any> => {
+    const { data } = await api.get('/seller/settings');
+    return data.data || data;
+  },
+  updateSettings: async (payload: Partial<{ notifications: any; privacy: any; preferences: any }>): Promise<any> => {
+    const { data } = await api.put('/seller/settings', payload);
+    return data.data || data;
+  },
+  deleteAccount: async (): Promise<void> => {
+    await api.delete('/seller/account');
+  },
+};
+
 // Car Management APIs (Primary seller functionality)
 export const carApi = {
   // Get seller's cars
@@ -216,8 +231,15 @@ export const analyticsApi = {
     for (const endpoint of tryEndpoints) {
       try {
         const { data } = await api.get(endpoint, { params });
-        return data.data || data;
+        console.log('Analytics API raw response:', JSON.stringify(data, null, 2));
+        const extracted = data.data || data;
+        console.log('Analytics API extracted data:', JSON.stringify(extracted, null, 2));
+        console.log('Sales by period:', extracted.sales_by_period);
+        console.log('Sales by channel:', extracted.sales_by_channel);
+        console.log('Conversion rate:', extracted.conversion_rate);
+        return extracted;
       } catch (err: any) {
+        console.error(`Analytics endpoint ${endpoint} failed:`, err);
         if (err?.response?.status && [403, 404].includes(err.response.status)) {
           continue;
         }
@@ -290,11 +312,78 @@ export const reviewApi = {
     const { data } = await api.post(`/cars/reviews/${reviewId}/respond`, { response });
     return data.data || data;
   },
+
+  // Get all seller reviews (all reviews for all seller's cars)
+  getSellerReviews: async (params?: {
+    page?: number;
+    limit?: number;
+    rating?: number | 'all';
+    search?: string;
+    sortBy?: 'newest' | 'oldest' | 'helpful' | 'rating';
+  }): Promise<any> => {
+    const { data } = await api.get('/seller/reviews', { params });
+    return data.data || data;
+  },
+
+  // Reply to a review
+  replyToReview: async (reviewId: string, reply: string): Promise<any> => {
+    const { data } = await api.post(`/seller/reviews/${reviewId}/reply`, { reply });
+    return data.data || data;
+  },
+};
+
+// Messages APIs
+export const messagesApi = {
+  // Get conversations list (inbox, sent, archived)
+  getConversations: async (params?: {
+    page?: number;
+    limit?: number;
+    folder?: 'inbox' | 'sent' | 'archived';
+    search?: string;
+    category?: 'inquiry' | 'offer' | 'complaint' | 'support' | 'all';
+  }): Promise<any> => {
+    const { data } = await api.get('/seller/messages', { params });
+    return data.data || data;
+  },
+
+  // Get messages in a conversation (thread)
+  getConversationMessages: async (conversationId: string): Promise<any> => {
+    const { data } = await api.get(`/seller/messages/${conversationId}`);
+    return data.data || data;
+  },
+
+  // Send a message (reply)
+  sendMessage: async (conversationId: string, payload: {
+    content: string;
+    messageType?: string;
+    fileUrl?: string;
+    category?: string;
+    priority?: string;
+  }): Promise<any> => {
+    const { data } = await api.post(`/seller/messages/${conversationId}`, payload);
+    return data.data || data;
+  },
+
+  // Mark messages as read
+  markAsRead: async (conversationId: string, messageIds?: string[]): Promise<void> => {
+    await api.patch(`/seller/messages/${conversationId}/read`, { messageIds });
+  },
+
+  // Archive/unarchive conversation
+  archiveConversation: async (conversationId: string, archived: boolean = true): Promise<void> => {
+    await api.patch(`/seller/messages/${conversationId}/archive`, { archived });
+  },
+
+  // Delete messages
+  deleteMessages: async (conversationId: string, messageIds: string[]): Promise<void> => {
+    await api.delete(`/seller/messages/${conversationId}`, { data: { messageIds } });
+  },
 };
 
 // Main seller API object
 export const sellerApi = {
   profile: sellerProfileApi,
+  settings: sellerSettingsApi,
   cars: carApi,
   analytics: analyticsApi,
   notifications: notificationApi,
@@ -302,4 +391,7 @@ export const sellerApi = {
   favorites: favoritesApi,
   reviews: reviewApi,
   spareParts: sparePartsApi,
+  messages: messagesApi,
+  // Alias for reviews (to match frontend usage)
+  review: reviewApi,
 };

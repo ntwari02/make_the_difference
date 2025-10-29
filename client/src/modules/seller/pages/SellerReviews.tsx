@@ -36,6 +36,8 @@ import {
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
+import { sellerApi } from '../services/sellerApi';
+import toast from 'react-hot-toast';
 
 interface Review {
   id: string;
@@ -53,6 +55,7 @@ interface Review {
   timestamp: string;
   helpful: number;
   verified: boolean;
+  sellerResponse?: string | null;
 }
 
 const SellerReviews: React.FC = () => {
@@ -66,87 +69,49 @@ const SellerReviews: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'helpful' | 'rating'>('newest');
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [distribution, setDistribution] = useState([0, 0, 0, 0, 0]);
+  const [totalPages, setTotalPages] = useState(1);
   const rowsPerPage = 8;
 
   useEffect(() => {
-    // Mock reviews data
-    const mockReviews: Review[] = [
-      {
-        id: '1',
-        buyer: { name: 'John Smith', avatar: '' },
-        car: { make: 'Toyota', model: 'Camry', year: 2020 },
-        rating: 5,
-        comment: 'Excellent service! The car was exactly as described and the seller was very professional.',
-        timestamp: '2024-01-15T10:30:00Z',
-        helpful: 12,
-        verified: true,
-      },
-      {
-        id: '2',
-        buyer: { name: 'Sarah Johnson', avatar: '' },
-        car: { make: 'Honda', model: 'Accord', year: 2019 },
-        rating: 4,
-        comment: 'Good experience overall. Car was in great condition and the transaction was smooth.',
-        timestamp: '2024-01-14T15:45:00Z',
-        helpful: 8,
-        verified: true,
-      },
-      {
-        id: '3',
-        buyer: { name: 'Mike Wilson', avatar: '' },
-        car: { make: 'Ford', model: 'F-150', year: 2021 },
-        rating: 5,
-        comment: 'Outstanding! The truck exceeded my expectations. Highly recommend this seller.',
-        timestamp: '2024-01-13T09:20:00Z',
-        helpful: 15,
-        verified: false,
-      },
-    ];
-    setReviews(mockReviews);
-  }, []);
+    loadReviews();
+  }, [page, ratingFilter, search, sortBy]);
 
-  const averageRating = reviews.length ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) : 0;
-  const totalReviews = reviews.length;
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+      const result = await sellerApi.reviews.getSellerReviews({
+        page,
+        limit: rowsPerPage,
+        rating: ratingFilter === 'all' ? undefined : ratingFilter,
+        search: search || undefined,
+        sortBy,
+      });
+      
+      setReviews(result.reviews || []);
+      setAverageRating(result.averageRating || 0);
+      setTotalReviews(result.pagination?.total || 0);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setDistribution(result.distribution || [0, 0, 0, 0, 0]);
+    } catch (error: any) {
+      console.error('Failed to load reviews:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load reviews');
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const distribution = useMemo(() => {
-    const buckets = [0, 0, 0, 0, 0];
-    reviews.forEach((r) => { buckets[Math.round(r.rating) - 1] += 1; });
-    return buckets;
-  }, [reviews]);
-
-  const filtered = useMemo(() => {
-    const base = reviews.filter((r) => {
-      const okRating = ratingFilter === 'all' || Math.round(r.rating) === ratingFilter;
-      const okSearch = search === '' || r.comment.toLowerCase().includes(search.toLowerCase()) || r.buyer.name.toLowerCase().includes(search.toLowerCase());
-      return okRating && okSearch;
-    });
-    const sorted = [...base].sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        case 'oldest':
-          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-        case 'helpful':
-          return b.helpful - a.helpful;
-        case 'rating':
-          return b.rating - a.rating;
-        default:
-          return 0;
-      }
-    });
-    return sorted;
-  }, [reviews, ratingFilter, search, sortBy]);
-
-  const paged = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filtered.slice(start, start + rowsPerPage);
-  }, [filtered, page]);
+  const paged = reviews;
 
   const exportCsv = () => {
     const rows: string[] = [];
     const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     rows.push('Buyer,Car,Rating,Helpful,Verified,Date,Comment');
-    filtered.forEach((r) => {
+    reviews.forEach((r) => {
       rows.push([
         esc(r.buyer.name),
         esc(`${r.car.year} ${r.car.make} ${r.car.model}`),
@@ -169,15 +134,24 @@ const SellerReviews: React.FC = () => {
 
   const handleReply = (review: Review) => {
     setSelectedReview(review);
+    setReplyText(review.sellerResponse || '');
     setReplyDialog(true);
   };
 
-  const handleSendReply = () => {
-    // In a real app, this would send the reply via API
-    console.log('Sending reply to review:', selectedReview?.id, replyText);
-    setReplyText('');
-    setReplyDialog(false);
-    setSelectedReview(null);
+  const handleSendReply = async () => {
+    if (!selectedReview || !replyText.trim()) return;
+    
+    try {
+      await sellerApi.reviews.replyToReview(selectedReview.id, replyText);
+      toast.success('Reply posted successfully');
+      setReplyText('');
+      setReplyDialog(false);
+      setSelectedReview(null);
+      await loadReviews(); // Reload to show the reply
+    } catch (error: any) {
+      console.error('Failed to post reply:', error);
+      toast.error(error?.response?.data?.message || 'Failed to post reply');
+    }
   };
 
   return (
@@ -219,7 +193,21 @@ const SellerReviews: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} md={5}>
-                <TextField fullWidth size="small" placeholder="Search reviews..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+                <TextField 
+                  fullWidth 
+                  size="small" 
+                  placeholder="Search reviews..." 
+                  value={search} 
+                  onChange={(e) => { 
+                    setSearch(e.target.value); 
+                    setPage(1); 
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      loadReviews();
+                    }
+                  }}
+                />
               </Grid>
               <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small">
@@ -244,7 +232,7 @@ const SellerReviews: React.FC = () => {
                       <StarIcon fontSize="small" color="warning" />
                     </Box>
                     <LinearProgress variant="determinate" value={pct} sx={{ flex: 1, height: 8, borderRadius: 4 }} />
-                    <Typography variant="caption" sx={{ width: 48, textAlign: 'right' }}>{pct}%</Typography>
+                    <Typography variant="caption" sx={{ width: 48, textAlign: 'right' }}>{count} ({pct}%)</Typography>
                   </Box>
                 );
               })}
@@ -253,8 +241,25 @@ const SellerReviews: React.FC = () => {
         </Card>
 
         {/* Reviews List */}
-        <Grid container spacing={3}>
-          {paged.map((review) => (
+        {loading ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <LinearProgress />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Loading reviews...
+            </Typography>
+          </Box>
+        ) : paged.length === 0 ? (
+          <Card sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              No reviews found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {search || ratingFilter !== 'all' ? 'Try adjusting your filters' : 'You don\'t have any reviews yet'}
+            </Typography>
+          </Card>
+        ) : (
+          <Grid container spacing={3}>
+            {paged.map((review) => (
             <Grid item xs={12} key={review.id}>
               <Card>
                 <CardContent>
@@ -295,10 +300,21 @@ const SellerReviews: React.FC = () => {
                           size="small"
                           startIcon={<ReplyIcon />}
                           onClick={() => handleReply(review)}
+                          variant={review.sellerResponse ? "outlined" : "text"}
                         >
-                          Reply
+                          {review.sellerResponse ? 'Edit Reply' : 'Reply'}
                         </Button>
                       </Box>
+                      {review.sellerResponse && (
+                        <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Your Response:
+                          </Typography>
+                          <Typography variant="body2">
+                            {review.sellerResponse}
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
                 </CardContent>
@@ -306,12 +322,20 @@ const SellerReviews: React.FC = () => {
             </Grid>
           ))}
         </Grid>
+        )}
 
         {/* Pagination and Export */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-          <Pagination page={page} onChange={(_, p) => setPage(p)} count={Math.max(1, Math.ceil(filtered.length / rowsPerPage))} color="primary" />
-          <MuiButton variant="outlined" onClick={exportCsv}>Export CSV</MuiButton>
-        </Box>
+        {!loading && totalReviews > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+            <Pagination 
+              page={page} 
+              onChange={(_, p) => setPage(p)} 
+              count={totalPages} 
+              color="primary" 
+            />
+            <MuiButton variant="outlined" onClick={exportCsv}>Export CSV</MuiButton>
+          </Box>
+        )}
 
         {/* Reply Dialog */}
         <Dialog

@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
-import { CssBaseline, Box } from '@mui/material';
+import { CssBaseline, Box, Typography } from '@mui/material';
 
 // Store and theme
 import { store } from '../store';
@@ -131,8 +131,22 @@ const InstructorAIAssistant = React.lazy(() => import('../../modules/instructor/
 // Debug page (temporary)
 const DebugAuth = React.lazy(() => import('../../modules/auth/pages/DebugAuth')) as React.LazyExoticComponent<React.ComponentType<any>>;
 
+// Optimized loading fallback with better UX
 const Fallback: React.FC = () => (
-  <div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: '#64748b' }}>Loading…</div>
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      gap: 2,
+    }}
+  >
+    <Typography variant="body2" color="text.secondary">
+      Loading...
+    </Typography>
+  </Box>
 );
 
 // Create router

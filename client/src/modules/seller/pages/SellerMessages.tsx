@@ -45,160 +45,199 @@ import {
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
+import { sellerApi } from '../services/sellerApi';
+import toast from 'react-hot-toast';
+import { LinearProgress } from '@mui/material';
 
+// Conversation in list view (mapped from backend)
+interface ConversationListItem {
+  id: string;
+  subject: string;
+  buyer: {
+    id: string;
+    name: string;
+    avatar: string;
+  } | null;
+  lastMessage: {
+    id: string;
+    content: string;
+    senderId: string;
+    isFromSeller: boolean;
+    timestamp: string;
+    read: boolean;
+  } | null;
+  unreadCount: number;
+  category: string;
+  priority: string;
+  archived: boolean;
+  timestamp: string;
+}
+
+// Message in thread view
 interface Message {
   id: string;
   sender: {
+    id: string;
     name: string;
     avatar: string;
     type: 'buyer' | 'seller' | 'admin';
   };
-  subject: string;
-  message: string;
-  timestamp: string;
+  content: string;
+  messageType: string;
+  fileUrl: string | null;
   read: boolean;
-  priority: 'low' | 'normal' | 'high';
-  category: 'inquiry' | 'offer' | 'complaint' | 'support';
-  seen?: boolean; // for outgoing messages (seller)
+  category: string;
+  priority: string;
+  timestamp: string;
 }
 
 const SellerMessages: React.FC = () => {
   const profile = useSelector((state: RootState) => state.seller.profile);
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [conversations, setConversations] = useState<ConversationListItem[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationListItem | null>(null);
   const [thread, setThread] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [sending, setSending] = useState(false);
   
-  const [filter, setFilter] = useState('inbox');
+  const [filter, setFilter] = useState<'inbox' | 'sent' | 'archived'>('inbox');
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [replyText, setReplyText] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>(
     { open: false, message: '', severity: 'success' }
   );
-  const [pendingSend, setPendingSend] = useState<{ timeoutId: number | null; content: string } | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
 
-  useEffect(() => {
-    // Mock messages data
-    const mockMessages: Message[] = [
-      {
-        id: '1',
-        sender: {
-          name: 'John Smith',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Interested in Toyota Camry',
-        message: 'Hi! I saw your Toyota Camry listing and I\'m very interested. Is it still available? Can we schedule a test drive?',
-        timestamp: '2024-01-15T10:30:00Z',
-        read: false,
-        priority: 'high',
-        category: 'inquiry'
-      },
-      {
-        id: '2',
-        sender: {
-          name: 'Sarah Johnson',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Price negotiation for Honda Accord',
-        message: 'I love the Honda Accord you have listed. Would you consider $22,000? I can pay cash.',
-        timestamp: '2024-01-14T15:45:00Z',
-        read: true,
-        priority: 'normal',
-        category: 'offer'
-      },
-      {
-        id: '3',
-        sender: {
-          name: 'Mike Wilson',
-          avatar: '',
-          type: 'buyer'
-        },
-        subject: 'Question about vehicle history',
-        message: 'Can you provide more details about the service history? Any accidents or major repairs?',
-        timestamp: '2024-01-13T09:20:00Z',
-        read: true,
-        priority: 'normal',
-        category: 'inquiry'
-      },
-      {
-        id: '4',
-        sender: {
-          name: 'Support Team',
-          avatar: '',
-          type: 'admin'
-        },
-        subject: 'Listing approval update',
-        message: 'Your recent listing for the BMW 3 Series has been approved and is now live on the platform.',
-        timestamp: '2024-01-12T14:10:00Z',
-        read: false,
-        priority: 'normal',
-        category: 'support'
-      }
-    ];
-    setMessages(mockMessages);
-  }, []);
-
-  const filteredMessages = messages.filter(msg => {
-    const folderOk = filter === 'inbox' ? true : filter === 'archived' ? msg.read : filter === 'sent' ? msg.sender.type === 'seller' : true;
-    const matchesSearch = searchTerm === '' ||
-      msg.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.sender.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return folderOk && matchesSearch;
-  });
-
-  const unreadCount = messages.filter(msg => !msg.read).length;
-
-  const handleMessageClick = (message: Message) => {
-    setSelectedMessage(message);
-    setThread([message]);
-    // Mark as read when opened
-    if (!message.read) {
-      setMessages(prev => prev.map(m =>
-        m.id === message.id ? { ...m, read: true } : m
-      ));
+  // Load conversations list
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const result = await sellerApi.messages.getConversations({
+        page,
+        limit: rowsPerPage,
+        folder: filter,
+        search: searchTerm || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter as any : undefined,
+      });
+      
+      setConversations(result.conversations || []);
+      setTotalPages(result.pagination?.totalPages || 1);
+    } catch (error: any) {
+      console.error('Failed to load conversations:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load conversations');
+      setConversations([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSendReply = () => {
-    if (!selectedMessage || !replyText.trim()) return;
-    // Simulate delayed send with undo option
-    const content = replyText;
-    const optimistic: Message = {
-      id: `temp-${Date.now()}`,
-      sender: { name: profile?.business_name || 'You', avatar: '', type: 'seller' },
-      subject: `Re: ${selectedMessage.subject}`,
-      message: (replyTo ? `@reply-to:${replyTo.id}\n` : '') + content + (attachments.length ? `\n\n[${attachments.length} attachment(s)]` : ''),
-      timestamp: new Date().toISOString(),
-      read: true,
-      priority: 'normal',
-      category: 'support',
-      seen: false,
-    };
-    setThread((prev) => [...prev, optimistic]);
-    setPendingSend({ timeoutId: window.setTimeout(() => {
-      // Commit send (append a seller message)
-      setMessages((prev) => [...prev, { ...optimistic, id: `${Date.now()}` }]);
-      setSnackbar({ open: true, message: 'Reply sent', severity: 'success' });
-      setPendingSend(null);
-    }, 4000), content });
-    setSnackbar({ open: true, message: 'Sending… You can undo', severity: 'info' });
-    setReplyText('');
-    setAttachments([]);
-    setReplyTo(null);
+  useEffect(() => {
+    loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filter, searchTerm, categoryFilter, rowsPerPage]);
+
+  // Load conversation thread when a conversation is selected
+  useEffect(() => {
+    if (selectedConversation?.id) {
+      loadThread(selectedConversation.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id]);
+
+  const loadThread = async (conversationId: string) => {
+    try {
+      setLoadingThread(true);
+      const result = await sellerApi.messages.getConversationMessages(conversationId);
+      setThread(result.messages || []);
+      
+      // Reload conversations to update unread counts
+      await loadConversations();
+    } catch (error: any) {
+      console.error('Failed to load thread:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load conversation');
+      setThread([]);
+    } finally {
+      setLoadingThread(false);
+    }
   };
 
-  const handleUndoSend = () => {
-    if (pendingSend?.timeoutId) {
-      clearTimeout(pendingSend.timeoutId);
-      setPendingSend(null);
-      setSnackbar({ open: true, message: 'Send undone', severity: 'success' });
+  // Convert conversations to messages format for display
+  const messagesForList = conversations.map(conv => ({
+    id: conv.id,
+    sender: {
+      name: conv.buyer?.name || 'Unknown',
+      avatar: conv.buyer?.avatar || '',
+      type: (conv.buyer ? 'buyer' : 'admin') as 'buyer' | 'seller' | 'admin'
+    },
+    subject: conv.subject,
+    message: conv.lastMessage?.content || '',
+    timestamp: conv.lastMessage?.timestamp || conv.timestamp,
+    read: conv.lastMessage?.read ?? true,
+    priority: (conv.priority || 'normal') as 'low' | 'normal' | 'high',
+    category: (conv.category || 'inquiry') as 'inquiry' | 'offer' | 'complaint' | 'support',
+    unreadCount: conv.unreadCount
+  }));
+
+  const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+
+  const handleMessageClick = async (conversationId: string) => {
+    const conv = conversations.find(c => c.id === conversationId);
+    if (conv) {
+      setSelectedConversation(conv);
+      // Thread will load automatically via useEffect
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedConversation || !replyText.trim()) return;
+    
+    try {
+      setSending(true);
+      const sentMessage = await sellerApi.messages.sendMessage(selectedConversation.id, {
+        content: replyText.trim(),
+        category: categoryFilter !== 'all' ? categoryFilter : 'support',
+        priority: 'normal'
+      });
+      
+      // Add to thread optimistically
+      const newMessage: Message = {
+        id: sentMessage.id,
+        sender: {
+          id: sentMessage.sender.id,
+          name: sentMessage.sender.name,
+          avatar: sentMessage.sender.avatar,
+          type: 'seller'
+        },
+        content: sentMessage.content,
+        messageType: sentMessage.messageType,
+        fileUrl: sentMessage.fileUrl,
+        read: sentMessage.read || false,
+        category: sentMessage.category,
+        priority: sentMessage.priority,
+        timestamp: sentMessage.timestamp
+      };
+      
+      setThread((prev) => [...prev, newMessage]);
+      setReplyText('');
+      setAttachments([]);
+      setReplyTo(null);
+      
+      // Reload conversations to update last message
+      await loadConversations();
+      
+      toast.success('Reply sent successfully');
+    } catch (error: any) {
+      console.error('Failed to send reply:', error);
+      toast.error(error?.response?.data?.message || 'Failed to send reply');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -213,19 +252,39 @@ const SellerMessages: React.FC = () => {
     setAttachments((prev) => prev.filter((f) => f.name !== fileName));
   };
 
-  const handleDeleteThreadMessage = (messageId: string) => {
-    // Delete a single message bubble from the open thread
-    setThread((prev) => prev.filter((m) => m.id !== messageId));
-    setSnackbar({ open: true, message: 'Message removed', severity: 'success' });
+  const handleDeleteThreadMessage = async (messageId: string) => {
+    if (!selectedConversation) return;
+    
+    try {
+      await sellerApi.messages.deleteMessages(selectedConversation.id, [messageId]);
+      setThread((prev) => prev.filter((m) => m.id !== messageId));
+      toast.success('Message deleted');
+      await loadThread(selectedConversation.id);
+    } catch (error: any) {
+      console.error('Failed to delete message:', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete message');
+    }
   };
 
   const handleForward = async () => {
-    if (!selectedMessage) return;
+    if (thread.length === 0) return;
     try {
-      await navigator.clipboard.writeText(`${selectedMessage.sender.name}: ${selectedMessage.message}`);
-      setSnackbar({ open: true, message: 'Message copied to clipboard for forwarding', severity: 'success' });
+      const text = thread.map(m => `${m.sender.name}: ${m.content}`).join('\n\n');
+      await navigator.clipboard.writeText(text);
+      toast.success('Conversation copied to clipboard');
     } catch {
-      setSnackbar({ open: true, message: 'Could not copy to clipboard', severity: 'error' });
+      toast.error('Could not copy to clipboard');
+    }
+  };
+
+  const handleArchive = async (conversationId: string, archived: boolean) => {
+    try {
+      await sellerApi.messages.archiveConversation(conversationId, archived);
+      toast.success(archived ? 'Conversation archived' : 'Conversation unarchived');
+      await loadConversations();
+    } catch (error: any) {
+      console.error('Failed to archive:', error);
+      toast.error(error?.response?.data?.message || 'Failed to archive conversation');
     }
   };
 
@@ -249,9 +308,8 @@ const SellerMessages: React.FC = () => {
   };
 
   const paged = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredMessages.slice(start, start + rowsPerPage);
-  }, [filteredMessages, page, rowsPerPage]);
+    return messagesForList;
+  }, [messagesForList]);
 
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
@@ -266,14 +324,24 @@ const SellerMessages: React.FC = () => {
     else setSelectedIds(new Set());
   };
 
-  const bulkMarkRead = () => {
-    setMessages((prev) => prev.map((m) => selectedIds.has(m.id) ? { ...m, read: true } : m));
-    setSelectedIds(new Set());
+  const bulkMarkRead = async () => {
+    try {
+      const promises = Array.from(selectedIds).map(id => 
+        sellerApi.messages.markAsRead(id)
+      );
+      await Promise.all(promises);
+      toast.success('Messages marked as read');
+      setSelectedIds(new Set());
+      await loadConversations();
+    } catch (error: any) {
+      console.error('Failed to mark as read:', error);
+      toast.error('Failed to mark messages as read');
+    }
   };
 
   const bulkDelete = () => {
-    setMessages((prev) => prev.filter((m) => !selectedIds.has(m.id)));
-    setSelectedIds(new Set());
+    // Note: Delete conversations or archive them? For now, just archive
+    toast.info('Bulk delete not implemented. Use archive instead.');
   };
 
   return (
@@ -287,7 +355,7 @@ const SellerMessages: React.FC = () => {
               <Typography variant="overline" color="text.secondary">Folders</Typography>
               <List>
                 {[
-                  { key: 'inbox', label: 'Inbox', count: unreadCount },
+                  { key: 'inbox', label: 'Inbox', count: totalUnreadCount },
                   { key: 'archived', label: 'Archived', count: 0 },
                   { key: 'sent', label: 'Sent', count: 0 },
                 ].map((f: any) => (
@@ -311,10 +379,18 @@ const SellerMessages: React.FC = () => {
                   checked={paged.length > 0 && selectedIds.size === paged.length}
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
-                <TextField size="small" placeholder="Search messages..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} sx={{ flex: 1 }} />
+                <TextField 
+                  size="small" 
+                  placeholder="Search messages..." 
+                  value={searchTerm} 
+                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
+                  onKeyDown={(e) => { if (e.key === 'Enter') loadConversations(); }}
+                  InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} 
+                  sx={{ flex: 1 }} 
+                />
                 <FormControl size="small" sx={{ minWidth: 120 }}>
                   <InputLabel>Category</InputLabel>
-                  <Select value={'all'} label="Category" onChange={() => {}}>
+                  <Select value={categoryFilter} label="Category" onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
                     <MenuItem value="all">All</MenuItem>
                     <MenuItem value="inquiry">Inquiries</MenuItem>
                     <MenuItem value="offer">Offers</MenuItem>
@@ -325,7 +401,13 @@ const SellerMessages: React.FC = () => {
                 <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkMarkRead}><MarkReadIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
               </Box>
+              {loading && <LinearProgress />}
               <Box sx={{ overflowY: 'auto' }}>
+                {!loading && paged.length === 0 && (
+                  <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+                    <Typography variant="body2">No conversations found</Typography>
+                  </Box>
+                )}
                 <List>
                   {paged.map((message, index) => (
                     <React.Fragment key={message.id}>
@@ -335,7 +417,7 @@ const SellerMessages: React.FC = () => {
                         sx={{ alignItems: 'flex-start' }}
                       >
                         <ListItemButton
-                          onClick={() => handleMessageClick(message)}
+                          onClick={() => handleMessageClick(message.id)}
                           sx={{
                             bgcolor: !message.read ? 'action.hover' : 'transparent',
                             '&:hover': { bgcolor: 'action.selected' },
@@ -343,7 +425,7 @@ const SellerMessages: React.FC = () => {
                           }}
                         >
                           <ListItemAvatar>
-                            <Badge color="error" variant="dot" invisible={message.read}>
+                            <Badge color="error" variant="dot" invisible={message.unreadCount === 0}>
                               <Avatar sx={{ bgcolor: 'primary.main' }}>
                                 {message.sender.name.charAt(0)}
                               </Avatar>
@@ -380,24 +462,39 @@ const SellerMessages: React.FC = () => {
                 </List>
               </Box>
               <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
-                <Pagination page={page} onChange={(_, p) => setPage(p)} count={Math.max(1, Math.ceil(filteredMessages.length / rowsPerPage))} color="primary" />
+                <Pagination page={page} onChange={(_, p) => setPage(p)} count={totalPages} color="primary" />
               </Box>
             </CardContent>
           </Card>
 
           {/* Detail pane */}
-          <Card sx={{ display: { xs: selectedMessage ? 'block' : 'none', lg: 'block' } }}>
+          <Card sx={{ display: { xs: selectedConversation ? 'block' : 'none', lg: 'block' } }}>
             <CardContent sx={{ height: { md: 'calc(100vh - 140px)' }, display: 'flex', flexDirection: 'column' }}>
-              {selectedMessage ? (
+              {selectedConversation ? (
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>{selectedMessage.sender.name.charAt(0)}</Avatar>
-                    <Box>
-                      <Typography variant="h6">{selectedMessage.sender.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{selectedMessage.subject}</Typography>
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                      {selectedConversation.buyer?.name.charAt(0) || '?'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6">
+                        {selectedConversation.buyer?.name || 'Unknown'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedConversation.subject}
+                      </Typography>
                     </Box>
+                    <IconButton size="small" onClick={() => handleArchive(selectedConversation.id, !selectedConversation.archived)}>
+                      <ArchiveIcon />
+                    </IconButton>
                   </Box>
+                  {loadingThread && <LinearProgress />}
                   <Paper variant="outlined" sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}>
+                    {!loadingThread && thread.length === 0 && (
+                      <Box sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
+                        <Typography variant="body2">No messages yet</Typography>
+                      </Box>
+                    )}
                     {thread.map((msg) => (
                       <Box key={msg.id} sx={{ display: 'flex', justifyContent: msg.sender.type === 'seller' ? 'flex-end' : 'flex-start', mb: 1.5, px: { xs: 0.5, sm: 0 } }}>
                         <Box sx={{ maxWidth: { xs: '92%', sm: '80%' }, position: 'relative', '&:hover .msg-actions': { opacity: 1 } }}>
@@ -412,7 +509,7 @@ const SellerMessages: React.FC = () => {
                             )}
                           </Box>
                           <Paper sx={{ p: 1, bgcolor: msg.sender.type === 'seller' ? 'primary.light' : 'background.paper' }}>
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.message}</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                           </Paper>
                           {msg.sender.type === 'seller' && (
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}>
@@ -429,13 +526,25 @@ const SellerMessages: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <Chip size="small" label={`Replying to ${replyTo.sender.name}`} onDelete={() => setReplyTo(null)} />
                         <Typography variant="caption" color="text.secondary" noWrap maxWidth={240}>
-                          {replyTo.message}
+                          {replyTo.content}
                         </Typography>
                       </Box>
                     )}
                     {/* Reply box with in-field attach icon */}
                     <Box sx={{ position: 'relative', mb: 1.5 }}>
-                      <TextField fullWidth multiline rows={3} placeholder={`Reply to ${selectedMessage.sender.name}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} />
+                      <TextField 
+                        fullWidth 
+                        multiline 
+                        rows={3} 
+                        placeholder={`Reply to ${selectedConversation.buyer?.name || 'buyer'}...`} 
+                        value={replyText} 
+                        onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && replyText.trim()) {
+                            handleSendReply();
+                          }
+                        }}
+                      />
                       <IconButton size="small" component="label" sx={{ position: 'absolute', right: 8, bottom: 8 }}>
                         <AttachIcon />
                         <input hidden multiple type="file" onChange={handleAttach} />
@@ -447,11 +556,15 @@ const SellerMessages: React.FC = () => {
                       ))}
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button variant="outlined" onClick={() => setSelectedMessage(null)}>Close</Button>
-                      {pendingSend && (
-                        <Button variant="text" startIcon={<UndoIcon />} onClick={handleUndoSend}>Undo</Button>
-                      )}
-                      <Button variant="contained" startIcon={<SendIcon />} onClick={handleSendReply} disabled={!replyText.trim()}>Send</Button>
+                      <Button variant="outlined" onClick={() => setSelectedConversation(null)}>Close</Button>
+                      <Button 
+                        variant="contained" 
+                        startIcon={<SendIcon />} 
+                        onClick={handleSendReply} 
+                        disabled={!replyText.trim() || sending}
+                      >
+                        {sending ? 'Sending...' : 'Send'}
+                      </Button>
                     </Box>
                   </Box>
                 </>

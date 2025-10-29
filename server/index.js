@@ -262,9 +262,44 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: { code, message } });
 });
 
-// Serve built client (single-service deployment)
+// Compression middleware for better performance (gzip)
+let compression;
+try {
+  compression = require('compression');
+  app.use(compression({
+    filter: (req, res) => {
+      // Don't compress responses if explicitly disabled or if request includes 'no-transform' in cache-control
+      if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
+        return false;
+      }
+      // Compress all text responses
+      return compression.filter(req, res);
+    },
+    level: 6, // Balance between compression and CPU usage
+    threshold: 1024 // Only compress responses > 1KB
+  }));
+} catch (e) {
+  console.warn('Compression middleware not installed. Install with: npm install compression');
+}
+
+// Serve built client (single-service deployment) with optimized caching
 const staticDir = path.join(__dirname, 'public');
-app.use(express.static(staticDir));
+app.use(express.static(staticDir, {
+  maxAge: '1y', // Cache static assets for 1 year
+  immutable: true, // Vite adds content hashes, so assets are immutable
+  setHeaders: (res, filePath) => {
+    // Add cache headers
+    if (filePath.endsWith('.html')) {
+      // HTML should not be cached (or cache for short time)
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (filePath.match(/\.(js|css|woff2?|png|jpg|jpeg|gif|svg|webp|ico)$/)) {
+      // Static assets with content hashes can be cached long-term
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 
 // SPA fallback: send index.html for all non-API routes that don't exist as static files (Express 5 compatible)
 app.get(/^\/(?!api\/).*/, (req, res, next) => {

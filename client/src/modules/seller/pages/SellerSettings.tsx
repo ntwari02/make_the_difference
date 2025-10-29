@@ -7,7 +7,6 @@ import {
   Switch,
   FormControlLabel,
   Button,
-  Grid,
   TextField,
   Alert,
   Divider,
@@ -25,6 +24,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Stack,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -41,11 +41,13 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import { useThemeMode } from '../../../core/theme/ThemeProvider';
 import SellerLayout from '../components/layout/SellerLayout';
+import { sellerApi } from '../services/sellerApi';
+import toast from 'react-hot-toast';
 
 const SellerSettings: React.FC = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state: RootState) => state.seller.profile);
-  const { mode, toggleColorMode } = useThemeMode();
+  const { mode, toggleColorMode, setMode } = useThemeMode();
 
   const [settings, setSettings] = useState({
     notifications: {
@@ -68,10 +70,12 @@ const SellerSettings: React.FC = () => {
       timezone: 'America/New_York',
       currency: 'USD',
       autoRefresh: true,
+      theme: 'light',
     },
   });
 
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
 
   const handleSettingChange = (category: keyof typeof settings, setting: string, value: any) => {
@@ -84,22 +88,89 @@ const SellerSettings: React.FC = () => {
     }));
   };
 
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const data = await sellerApi.settings.getSettings();
+        if (!mounted) return;
+        const loadedSettings = {
+          notifications: {
+            email: !!data?.notifications?.email,
+            push: !!data?.notifications?.push,
+            sms: !!data?.notifications?.sms,
+            newInquiries: !!data?.notifications?.newInquiries,
+            newOffers: !!data?.notifications?.newOffers,
+            paymentUpdates: !!data?.notifications?.paymentUpdates,
+            reviewReplies: !!data?.notifications?.reviewReplies,
+          },
+          privacy: {
+            showProfile: data?.privacy?.showProfile !== false,
+            showContact: !!data?.privacy?.showContact,
+            showListings: data?.privacy?.showListings !== false,
+            allowMessages: data?.privacy?.allowMessages !== false,
+          },
+          preferences: {
+            language: data?.preferences?.language || 'en',
+            timezone: data?.preferences?.timezone || 'America/New_York',
+            currency: data?.preferences?.currency || 'USD',
+            autoRefresh: data?.preferences?.autoRefresh !== false,
+            theme: data?.preferences?.theme || 'light',
+          },
+        };
+        setSettings(loadedSettings);
+        if (data?.preferences?.theme && setMode) {
+          setMode(data.preferences.theme as 'light' | 'dark');
+        }
+      } catch (_) {
+        // best-effort: keep defaults
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [setMode]);
+
   const handleSave = async () => {
     setSaving(true);
-    // In a real app, this would save to API
-    setTimeout(() => {
+    try {
+      // Include current theme mode in settings
+      const settingsToSave = {
+        ...settings,
+        preferences: {
+          ...settings.preferences,
+          theme: mode, // Save current theme mode
+        },
+      };
+      await sellerApi.settings.updateSettings(settingsToSave);
+      toast.success('Settings saved');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save settings');
+    } finally {
       setSaving(false);
-    }, 1000);
+    }
   };
 
   const handleDeleteAccount = () => {
     setDeleteDialog(true);
   };
 
-  const confirmDeleteAccount = () => {
-    // In a real app, this would delete the account via API
-    console.log('Account deletion requested');
-    setDeleteDialog(false);
+  const confirmDeleteAccount = async () => {
+    try {
+      setSaving(true);
+      await sellerApi.settings.deleteAccount();
+      toast.success('Account deleted successfully');
+      // Redirect to home/login after successful deletion
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = '/';
+      }, 1500);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to delete account');
+      setSaving(false);
+      setDeleteDialog(false);
+    }
   };
 
   return (
@@ -114,9 +185,9 @@ const SellerSettings: React.FC = () => {
             variant="contained"
             startIcon={<SaveIcon />}
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || loading}
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving...' : (loading ? 'Loading…' : 'Save Changes')}
           </Button>
         </Box>
 
@@ -129,8 +200,8 @@ const SellerSettings: React.FC = () => {
                 Notification Preferences
               </Typography>
             </Box>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight={600}>
                   Email Notifications
                 </Typography>
@@ -139,6 +210,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-email"
+                          name="notifications.email"
                           checked={settings.notifications.email}
                           onChange={(e) => handleSettingChange('notifications', 'email', e.target.checked)}
                         />
@@ -150,6 +223,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-new-inquiries"
+                          name="notifications.newInquiries"
                           checked={settings.notifications.newInquiries}
                           onChange={(e) => handleSettingChange('notifications', 'newInquiries', e.target.checked)}
                           disabled={!settings.notifications.email}
@@ -162,6 +237,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-new-offers"
+                          name="notifications.newOffers"
                           checked={settings.notifications.newOffers}
                           onChange={(e) => handleSettingChange('notifications', 'newOffers', e.target.checked)}
                           disabled={!settings.notifications.email}
@@ -174,6 +251,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-payment-updates"
+                          name="notifications.paymentUpdates"
                           checked={settings.notifications.paymentUpdates}
                           onChange={(e) => handleSettingChange('notifications', 'paymentUpdates', e.target.checked)}
                           disabled={!settings.notifications.email}
@@ -183,9 +262,9 @@ const SellerSettings: React.FC = () => {
                     />
                   </ListItem>
                 </List>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={6}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight={600}>
                   Push Notifications
                 </Typography>
@@ -194,6 +273,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-push"
+                          name="notifications.push"
                           checked={settings.notifications.push}
                           onChange={(e) => handleSettingChange('notifications', 'push', e.target.checked)}
                         />
@@ -205,6 +286,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="notifications-review-replies"
+                          name="notifications.reviewReplies"
                           checked={settings.notifications.reviewReplies}
                           onChange={(e) => handleSettingChange('notifications', 'reviewReplies', e.target.checked)}
                           disabled={!settings.notifications.push}
@@ -214,8 +297,26 @@ const SellerSettings: React.FC = () => {
                     />
                   </ListItem>
                 </List>
-              </Grid>
-            </Grid>
+                <Typography variant="subtitle1" gutterBottom fontWeight={600} sx={{ mt: 2 }}>
+                  SMS Notifications
+                </Typography>
+                <List dense>
+                  <ListItem>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          id="notifications-sms"
+                          name="notifications.sms"
+                          checked={settings.notifications.sms}
+                          onChange={(e) => handleSettingChange('notifications', 'sms', e.target.checked)}
+                        />
+                      }
+                      label="Enable SMS notifications"
+                    />
+                  </ListItem>
+                </List>
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
 
@@ -228,8 +329,8 @@ const SellerSettings: React.FC = () => {
                 Privacy & Visibility
               </Typography>
             </Box>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight={600}>
                   Profile Visibility
                 </Typography>
@@ -238,6 +339,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="privacy-show-profile"
+                          name="privacy.showProfile"
                           checked={settings.privacy.showProfile}
                           onChange={(e) => handleSettingChange('privacy', 'showProfile', e.target.checked)}
                         />
@@ -249,6 +352,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="privacy-show-contact"
+                          name="privacy.showContact"
                           checked={settings.privacy.showContact}
                           onChange={(e) => handleSettingChange('privacy', 'showContact', e.target.checked)}
                         />
@@ -260,6 +365,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="privacy-show-listings"
+                          name="privacy.showListings"
                           checked={settings.privacy.showListings}
                           onChange={(e) => handleSettingChange('privacy', 'showListings', e.target.checked)}
                         />
@@ -268,9 +375,9 @@ const SellerSettings: React.FC = () => {
                     />
                   </ListItem>
                 </List>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={6}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight={600}>
                   Communication
                 </Typography>
@@ -279,6 +386,8 @@ const SellerSettings: React.FC = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                          id="privacy-allow-messages"
+                          name="privacy.allowMessages"
                           checked={settings.privacy.allowMessages}
                           onChange={(e) => handleSettingChange('privacy', 'allowMessages', e.target.checked)}
                         />
@@ -287,8 +396,8 @@ const SellerSettings: React.FC = () => {
                     />
                   </ListItem>
                 </List>
-              </Grid>
-            </Grid>
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
 
@@ -301,11 +410,15 @@ const SellerSettings: React.FC = () => {
                 Preferences
               </Typography>
             </Box>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mb: 3 }}>
+              <Box sx={{ flex: 1 }}>
                 <FormControl fullWidth>
-                  <InputLabel>Language</InputLabel>
+                  <InputLabel id="preferences-language-label">Language</InputLabel>
                   <Select
+                    id="preferences-language"
+                    name="preferences.language"
+                    labelId="preferences-language-label"
+                    aria-labelledby="preferences-language-label"
                     value={settings.preferences.language}
                     label="Language"
                     onChange={(e) => handleSettingChange('preferences', 'language', e.target.value)}
@@ -316,12 +429,16 @@ const SellerSettings: React.FC = () => {
                     <MenuItem value="de">German</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={4}>
+              <Box sx={{ flex: 1 }}>
                 <FormControl fullWidth>
-                  <InputLabel>Timezone</InputLabel>
+                  <InputLabel id="preferences-timezone-label">Timezone</InputLabel>
                   <Select
+                    id="preferences-timezone"
+                    name="preferences.timezone"
+                    labelId="preferences-timezone-label"
+                    aria-labelledby="preferences-timezone-label"
                     value={settings.preferences.timezone}
                     label="Timezone"
                     onChange={(e) => handleSettingChange('preferences', 'timezone', e.target.value)}
@@ -332,12 +449,16 @@ const SellerSettings: React.FC = () => {
                     <MenuItem value="America/Los_Angeles">Pacific Time</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={4}>
+              <Box sx={{ flex: 1 }}>
                 <FormControl fullWidth>
-                  <InputLabel>Currency</InputLabel>
+                  <InputLabel id="preferences-currency-label">Currency</InputLabel>
                   <Select
+                    id="preferences-currency"
+                    name="preferences.currency"
+                    labelId="preferences-currency-label"
+                    aria-labelledby="preferences-currency-label"
                     value={settings.preferences.currency}
                     label="Currency"
                     onChange={(e) => handleSettingChange('preferences', 'currency', e.target.value)}
@@ -348,20 +469,21 @@ const SellerSettings: React.FC = () => {
                     <MenuItem value="GBP">GBP (£)</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.preferences.autoRefresh}
-                      onChange={(e) => handleSettingChange('preferences', 'autoRefresh', e.target.checked)}
-                    />
-                  }
-                  label="Auto-refresh dashboard data"
-                />
-              </Grid>
-            </Grid>
+              </Box>
+            </Stack>
+            <Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    id="preferences-auto-refresh"
+                    name="preferences.autoRefresh"
+                    checked={settings.preferences.autoRefresh}
+                    onChange={(e) => handleSettingChange('preferences', 'autoRefresh', e.target.checked)}
+                  />
+                }
+                label="Auto-refresh dashboard data"
+              />
+            </Box>
           </CardContent>
         </Card>
 
@@ -377,8 +499,14 @@ const SellerSettings: React.FC = () => {
             <FormControlLabel
               control={
                 <Switch
+                  id="preferences-theme"
+                  name="preferences.theme"
                   checked={mode === 'dark'}
-                  onChange={toggleColorMode}
+                  onChange={(e) => {
+                    toggleColorMode();
+                    // Update settings state immediately when theme changes
+                    handleSettingChange('preferences', 'theme', e.target.checked ? 'dark' : 'light');
+                  }}
                 />
               }
               label={`${mode === 'dark' ? 'Dark' : 'Light'} mode`}
@@ -403,6 +531,7 @@ const SellerSettings: React.FC = () => {
               color="error"
               startIcon={<DeleteIcon />}
               onClick={handleDeleteAccount}
+              disabled={saving || loading}
             >
               Delete Account
             </Button>
@@ -449,8 +578,9 @@ const SellerSettings: React.FC = () => {
               variant="contained"
               color="error"
               onClick={confirmDeleteAccount}
+              disabled={saving}
             >
-              Yes, Delete Account
+              {saving ? 'Deleting...' : 'Yes, Delete Account'}
             </Button>
           </DialogActions>
         </Dialog>

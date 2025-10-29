@@ -38,6 +38,8 @@ import {
   DialogContent,
   DialogActions,
   Pagination,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -95,6 +97,8 @@ function TabPanel(props: TabPanelProps) {
 
 const SellerSparePartsDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [activeTab, setActiveTab] = useState(0);
   const [spareParts, setSpareParts] = useState<any[]>([]);
@@ -858,30 +862,65 @@ const SellerSparePartsDashboard: React.FC = () => {
 
   return (
     <SellerLayout>
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box>
-            <Typography variant="h4" fontWeight={700} gutterBottom>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 2, sm: 0 },
+          mb: 4 
+        }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography 
+              variant="h4" 
+              fontWeight={700} 
+              gutterBottom
+              sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}
+            >
               Spare Parts Management
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography 
+              variant="body1" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
               Manage your spare parts inventory, pricing, and analytics
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: { xs: 1, sm: 2 },
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' }
+          }}>
             <Button
               variant="outlined"
               startIcon={<AnalyticsIcon />}
               onClick={() => navigate('/seller/spare-parts/analytics')}
+              size="medium"
+              sx={{ 
+                minWidth: { xs: 'auto', sm: '120px' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                px: { xs: 1.5, sm: 2 }
+              }}
             >
-              Analytics
+              <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>Analytics</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>Stats</Box>
             </Button>
             <Button
               variant="outlined"
               startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
               onClick={fetchSpareParts}
               disabled={refreshing}
+              size="medium"
+              sx={{ 
+                minWidth: { xs: 'auto', sm: '100px' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                px: { xs: 1.5, sm: 2 }
+              }}
             >
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
@@ -889,8 +928,16 @@ const SellerSparePartsDashboard: React.FC = () => {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleCreatePart}
+              size="medium"
+              sx={{ 
+                minWidth: { xs: '100%', sm: 'auto' },
+                width: { xs: '100%', sm: 'auto' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                px: { xs: 2, sm: 3 }
+              }}
             >
-              Add Spare Part
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Add Spare Part</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Add Part</Box>
             </Button>
           </Box>
         </Box>
@@ -983,8 +1030,17 @@ const SellerSparePartsDashboard: React.FC = () => {
               value={activeTab} 
               onChange={handleTabChange} 
               aria-label="spare parts tabs"
-              variant="fullWidth"
-              sx={{ width: '100%' }}
+              variant={isMobile ? 'scrollable' : 'fullWidth'}
+              scrollButtons={isMobile ? 'auto' : false}
+              allowScrollButtonsMobile
+              sx={{ 
+                width: '100%',
+                '& .MuiTab-root': {
+                  fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                  minHeight: { xs: 48, sm: 56 },
+                  padding: { xs: '8px 12px', sm: '12px 16px' }
+                }
+              }}
             >
               <Tab 
                 label={
@@ -1027,7 +1083,14 @@ const SellerSparePartsDashboard: React.FC = () => {
           {/* All Parts Tab */}
           <TabPanel value={activeTab} index={0}>
             {/* Filters and Search */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: { xs: 1.5, sm: 2 }, 
+              mb: 4, 
+              flexWrap: 'wrap', 
+              alignItems: { xs: 'stretch', sm: 'center' },
+              flexDirection: { xs: 'column', sm: 'row' }
+            }}>
               <TextField
                 placeholder="Search parts..."
                 value={searchQuery}
@@ -1039,10 +1102,17 @@ const SellerSparePartsDashboard: React.FC = () => {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ minWidth: 300 }}
+                fullWidth
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 280, md: 300 },
+                  maxWidth: { xs: '100%', sm: 'none' }
+                }}
               />
               
-              <FormControl sx={{ minWidth: 140 }}>
+              <FormControl sx={{ 
+                minWidth: { xs: '100%', sm: 140, md: 160 },
+                width: { xs: '100%', sm: 'auto' }
+              }}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={statusFilter}
@@ -1059,8 +1129,14 @@ const SellerSparePartsDashboard: React.FC = () => {
               <Button
                 variant="outlined"
                 startIcon={<FilterIcon />}
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  minWidth: { xs: '100%', sm: 'auto' },
+                  whiteSpace: 'nowrap'
+                }}
               >
-                More Filters
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>More Filters</Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Filters</Box>
               </Button>
             </Box>
 

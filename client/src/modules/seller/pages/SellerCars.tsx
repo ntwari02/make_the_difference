@@ -54,6 +54,7 @@ import type { Car } from '../types';
 import { setCars, removeCar, setLoading, setError, setViewMode } from '../store/sellerSlice';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
+import getImageUrl from '../../../shared/utils/imageUtils';
 
 interface CarFilters {
   search: string;
@@ -111,27 +112,12 @@ const SellerCars: React.FC = () => {
     { id: 'm12', brand: 'Volkswagen', model: 'Jetta', year: 2017, mileage: 72000, price: 11800, status: 'pending', images: ['https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop'] },
   ]), []);
 
-  const brandImageMap: Record<string, string> = useMemo(() => ({
-    toyota: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=1200&auto=format&fit=crop',
-    honda: 'https://images.unsplash.com/photo-1556665453-1f4deabe35f4?q=80&w=1200&auto=format&fit=crop',
-    ford: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop',
-    bmw: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=1200&auto=format&fit=crop',
-    mercedes: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200&auto=format&fit=crop',
-    audi: 'https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop',
-    hyundai: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1200&auto=format&fit=crop',
-    kia: 'https://images.unsplash.com/photo-1606666431364-82bd6f4d5226?q=80&w=1200&auto=format&fit=crop',
-    tesla: 'https://images.unsplash.com/photo-1511390428939-6b0f04096b4a?q=80&w=1200&auto=format&fit=crop',
-    nissan: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1200&auto=format&fit=crop',
-    chevrolet: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200&auto=format&fit=crop',
-    volkswagen: 'https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop',
-  }), []);
 
   const defaultCarImage = 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop';
 
   const getCarImage = (car: any) => {
-    if (car?.images?.[0]) return car.images[0];
-    const brandKey = String(car?.brand || '').toLowerCase();
-    return brandImageMap[brandKey] || defaultCarImage;
+    const first = car?.images?.[0];
+    return getImageUrl(first) || defaultCarImage;
   };
 
   // Debounce search input into filters.search
@@ -164,7 +150,7 @@ const SellerCars: React.FC = () => {
       year: Number(item.year ?? 0),
       mileage: Number(item.mileage ?? 0),
       price: Number(item.price ?? 0),
-      car_condition: (item.car_condition ?? 'used') as Car['car_condition'],
+      car_condition: (item.car_condition || item.condition || 'used') as Car['car_condition'],
       fuel_type: String(item.fuel_type ?? 'petrol'),
       transmission: String(item.transmission ?? 'manual'),
       body_type: String(item.body_type ?? 'sedan'),
@@ -547,6 +533,22 @@ const SellerCars: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {`${car.year} • ${car.mileage?.toLocaleString()} miles`}
                   </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                    {((car as any)?.quantity ?? null) !== null && ((car as any)?.quantity !== undefined) && (
+                      <Chip size="small" variant="outlined" label={`Qty: ${(car as any).quantity}`} />
+                    )}
+                    {(() => {
+                      const condition = car.car_condition || (car as any)?.condition || 'used';
+                      return (
+                        <Chip
+                          size="small"
+                          color={condition === 'new' ? 'success' : condition === 'certified' ? 'info' : 'default'}
+                          variant={condition === 'new' ? 'filled' : 'outlined'}
+                          label={String(condition).charAt(0).toUpperCase() + String(condition).slice(1)}
+                        />
+                      );
+                    })()}
+                  </Box>
                   <Typography variant="h6" color="primary" fontWeight={700}>
                     {formatPrice(car.price)}
                   </Typography>
@@ -623,9 +625,25 @@ const SellerCars: React.FC = () => {
                           <Typography variant="subtitle1" fontWeight={600}>
                             {car.brand} {car.model}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {car.year} • {car.mileage?.toLocaleString()} miles
-                          </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {car.year} • {car.mileage?.toLocaleString()} miles
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                              {((car as any)?.quantity ?? null) !== null && ((car as any)?.quantity !== undefined) && (
+                                <Chip size="small" variant="outlined" label={`Qty: ${(car as any).quantity}`} />
+                              )}
+                              {(() => {
+                                const condition = car.car_condition || (car as any)?.condition || 'used';
+                                return (
+                                  <Chip
+                                    size="small"
+                                    color={condition === 'new' ? 'success' : condition === 'certified' ? 'info' : 'default'}
+                                    variant={condition === 'new' ? 'filled' : 'outlined'}
+                                    label={String(condition).charAt(0).toUpperCase() + String(condition).slice(1)}
+                                  />
+                                );
+                              })()}
+                            </Box>
                         </Box>
                       </Box>
                     </TableCell>
