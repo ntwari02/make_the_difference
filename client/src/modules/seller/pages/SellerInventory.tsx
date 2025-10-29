@@ -43,6 +43,7 @@ import { removeCar, setCars } from '../store/sellerSlice';
 import type { Car } from '../types';
 import { sellerApi } from '../services/sellerApi';
 import { useNavigate } from 'react-router-dom';
+import getImageUrl from '../../../shared/utils/imageUtils';
 
 const SellerInventory: React.FC = () => {
   const dispatch = useDispatch();
@@ -291,7 +292,7 @@ const SellerInventory: React.FC = () => {
                     <Box sx={{ position: 'relative' }}>
                       <Avatar
                         variant="rounded"
-                        src={c.images && Array.isArray(c.images) && c.images.length > 0 ? c.images[0] : undefined}
+                        src={c.images && Array.isArray(c.images) && c.images.length > 0 ? getImageUrl(c.images[0]) : undefined}
                         imgProps={{ onError: () => console.log('Failed to load image for car:', c.id) }}
                         sx={{ width: '100%', height: 180, bgcolor: 'grey.100' }}
                       >
@@ -390,7 +391,7 @@ const SellerInventory: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                           <Box sx={{ width: 56, height: 36, borderRadius: 1, overflow: 'hidden', bgcolor: 'grey.100', border: '1px solid', borderColor: 'divider' }}>
                             {c.images?.[0] ? (
-                              <img src={c.images[0]} alt={c.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={getImageUrl(c.images[0])} alt={c.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : null}
                           </Box>
                           <Box>

@@ -4,19 +4,22 @@ export const getImageUrl = (imagePath: string | undefined): string => {
     return 'https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop';
   }
   
-  // If it's already an absolute URL (http/https), return as is
+  // Already absolute
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
-  // If it's a relative path starting with /uploads, prepend the API base URL
+  // Resolve base URL from envs (match PhotoUpload behavior)
+  const publicBase = (import.meta as any)?.env?.VITE_PUBLIC_API_BASE_URL || (import.meta as any)?.env?.VITE_API_BASE_URL || (import.meta as any)?.env?.VITE_API_URL || '';
+  const normalizedBase = String(publicBase || '').replace(/\/+$/, '').replace(/\/?api\/?$/, '');
+  
+  // If it's a relative path starting with /uploads, prepend base
   if (imagePath.startsWith('/uploads/')) {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-    return `${API_BASE_URL.replace('/api', '')}${imagePath}`;
+    return `${normalizedBase}${imagePath}`;
   }
   
-  // Fallback to placeholder image
-  return 'https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop';
+  // If it's a bare filename or relative without leading slash, serve under /uploads
+  return `${normalizedBase}/uploads/${imagePath.replace(/^\/+/, '')}`;
 };
 
 // Utility function to process car images array

@@ -54,6 +54,7 @@ import type { Car } from '../types';
 import { setCars, removeCar, setLoading, setError, setViewMode } from '../store/sellerSlice';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
+import getImageUrl from '../../../shared/utils/imageUtils';
 
 interface CarFilters {
   search: string;
@@ -129,9 +130,8 @@ const SellerCars: React.FC = () => {
   const defaultCarImage = 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop';
 
   const getCarImage = (car: any) => {
-    if (car?.images?.[0]) return car.images[0];
-    const brandKey = String(car?.brand || '').toLowerCase();
-    return brandImageMap[brandKey] || defaultCarImage;
+    const first = car?.images?.[0];
+    return getImageUrl(first) || defaultCarImage;
   };
 
   // Debounce search input into filters.search

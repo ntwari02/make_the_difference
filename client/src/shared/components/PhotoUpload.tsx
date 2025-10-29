@@ -73,6 +73,16 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Resolve image src to support production deployments behind a different origin
+  const publicBase = (import.meta as any)?.env?.VITE_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') || '';
+  const resolveSrc = (raw: string) => {
+    if (!raw) return raw;
+    if (raw.startsWith('data:')) return raw;
+    if (raw.startsWith('http')) return raw;
+    if (raw.startsWith('/uploads')) return `${publicBase}${raw}`;
+    return `${publicBase}/uploads/${raw.replace(/^\/+/, '')}`;
+  };
+
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
       return `File type ${file.type} is not supported. Please use JPEG, PNG, or WebP.`;
@@ -342,13 +352,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             {images.length > 0 ? (
               <Box
                 component="img"
-                src={
-                  images[0].startsWith('data:')
-                    ? images[0]
-                    : (images[0].startsWith('/uploads') || images[0].startsWith('http'))
-                      ? images[0]
-                      : `/uploads/${images[0].replace(/^\/+/, '')}`
-                }
+                src={resolveSrc(images[0])}
                 alt="Profile"
                 sx={{
                   width: '100%',
@@ -452,13 +456,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
             <Box sx={{ textAlign: 'center' }}>
               <Box
                 component="img"
-                src={
-                  previewDialog.image.startsWith('data:')
-                    ? previewDialog.image
-                    : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
-                      ? previewDialog.image
-                      : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
-                }
+                src={resolveSrc(previewDialog.image)}
                 alt="Profile Preview"
                 sx={{
                   maxWidth: '100%',
@@ -576,13 +574,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
               >
                 <Box
                   component="img"
-                  src={
-                    image.startsWith('data:')
-                      ? image
-                      : (image.startsWith('/uploads') || image.startsWith('http'))
-                        ? image
-                        : `/uploads/${image.replace(/^\/+/, '')}`
-                  }
+                  src={resolveSrc(image)}
                   alt={`Upload ${index + 1}`}
                   sx={{
                     width: '100%',
@@ -668,13 +660,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           <Box sx={{ textAlign: 'center' }}>
             <Box
               component="img"
-              src={
-                previewDialog.image.startsWith('data:')
-                  ? previewDialog.image
-                  : (previewDialog.image.startsWith('/uploads') || previewDialog.image.startsWith('http'))
-                    ? previewDialog.image
-                    : `/uploads/${previewDialog.image.replace(/^\/+/, '')}`
-              }
+              src={resolveSrc(previewDialog.image)}
               alt="Preview"
               sx={{
                 maxWidth: '100%',
