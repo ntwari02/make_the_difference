@@ -390,7 +390,7 @@ const SellerSparePartForm: React.FC = () => {
             <PhotoUpload
               images={formData.images}
               onImagesChange={(images) => handleInputChange('images', images)}
-              maxImages={8}
+              maxImages={1}
               maxFileSize={15}
               entityType="spare-part"
               entityId={id}
@@ -398,6 +398,8 @@ const SellerSparePartForm: React.FC = () => {
               label="Product Images"
               description="Upload clear photos of the spare part from different angles"
               aspectRatio="4/3"
+              hideOverlayActions={true}
+              replaceOnUpload={true}
             />
           </Box>
           </Box>

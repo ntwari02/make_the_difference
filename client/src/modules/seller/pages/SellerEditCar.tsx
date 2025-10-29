@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Card, CardContent, CardHeader, Typography, TextField, Button, Chip, Divider, Stack } from '@mui/material';
+import { Box, Card, CardContent, CardHeader, Typography, TextField, Button, Chip, Divider } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Save as SaveIcon, RestartAlt as ResetIcon, Image as ImageIcon } from '@mui/icons-material';
+import { Save as SaveIcon, RestartAlt as ResetIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
 import { useDispatch } from 'react-redux';
 import { updateCar as updateCarInStore } from '../store/sellerSlice';
+import PhotoUpload from '../../../shared/components/PhotoUpload';
 
 type CarForm = {
   title: string;
@@ -104,14 +105,6 @@ const SellerEditCar: React.FC = () => {
     }
   };
 
-  const handleImagesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    const readers = Array.from(files).map((f) => new Promise<string>((resolve) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.readAsDataURL(f); }));
-    const dataUrls = await Promise.all(readers);
-    setValue('images', [...(values.images || []), ...dataUrls], { shouldDirty: true });
-    e.target.value = '';
-  };
 
   if (loading) {
     return (
@@ -147,20 +140,22 @@ const SellerEditCar: React.FC = () => {
               <TextField label="Description" multiline minRows={4} {...register('description')} />
 
               <Divider textAlign="left">Images</Divider>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                <Button variant="outlined" startIcon={<ImageIcon />} component="label">
-                  Add images
-                  <input hidden accept="image/*" multiple type="file" onChange={handleImagesSelected} />
-                </Button>
-                <Typography variant="body2" color="text.secondary">Images are preview-only in this demo.</Typography>
-              </Stack>
-              <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' } }}>
-                {(values.images || []).map((src, i) => (
-                  <Box key={i} sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                    <img src={src} alt={`car-${i}`} style={{ display: 'block', width: '100%', height: 90, objectFit: 'cover' }} />
-                  </Box>
-                ))}
-              </Box>
+              <PhotoUpload
+                images={values.images || []}
+                onImagesChange={(imageUrls) => {
+                  setValue('images', imageUrls, { shouldDirty: true });
+                }}
+                maxImages={10}
+                maxFileSize={5}
+                entityType="car"
+                entityId={id}
+                uploadEndpoint={id ? `/api/cars/${id}/images` : undefined}
+                label="Car Images"
+                description="Upload clear photos of the car. New uploads will replace existing images."
+                aspectRatio="16/9"
+                hideOverlayActions={false}
+                replaceOnUpload={true}
+              />
 
               <Divider />
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>

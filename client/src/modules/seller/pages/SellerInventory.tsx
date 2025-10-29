@@ -313,6 +313,9 @@ const SellerInventory: React.FC = () => {
                         <Chip size="small" variant="outlined" label={`${c.year || '—'}`}/>
                         <Chip size="small" variant="outlined" label={c.mileage ? `${c.mileage.toLocaleString()} km` : '—'}/>
                         {c.location ? <Chip size="small" variant="outlined" label={c.location}/> : null}
+                        {((c as any)?.quantity ?? null) !== null && ((c as any)?.quantity !== undefined) && (
+                          <Chip size="small" color="info" variant="outlined" label={`Qty: ${(c as any).quantity}`} />
+                        )}
                       </Box>
                       <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
                         {c.price ? `$${Number(c.price).toLocaleString()}` : '—'}
@@ -397,6 +400,9 @@ const SellerInventory: React.FC = () => {
                           <Box>
                             <Typography variant="subtitle2" fontWeight={600}>{c.title || `${c.year} ${c.brand} ${c.model}`}</Typography>
                             <Typography variant="caption" color="text.secondary">{c.brand} · {c.model} · {c.year}</Typography>
+                            {((c as any)?.quantity ?? null) !== null && ((c as any)?.quantity !== undefined) && (
+                              <Chip size="small" variant="outlined" label={`Qty: ${(c as any).quantity}`} sx={{ ml: 1 }} />
+                            )}
                           </Box>
                         </Box>
                       </TableCell>

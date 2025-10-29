@@ -164,7 +164,7 @@ const SellerCars: React.FC = () => {
       year: Number(item.year ?? 0),
       mileage: Number(item.mileage ?? 0),
       price: Number(item.price ?? 0),
-      car_condition: (item.car_condition ?? 'used') as Car['car_condition'],
+      car_condition: (item.car_condition || item.condition || 'used') as Car['car_condition'],
       fuel_type: String(item.fuel_type ?? 'petrol'),
       transmission: String(item.transmission ?? 'manual'),
       body_type: String(item.body_type ?? 'sedan'),
@@ -547,6 +547,22 @@ const SellerCars: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {`${car.year} • ${car.mileage?.toLocaleString()} miles`}
                   </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                    {((car as any)?.quantity ?? null) !== null && ((car as any)?.quantity !== undefined) && (
+                      <Chip size="small" variant="outlined" label={`Qty: ${(car as any).quantity}`} />
+                    )}
+                    {(() => {
+                      const condition = car.car_condition || (car as any)?.condition || 'used';
+                      return (
+                        <Chip
+                          size="small"
+                          color={condition === 'new' ? 'success' : condition === 'certified' ? 'info' : 'default'}
+                          variant={condition === 'new' ? 'filled' : 'outlined'}
+                          label={String(condition).charAt(0).toUpperCase() + String(condition).slice(1)}
+                        />
+                      );
+                    })()}
+                  </Box>
                   <Typography variant="h6" color="primary" fontWeight={700}>
                     {formatPrice(car.price)}
                   </Typography>
@@ -623,9 +639,25 @@ const SellerCars: React.FC = () => {
                           <Typography variant="subtitle1" fontWeight={600}>
                             {car.brand} {car.model}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {car.year} • {car.mileage?.toLocaleString()} miles
-                          </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {car.year} • {car.mileage?.toLocaleString()} miles
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                              {((car as any)?.quantity ?? null) !== null && ((car as any)?.quantity !== undefined) && (
+                                <Chip size="small" variant="outlined" label={`Qty: ${(car as any).quantity}`} />
+                              )}
+                              {(() => {
+                                const condition = car.car_condition || (car as any)?.condition || 'used';
+                                return (
+                                  <Chip
+                                    size="small"
+                                    color={condition === 'new' ? 'success' : condition === 'certified' ? 'info' : 'default'}
+                                    variant={condition === 'new' ? 'filled' : 'outlined'}
+                                    label={String(condition).charAt(0).toUpperCase() + String(condition).slice(1)}
+                                  />
+                                );
+                              })()}
+                            </Box>
                         </Box>
                       </Box>
                     </TableCell>
