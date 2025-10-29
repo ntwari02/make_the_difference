@@ -112,20 +112,6 @@ const SellerCars: React.FC = () => {
     { id: 'm12', brand: 'Volkswagen', model: 'Jetta', year: 2017, mileage: 72000, price: 11800, status: 'pending', images: ['https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop'] },
   ]), []);
 
-  const brandImageMap: Record<string, string> = useMemo(() => ({
-    toyota: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=1200&auto=format&fit=crop',
-    honda: 'https://images.unsplash.com/photo-1556665453-1f4deabe35f4?q=80&w=1200&auto=format&fit=crop',
-    ford: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop',
-    bmw: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=1200&auto=format&fit=crop',
-    mercedes: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200&auto=format&fit=crop',
-    audi: 'https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop',
-    hyundai: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1200&auto=format&fit=crop',
-    kia: 'https://images.unsplash.com/photo-1606666431364-82bd6f4d5226?q=80&w=1200&auto=format&fit=crop',
-    tesla: 'https://images.unsplash.com/photo-1511390428939-6b0f04096b4a?q=80&w=1200&auto=format&fit=crop',
-    nissan: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1200&auto=format&fit=crop',
-    chevrolet: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200&auto=format&fit=crop',
-    volkswagen: 'https://images.unsplash.com/photo-1605559424843-9e4c4d2ad1c1?q=80&w=1200&auto=format&fit=crop',
-  }), []);
 
   const defaultCarImage = 'https://images.unsplash.com/photo-1517059224940-d4af9eec41e5?q=80&w=1200&auto=format&fit=crop';
 

@@ -415,9 +415,10 @@ const SellerSparePartForm: React.FC = () => {
             
             <Card sx={{ 
               p: 3, 
-              backgroundColor: 'grey.50', 
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'grey.50',
               border: '1px solid', 
-              borderColor: 'grey.300',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'grey.300',
+              boxShadow: 'none',
               position: 'sticky',
               top: 20
             }}>
@@ -456,20 +457,20 @@ const SellerSparePartForm: React.FC = () => {
                 <Divider sx={{ my: 2 }} />
                 
                 {/* Pricing Summary */}
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom color="text.primary">
                   Pricing Summary
                 </Typography>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Selling Price:</Typography>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" color="text.secondary">Selling Price:</Typography>
+                  <Typography variant="body2" fontWeight={600} color="text.primary">
                     {formatPrice(formData.price)}
                   </Typography>
                 </Box>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Quantity Available:</Typography>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" color="text.secondary">Quantity Available:</Typography>
+                  <Typography variant="body2" fontWeight={600} color="text.primary">
                     {formData.quantity_available}
                   </Typography>
                 </Box>
@@ -477,7 +478,7 @@ const SellerSparePartForm: React.FC = () => {
                 <Divider sx={{ my: 1 }} />
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body1" fontWeight={600}>Total Inventory Value:</Typography>
+                  <Typography variant="body1" fontWeight={600} color="text.primary">Total Inventory Value:</Typography>
                   <Typography variant="h6" fontWeight={700} color="primary">
                     {formatPrice(formData.price * formData.quantity_available)}
                   </Typography>

@@ -316,6 +316,17 @@ const SellerInventory: React.FC = () => {
                         {((c as any)?.quantity ?? null) !== null && ((c as any)?.quantity !== undefined) && (
                           <Chip size="small" color="info" variant="outlined" label={`Qty: ${(c as any).quantity}`} />
                         )}
+                        {(() => {
+                          const condition = (c as any)?.car_condition || (c as any)?.condition || 'used';
+                          return (
+                            <Chip
+                              size="small"
+                              color={condition === 'new' ? 'success' : condition === 'certified' ? 'info' : 'default'}
+                              variant={condition === 'new' ? 'filled' : 'outlined'}
+                              label={String(condition).charAt(0).toUpperCase() + String(condition).slice(1)}
+                            />
+                          );
+                        })()}
                       </Box>
                       <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
                         {c.price ? `$${Number(c.price).toLocaleString()}` : '—'}
