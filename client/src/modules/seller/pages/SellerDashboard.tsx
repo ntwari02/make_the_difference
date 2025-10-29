@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Card,
@@ -9,28 +9,17 @@ import {
   Chip,
   Stack,
   IconButton,
-  Menu,
   MenuItem,
+  Menu,
+  ListItemIcon,
+  ListItemText,
   Divider,
   Alert,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
   Badge,
-  Tooltip,
-  Fab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
-  Switch,
-  FormControlLabel,
+  useTheme,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -41,24 +30,20 @@ import {
   Inventory,
   Star,
   Notifications,
-  Settings,
-  Add,
-  MoreVert,
   Visibility,
-  Refresh,
-  Download,
   Assessment,
   CheckCircle,
   Warning,
   Error,
   Info,
-  Receipt,
-  Analytics,
-  Support,
-  Close,
-  Save,
+  MoreVert,
+  Edit,
+  Print,
+  Cancel,
+  Person,
 } from '@mui/icons-material';
 import SellerLayout from '../components/layout/SellerLayout';
+import { ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend } from 'recharts';
 
 // Mock data for demonstration
 const mockStats = {
@@ -190,106 +175,49 @@ const mockNotifications = [
 ];
 
 const SellerDashboard: React.FC = () => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const refreshInterval = 30000; // 30 seconds
-  
-  // Quick Add Dialog form state
-  const [quickAddForm, setQuickAddForm] = useState({
-    productName: '',
-    unitPrice: '',
-    quantity: '',
-    category: '',
-    description: '',
-    isActive: true
-  });
+  const theme = useTheme();
+  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [orderMenuAnchor, setOrderMenuAnchor] = useState<{ el: HTMLElement; orderId: string } | null>(null);
 
-  // Auto-refresh functionality
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate data refresh
-      console.log('Refreshing dashboard data...');
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [refreshInterval]);
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleOrderMenuOpen = (event: React.MouseEvent<HTMLElement>, orderId: string) => {
+    setOrderMenuAnchor({ el: event.currentTarget, orderId });
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const handleOrderMenuClose = () => {
+    setOrderMenuAnchor(null);
   };
 
-  const handleDialogOpen = () => {
-    setOpenDialog(true);
-  };
-
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    // Reset form when dialog closes
-    setQuickAddForm({
-      productName: '',
-      unitPrice: '',
-      quantity: '',
-      category: '',
-      description: '',
-      isActive: true
-    });
-  };
-
-  const handleQuickAddInputChange = (field: string, value: any) => {
-    setQuickAddForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const calculateTotalPrice = () => {
-    const unitPrice = parseFloat(quickAddForm.unitPrice) || 0;
-    const quantity = parseInt(quickAddForm.quantity) || 0;
-    return unitPrice * quantity;
-  };
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!quickAddForm.productName.trim()) {
-      errors.productName = 'Product name is required';
+  const handleOrderAction = (action: string, orderId: string) => {
+    handleOrderMenuClose();
+    // Handle different actions
+    switch (action) {
+      case 'view':
+        console.log('View order:', orderId);
+        // Navigate to order details
+        break;
+      case 'edit':
+        console.log('Edit order:', orderId);
+        // Navigate to order edit page
+        break;
+      case 'complete':
+        console.log('Complete order:', orderId);
+        // Update order status to completed
+        break;
+      case 'cancel':
+        console.log('Cancel order:', orderId);
+        // Cancel the order
+        break;
+      case 'print':
+        console.log('Print invoice:', orderId);
+        // Print invoice
+        break;
+      case 'customer':
+        console.log('View customer:', orderId);
+        // View customer profile
+        break;
+      default:
+        break;
     }
-    
-    const unitPrice = parseFloat(quickAddForm.unitPrice);
-    if (!quickAddForm.unitPrice || unitPrice <= 0) {
-      errors.unitPrice = 'Unit price must be greater than 0';
-    }
-    
-    const quantity = parseInt(quickAddForm.quantity);
-    if (!quickAddForm.quantity || quantity <= 0) {
-      errors.quantity = 'Quantity must be greater than 0';
-    }
-    
-    return errors;
-  };
-
-  const handleSaveProduct = () => {
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      // Handle validation errors - you could show them in the UI
-      console.log('Validation errors:', errors);
-      return;
-    }
-    
-    const totalPrice = calculateTotalPrice();
-    console.log('Saving product:', {
-      ...quickAddForm,
-      totalPrice,
-      unitPrice: parseFloat(quickAddForm.unitPrice),
-      quantity: parseInt(quickAddForm.quantity)
-    });
-    
-    // Here you would typically call an API to save the product
-    handleDialogClose();
   };
 
   const formatCurrency = (amount: number) => {
@@ -302,6 +230,61 @@ const SellerDashboard: React.FC = () => {
   const formatPercentage = (value: number) => {
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
+
+  // Generate selling statistics data based on period filter (for Bar Chart)
+  const sellingStatsData = React.useMemo(() => {
+    if (period === 'week') {
+      // Last 7 days
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return days.map((day) => ({
+        period: day,
+        sales: Math.floor(Math.random() * 20) + 10,
+        revenue: Math.floor(Math.random() * 15000) + 5000,
+      }));
+    } else if (period === 'month') {
+      // Last 12 months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months.map((month) => ({
+        period: month,
+        sales: Math.floor(Math.random() * 30) + 15,
+        revenue: Math.floor(Math.random() * 25000) + 10000,
+      }));
+    } else {
+      // Last 5 years
+      const currentYear = new Date().getFullYear();
+      return Array.from({ length: 5 }, (_, idx) => ({
+        period: String(currentYear - 4 + idx),
+        sales: Math.floor(Math.random() * 200) + 100,
+        revenue: Math.floor(Math.random() * 200000) + 100000,
+      }));
+    }
+  }, [period]);
+
+  // Generate orders statistics data for radar chart based on period
+  const ordersStatsData = React.useMemo(() => {
+    if (period === 'week') {
+      // Orders by day of week
+      return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
+        category: day,
+        orders: Math.floor(Math.random() * 50) + 20,
+        fullValue: Math.floor(Math.random() * 100) + 50,
+      }));
+    } else if (period === 'month') {
+      // Orders by week of month
+      return ['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((week) => ({
+        category: week,
+        orders: Math.floor(Math.random() * 100) + 50,
+        fullValue: Math.floor(Math.random() * 200) + 100,
+      }));
+    } else {
+      // Orders by quarter
+      return ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
+        category: quarter,
+        orders: Math.floor(Math.random() * 500) + 200,
+        fullValue: Math.floor(Math.random() * 1000) + 500,
+      }));
+    }
+  }, [period]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -386,35 +369,6 @@ const SellerDashboard: React.FC = () => {
     </Card>
   );
 
-  const QuickActionButton: React.FC<{
-    icon: React.ReactNode;
-    label: string;
-    color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-    onClick: () => void;
-  }> = ({ icon, label, color, onClick }) => (
-    <Button
-      variant="outlined"
-      startIcon={icon}
-      onClick={onClick}
-      sx={{
-        height: 60,
-        borderRadius: 2,
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          backgroundColor: `${color}.main`,
-          color: 'white',
-          '& .MuiSvgIcon-root': {
-            color: 'white'
-          }
-        }
-      }}
-    >
-      {label}
-    </Button>
-  );
-
   return (
     <SellerLayout>
       <Box sx={{ p: 3 }}>
@@ -428,55 +382,22 @@ const SellerDashboard: React.FC = () => {
               Welcome back! Here's what's happening with your business today.
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Tooltip title="Refresh Data">
-              <IconButton 
-                onClick={() => window.location.reload()}
-                sx={{
-                  transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'rotate(180deg)'
-                  }
-                }}
-              >
-                <Refresh />
-              </IconButton>
-            </Tooltip>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleDialogOpen}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                }
-              }}
+        </Box>
+
+        {/* Period Filter */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Period</InputLabel>
+            <Select 
+              label="Period" 
+              value={period} 
+              onChange={(e) => setPeriod(e.target.value as any)}
             >
-              Quick Add
-            </Button>
-            <IconButton onClick={handleMenuOpen}>
-              <MoreVert />
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              <MenuItem onClick={handleMenuClose}>
-                <Download sx={{ mr: 1 }} />
-                Export Data
-              </MenuItem>
-              <MenuItem onClick={handleMenuClose}>
-                <Settings sx={{ mr: 1 }} />
-                Settings
-              </MenuItem>
-            </Menu>
-          </Box>
+              <MenuItem value="week">Week</MenuItem>
+              <MenuItem value="month">Month</MenuItem>
+              <MenuItem value="year">Year</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Key Metrics */}
@@ -520,44 +441,105 @@ const SellerDashboard: React.FC = () => {
           />
         </Box>
 
-        {/* Quick Actions */}
-        <Card sx={{ mb: 4, borderRadius: 3 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
-              Quick Actions
-            </Typography>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
-              gap: 2 
-            }}>
-              <QuickActionButton
-                icon={<Add sx={{ fontSize: 18 }} />}
-                label="Add Product"
-                color="primary"
-                onClick={() => console.log('Add Product')}
-              />
-              <QuickActionButton
-                icon={<Receipt sx={{ fontSize: 18 }} />}
-                label="View Orders"
-                color="success"
-                onClick={() => console.log('View Orders')}
-              />
-              <QuickActionButton
-                icon={<Analytics sx={{ fontSize: 18 }} />}
-                label="Analytics"
-                color="info"
-                onClick={() => console.log('Analytics')}
-              />
-              <QuickActionButton
-                icon={<Support sx={{ fontSize: 18 }} />}
-                label="Support"
-                color="warning"
-                onClick={() => console.log('Support')}
-              />
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Charts Section - Bar Chart and Radar Chart */}
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+          gap: 3, 
+          mb: 4 
+        }}>
+          {/* Selling Statistics - Bar Chart */}
+          <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  Selling Statistics - {period === 'week' ? 'Weekly' : period === 'month' ? 'Monthly' : 'Yearly'} View
+                </Typography>
+              </Box>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={sellingStatsData} margin={{ top: 10, right: 20, left: 0, bottom: period === 'week' ? 40 : 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined }} 
+                    tickLine={false} 
+                    axisLine={false}
+                    angle={period === 'week' ? -45 : 0}
+                    textAnchor={period === 'week' ? 'end' : 'middle'}
+                    height={period === 'week' ? 60 : 30}
+                  />
+                  <YAxis tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined }} tickLine={false} axisLine={false} />
+                  <ReTooltip 
+                    formatter={(v: any, n: any) => [
+                      n === 'revenue' ? `$${Number(v).toLocaleString()}` : v, 
+                      n === 'revenue' ? 'Revenue' : 'Sales'
+                    ]} 
+                  />
+                  <Legend wrapperStyle={{ paddingTop: 8 }} />
+                  <Bar dataKey="sales" fill="#6A8EEB" radius={[4, 4, 0, 0]} name="Sales" />
+                  <Bar dataKey="revenue" fill="#9B6EEB" radius={[4, 4, 0, 0]} name="Revenue ($)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Orders Statistics - Radar Chart */}
+          <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  Orders Statistics - {period === 'week' ? 'Daily' : period === 'month' ? 'Weekly' : 'Quarterly'} View
+                </Typography>
+              </Box>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={ordersStatsData} margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+                  <PolarGrid stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} />
+                  <PolarAngleAxis 
+                    dataKey="category" 
+                    tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : undefined }}
+                    fontSize={12}
+                  />
+                  <PolarRadiusAxis 
+                    angle={90} 
+                    domain={[0, 'dataMax + 20']} 
+                    tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.6)' : undefined }}
+                  />
+                  <ReTooltip 
+                    formatter={(value: any, name: any) => [
+                      name === 'orders' ? `${value} orders` : value,
+                      name === 'orders' ? 'Orders' : 'Full Value'
+                    ]}
+                    contentStyle={{
+                      backgroundColor: theme.palette.mode === 'dark' ? '#1f2937' : '#fff',
+                      border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Radar 
+                    name="Orders" 
+                    dataKey="orders" 
+                    stroke="#22d3ee" 
+                    fill="#22d3ee" 
+                    fillOpacity={0.6}
+                    strokeWidth={2}
+                  />
+                  <Radar 
+                    name="Full Value" 
+                    dataKey="fullValue" 
+                    stroke="#fbbf24" 
+                    fill="#fbbf24" 
+                    fillOpacity={0.4}
+                    strokeWidth={2}
+                  />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: 16 }}
+                    iconType="circle"
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Box>
 
         {/* Main Content Grid */}
         <Box sx={{ 
@@ -567,8 +549,8 @@ const SellerDashboard: React.FC = () => {
           mb: 4 
         }}>
           {/* Recent Orders */}
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
+          <Card sx={{ borderRadius: 1 }}>
+            <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6" fontWeight={600}>
                   Recent Orders
@@ -577,53 +559,119 @@ const SellerDashboard: React.FC = () => {
                   View All
                 </Button>
               </Box>
-              <List>
-                {mockRecentOrders.map((order, index) => (
-                  <React.Fragment key={order.id}>
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemAvatar>
-                        <Avatar src={order.avatar} />
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="body1" fontWeight={600}>
-                              {order.customer}
-                            </Typography>
-                            <Typography variant="body1" fontWeight={600}>
-                              {formatCurrency(order.amount)}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {order.id} • {order.date}
-                            </Typography>
-                            <Chip
-                              label={order.status}
-                              size="small"
-                              color={getStatusColor(order.status) as any}
-                              sx={{ textTransform: 'capitalize' }}
-                            />
-                          </Box>
-                        }
+              <Stack spacing={2}>
+                {mockRecentOrders.map((order) => (
+                  <Box
+                    key={order.id}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 2,
+                      borderRadius: 1,
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                      border: '1px solid',
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                      <Avatar src={order.avatar} sx={{ width: 48, height: 48 }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body1" fontWeight={600} noWrap>
+                          {order.customer}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                          {order.id} • {order.date}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 2 }}>
+                      <Typography variant="h6" fontWeight={600} color="primary.main">
+                        {formatCurrency(order.amount)}
+                      </Typography>
+                      <Chip
+                        label={order.status}
+                        size="small"
+                        color={getStatusColor(order.status) as any}
+                        sx={{ textTransform: 'capitalize', minWidth: 90, justifyContent: 'center' }}
                       />
-                      <ListItemSecondaryAction>
-                        <IconButton size="small">
-                          <MoreVert />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    {index < mockRecentOrders.length - 1 && <Divider />}
-                  </React.Fragment>
+                      <IconButton 
+                        size="small" 
+                        sx={{ ml: 0.5 }}
+                        onClick={(e) => handleOrderMenuOpen(e, order.id)}
+                      >
+                        <MoreVert />
+                      </IconButton>
+                    </Box>
+                  </Box>
                 ))}
-              </List>
+              </Stack>
+              <Menu
+                anchorEl={orderMenuAnchor?.el || null}
+                open={Boolean(orderMenuAnchor)}
+                onClose={handleOrderMenuClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                MenuListProps={{ dense: true }}
+                slotProps={{ 
+                  paper: { 
+                    sx: { 
+                      minWidth: 200, 
+                      mt: 0.5,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    } 
+                  } 
+                }}
+              >
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('view', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <Visibility fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>View Details</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('edit', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <Edit fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Edit Order</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('customer', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <Person fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>View Customer</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('complete', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <CheckCircle fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Mark as Complete</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('cancel', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <Cancel fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Cancel Order</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => orderMenuAnchor && handleOrderAction('print', orderMenuAnchor.orderId)}>
+                  <ListItemIcon>
+                    <Print fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Print Invoice</ListItemText>
+                </MenuItem>
+              </Menu>
             </CardContent>
           </Card>
 
           {/* Notifications */}
-          <Card sx={{ borderRadius: 3 }}>
+          <Card sx={{ borderRadius: 1 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6" fontWeight={600}>
@@ -667,7 +715,7 @@ const SellerDashboard: React.FC = () => {
         </Box>
 
         {/* Top Products */}
-        <Card sx={{ borderRadius: 3 }}>
+        <Card sx={{ borderRadius: 1 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6" fontWeight={600}>
@@ -730,131 +778,6 @@ const SellerDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Floating Action Button */}
-        <Fab
-          color="primary"
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              transform: 'scale(1.1)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.3)'
-            }
-          }}
-          onClick={handleDialogOpen}
-        >
-          <Add />
-        </Fab>
-
-        {/* Quick Add Dialog */}
-        <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="sm" fullWidth>
-          <DialogTitle>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              Quick Add
-              <IconButton onClick={handleDialogClose}>
-                <Close />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 2 }}>
-              <TextField
-                fullWidth
-                label="Product Name"
-                variant="outlined"
-                placeholder="Enter product name"
-                value={quickAddForm.productName}
-                onChange={(e) => handleQuickAddInputChange('productName', e.target.value)}
-                required
-              />
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Unit Price (USD)"
-                  variant="outlined"
-                  type="number"
-                  placeholder="Enter unit price"
-                  value={quickAddForm.unitPrice}
-                  onChange={(e) => handleQuickAddInputChange('unitPrice', e.target.value)}
-                  inputProps={{ min: 0, step: 0.01 }}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label="Quantity"
-                  variant="outlined"
-                  type="number"
-                  placeholder="Enter quantity"
-                  value={quickAddForm.quantity}
-                  onChange={(e) => handleQuickAddInputChange('quantity', e.target.value)}
-                  inputProps={{ min: 1 }}
-                  required
-                />
-              </Box>
-              
-              <TextField
-                fullWidth
-                label="Total Price (USD)"
-                variant="outlined"
-                value={formatCurrency(calculateTotalPrice())}
-                InputProps={{ readOnly: true }}
-                helperText="Calculated automatically: Unit Price × Quantity"
-                sx={{ 
-                  '& .MuiInputBase-input': { 
-                    fontWeight: 600,
-                    color: 'primary.main'
-                  }
-                }}
-              />
-              
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select 
-                  label="Category"
-                  value={quickAddForm.category}
-                  onChange={(e) => handleQuickAddInputChange('category', e.target.value)}
-                >
-                  <MenuItem value="engine">Engine Parts</MenuItem>
-                  <MenuItem value="brake">Brake System</MenuItem>
-                  <MenuItem value="electrical">Electrical</MenuItem>
-                  <MenuItem value="suspension">Suspension</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <TextField
-                fullWidth
-                label="Description"
-                variant="outlined"
-                multiline
-                rows={3}
-                placeholder="Enter product description"
-                value={quickAddForm.description}
-                onChange={(e) => handleQuickAddInputChange('description', e.target.value)}
-              />
-              
-              <FormControlLabel
-                control={
-                  <Switch 
-                    checked={quickAddForm.isActive}
-                    onChange={(e) => handleQuickAddInputChange('isActive', e.target.checked)}
-                  />
-                }
-                label="Make product active immediately"
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={handleDialogClose} variant="outlined">
-              Cancel
-            </Button>
-            <Button onClick={handleSaveProduct} variant="contained" startIcon={<Save />}>
-              Save Product
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     </SellerLayout>
   );

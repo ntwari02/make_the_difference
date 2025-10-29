@@ -5,13 +5,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import { sellerApi } from '../services/sellerApi';
 import { setAnalytics } from '../store/sellerSlice';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 const SellerAnalytics: React.FC = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const analytics = useSelector((state: RootState) => state.seller.analytics);
-  const [period, setPeriod] = useState<'12m' | '6m' | '3m'>('12m');
+  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [loading, setLoading] = useState<boolean>(true);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -111,6 +111,63 @@ const SellerAnalytics: React.FC = () => {
     return { totalRevenue, totalSales, avgOrderValue };
   }, [chartData]);
 
+  // Generate selling statistics data based on period filter
+  const sellingStatsData = useMemo(() => {
+    if (period === 'week') {
+      // Last 7 days
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return days.map((day, idx) => ({
+        period: day,
+        sales: Math.floor(Math.random() * 20) + 10,
+        revenue: Math.floor(Math.random() * 15000) + 5000,
+      }));
+    } else if (period === 'month') {
+      // Last 12 months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months.map((month, idx) => ({
+        period: month,
+        sales: Math.floor(Math.random() * 30) + 15,
+        revenue: Math.floor(Math.random() * 25000) + 10000,
+      }));
+    } else {
+      // Last 5 years
+      const currentYear = new Date().getFullYear();
+      return Array.from({ length: 5 }, (_, idx) => ({
+        period: String(currentYear - 4 + idx),
+        sales: Math.floor(Math.random() * 200) + 100,
+        revenue: Math.floor(Math.random() * 200000) + 100000,
+      }));
+    }
+  }, [period]);
+
+  // Generate orders statistics data for radar chart based on period
+  const ordersStatsData = useMemo(() => {
+    const categories = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    if (period === 'week') {
+      // Orders by day of week
+      return categories.map((day, idx) => ({
+        category: day.substring(0, 3),
+        orders: Math.floor(Math.random() * 50) + 20,
+        fullValue: Math.floor(Math.random() * 100) + 50,
+      }));
+    } else if (period === 'month') {
+      // Orders by week of month
+      return ['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((week, idx) => ({
+        category: week,
+        orders: Math.floor(Math.random() * 100) + 50,
+        fullValue: Math.floor(Math.random() * 200) + 100,
+      }));
+    } else {
+      // Orders by quarter
+      return ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => ({
+        category: quarter,
+        orders: Math.floor(Math.random() * 500) + 200,
+        fullValue: Math.floor(Math.random() * 1000) + 500,
+      }));
+    }
+  }, [period]);
+
   return (
     <SellerLayout>
       <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '100%' }}>
@@ -140,11 +197,11 @@ const SellerAnalytics: React.FC = () => {
             width: { xs: '100%', sm: 'auto' }
           }}>
             <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
-              <InputLabel>Period</InputLabel>
-              <Select label="Period" value={period} onChange={(e) => setPeriod(e.target.value as any)}>
-                <MenuItem value="12m">Last 12 months</MenuItem>
-                <MenuItem value="6m">Last 6 months</MenuItem>
-                <MenuItem value="3m">Last 3 months</MenuItem>
+              <InputLabel>Period Type</InputLabel>
+              <Select label="Period Type" value={period} onChange={(e) => setPeriod(e.target.value as any)}>
+                <MenuItem value="week">Week</MenuItem>
+                <MenuItem value="month">Month</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
               </Select>
             </FormControl>
             <TextField 
@@ -209,11 +266,105 @@ const SellerAnalytics: React.FC = () => {
           </Card>
         </Box>
 
-        {/* Revenue & Sales chart */}
+        {/* Selling Statistics - Bar Chart */}
         <Card sx={{ mb: 3, bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>Revenue & Sales</Typography>
+              <Typography variant="h6" fontWeight={600}>
+                Selling Statistics - {period === 'week' ? 'Weekly' : period === 'month' ? 'Monthly' : 'Yearly'} View
+              </Typography>
+              <Chip size="small" label={`${sellingStatsData.length} periods`} />
+            </Box>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={sellingStatsData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} />
+                <XAxis 
+                  dataKey="period" 
+                  tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined }} 
+                  tickLine={false} 
+                  axisLine={false}
+                  angle={period === 'week' ? -45 : 0}
+                  textAnchor={period === 'week' ? 'end' : 'middle'}
+                  height={period === 'week' ? 60 : 30}
+                />
+                <YAxis tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined }} tickLine={false} axisLine={false} />
+                <ReTooltip 
+                  formatter={(v: any, n: any) => [
+                    n === 'revenue' ? `$${Number(v).toLocaleString()}` : v, 
+                    n === 'revenue' ? 'Revenue' : 'Sales'
+                  ]} 
+                />
+                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <Bar dataKey="sales" fill="#22d3ee" radius={[4, 4, 0, 0]} name="Sales" />
+                <Bar dataKey="revenue" fill="#fbbf24" radius={[4, 4, 0, 0]} name="Revenue ($)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Orders Statistics - Radar Chart */}
+        <Card sx={{ mb: 3, bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" fontWeight={600}>
+                Orders Statistics - {period === 'week' ? 'Daily' : period === 'month' ? 'Weekly' : 'Quarterly'} View
+              </Typography>
+              <Chip size="small" label={`${ordersStatsData.length} categories`} />
+            </Box>
+            <ResponsiveContainer width="100%" height={350}>
+              <RadarChart data={ordersStatsData} margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+                <PolarGrid stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} />
+                <PolarAngleAxis 
+                  dataKey="category" 
+                  tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : undefined }}
+                  fontSize={12}
+                />
+                <PolarRadiusAxis 
+                  angle={90} 
+                  domain={[0, 'dataMax + 20']} 
+                  tick={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.6)' : undefined }}
+                />
+                <ReTooltip 
+                  formatter={(value: any, name: any) => [
+                    name === 'orders' ? `${value} orders` : value,
+                    name === 'orders' ? 'Orders' : 'Full Value'
+                  ]}
+                  contentStyle={{
+                    backgroundColor: theme.palette.mode === 'dark' ? '#1f2937' : '#fff',
+                    border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                    borderRadius: '8px'
+                  }}
+                />
+                <Radar 
+                  name="Orders" 
+                  dataKey="orders" 
+                  stroke="#22d3ee" 
+                  fill="#22d3ee" 
+                  fillOpacity={0.6}
+                  strokeWidth={2}
+                />
+                <Radar 
+                  name="Full Value" 
+                  dataKey="fullValue" 
+                  stroke="#fbbf24" 
+                  fill="#fbbf24" 
+                  fillOpacity={0.4}
+                  strokeWidth={2}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: 16 }}
+                  iconType="circle"
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Revenue & Sales chart (keeping existing) */}
+        <Card sx={{ mb: 3, bgcolor: theme.palette.mode === 'dark' ? '#111827' : 'background.paper' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" fontWeight={600}>Revenue & Sales Trend</Typography>
               <Chip size="small" label={`${chartData.length} periods`} />
             </Box>
             <ResponsiveContainer width="100%" height={260}>
