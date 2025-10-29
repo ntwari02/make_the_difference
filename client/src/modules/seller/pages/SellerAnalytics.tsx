@@ -115,10 +115,31 @@ const SellerAnalytics: React.FC = () => {
     <SellerLayout>
       <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '100%' }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h4" component="h1" fontWeight={700}>Analytics</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          gap: { xs: 2, sm: 2 }, 
+          mb: 3, 
+          flexWrap: 'wrap' 
+        }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            fontWeight={700}
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}
+          >
+            Analytics
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: { xs: 1, sm: 1.5 }, 
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' }
+          }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
               <InputLabel>Period</InputLabel>
               <Select label="Period" value={period} onChange={(e) => setPeriod(e.target.value as any)}>
                 <MenuItem value="12m">Last 12 months</MenuItem>
@@ -126,10 +147,40 @@ const SellerAnalytics: React.FC = () => {
                 <MenuItem value="3m">Last 3 months</MenuItem>
               </Select>
             </FormControl>
-            <TextField size="small" label="Start date" type="date" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <TextField size="small" label="End date" type="date" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            <Button variant="outlined" onClick={() => { setStartDate(''); setEndDate(''); }}>Clear dates</Button>
-            <Button variant="contained" onClick={exportCsv}>Export CSV</Button>
+            <TextField 
+              size="small" 
+              label="Start date" 
+              type="date" 
+              InputLabelProps={{ shrink: true }} 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+              fullWidth
+              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+            />
+            <TextField 
+              size="small" 
+              label="End date" 
+              type="date" 
+              InputLabelProps={{ shrink: true }} 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+              fullWidth
+              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+            />
+            <Button 
+              variant="outlined" 
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
+              Clear dates
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={exportCsv}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
+              Export CSV
+            </Button>
           </Box>
         </Box>
 

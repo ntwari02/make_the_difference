@@ -171,7 +171,8 @@ const SellerSparePartForm: React.FC = () => {
         quantity_reserved: 0,
         reorder_point: 10,
         vehicle_compatibility: [],
-        images: isEdit ? formData.images : [], // For new parts, start with empty images array
+        // Force replace semantics: persist only the current image when editing
+        images: isEdit ? (Array.isArray(formData.images) && formData.images.length > 0 ? [formData.images[0]] : []) : [],
         is_featured: false,
         requires_installation: false,
         warranty_period_months: 12,

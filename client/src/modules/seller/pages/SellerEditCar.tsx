@@ -81,6 +81,11 @@ const SellerEditCar: React.FC = () => {
     if (!id) return;
     setSaving(true);
     try {
+      // Filter out base64 data URLs, only keep file paths (uploaded images)
+      const imagePaths = (data.images || []).filter((img: string) => 
+        img && !img.startsWith('data:') && (img.startsWith('/uploads/') || img.startsWith('http'))
+      );
+      
       const payload: any = {
         title: data.title,
         brand: data.make,
@@ -94,6 +99,7 @@ const SellerEditCar: React.FC = () => {
         location: data.location,
         description: data.description,
         features: data.features,
+        images: imagePaths, // Include current images to replace existing ones
       };
       const updated = await sellerApi.cars.updateCar(id, payload);
       dispatch(updateCarInStore(updated as any));
