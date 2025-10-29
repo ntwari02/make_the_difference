@@ -28,14 +28,48 @@ const upload = multer({
 // GET /api/seller/profile - seller business profile
 router.get('/profile', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
   try {
-    let profile = await sellerService.getSellerProfile(req.user.id);
+    let profile;
+    try {
+      profile = await sellerService.getSellerProfile(req.user.id);
+    } catch (getProfileErr) {
+      // If getProfile fails with JSON error, it means seller exists but has bad data
+      // The getSellerProfile function should have fixed it, but if it still fails,
+      // try to fix the data directly and retry
+      if (getProfileErr.code === 'ER_INVALID_JSON_TEXT' || getProfileErr.errno === 3140) {
+        console.warn('Profile fetch failed with JSON error, attempting to fix data and retry...');
+        // Fix the data
+        try {
+          await require('../config/database').executeQuery(`
+            UPDATE sellers 
+            SET images = NULL, business_hours = NULL, services = NULL 
+            WHERE user_id = ?
+          `, [req.user.id]);
+          // Retry getting profile
+          profile = await sellerService.getSellerProfile(req.user.id);
+        } catch (fixErr) {
+          console.error('Failed to fix and retry:', fixErr.message);
+          // If still fails, return null so we create a new profile
+          profile = null;
+        }
+      } else {
+        // For other errors, re-throw
+        throw getProfileErr;
+      }
+    }
+    
     if (!profile) {
       // Create a default seller profile on first access
       profile = await sellerService.upsertSellerProfile(req.user.id, {});
     }
     return res.json({ success: true, data: profile });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('Route /seller/profile error:', {
+      code: err.code,
+      errno: err.errno,
+      message: err.message,
+      stack: err.stack?.substring(0, 500)
+    });
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
   }
 });
 
@@ -336,6 +370,214 @@ router.post('/spare-parts/:id/images', authenticate, authorizeRoles('seller', 'a
   } catch (error) {
     console.error('Spare parts image upload failed:', error);
     return res.status(400).json({ success: false, message: error.message || 'Failed to upload images' });
+  }
+});
+
+// GET /api/seller/settings - fetch seller settings (notifications, privacy, preferences)
+router.get('/settings', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const settings = await sellerService.getSellerSettings(req.user.id);
+    return res.json({ success: true, data: settings });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/seller/settings - upsert seller settings
+router.put('/settings', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { notifications, privacy, preferences } = req.body || {};
+    const updated = await sellerService.upsertSellerSettings(req.user.id, { notifications, privacy, preferences });
+    return res.json({ success: true, data: updated });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/seller/account - Delete seller account and all associated data
+router.delete('/account', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const success = await sellerService.deleteSellerAccount(userId);
+    if (success) {
+      return res.json({ success: true, message: 'Account deleted successfully' });
+    } else {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+  } catch (err) {
+    console.error('Delete account error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to delete account' });
+  }
+});
+
+// GET /api/seller/reviews - Get all reviews for seller's cars
+router.get('/reviews', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const filters = {
+      page: req.query.page || 1,
+      limit: req.query.limit || 20,
+      rating: req.query.rating || 'all',
+      search: req.query.search || '',
+      sortBy: req.query.sortBy || 'newest'
+    };
+    const result = await sellerService.getSellerReviews(req.user.id, filters);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('Get seller reviews error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to get reviews' });
+  }
+});
+
+// POST /api/seller/reviews/:reviewId/reply - Reply to a review
+router.post('/reviews/:reviewId/reply', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { reply } = req.body || {};
+    
+    if (!reply || !String(reply).trim()) {
+      return res.status(400).json({ success: false, message: 'Reply text is required' });
+    }
+
+    const updated = await sellerService.replyToReview(req.user.id, reviewId, reply);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Review not found or unauthorized' });
+    }
+    
+    return res.json({ success: true, data: updated, message: 'Reply posted successfully' });
+  } catch (err) {
+    console.error('Reply to review error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to post reply' });
+  }
+});
+
+// ==================== SELLER MESSAGES ROUTES ====================
+
+// GET /api/seller/messages - Get conversations list (inbox, sent, archived)
+router.get('/messages', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const filters = {
+      page: req.query.page || 1,
+      limit: req.query.limit || 20,
+      folder: req.query.folder || 'inbox', // inbox, sent, archived
+      search: req.query.search || '',
+      category: req.query.category || 'all'
+    };
+    const result = await sellerService.getSellerConversations(req.user.id, filters);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('Get seller conversations error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to get conversations' });
+  }
+});
+
+// GET /api/seller/messages/:conversationId - Get messages in a conversation (thread)
+router.get('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const result = await sellerService.getConversationMessages(req.user.id, conversationId);
+    
+    // Auto-mark messages as read when viewing conversation
+    await sellerService.markMessagesAsRead(req.user.id, conversationId);
+    
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('Get conversation messages error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to get messages' });
+  }
+});
+
+// POST /api/seller/messages/:conversationId - Send a message (reply)
+router.post('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { content, messageType, fileUrl, category, priority } = req.body || {};
+    
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({ success: false, message: 'Message content is required' });
+    }
+
+    const message = await sellerService.sendMessage(req.user.id, conversationId, content, {
+      messageType,
+      fileUrl,
+      category,
+      priority
+    });
+    
+    return res.json({ success: true, data: message, message: 'Message sent successfully' });
+  } catch (err) {
+    console.error('Send message error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to send message' });
+  }
+});
+
+// PATCH /api/seller/messages/:conversationId/read - Mark messages as read
+router.patch('/messages/:conversationId/read', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { messageIds } = req.body || {}; // Optional: specific message IDs to mark as read
+    
+    await sellerService.markMessagesAsRead(req.user.id, conversationId, messageIds);
+    return res.json({ success: true, message: 'Messages marked as read' });
+  } catch (err) {
+    console.error('Mark messages as read error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to mark messages as read' });
+  }
+});
+
+// PATCH /api/seller/messages/:conversationId/archive - Archive/unarchive conversation
+router.patch('/messages/:conversationId/archive', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { archived = true } = req.body || {};
+    
+    await sellerService.archiveConversation(req.user.id, conversationId, archived);
+    return res.json({ success: true, message: archived ? 'Conversation archived' : 'Conversation unarchived' });
+  } catch (err) {
+    console.error('Archive conversation error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to archive conversation' });
+  }
+});
+
+// DELETE /api/seller/messages/:conversationId - Delete messages
+router.delete('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { messageIds } = req.body || {};
+    
+    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Message IDs are required' });
+    }
+    
+    await sellerService.deleteMessages(req.user.id, conversationId, messageIds);
+    return res.json({ success: true, message: 'Messages deleted successfully' });
+  } catch (err) {
+    console.error('Delete messages error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to delete messages' });
+  }
+});
+
+// ==================== SELLER ANALYTICS ROUTES ====================
+
+// GET /api/seller/analytics - Get seller analytics data
+router.get('/analytics', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const filters = {
+      period: req.query.period || '12m', // 12m, 6m, 3m
+      start_date: req.query.start_date || null,
+      end_date: req.query.end_date || null
+    };
+    
+    // Debug logging
+    console.log('Analytics request filters:', filters);
+    
+    const analytics = await sellerService.getSellerAnalytics(req.user.id, filters);
+    console.log('Analytics response includes conversion_rate:', 'conversion_rate' in analytics);
+    console.log('Analytics response keys:', Object.keys(analytics));
+    return res.json({ success: true, data: analytics });
+  } catch (err) {
+    console.error('Get seller analytics error:', err);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to get analytics' });
   }
 });
 

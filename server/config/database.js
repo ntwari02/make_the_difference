@@ -205,14 +205,15 @@ const executeQuery = async (query, params = [], retries = 3) => {
   }
   
   // Sanitize parameters
+  // Important: Preserve NULLs for JSON and nullable columns. Do NOT convert to empty strings
   const sanitizedParams = params.map((param, index) => {
     if (param === null || param === undefined) {
-      if (debugMode) console.warn(`Parameter ${index} is null/undefined, converting to empty string`);
-      return '';
+      if (debugMode) console.warn(`Parameter ${index} is null/undefined, preserving as NULL`);
+      return null;
     }
     if (typeof param === 'string' && (param === 'undefined' || param === 'null')) {
-      if (debugMode) console.warn(`Parameter ${index} is string "undefined"/"null", converting to empty string`);
-      return '';
+      if (debugMode) console.warn(`Parameter ${index} is string "undefined"/"null", converting to NULL`);
+      return null;
     }
     return param;
   });
@@ -226,7 +227,7 @@ const executeQuery = async (query, params = [], retries = 3) => {
     if (sanitizedParams.length < placeholderCount) {
       if (debugMode) console.log('Adding missing parameters...');
       while (sanitizedParams.length < placeholderCount) {
-        sanitizedParams.push('');
+        sanitizedParams.push(null);
       }
     } else if (sanitizedParams.length > placeholderCount) {
       if (debugMode) console.log('Removing excess parameters...');
@@ -260,6 +261,13 @@ const executeQuery = async (query, params = [], retries = 3) => {
       console.error(`❌ Database query error (attempt ${attempt}/${retries}):`, error.message);
       console.error('Error code:', error.code);
       console.error('Error errno:', error.errno);
+      
+      // Don't retry on JSON validation errors - they won't fix themselves
+      // Throw immediately so the caller can handle it
+      if (error.code === 'ER_INVALID_JSON_TEXT' || error.errno === 3140) {
+        console.error('❌ JSON validation error detected - not retrying (will be handled by caller)');
+        throw error; // Throw immediately, don't retry
+      }
       
       // Handle specific MySQL parameter errors
       if (error.code === 'ER_WRONG_ARGUMENTS' || error.errno === 1210) {

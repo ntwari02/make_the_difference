@@ -13,7 +13,9 @@
     "build:client": "cd ../client && npm install && npm run build",
     "copy:client": "node scripts/copyClientBuild.js",
     "build": "npm run build:client && npm run copy:client",
-    "test": "cross-env QUIET_STARTUP=true VERBOSE_AI_STARTUP=false nodemon index.js"
+    "test": "cross-env QUIET_STARTUP=true VERBOSE_AI_STARTUP=false nodemon index.js",
+    "start:win": "set QUIET_STARTUP=true&& set VERBOSE_AI_STARTUP=false&& node index.js",
+    "dev:win": "set QUIET_STARTUP=true&& set VERBOSE_AI_STARTUP=false&& nodemon index.js"
   },
   "keywords": [],
   "author": "",
