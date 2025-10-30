@@ -112,7 +112,11 @@ class OrdersService {
 
   async getOrdersBySeller(sellerId, filters = {}) {
     try {
-      const { status, payment_status, start_date, end_date, search, page = 1, limit = 20 } = filters;
+      const { status, payment_status, start_date, end_date, search } = filters;
+      const rawPage = filters.page ?? 1;
+      const rawLimit = filters.limit ?? 20;
+      const safeLimit = Number.isFinite(Number(rawLimit)) ? Math.max(1, parseInt(rawLimit, 10)) : 20;
+      const safePage = Number.isFinite(Number(rawPage)) ? Math.max(1, parseInt(rawPage, 10)) : 1;
       
       let query = `
         SELECT o.*, 
@@ -154,10 +158,9 @@ class OrdersService {
 
       query += ' GROUP BY o.id ORDER BY o.created_at DESC';
 
-      // Add pagination
-      const offset = (page - 1) * limit;
-      query += ' LIMIT ? OFFSET ?';
-      params.push(limit, offset);
+      // Add pagination (avoid binding LIMIT/OFFSET for some MySQL drivers that dislike it)
+      const offset = (safePage - 1) * safeLimit;
+      query += ` LIMIT ${safeLimit} OFFSET ${offset}`;
 
       const orders = await executeQuery(query, params);
 
@@ -167,6 +170,35 @@ class OrdersService {
           SELECT * FROM ${this.orderItemsTable} WHERE order_id = ?
         `;
         order.items = await executeQuery(itemsQuery, [order.id]);
+
+        // Enrich item name/image from cars for car items
+        for (const item of order.items) {
+          try {
+            const type = (item.item_type || item.type || '').toLowerCase();
+            const itemId = item.item_id || item.product_id || item.car_id;
+            if (type === 'car' && itemId) {
+              const carRows = await executeQuery(`
+                SELECT id, title, brand, model, images
+                FROM cars
+                WHERE id = ?
+                LIMIT 1
+              `, [itemId]);
+              if (carRows.length > 0) {
+                const car = carRows[0];
+                const images = (() => {
+                  try {
+                    if (!car.images) return [];
+                    if (typeof car.images === 'string') return JSON.parse(car.images);
+                    if (Array.isArray(car.images)) return car.images;
+                    return [];
+                  } catch { return []; }
+                })();
+                item.item_name = car.title || `${car.brand || ''} ${car.model || ''}`.trim();
+                item.item_image = images?.[0] || item.item_image || null;
+              }
+            }
+          } catch (_) { /* ignore enrichment errors */ }
+        }
       }
 
       // Get total count for pagination
@@ -211,9 +243,9 @@ class OrdersService {
         orders,
         pagination: {
           total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total_pages: Math.ceil(total / limit)
+          page: safePage,
+          limit: safeLimit,
+          total_pages: Math.ceil(total / safeLimit)
         }
       };
     } catch (error) {

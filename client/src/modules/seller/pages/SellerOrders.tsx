@@ -47,10 +47,12 @@ import {
   Refresh as RefreshIcon,
   Print as PrintIcon,
   TrendingUp as TrendingUpIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
 
 interface Order {
   id: string;
@@ -90,6 +92,7 @@ const SellerOrders: React.FC = () => {
     total_orders: 0,
     pending_orders: 0,
     processing_orders: 0,
+    completed_orders: 0,
     completed_payments: 0,
     total_revenue: 0,
   });
@@ -148,44 +151,32 @@ const SellerOrders: React.FC = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Mock API call - replace with actual API
-      setTimeout(() => {
-        let filteredOrders = mockOrders;
-
-        if (statusFilter !== 'all') {
-          filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
-        }
-        if (paymentFilter !== 'all') {
-          filteredOrders = filteredOrders.filter(order => order.payment_status === paymentFilter);
-        }
-        if (searchQuery) {
-          filteredOrders = filteredOrders.filter(order =>
-            order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            `${order.first_name} ${order.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            order.email?.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        }
-
-        setOrders(filteredOrders);
-        setTotalPages(1);
-        setLoading(false);
-      }, 500);
+      const params: any = { page: currentPage, limit: 20 };
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (paymentFilter !== 'all') params.payment_status = paymentFilter;
+      if (searchQuery) params.search = searchQuery;
+      const res = await sellerApi.orders.listMy(params);
+      const list = Array.isArray((res as any)?.orders) ? (res as any).orders : (Array.isArray(res as any) ? (res as any) : []);
+      setOrders(list as any);
+      setTotalPages((res as any)?.pagination?.total_pages || 1);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to fetch orders');
+    } finally {
       setLoading(false);
     }
   };
 
   const fetchStats = async () => {
     try {
-      // Mock stats - replace with actual API
+      const data = await sellerApi.orders.stats();
       setStats({
-        total_orders: 24,
-        pending_orders: 3,
-        processing_orders: 5,
-        completed_payments: 16,
-        total_revenue: 125000,
+        total_orders: data?.total_orders || 0,
+        pending_orders: data?.pending_orders || 0,
+        processing_orders: data?.processing_orders || 0,
+        completed_orders: data?.completed_orders || 0,
+        completed_payments: data?.completed_payments || 0,
+        total_revenue: data?.total_revenue || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -248,6 +239,14 @@ const SellerOrders: React.FC = () => {
     });
   };
 
+  const handleMessageBuyer = (order: Order) => {
+    const email = order.email;
+    const subject = `Order ${order.order_number}`;
+    const body = `Hello ${order.first_name || ''},\n\nRegarding your order ${order.order_number}.`;
+    // Navigate to seller messages with compose params
+    window.location.assign(`/seller/messages?compose=${encodeURIComponent(email || '')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
   return (
     <SellerLayout>
       <Box sx={{ p: 4 }}>
@@ -262,27 +261,40 @@ const SellerOrders: React.FC = () => {
         </Box>
 
         {/* Stats Cards */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md sx={{ minWidth: 0 }}>
-            <Card sx={{ height: '100%' }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(3, minmax(0, 1fr))',
+              lg: 'repeat(4, minmax(0, 1fr))',
+              xl: 'repeat(5, minmax(0, 1fr))',
+            },
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          <Box>
+            <Card sx={{ height: '100%', minHeight: 140 }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom variant="body2">
                   Total Orders
                 </Typography>
-                <Typography variant="h4">{stats.total_orders}</Typography>
+                <Typography variant="h4" sx={{ fontSize: 36 }}>{stats.total_orders}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   All time
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md sx={{ minWidth: 0 }}>
-            <Card sx={{ height: '100%' }}>
+          </Box>
+          <Box>
+            <Card sx={{ height: '100%', minHeight: 140 }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom variant="body2">
                   Pending
                 </Typography>
-                <Typography variant="h4" color="warning.main">
+                <Typography variant="h4" color="warning.main" sx={{ fontSize: 36 }}>
                   {stats.pending_orders}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -290,14 +302,14 @@ const SellerOrders: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md sx={{ minWidth: 0 }}>
-            <Card sx={{ height: '100%' }}>
+          </Box>
+          <Box>
+            <Card sx={{ height: '100%', minHeight: 140 }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom variant="body2">
                   Processing
                 </Typography>
-                <Typography variant="h4" color="info.main">
+                <Typography variant="h4" color="info.main" sx={{ fontSize: 36 }}>
                   {stats.processing_orders}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -305,14 +317,14 @@ const SellerOrders: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md sx={{ minWidth: 0 }}>
-            <Card sx={{ height: '100%' }}>
+          </Box>
+          <Box>
+            <Card sx={{ height: '100%', minHeight: 140 }}>
               <CardContent>
                 <Typography color="text.secondary" gutterBottom variant="body2">
                   Total Revenue
                 </Typography>
-                <Typography variant="h4" color="success.main">
+                <Typography variant="h4" color="success.main" sx={{ fontSize: 36 }}>
                   {formatCurrency(stats.total_revenue)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -320,8 +332,24 @@ const SellerOrders: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
+          </Box>
+          {/* Completed Orders card */}
+          <Box>
+            <Card sx={{ height: '100%', minHeight: 140 }}>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom variant="body2">
+                  Completed Orders
+                </Typography>
+                <Typography variant="h4" color="success.main" sx={{ fontSize: 36 }}>
+                  {(stats as any)?.completed_orders ?? 0}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Successfully delivered
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
 
         {/* Filters */}
         <Card sx={{ mb: 3 }}>
@@ -373,6 +401,8 @@ const SellerOrders: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              {/* Spacer to push Refresh button to the far right on wide screens */}
+              <Grid item sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }} />
               <Grid item xs={12} md={2}>
                 <Button
                   fullWidth
@@ -406,6 +436,7 @@ const SellerOrders: React.FC = () => {
                     <TableHead>
                       <TableRow>
                         <TableCell>Order #</TableCell>
+                        <TableCell>Item</TableCell>
                         <TableCell>Customer</TableCell>
                         <TableCell>Items</TableCell>
                         <TableCell>Total</TableCell>
@@ -422,6 +453,21 @@ const SellerOrders: React.FC = () => {
                             <Typography variant="body2" fontWeight="medium">
                               {order.order_number}
                             </Typography>
+                          </TableCell>
+                          {/* Item cell */}
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Box
+                                component="img"
+                                src={getImageUrl(order.items?.[0]?.item_image)}
+                                alt={order.items?.[0]?.item_name || 'item'}
+                                sx={{ width: 56, height: 40, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                                onError={(e: any) => { e.currentTarget.style.visibility = 'hidden'; }}
+                              />
+                              <Typography variant="body2" noWrap maxWidth={220}>
+                                {order.items?.[0]?.item_name || '—'}
+                              </Typography>
+                            </Box>
                           </TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -467,11 +513,23 @@ const SellerOrders: React.FC = () => {
                             <Typography variant="caption">{formatDate(order.created_at)}</Typography>
                           </TableCell>
                           <TableCell align="right">
-                            <Tooltip title="View Details">
-                              <IconButton size="small" onClick={() => handleViewOrder(order)}>
-                                <ViewIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                              <Tooltip title="Message Buyer">
+                                <IconButton size="small" onClick={() => handleMessageBuyer(order)}>
+                                  <ChatIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Change Status">
+                                <IconButton size="small" onClick={() => { setSelectedOrder(order); setStatusDialogOpen(true); }}>
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="View Details">
+                                <IconButton size="small" onClick={() => handleViewOrder(order)}>
+                                  <ViewIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       ))}

@@ -452,6 +452,22 @@ router.post('/reviews/:reviewId/reply', authenticate, authorizeRoles('seller','a
 
 // ==================== SELLER MESSAGES ROUTES ====================
 
+// POST /api/seller/messages - Start a new conversation and send first message
+router.post('/messages', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { to, subject, content } = req.body || {};
+    if (!to || !content) {
+      return res.status(400).json({ success: false, message: 'Recipient and content are required' });
+    }
+    const result = await sellerService.startConversation(req.user.id, { to, subject, content });
+    const msg = result.existed ? 'Conversation already exists' : 'Conversation started';
+    return res.json({ success: true, data: result, message: msg });
+  } catch (err) {
+    console.error('Start conversation error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to start conversation' });
+  }
+});
+
 // GET /api/seller/messages - Get conversations list (inbox, sent, archived)
 router.get('/messages', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
   try {
@@ -535,6 +551,18 @@ router.patch('/messages/:conversationId/archive', authenticate, authorizeRoles('
   } catch (err) {
     console.error('Archive conversation error:', err);
     return res.status(400).json({ success: false, message: err.message || 'Failed to archive conversation' });
+  }
+});
+
+// DELETE (leave) a conversation for this seller; if no participants remain, fully delete
+router.delete('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const result = await sellerService.deleteConversationForSeller(req.user.id, conversationId);
+    return res.json({ success: true, data: result, message: 'Conversation removed' });
+  } catch (err) {
+    console.error('Delete conversation error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to delete conversation' });
   }
 });
 

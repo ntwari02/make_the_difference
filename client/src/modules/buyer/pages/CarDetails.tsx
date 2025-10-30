@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Card, CardContent, Chip, Divider, Typography, Button, TextField, Tabs, Tab, IconButton } from '@mui/material';
+import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
+import { Box, Card, CardContent, Chip, Divider, Typography, Button, TextField, Tabs, Tab, IconButton, Avatar } from '@mui/material';
 import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
 import { sellerApi } from '../../seller/services/sellerApi';
+import { buyerApi, vehicleApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
+import toast from 'react-hot-toast';
 
 type CarLite = {
   id: string;
@@ -22,7 +24,79 @@ type CarLite = {
   location?: string;
   features?: string[];
   description?: string;
+  seller_id?: string;
+  seller_name?: string;
+  seller_email?: string;
 };
+
+// Isolated, memoized contact form to prevent focus loss on parent re-renders
+const ContactForm: React.FC<{ price?: number; carId: string; sellerId?: string; sellerName?: string; sellerEmail?: string; image?: string }> = memo(({ price, carId, sellerId, sellerName, sellerEmail, image }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    // Fire-and-forget order request to seller's orders list (as 'pending')
+    (async () => {
+      try {
+        if (!sellerId) throw new Error('Missing seller');
+        await buyerApi.orders.create({
+          seller_id: sellerId,
+          item_type: 'car',
+          total_amount: price || 0,
+          currency: 'USD',
+          payment_method: 'cash',
+          delivery_method: 'pickup',
+          buyer_notes: message || `Inquiry about car ${carId}`,
+          items: [
+            {
+              item_id: carId,
+              item_type: 'car',
+              quantity: 1,
+              unit_price: price || 0,
+              total_price: price || 0,
+              item_name: sellerName ? `Car from ${sellerName}` : 'Car',
+              item_image: image || undefined,
+            },
+          ],
+        });
+        toast.success('Request sent. The seller will contact you soon.');
+        // Clear form
+        setName('');
+        setEmail('');
+        setMessage('');
+      } catch (err: any) {
+        // Surface useful error info for debugging while keeping a friendly message for users
+        const apiMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message;
+        console.error('Order create failed:', err?.response || err);
+        toast.error(apiMsg ? `Failed to send request: ${apiMsg}` : 'Failed to send request.');
+      }
+    })();
+  }, [name, email, message, price, carId, sellerId, sellerName, image]);
+
+  return (
+    <>
+      {sellerId && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <Avatar sx={{ width: 36, height: 36 }}>{(sellerName || 'S').charAt(0)}</Avatar>
+          <Box sx={{ lineHeight: 1 }}>
+            <Typography variant="subtitle2" fontWeight={700}>{sellerName || 'Seller'}</Typography>
+            {sellerEmail && (
+              <Typography variant="caption" color="text.secondary">{sellerEmail}</Typography>
+            )}
+          </Box>
+        </Box>
+      )}
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 1.5, mb: 2 }}>
+        <TextField size="small" label="Your name" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
+        <TextField size="small" label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+        <TextField size="small" label="Message" multiline minRows={3} value={message} onChange={(e) => setMessage(e.target.value)} required />
+        <Button type="submit" variant="contained" fullWidth>Contact Seller</Button>
+      </Box>
+    </>
+  );
+});
 
 const CarDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +108,7 @@ const CarDetails: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [contact, setContact] = useState({ name: '', email: '', message: '' });
+  const [similar, setSimilar] = useState<CarLite[]>([]);
 
   const mockById = useMemo<Record<string, CarLite>>(
     () => ({
@@ -66,6 +140,9 @@ const CarDetails: React.FC = () => {
           location: apiCar.location,
           features: apiCar.features || [],
           description: apiCar.description,
+          seller_id: apiCar.seller_id || apiCar.sellerId || apiCar.seller?.id,
+          seller_name: [apiCar.seller_name, apiCar.seller_last_name].filter(Boolean).join(' ') || apiCar.dealer_name,
+          seller_email: apiCar.seller_email,
         };
         setCar(mapped);
       } catch (e) {
@@ -77,6 +154,35 @@ const CarDetails: React.FC = () => {
     };
     load();
   }, [id, mockById]);
+
+  // Load similar listings by brand once the car is loaded
+  useEffect(() => {
+    const loadSimilar = async () => {
+      if (!car?.brand) {
+        setSimilar([]);
+        return;
+      }
+      try {
+        const res: any = await vehicleApi.getVehicles({ brand: car.brand, limit: 6 });
+        const list: any[] = Array.isArray(res?.vehicles) ? res.vehicles : (Array.isArray(res) ? res : res?.data || []);
+        const mapped: CarLite[] = list
+          .filter((c) => String(c.id) !== String(car.id))
+          .map((c) => ({
+            id: String(c.id),
+            title: c.title || `${c.year || ''} ${c.brand || c.make || ''} ${c.model || ''}`.trim(),
+            brand: c.brand || c.make || '',
+            model: c.model || '',
+            year: c.year || 0,
+            price: c.price,
+            images: Array.isArray(c.images) ? c.images : (typeof c.images === 'string' ? [c.images] : []),
+          }));
+        setSimilar(mapped);
+      } catch (e) {
+        setSimilar([]);
+      }
+    };
+    loadSimilar();
+  }, [car?.brand, car?.id]);
 
   if (loading) {
     return (
@@ -165,25 +271,10 @@ const CarDetails: React.FC = () => {
             <Card sx={{ position: { xs: 'static', md: 'sticky' }, top: { md: 16 } }}>
               <CardContent>
                 <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>{car.price ? `$${car.price.toLocaleString()}` : 'Contact for price'}</Typography>
-                {/* Contact Form */}
-                <Box component="form" onSubmit={(e) => { e.preventDefault(); alert(`Message sent!\nName: ${contact.name}\nEmail: ${contact.email}\n${contact.message}`); }} sx={{ display: 'grid', gap: 1.5, mb: 2 }}>
-                  <TextField size="small" label="Your name" value={contact.name} onChange={(e) => setContact((p) => ({ ...p, name: e.target.value }))} required />
-                  <TextField size="small" label="Email" type="email" value={contact.email} onChange={(e) => setContact((p) => ({ ...p, email: e.target.value }))} required />
-                  <TextField size="small" label="Message" multiline minRows={3} value={contact.message} onChange={(e) => setContact((p) => ({ ...p, message: e.target.value }))} required />
-                  <Button type="submit" variant="contained" fullWidth>Contact Seller</Button>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>Monthly payment estimate</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
-                  <TextField size="small" type="number" label="Down ($)" defaultValue={3000} />
-                  <TextField size="small" type="number" label="APR (%)" defaultValue={5.5} />
-                  <TextField size="small" type="number" label="Term (mo)" defaultValue={60} />
-                  <Box sx={{ display: 'grid', placeItems: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
-                    <Typography variant="subtitle2">
-                      ≈ ${(Math.max(0, (car.price || 0) - 3000) * (0.055/12) / (1 - Math.pow(1 + (0.055/12), -60)) || 0).toFixed(0)}/mo
-                    </Typography>
-                  </Box>
-                </Box>
+                {/* Contact Form - hidden for sellers */}
+                {(((localStorage.getItem('user_data') && JSON.parse(localStorage.getItem('user_data') || '{}')?.role?.toLowerCase?.()) !== 'seller')) && (
+                  <ContactForm price={car.price} carId={car.id} sellerId={car.seller_id} sellerName={car.seller_name} sellerEmail={car.seller_email} image={car.images?.[0]} />
+                )}
               </CardContent>
             </Card>
           </Box>
@@ -199,17 +290,23 @@ const CarDetails: React.FC = () => {
         {/* Similar Listings */}
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Similar listings</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
-            {[ 'm2', 'm3' ].map((sid) => mockById[sid]).filter(Boolean).map((s) => (
-              <Card key={s!.id} onClick={() => navigate(`/cars/${s!.id}`)} sx={{ cursor: 'pointer' }}>
-                <Box component="img" src={s!.images?.[0] || ''} alt={s!.title} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
-                <CardContent>
-                  <Typography variant="subtitle1" fontWeight={700}>{s!.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">${s!.price?.toLocaleString()}</Typography>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
+          {similar.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">No similar cars found.</Typography>
+          ) : (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+              {similar.map((s) => (
+                <Card key={s.id} onClick={() => navigate(`/cars/${s.id}`)} sx={{ cursor: 'pointer' }}>
+                  <Box component="img" src={getImageUrl(s.images?.[0])} alt={s.title} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight={700}>{s.title}</Typography>
+                    {s.price != null && (
+                      <Typography variant="body2" color="text.secondary">${Number(s.price).toLocaleString()}</Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
         </Box>
       </Box>
     </Layout>

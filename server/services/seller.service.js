@@ -778,6 +778,79 @@ const checkNotificationPreference = async (userId, notificationType) => {
 
 // ==================== SELLER MESSAGES FUNCTIONS ====================
 
+// Create or get a conversation with a buyer by email, and optionally send first message
+const startConversation = async (sellerUserId, { to, subject, content }) => {
+  try {
+    if (!to || !String(to).trim()) {
+      throw new Error('Recipient email is required');
+    }
+
+    // Resolve seller id from user id
+    const sellerRows = await executeQuery(`SELECT id FROM sellers WHERE user_id = ? LIMIT 1`, [sellerUserId]);
+    if (sellerRows.length === 0) {
+      throw new Error('Seller profile not found');
+    }
+    const sellerId = sellerRows[0].id;
+
+    // Resolve buyer by email
+    const buyerRows = await executeQuery(`SELECT id, first_name, last_name FROM users WHERE email = ? LIMIT 1`, [to]);
+    if (buyerRows.length === 0) {
+      throw new Error('Buyer not found');
+    }
+    const buyerId = buyerRows[0].id;
+
+    // Check if a conversation already exists between these two participants (ignore subject)
+    const existing = await executeQuery(`
+      SELECT c.id
+      FROM conversations c
+      INNER JOIN conversation_participants cps 
+        ON cps.conversation_id = c.id AND cps.user_id = ? 
+        AND cps.role IN ('seller','member','admin') AND cps.left_at IS NULL
+      INNER JOIN conversation_participants cpb 
+        ON cpb.conversation_id = c.id AND cpb.user_id = ? 
+        AND cpb.role IN ('buyer','member','support') AND cpb.left_at IS NULL
+      WHERE c.status = 'active'
+      ORDER BY COALESCE(c.last_message_at, c.updated_at, c.created_at) DESC
+      LIMIT 1
+    `, [sellerUserId, buyerId]);
+
+    const conversationId = existing.length ? existing[0].id : require('crypto').randomUUID();
+
+    if (!existing.length) {
+      // Create conversation row (use minimal known columns)
+      await executeQuery(`
+        INSERT INTO conversations (id, subject, created_at, updated_at, status)
+        VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'active')
+      `, [conversationId, subject || null]);
+
+      // Add participants
+      await executeQuery(`
+        INSERT INTO conversation_participants (conversation_id, user_id, role)
+        VALUES (?, ?, 'seller'), (?, ?, 'buyer')
+      `, [conversationId, sellerUserId, conversationId, buyerId]);
+    }
+
+    // If content is provided, create first message from seller
+    if (content && String(content).trim()) {
+      const messageId = require('crypto').randomUUID();
+      await executeQuery(`
+        INSERT INTO messages (
+          id, conversation_id, sender_id, content, message_type, file_url, category, priority, is_read, created_at
+        ) VALUES (?, ?, ?, ?, 'text', NULL, 'support', 'normal', 0, CURRENT_TIMESTAMP)
+      `, [messageId, conversationId, sellerUserId, String(content).trim()]);
+
+      await executeQuery(`
+        UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `, [conversationId]);
+    }
+
+    return { id: conversationId, buyer_id: buyerId, subject: subject || null, existed: existing.length > 0 };
+  } catch (err) {
+    console.error('startConversation error:', err);
+    throw err;
+  }
+};
+
 // Get seller conversations (inbox, sent, archived)
 const getSellerConversations = async (userId, filters = {}) => {
   try {
@@ -809,6 +882,25 @@ const getSellerConversations = async (userId, filters = {}) => {
         buyer_user.first_name,
         buyer_user.last_name,
         buyer_user.profile_image as buyer_avatar,
+        -- Car info from most recent order between this seller and buyer
+        (
+          SELECT CONCAT(coalesce(car.brand,''),' ',coalesce(car.model,''))
+          FROM orders o
+          INNER JOIN order_items oi ON o.id = oi.order_id
+          INNER JOIN cars car ON oi.item_type = 'car' AND oi.item_id = car.id
+          WHERE o.seller_id = ? AND o.buyer_id = buyer_participant.user_id
+          ORDER BY o.created_at DESC
+          LIMIT 1
+        ) as car_title,
+        (
+          SELECT JSON_UNQUOTE(JSON_EXTRACT(car.images, '$[0]'))
+          FROM orders o
+          INNER JOIN order_items oi ON o.id = oi.order_id
+          INNER JOIN cars car ON oi.item_type = 'car' AND oi.item_id = car.id
+          WHERE o.seller_id = ? AND o.buyer_id = buyer_participant.user_id
+          ORDER BY o.created_at DESC
+          LIMIT 1
+        ) as car_image,
         -- Get last message
         m.id as last_message_id,
         m.content as last_message_content,
@@ -845,7 +937,7 @@ const getSellerConversations = async (userId, filters = {}) => {
       WHERE c.status = 'active'
     `;
 
-    const params = [userId, userId, userId];
+    const params = [userId, userId, userId, sellerRows[0].id, sellerRows[0].id];
 
     // Filter by folder (inbox, sent, archived)
     if (filters.folder === 'archived') {
@@ -952,6 +1044,8 @@ const getSellerConversations = async (userId, filters = {}) => {
     const formattedConversations = conversations.map(c => ({
       id: c.id,
       subject: c.subject || c.title || 'No Subject',
+      carTitle: c.car_title || null,
+      carImage: c.car_image || null,
       buyer: c.buyer_id ? {
         id: c.buyer_id,
         name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Anonymous',
@@ -1224,8 +1318,17 @@ const archiveConversation = async (userId, conversationId, archived = true) => {
       throw new Error('Conversation not found or unauthorized');
     }
 
-    // Update settings JSON to include archived status
-    const currentSettings = participant[0].settings ? JSON.parse(participant[0].settings) : {};
+    // Update settings JSON to include archived status (handle string or object)
+    let currentSettings = {};
+    try {
+      const raw = participant[0].settings;
+      if (!raw) currentSettings = {};
+      else if (typeof raw === 'string') currentSettings = JSON.parse(raw);
+      else if (typeof raw === 'object') currentSettings = raw;
+      else currentSettings = {};
+    } catch {
+      currentSettings = {};
+    }
     currentSettings.archived = archived ? 1 : 0;
 
     await executeQuery(`
@@ -1268,6 +1371,37 @@ const deleteMessages = async (userId, conversationId, messageIds) => {
     return { success: true };
   } catch (err) {
     console.error('Error deleting messages:', err);
+    throw err;
+  }
+};
+
+// Permanently delete conversation for this seller (leave the conversation; delete if no participants remain)
+const deleteConversationForSeller = async (userId, conversationId) => {
+  try {
+    // Mark seller as left
+    await executeQuery(`
+      UPDATE conversation_participants
+      SET left_at = CURRENT_TIMESTAMP
+      WHERE conversation_id = ? AND user_id = ? AND role IN ('seller','member','admin') AND left_at IS NULL
+    `, [conversationId, userId]);
+
+    // If no active participants remain, delete messages and conversation
+    const remaining = await executeQuery(`
+      SELECT COUNT(*) as cnt
+      FROM conversation_participants
+      WHERE conversation_id = ? AND left_at IS NULL
+    `, [conversationId]);
+
+    const count = parseInt(remaining[0]?.cnt) || 0;
+    if (count === 0) {
+      await executeQuery(`DELETE FROM messages WHERE conversation_id = ?`, [conversationId]);
+      await executeQuery(`DELETE FROM conversation_participants WHERE conversation_id = ?`, [conversationId]);
+      await executeQuery(`DELETE FROM conversations WHERE id = ?`, [conversationId]);
+    }
+
+    return { success: true, removed: count === 0 };
+  } catch (err) {
+    console.error('Error deleting conversation for seller:', err);
     throw err;
   }
 };
@@ -1494,12 +1628,14 @@ module.exports = {
   checkNotificationPreference,
   getSellerReviews,
   replyToReview,
+  startConversation,
   getSellerConversations,
   getConversationMessages,
   sendMessage,
   markMessagesAsRead,
   archiveConversation,
   deleteMessages,
+  deleteConversationForSeller,
   getSellerAnalytics,
 };
 

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ENV } from '../../../core/config/environment';
+import { api as coreApi } from '../../../core/services/api/apiClient';
 import type { Vehicle, Favorite, Review, SearchFilters, BuyerProfile } from '../types';
 
 const api = axios.create({
@@ -23,31 +24,39 @@ api.interceptors.request.use(
 export const vehicleApi = {
   // Get all vehicles with filters
   getVehicles: async (filters?: SearchFilters): Promise<{ vehicles: Vehicle[]; pagination: any }> => {
-    const { data } = await api.get('/ecommerce/cars', { params: filters });
+    const { data } = await api.get('/cars', { params: filters });
     return data.data || data;
   },
 
   // Search vehicles
   searchVehicles: async (query: string, filters?: SearchFilters): Promise<{ vehicles: Vehicle[]; pagination: any }> => {
-    const { data } = await api.get('/ecommerce/cars/search', { params: { q: query, ...filters } });
+    const { data } = await api.get('/cars/search', { params: { q: query, ...filters } });
     return data.data || data;
   },
 
   // Get vehicle by ID
   getVehicleById: async (vehicleId: string): Promise<Vehicle> => {
-    const { data } = await api.get(`/ecommerce/cars/${vehicleId}`);
+    const { data } = await api.get(`/cars/${vehicleId}`);
     return data.data || data;
   },
 
   // Get vehicle reviews
   getVehicleReviews: async (vehicleId: string, page: number = 1, limit: number = 10): Promise<{ reviews: Review[]; pagination: any }> => {
-    const { data } = await api.get(`/ecommerce/cars/${vehicleId}/reviews`, { params: { page, limit } });
+    const { data } = await api.get(`/cars/${vehicleId}/reviews`, { params: { page, limit } });
     return data.data || data;
   },
 };
 
 // Buyer-specific APIs (require authentication)
 export const buyerApi = {
+  // Orders
+  orders: {
+    create: async (payload: any) => {
+      // Use shared core API client so Authorization header is guaranteed
+      const { data } = await coreApi.post('/orders', payload);
+      return (data as any).data || data;
+    },
+  },
   // Favorites
   addToFavorites: async (vehicleId: string): Promise<Favorite> => {
     const { data } = await api.post(`/ecommerce/cars/${vehicleId}/favorite`);
