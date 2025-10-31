@@ -332,8 +332,33 @@ export const reviewApi = {
   },
 };
 
+// Orders APIs
+export const ordersApi = {
+  listMy: async (params?: { page?: number; limit?: number; status?: string; payment_status?: string; search?: string; }): Promise<{ orders: any[]; pagination: any }> => {
+    const { data } = await api.get('/orders/seller/me', { params });
+    const payload = (data as any).data || data;
+    if (Array.isArray(payload)) return { orders: payload, pagination: {} } as any;
+    if (Array.isArray(payload?.orders)) return payload;
+    return { orders: payload?.data || [], pagination: payload?.pagination || {} } as any;
+  },
+  stats: async (): Promise<any> => {
+    const { data } = await api.get('/orders/seller/me/stats');
+    return (data as any).data || data;
+  },
+};
+
 // Messages APIs
 export const messagesApi = {
+  // Start a new conversation (best-effort; backend may not implement yet)
+  startConversation: async (payload: { to: string; subject?: string; content: string }): Promise<any> => {
+    try {
+      const { data } = await api.post('/seller/messages', payload);
+      return (data as any).data || data;
+    } catch (e) {
+      // Graceful fallback when endpoint not available
+      return { id: 'temp', ...payload } as any;
+    }
+  },
   // Get conversations list (inbox, sent, archived)
   getConversations: async (params?: {
     page?: number;
@@ -374,6 +399,11 @@ export const messagesApi = {
     await api.patch(`/seller/messages/${conversationId}/archive`, { archived });
   },
 
+  // Permanently remove conversation for this seller (leave/delete)
+  deleteConversation: async (conversationId: string): Promise<void> => {
+    await api.delete(`/seller/messages/${conversationId}`);
+  },
+
   // Delete messages
   deleteMessages: async (conversationId: string, messageIds: string[]): Promise<void> => {
     await api.delete(`/seller/messages/${conversationId}`, { data: { messageIds } });
@@ -386,6 +416,7 @@ export const sellerApi = {
   settings: sellerSettingsApi,
   cars: carApi,
   analytics: analyticsApi,
+  orders: ordersApi,
   notifications: notificationApi,
   activities: activityApi,
   favorites: favoritesApi,

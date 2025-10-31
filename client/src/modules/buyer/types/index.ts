@@ -79,6 +79,8 @@ export interface Review {
 }
 
 export interface SearchFilters {
+  page?: number;
+  limit?: number;
   brand?: string;
   model?: string;
   year_min?: number;

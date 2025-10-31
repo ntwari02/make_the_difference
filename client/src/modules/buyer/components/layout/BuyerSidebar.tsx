@@ -10,7 +10,6 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  Avatar,
   Tooltip,
 } from '@mui/material';
 import {
@@ -24,8 +23,6 @@ import {
   Person as ProfileIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../../../core/store';
 
 interface BuyerSidebarProps {
   open: boolean;
@@ -46,7 +43,6 @@ const menuItems: MenuItem[] = [
   { title: 'Browse', path: '/browse', icon: <BrowseIcon /> },
   { title: 'Favorites', path: '/buyer/favorites', icon: <FavoriteIcon /> },
   { title: 'Messages', path: '/buyer/messages', icon: <MessageIcon />, badge: 2 },
-  { title: 'AI Chat', path: '/buyer/ai-chat', icon: <AIIcon /> },
   { title: 'Payments', path: '/buyer/payments', icon: <PaymentIcon /> },
   { title: 'Profile', path: '/buyer/profile', icon: <ProfileIcon /> },
   { title: 'Settings', path: '/buyer/settings', icon: <SettingsIcon /> },
@@ -63,8 +59,6 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const profile = useSelector((state: RootState) => state.buyer.profile);
-
   const handleNavigate = (path: string) => {
     navigate(path);
     if (isMobile) {
@@ -75,127 +69,99 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
   const isActivePath = (path: string) => location.pathname === path;
 
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Logo and Brand */}
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          minHeight: 64,
-        }}
-      >
-        {open ? (
-          <>
-            <Avatar
-              src={profile?.avatar_url}
-              alt={profile?.full_name}
-              sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
-            >
-              {profile?.full_name?.charAt(0)}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="h6"
-                noWrap
-                sx={{
-                  fontWeight: 700,
-                  color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-                }}
-              >
-                {profile?.full_name || 'Buyer Portal'}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : theme.palette.text.secondary,
-                  display: 'block',
-                }}
-              >
-                Explore and manage your account
-              </Typography>
-            </Box>
-          </>
-        ) : (
-          <Avatar
-            src={profile?.avatar_url}
-            alt={profile?.full_name}
-            sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}
-          >
-            {profile?.full_name?.charAt(0)}
-          </Avatar>
-        )}
-      </Box>
-
-      <Divider sx={{
-        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : theme.palette.divider,
-      }} />
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* No brand header — match seller sidebar */}
+      <Divider sx={{ borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : theme.palette.divider }} />
 
       {/* Navigation Menu */}
-      <List sx={{ flex: 1, py: 2, px: 1 }}>
+      <List sx={{ flex: 1, py: 2, px: 1, overflow: 'hidden' }}>
         {menuItems.map((item) => {
           const isActive = isActivePath(item.path);
           const showBadge = item.badge && item.badge > 0;
+          const label = item.title;
 
           return (
-            <Tooltip key={item.path} title={!open ? item.title : ''} placement="right" arrow>
+            <Tooltip key={item.path} title={!open ? label : ''} placement="right" arrow>
               <ListItemButton
                 onClick={() => handleNavigate(item.path)}
                 selected={isActive}
                 sx={{
-                  borderRadius: 2,
-                  mb: 0.5,
+                  borderRadius: 1.5,
+                  mb: 1,
                   minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
-                  color: theme.palette.mode === 'dark'
-                    ? (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)')
-                    : (isActive ? theme.palette.primary.main : theme.palette.text.secondary),
+                  py: 1.5,
+                  position: 'relative',
+                  color: isActive ? '#ffffff' : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : theme.palette.text.secondary),
+                  bgcolor: isActive ? '#2C3E50' : 'transparent',
+                  border: isActive ? '1px solid #3498DB' : '1px solid transparent',
+                  boxShadow: isActive ? '0 0 12px rgba(52, 152, 219, 0.3)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : theme.palette.action.hover,
-                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                    bgcolor: isActive ? '#34495E' : '#2C3E50',
+                    color: '#ffffff !important',
+                    transform: isActive ? 'scale(1.02)' : 'translateX(6px)',
+                    borderColor: isActive ? '#4A90E2' : 'rgba(52, 152, 219, 0.5)',
+                    boxShadow: isActive ? '0 0 16px rgba(52, 152, 219, 0.4)' : '0 4px 12px rgba(52, 152, 219, 0.2)',
                   },
                   '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.primary.contrastText,
-                    '&:hover': { bgcolor: 'primary.dark' },
-                    '& .MuiListItemIcon-root': {
-                      color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.primary.contrastText,
-                    },
+                    bgcolor: '#2C3E50 !important',
+                    color: '#ffffff !important',
+                    '&:hover': { bgcolor: '#34495E !important' },
                   },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    minWidth: 0,
-                    mr: open ? 2 : 'auto',
-                    justifyContent: 'center',
-                    color: theme.palette.mode === 'dark'
-                      ? (isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)')
-                      : (isActive ? theme.palette.primary.main : theme.palette.text.secondary),
+                    minWidth: open ? 40 : 'auto',
+                    justifyContent: open ? 'flex-start' : 'center',
+                    color: isActive ? '#3498DB' : 'inherit',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '& .MuiSvgIcon-root': { fontSize: 20, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
+                    '&:hover': { color: '#3498DB !important' },
                   }}
                 >
                   {item.icon}
                 </ListItemIcon>
+                {isActive && open && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      bgcolor: '#3498DB',
+                      boxShadow: '0 0 8px rgba(52, 152, 219, 0.8)',
+                    }}
+                  />
+                )}
                 {open && (
                   <>
                     <ListItemText
-                      primary={item.title}
+                      primary={label}
                       primaryTypographyProps={{ fontWeight: isActive ? 700 : 500 }}
                     />
                     {showBadge && (
                       <Box
                         sx={{
-                          bgcolor: 'error.main',
-                          color: 'error.contrastText',
-                          borderRadius: '12px',
-                          px: 1,
-                          py: 0.5,
-                          fontSize: '0.75rem',
+                          bgcolor: '#E74C3C',
+                          color: '#ffffff',
+                          borderRadius: 2,
+                          px: 1.2,
+                          py: 0.3,
+                          fontSize: '0.7rem',
                           fontWeight: 700,
                           minWidth: '20px',
                           textAlign: 'center',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 4px rgba(231, 76, 60, 0.3)',
+                          mr: open ? 2 : 0,
                         }}
                       >
                         {item.badge}
@@ -263,7 +229,11 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
               borderRight: theme.palette.mode === 'dark'
                 ? `1px solid rgba(255, 255, 255, 0.1)`
                 : `1px solid ${theme.palette.divider}`,
+              // Position below fixed header (64px)
+              top: '64px',
+              height: 'calc(100% - 64px)',
               overflowX: 'hidden',
+              overflowY: 'hidden',
               transition: theme.transitions.create('width', {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,

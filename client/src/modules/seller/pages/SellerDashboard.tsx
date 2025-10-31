@@ -511,6 +511,16 @@ const SellerDashboard: React.FC = () => {
               </Box>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={sellingStatsData} margin={{ top: 10, right: 20, left: 0, bottom: period === 'week' ? 40 : 20 }}>
+                  <defs>
+                    <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.3} />
+                    </linearGradient>
+                    <linearGradient id="favGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} />
                   <XAxis 
                     dataKey="period" 
@@ -529,8 +539,8 @@ const SellerDashboard: React.FC = () => {
                     ]} 
                   />
                   <Legend wrapperStyle={{ paddingTop: 8 }} />
-                  <Bar dataKey="sales" fill="#6A8EEB" radius={[4, 4, 0, 0]} name="Sales" />
-                  <Bar dataKey="revenue" fill="#9B6EEB" radius={[4, 4, 0, 0]} name="Revenue ($)" />
+                  <Bar dataKey="sales" fill="url(#viewsGradient)" radius={[4, 4, 0, 0]} name="Sales" />
+                  <Bar dataKey="revenue" fill="url(#favGradient)" radius={[4, 4, 0, 0]} name="Revenue ($)" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

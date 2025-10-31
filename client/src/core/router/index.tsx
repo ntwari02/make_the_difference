@@ -29,6 +29,7 @@ import LandingPage from '../../modules/landing/pages/LandingPage';
 import ErrorPage from '../../shared/components/ui/ErrorPage';
 import SmartRedirect from '../../shared/components/ui/SmartRedirect';
 import ProtectedRoute from './ProtectedRoute';
+import BuyerAppLayout from '../../modules/buyer/components/layout/BuyerAppLayout';
 
 // Dealer pages
 const DealerDashboard = React.lazy(() => import('../../modules/dealer/pages/DealerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -498,16 +499,64 @@ const router = createBrowserRouter([
     ),
   },
 
-  // Buyer routes
+  // Buyer routes (nested under persistent Buyer layout)
   {
-    path: '/buyer/dashboard',
+    path: '/buyer',
     element: (
       <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerDashboard />
-        </React.Suspense>
+        <BuyerAppLayout />
       </ProtectedRoute>
     ),
+    children: [
+      {
+        path: 'dashboard',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerDashboard />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'favorites',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerFavorites />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'messages',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerMessages />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerProfile />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'settings',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerSettings />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'payments',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerPayments />
+          </React.Suspense>
+        ),
+      },
+    ],
   },
 
   // Instructor routes
@@ -723,66 +772,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
-  {
-    path: '/buyer/favorites',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerFavorites />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/buyer/messages',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerMessages />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/buyer/profile',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerProfile />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/buyer/settings',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerSettings />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/buyer/ai-chat',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerAIChat />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/buyer/payments',
-    element: (
-      <ProtectedRoute allowedRoles={['buyer','admin']}>
-        <React.Suspense fallback={<Fallback />}>
-          <BuyerPayments />
-        </React.Suspense>
-      </ProtectedRoute>
-    ),
-  },
+  
 
   // Seller routes
   {

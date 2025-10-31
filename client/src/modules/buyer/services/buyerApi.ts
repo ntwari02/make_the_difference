@@ -31,6 +31,14 @@ export const vehicleApi = {
 
 // Buyer-specific APIs (require authentication)
 export const buyerApi = {
+  // Orders
+  orders: {
+    create: async (payload: any) => {
+      // Use shared core API client so Authorization header is guaranteed
+      const { data } = await coreApi.post('/orders', payload);
+      return (data as any).data || data;
+    },
+  },
   // Favorites
   addToFavorites: async (vehicleId: string): Promise<Favorite> => {
     const { data } = await api.post(`/cars/${vehicleId}/favorite`);

@@ -185,12 +185,12 @@ const SellerAnalytics: React.FC = () => {
           </Typography>
           <Box sx={{ 
             display: 'flex', 
-            alignItems: { xs: 'stretch', sm: 'center' }, 
-            gap: { xs: 1, sm: 1.5 }, 
-            flexWrap: 'wrap',
-            width: { xs: '100%', sm: 'auto' }
+            alignItems: 'center', 
+            gap: 1, 
+            flexWrap: 'nowrap',
+            width: 'auto'
           }}>
-            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
+            <FormControl size="small" sx={{ minWidth: 110 }}>
               <InputLabel>Period Type</InputLabel>
               <Select label="Period Type" value={period} onChange={(e) => setPeriod(e.target.value as any)}>
                 <MenuItem value="week">Week</MenuItem>
@@ -205,8 +205,7 @@ const SellerAnalytics: React.FC = () => {
               InputLabelProps={{ shrink: true }} 
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)} 
-              fullWidth
-              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+              sx={{ width: 140 }}
             />
             <TextField 
               size="small" 
@@ -215,20 +214,21 @@ const SellerAnalytics: React.FC = () => {
               InputLabelProps={{ shrink: true }} 
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)} 
-              fullWidth
-              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+              sx={{ width: 140 }}
             />
             <Button 
               variant="outlined" 
+              size="small"
               onClick={() => { setStartDate(''); setEndDate(''); }}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              sx={{ minWidth: 100 }}
             >
               Clear dates
             </Button>
             <Button 
               variant="contained" 
+              size="small"
               onClick={exportCsv}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              sx={{ minWidth: 110 }}
             >
               Export CSV
             </Button>

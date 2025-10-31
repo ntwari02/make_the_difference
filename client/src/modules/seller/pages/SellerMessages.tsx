@@ -27,6 +27,10 @@ import {
   ListItemButton,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -45,6 +49,7 @@ import {
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { sellerApi } from '../services/sellerApi';
 import toast from 'react-hot-toast';
 import { LinearProgress } from '@mui/material';
@@ -93,6 +98,8 @@ interface Message {
 
 const SellerMessages: React.FC = () => {
   const profile = useSelector((state: RootState) => state.seller.profile);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationListItem | null>(null);
@@ -114,6 +121,12 @@ const SellerMessages: React.FC = () => {
     { open: false, message: '', severity: 'success' }
   );
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  // Compose dialog (start new conversation)
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [inlineCompose, setInlineCompose] = useState(false);
 
   // Load conversations list
   const loadConversations = async () => {
@@ -143,15 +156,33 @@ const SellerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filter, searchTerm, categoryFilter, rowsPerPage]);
 
+  // Open compose from query params (?compose=email&subject=...)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const to = params.get('compose');
+    const subject = params.get('subject') || '';
+    const body = params.get('body') || '';
+    if (to) {
+      setComposeTo(to);
+      setComposeSubject(subject);
+      setComposeBody(body);
+      // Show inline compose on the detail pane
+      setInlineCompose(true);
+      // Clean URL once opened
+      navigate('/seller/messages', { replace: true });
+    }
+  }, [location.search, navigate]);
+
   // Load conversation thread when a conversation is selected
   useEffect(() => {
-    if (selectedConversation?.id) {
+    if (selectedConversation?.id && !selectedConversation.id.startsWith('temp')) {
       loadThread(selectedConversation.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id]);
 
   const loadThread = async (conversationId: string) => {
+    if (conversationId.startsWith('temp')) return;
     try {
       setLoadingThread(true);
       const result = await sellerApi.messages.getConversationMessages(conversationId);
@@ -173,10 +204,10 @@ const SellerMessages: React.FC = () => {
     id: conv.id,
     sender: {
       name: conv.buyer?.name || 'Unknown',
-      avatar: conv.buyer?.avatar || '',
+      avatar: (conv as any).carImage || conv.buyer?.avatar || '',
       type: (conv.buyer ? 'buyer' : 'admin') as 'buyer' | 'seller' | 'admin'
     },
-    subject: conv.subject,
+    subject: (conv as any).carTitle || conv.subject,
     message: conv.lastMessage?.content || '',
     timestamp: conv.lastMessage?.timestamp || conv.timestamp,
     read: conv.lastMessage?.read ?? true,
@@ -188,6 +219,11 @@ const SellerMessages: React.FC = () => {
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
   const handleMessageClick = async (conversationId: string) => {
+    if (conversationId.startsWith('temp')) {
+      await loadConversations();
+      toast.error('Conversation is not ready yet. Please try again.');
+      return;
+    }
     const conv = conversations.find(c => c.id === conversationId);
     if (conv) {
       setSelectedConversation(conv);
@@ -197,6 +233,12 @@ const SellerMessages: React.FC = () => {
 
   const handleSendReply = async () => {
     if (!selectedConversation || !replyText.trim()) return;
+    if (selectedConversation.id.startsWith('temp')) {
+      toast.error('Conversation is not ready yet. Please start a new one.');
+      await loadConversations();
+      setSelectedConversation(null);
+      return;
+    }
     
     try {
       setSending(true);
@@ -339,9 +381,31 @@ const SellerMessages: React.FC = () => {
     }
   };
 
-  const bulkDelete = () => {
-    // Note: Delete conversations or archive them? For now, just archive
-    toast.info('Bulk delete not implemented. Use archive instead.');
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const ids = Array.from(selectedIds).filter(id => !id.startsWith('temp'));
+      if (filter === 'archived') {
+        // In archived folder, permanently remove (leave) conversations
+        await Promise.all(ids.map((id) => sellerApi.messages.deleteConversation(id)));
+      } else {
+        // In inbox/sent, archive them
+        await Promise.all(ids.map((id) => sellerApi.messages.archiveConversation(id, true)));
+      }
+      // Optimistically remove from UI
+      setConversations((prev) => prev.filter((c) => !ids.includes(c.id)));
+      toast.success('Conversation(s) deleted');
+      setSelectedIds(new Set());
+      // Refresh in background to stay in sync
+      loadConversations();
+      if (selectedConversation && ids.includes(selectedConversation.id)) {
+        setSelectedConversation(null);
+        setThread([]);
+      }
+    } catch (error: any) {
+      console.error('Bulk delete failed:', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete conversations');
+    }
   };
 
   return (
@@ -400,12 +464,39 @@ const SellerMessages: React.FC = () => {
                 </FormControl>
                 <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkMarkRead}><MarkReadIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
+                <Button 
+                  variant="contained" 
+                  size="small"
+                  startIcon={<ForwardIcon />} 
+                  onClick={() => { 
+                    setComposeTo(''); 
+                    setComposeSubject(''); 
+                    setComposeBody(''); 
+                    setSelectedConversation(null); 
+                    setInlineCompose(true); 
+                  }}
+                >
+                  New Chat
+                </Button>
               </Box>
               {loading && <LinearProgress />}
               <Box sx={{ overflowY: 'auto' }}>
                 {!loading && paged.length === 0 && (
                   <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-                    <Typography variant="body2">No conversations found</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>No conversations found</Typography>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<ForwardIcon />} 
+                      onClick={() => { 
+                        setComposeTo(''); 
+                        setComposeSubject(''); 
+                        setComposeBody(''); 
+                        setSelectedConversation(null); 
+                        setInlineCompose(true); 
+                      }}
+                    >
+                      Start a New Chat
+                    </Button>
                   </Box>
                 )}
                 <List>
@@ -426,7 +517,7 @@ const SellerMessages: React.FC = () => {
                         >
                           <ListItemAvatar>
                             <Badge color="error" variant="dot" invisible={message.unreadCount === 0}>
-                              <Avatar sx={{ bgcolor: 'primary.main' }}>
+                              <Avatar src={message.sender.avatar || undefined} sx={{ bgcolor: 'primary.main' }}>
                                 {message.sender.name.charAt(0)}
                               </Avatar>
                             </Badge>
@@ -473,7 +564,7 @@ const SellerMessages: React.FC = () => {
               {selectedConversation ? (
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                    <Avatar src={(selectedConversation as any).carImage || selectedConversation.buyer?.avatar || undefined} sx={{ bgcolor: 'primary.main' }}>
                       {selectedConversation.buyer?.name.charAt(0) || '?'}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
@@ -481,7 +572,7 @@ const SellerMessages: React.FC = () => {
                         {selectedConversation.buyer?.name || 'Unknown'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {selectedConversation.subject}
+                        {(selectedConversation as any).carTitle || selectedConversation.subject}
                       </Typography>
                     </Box>
                     <IconButton size="small" onClick={() => handleArchive(selectedConversation.id, !selectedConversation.archived)}>
@@ -568,6 +659,63 @@ const SellerMessages: React.FC = () => {
                     </Box>
                   </Box>
                 </>
+              ) : inlineCompose ? (
+                <>
+                  <Typography variant="h6" sx={{ mb: 2 }}>New Message</Typography>
+                  <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2 }} />
+                  <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
+                  <TextField fullWidth multiline rows={10} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} sx={{ mb: 2 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button onClick={() => setInlineCompose(false)}>Cancel</Button>
+                    <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
+                      try {
+                        const created = await sellerApi.messages.startConversation({ to: composeTo, subject: composeSubject, content: composeBody });
+                        if (created?.id) {
+                          if (created.existed) {
+                            toast.success('Existing conversation found. Opening it.');
+                          } else {
+                            toast.success('Message sent');
+                          }
+                          const conv: any = {
+                            id: created.id,
+                            subject: composeSubject || 'No Subject',
+                            buyer: { id: created?.buyer_id || '', name: composeTo, avatar: '' },
+                            lastMessage: {
+                              id: `m-${Date.now()}`,
+                              content: composeBody,
+                              senderId: 'me',
+                              isFromSeller: true,
+                              timestamp: new Date().toISOString(),
+                              read: true,
+                            },
+                            unreadCount: 0,
+                            category: 'support',
+                            priority: 'normal',
+                            archived: false,
+                            timestamp: new Date().toISOString(),
+                          };
+                          // If it existed, refresh and select to avoid duplicates
+                          if (created.existed) {
+                            await loadConversations();
+                            const after = (prev => prev);
+                            const found = conversations.find(c => c.id === created.id);
+                            setSelectedConversation(found || conv);
+                          } else {
+                            setConversations((prev) => [conv, ...prev]);
+                            setSelectedConversation(conv);
+                          }
+                        } else {
+                          await loadConversations();
+                        }
+                        setInlineCompose(false);
+                      } catch {
+                        toast.error('Failed to send message');
+                      }
+                    }}>
+                      Send
+                    </Button>
+                  </Box>
+                </>
               ) : (
                 <Box sx={{ display: 'grid', placeItems: 'center', height: '100%', color: 'text.secondary' }}>
                   <Typography variant="body2">Select a conversation to view details</Typography>
@@ -584,6 +732,64 @@ const SellerMessages: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      {/* Compose Dialog */}
+      <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>New Message</DialogTitle>
+        <DialogContent>
+          <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2, mt: 1 }} />
+          <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
+          <TextField fullWidth multiline rows={8} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setComposeOpen(false)}>Cancel</Button>
+          <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
+            try {
+              const created = await sellerApi.messages.startConversation({ to: composeTo, subject: composeSubject, content: composeBody });
+              if (created?.id) {
+                if (created.existed) {
+                  toast.success('Existing conversation found. Opening it.');
+                } else {
+                  toast.success('Message sent');
+                }
+                const conv: any = {
+                  id: created.id,
+                  subject: composeSubject || 'No Subject',
+                  buyer: { id: created?.buyer_id || '', name: composeTo, avatar: '' },
+                  lastMessage: {
+                    id: `m-${Date.now()}`,
+                    content: composeBody,
+                    senderId: 'me',
+                    isFromSeller: true,
+                    timestamp: new Date().toISOString(),
+                    read: true,
+                  },
+                  unreadCount: 0,
+                  category: 'support',
+                  priority: 'normal',
+                  archived: false,
+                  timestamp: new Date().toISOString(),
+                };
+                if (created.existed) {
+                  await loadConversations();
+                  const found = conversations.find(c => c.id === created.id);
+                  setSelectedConversation(found || conv);
+                } else {
+                  setConversations((prev) => [conv, ...prev]);
+                  setSelectedConversation(conv);
+                }
+              } else {
+                await loadConversations();
+              }
+              setComposeOpen(false);
+              setInlineCompose(false);
+            } catch (err) {
+              toast.error('Failed to send message');
+            }
+          }}>
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
     </SellerLayout>
   );
 };
