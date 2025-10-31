@@ -4,6 +4,12 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const { authenticate, authorizeRoles } = require('../middlewares/auth');
+const EventEmitter = require('events');
+// Simple process-wide event bus (singleton)
+if (!global.__SELLER_MSG_BUS__) {
+  global.__SELLER_MSG_BUS__ = new EventEmitter();
+}
+const msgBus = global.__SELLER_MSG_BUS__;
 const sellerService = require('../services/seller.service');
 
 const router = express.Router();
@@ -486,6 +492,52 @@ router.get('/messages', authenticate, authorizeRoles('seller','admin'), async (r
   }
 });
 
+// Server-Sent Events stream for live seller message updates
+router.get('/messages/stream', async (req, res, next) => {
+  try {
+    // Allow auth via header or token query param for EventSource
+    if (!req.headers.authorization && req.query.token) {
+      req.headers.authorization = `Bearer ${req.query.token}`;
+    }
+    // Reuse existing middleware stack
+    authenticate(req, res, async (err) => {
+      if (err) return;
+      authorizeRoles('seller','admin')(req, res, () => {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders && res.flushHeaders();
+
+        const userId = req.user.id;
+        const send = (event, data) => {
+          res.write(`event: ${event}\n`);
+          res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        const onEvent = (payload) => {
+          // Only forward events targeted to this seller user
+          if (!payload || (payload.userId && payload.userId !== userId)) return;
+          send(payload.event || 'update', payload);
+        };
+
+        msgBus.on('seller.messages', onEvent);
+
+        // Heartbeat to keep connection alive
+        const hb = setInterval(() => send('ping', { t: Date.now() }), 25000);
+
+        req.on('close', () => {
+          clearInterval(hb);
+          msgBus.off('seller.messages', onEvent);
+          try { res.end(); } catch {}
+        });
+      });
+    });
+  } catch (e) {
+    console.error('SSE stream error', e);
+    res.status(500).end();
+  }
+});
+
 // GET /api/seller/messages/:conversationId - Get messages in a conversation (thread)
 router.get('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
   try {
@@ -580,6 +632,50 @@ router.delete('/messages/:conversationId', authenticate, authorizeRoles('seller'
     return res.json({ success: true, message: 'Messages deleted successfully' });
   } catch (err) {
     console.error('Delete messages error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to delete messages' });
+  }
+});
+
+// DELETE /api/seller/messages/:conversationId/messages/:messageId - Delete a single message
+router.delete('/messages/:conversationId/messages/:messageId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId, messageId } = req.params;
+    await sellerService.deleteMessages(req.user.id, conversationId, [messageId]);
+    return res.json({ success: true, message: 'Message deleted successfully' });
+  } catch (err) {
+    console.error('Delete single message error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to delete message' });
+  }
+});
+
+// POST /api/seller/messages/:conversationId/messages/delete - Bulk delete messages
+router.post('/messages/:conversationId/messages/delete', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { messageIds } = req.body || {};
+    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Message IDs are required' });
+    }
+    await sellerService.deleteMessages(req.user.id, conversationId, messageIds);
+    return res.json({ success: true, message: 'Messages deleted successfully' });
+  } catch (err) {
+    console.error('Bulk delete messages error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to delete messages' });
+  }
+});
+
+// POST /api/seller/messages/:conversationId/messages/bulk-delete - Alternate bulk delete path
+router.post('/messages/:conversationId/messages/bulk-delete', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { messageIds } = req.body || {};
+    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Message IDs are required' });
+    }
+    await sellerService.deleteMessages(req.user.id, conversationId, messageIds);
+    return res.json({ success: true, message: 'Messages deleted successfully' });
+  } catch (err) {
+    console.error('Bulk delete messages (alt) error:', err);
     return res.status(400).json({ success: false, message: err.message || 'Failed to delete messages' });
   }
 });

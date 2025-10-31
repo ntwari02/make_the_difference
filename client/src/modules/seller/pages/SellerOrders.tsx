@@ -29,6 +29,7 @@ import {
   Divider,
   Alert,
   LinearProgress,
+  CircularProgress,
   Menu,
   Pagination,
   Tooltip,
@@ -85,6 +86,11 @@ const SellerOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('pending');
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [newPaymentStatus, setNewPaymentStatus] = useState<string>('pending');
+  const [paymentSaving, setPaymentSaving] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -96,6 +102,8 @@ const SellerOrders: React.FC = () => {
     completed_payments: 0,
     total_revenue: 0,
   });
+  const autoRefresh = true;
+  const refreshIntervalMs = 10000; // 10s
 
   // Mock data for demonstration (replace with API calls)
   const mockOrders: Order[] = [
@@ -148,6 +156,22 @@ const SellerOrders: React.FC = () => {
     fetchStats();
   }, [statusFilter, paymentFilter, searchQuery, currentPage]);
 
+  // Lightweight realtime: periodic refresh and on window focus
+  useEffect(() => {
+    if (!autoRefresh) return;
+    let interval: any | null = null;
+    const onFocus = () => { fetchOrders(); fetchStats(); };
+    window.addEventListener('focus', onFocus);
+    interval = setInterval(() => {
+      fetchOrders();
+      fetchStats();
+    }, refreshIntervalMs);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh, refreshIntervalMs, statusFilter, paymentFilter, searchQuery, currentPage]);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -190,13 +214,33 @@ const SellerOrders: React.FC = () => {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      // Mock API call - replace with actual API
+      setStatusSaving(true);
+      await sellerApi.orders.updateStatus(orderId, newStatus);
       toast.success(`Order status updated to ${newStatus}`);
       setStatusDialogOpen(false);
       fetchOrders();
+      fetchStats();
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update order status');
+    } finally {
+      setStatusSaving(false);
+    }
+  };
+
+  const handlePaymentChange = async (orderId: string, newPayment: string) => {
+    try {
+      setPaymentSaving(true);
+      await sellerApi.orders.updatePayment(orderId, newPayment);
+      toast.success(`Payment status updated to ${newPayment}`);
+      setPaymentDialogOpen(false);
+      fetchOrders();
+      fetchStats();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Failed to update payment status');
+    } finally {
+      setPaymentSaving(false);
     }
   };
 
@@ -457,15 +501,22 @@ const SellerOrders: React.FC = () => {
                           {/* Item cell */}
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Box
-                                component="img"
-                                src={getImageUrl(order.items?.[0]?.item_image)}
-                                alt={order.items?.[0]?.item_name || 'item'}
-                                sx={{ width: 56, height: 40, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
-                                onError={(e: any) => { e.currentTarget.style.visibility = 'hidden'; }}
-                              />
+                              {(() => {
+                                const firstItem = order.items?.[0] || {} as any;
+                                const rawImage = firstItem.item_image || firstItem.image || (Array.isArray(firstItem.images) ? firstItem.images[0] : undefined);
+                                const name = firstItem.item_name || firstItem.name || 'item';
+                                const imgSrc = getImageUrl(rawImage);
+                                return (
+                                  <Avatar
+                                    src={imgSrc}
+                                    alt={name}
+                                    sx={{ width: 40, height: 40 }}
+                                    imgProps={{ onError: (e: any) => { e.currentTarget.src = getImageUrl(undefined as any); } }}
+                                  />
+                                );
+                              })()}
                               <Typography variant="body2" noWrap maxWidth={220}>
-                                {order.items?.[0]?.item_name || '—'}
+                                {order.items?.[0]?.item_name || order.items?.[0]?.name || '—'}
                               </Typography>
                             </Box>
                           </TableCell>
@@ -517,6 +568,11 @@ const SellerOrders: React.FC = () => {
                               <Tooltip title="Message Buyer">
                                 <IconButton size="small" onClick={() => handleMessageBuyer(order)}>
                                   <ChatIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Change Payment">
+                                <IconButton size="small" onClick={() => { setSelectedOrder(order); setNewPaymentStatus(order.payment_status); setPaymentDialogOpen(true); }}>
+                                  <PaymentIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Change Status">
@@ -628,6 +684,86 @@ const SellerOrders: React.FC = () => {
             <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
             <Button variant="contained" startIcon={<PrintIcon />}>
               Print
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Change Status Dialog */}
+        <Dialog
+          open={statusDialogOpen}
+          onClose={() => setStatusDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Change Order Status</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 1 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  label="Status"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(String(e.target.value))}
+                >
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="confirmed">Confirmed</MenuItem>
+                  <MenuItem value="processing">Processing</MenuItem>
+                  <MenuItem value="shipped">Shipped</MenuItem>
+                  <MenuItem value="delivered">Delivered</MenuItem>
+                  <MenuItem value="cancelled">Cancelled</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setStatusDialogOpen(false)} disabled={statusSaving}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!selectedOrder || statusSaving}
+              onClick={() => selectedOrder && handleStatusChange(selectedOrder.id, newStatus)}
+              startIcon={statusSaving ? <CircularProgress size={16} /> : <CheckCircleIcon />}
+            >
+              Update
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Change Payment Status Dialog */}
+        <Dialog
+          open={paymentDialogOpen}
+          onClose={() => setPaymentDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Change Payment Status</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 1 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Payment</InputLabel>
+                <Select
+                  label="Payment"
+                  value={newPaymentStatus}
+                  onChange={(e) => setNewPaymentStatus(String(e.target.value))}
+                >
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="processing">Processing</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="failed">Failed</MenuItem>
+                  <MenuItem value="refunded">Refunded</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPaymentDialogOpen(false)} disabled={paymentSaving}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!selectedOrder || paymentSaving}
+              onClick={() => selectedOrder && handlePaymentChange(selectedOrder.id, newPaymentStatus)}
+              startIcon={paymentSaving ? <CircularProgress size={16} /> : <PaymentIcon />}
+            >
+              Update
             </Button>
           </DialogActions>
         </Dialog>

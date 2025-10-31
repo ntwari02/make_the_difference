@@ -341,6 +341,14 @@ export const ordersApi = {
     if (Array.isArray(payload?.orders)) return payload;
     return { orders: payload?.data || [], pagination: payload?.pagination || {} } as any;
   },
+  updateStatus: async (orderId: string, status: string, notes?: string): Promise<any> => {
+    const { data } = await api.patch(`/orders/${orderId}/status`, { status, notes });
+    return (data as any).data || data;
+  },
+  updatePayment: async (orderId: string, payment_status: string, transaction_id?: string, payment_date?: string): Promise<any> => {
+    const { data } = await api.patch(`/orders/${orderId}/payment`, { payment_status, transaction_id, payment_date });
+    return (data as any).data || data;
+  },
   stats: async (): Promise<any> => {
     const { data } = await api.get('/orders/seller/me/stats');
     return (data as any).data || data;
@@ -404,9 +412,44 @@ export const messagesApi = {
     await api.delete(`/seller/messages/${conversationId}`);
   },
 
-  // Delete messages
+  // Delete messages (bulk) - avoid conversation delete fallback
   deleteMessages: async (conversationId: string, messageIds: string[]): Promise<void> => {
-    await api.delete(`/seller/messages/${conversationId}`, { data: { messageIds } });
+    // Preferred bulk action endpoint
+    try {
+      await api.post(`/seller/messages/${conversationId}/messages/delete`, { messageIds });
+      return;
+    } catch (err: any) {
+      if (err?.response?.status !== 404 && err?.response?.status !== 405) throw err;
+    }
+    // Alternative bulk endpoint naming
+    try {
+      await api.post(`/seller/messages/${conversationId}/messages/bulk-delete`, { messageIds });
+      return;
+    } catch (err: any) {
+      if (err?.response?.status !== 404 && err?.response?.status !== 405) throw err;
+    }
+    // If no safe endpoint exists, surface an error instead of deleting the whole conversation
+    throw new Error('Bulk message delete endpoint not available');
+  },
+  // Delete a single message (no conversation delete fallback)
+  deleteSingleMessage: async (conversationId: string, messageId: string): Promise<void> => {
+    // Try explicit nested resource first
+    try {
+      await api.delete(`/seller/messages/${conversationId}/messages/${messageId}`);
+      return;
+    } catch (err: any) {
+      // If endpoint not found, try an action route
+      if (err?.response?.status === 404 || err?.response?.status === 405) {
+        try {
+          await api.post(`/seller/messages/${conversationId}/messages/delete`, { messageIds: [messageId] });
+          return;
+        } catch (_) {
+          // fall through to legacy
+        }
+      }
+    }
+    // Do not fallback to deleting the entire conversation
+    throw new Error('Single message delete endpoint not available');
   },
 };
 

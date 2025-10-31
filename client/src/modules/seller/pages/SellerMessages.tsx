@@ -32,9 +32,11 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { Tabs, Tab } from '@mui/material';
 import {
   Send as SendIcon,
   Search as SearchIcon,
+  Close as CloseIcon,
   FilterList as FilterIcon,
   MoreVert as MoreIcon,
   Reply as ReplyIcon,
@@ -45,14 +47,19 @@ import {
   AttachFile as AttachIcon,
   Undo as UndoIcon,
   ForwardToInbox as ForwardIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { sellerApi } from '../services/sellerApi';
+import { getAllConversations, saveConversations, saveThread, getThread, upsertConversation, removeConversation } from '../services/messagesDb';
 import toast from 'react-hot-toast';
 import { LinearProgress } from '@mui/material';
+import { getImageUrl } from '../../shared/utils/imageUtils';
+import { alpha } from '@mui/material/styles';
 
 // Conversation in list view (mapped from backend)
 interface ConversationListItem {
@@ -108,8 +115,14 @@ const SellerMessages: React.FC = () => {
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
   
-  const [filter, setFilter] = useState<'inbox' | 'sent' | 'archived'>('inbox');
+  const [filter, setFilter] = useState<'inbox' | 'sent' | 'archived' | 'all'>(() => {
+    const saved = localStorage.getItem('seller:msgFolder');
+    return (saved === 'inbox' || saved === 'archived' || saved === 'sent' || saved === 'all') ? (saved as any) : 'all';
+  });
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTimer, setSearchTimer] = useState<any>(null);
+  const [firstLoaded, setFirstLoaded] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [replyText, setReplyText] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -128,6 +141,107 @@ const SellerMessages: React.FC = () => {
   const [composeBody, setComposeBody] = useState('');
   const [inlineCompose, setInlineCompose] = useState(false);
 
+  // Buyer-style controls
+  const [tabValue, setTabValue] = useState<number>(() => {
+    const saved = localStorage.getItem('seller:msgTab');
+    return saved ? parseInt(saved, 10) || 0 : 0;
+  });
+  const [filterUnread, setFilterUnread] = useState(false);
+  const [starredIds, setStarredIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('seller:starredConversations');
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch { return new Set<string>(); }
+  });
+
+  // Helpers to persist minimal conversations across sessions
+  const cacheKey = 'seller:cachedConversations';
+  const cacheFullKey = 'seller:cachedConversationsFull';
+  const readCachedConversations = (): any[] => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  };
+  const readCachedConversationsFull = (): any[] => {
+    try {
+      const raw = localStorage.getItem(cacheFullKey);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  };
+  const writeCachedConversation = (c: any) => {
+    try {
+      const list = readCachedConversations().filter((x) => x.id !== c.id);
+      list.unshift(c);
+      localStorage.setItem(cacheKey, JSON.stringify(list.slice(0, 20)));
+    } catch {}
+  };
+  const writeCachedConversationsFull = (list: any[]) => {
+    try { localStorage.setItem(cacheFullKey, JSON.stringify(list.slice(0, 50))); } catch {}
+  };
+
+  // Persist last-used folder
+  useEffect(() => {
+    try { localStorage.setItem('seller:msgFolder', filter); } catch {}
+  }, [filter]);
+  useEffect(() => {
+    try { localStorage.setItem('seller:msgTab', String(tabValue)); } catch {}
+  }, [tabValue]);
+  useEffect(() => {
+    try { localStorage.setItem('seller:starredConversations', JSON.stringify(Array.from(starredIds))); } catch {}
+  }, [starredIds]);
+
+  // On first mount, optimistically populate from cache so the list is not empty after login
+  useEffect(() => {
+    // Prefer IndexedDB (persistent) if available
+    (async () => {
+      try {
+        const persisted = await getAllConversations();
+        if (Array.isArray(persisted) && persisted.length > 0 && conversations.length === 0) {
+          setConversations(persisted as any);
+          setSelectedConversation(persisted[0] as any);
+        }
+      } catch {}
+    })();
+    // Prefer full cached list first
+    const full = readCachedConversationsFull();
+    if (full.length > 0 && conversations.length === 0) {
+      setConversations(full as any);
+      setSelectedConversation(full[0] as any);
+      if (filter !== 'all') setFilter('all');
+    }
+    const cachedList = readCachedConversations();
+    if (cachedList.length > 0 && conversations.length === 0) {
+      const mapped: ConversationListItem[] = cachedList.map((head: any) => ({
+        id: head.id,
+        subject: head.subject || 'No Subject',
+        buyer: { id: '', name: head.to || 'Unknown', avatar: '' },
+        lastMessage: {
+          id: `m-${Date.now()}`,
+          content: head.body || '',
+          senderId: 'me',
+          isFromSeller: true,
+          timestamp: head.timestamp || new Date().toISOString(),
+          read: true,
+        },
+        unreadCount: 0,
+        category: 'support',
+        priority: 'normal',
+        archived: false,
+        timestamp: head.timestamp || new Date().toISOString(),
+      } as any));
+      setConversations(mapped);
+      setSelectedConversation(mapped[0]);
+      if (filter !== 'sent') setFilter('sent');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load conversations list
   const loadConversations = async () => {
     try {
@@ -135,13 +249,92 @@ const SellerMessages: React.FC = () => {
       const result = await sellerApi.messages.getConversations({
         page,
         limit: rowsPerPage,
-        folder: filter,
+        folder: firstLoaded ? filter : 'all',
         search: searchTerm || undefined,
         category: categoryFilter !== 'all' ? categoryFilter as any : undefined,
       });
       
       setConversations(result.conversations || []);
       setTotalPages(result.pagination?.totalPages || 1);
+      if (Array.isArray(result.conversations) && result.conversations.length > 0) {
+        // Persist a full copy to avoid empty UI on next login
+        writeCachedConversationsFull(result.conversations);
+        // Also persist permanently in IndexedDB
+        try { await saveConversations(result.conversations); } catch {}
+      }
+
+      // Fallback: if nothing returned, try a broad fetch (folder=all, no search) to avoid empty UI
+      if ((!result.conversations || result.conversations.length === 0)) {
+        try {
+          const broad = await sellerApi.messages.getConversations({ page: 1, limit: rowsPerPage, folder: 'all' });
+          if (Array.isArray(broad.conversations) && broad.conversations.length > 0) {
+            setConversations(broad.conversations);
+            setTotalPages(broad.pagination?.totalPages || 1);
+            writeCachedConversationsFull(broad.conversations);
+            if (filter !== 'all') setFilter('all');
+          }
+        } catch {}
+      }
+      if (!firstLoaded) setFirstLoaded(true);
+
+      // Fallback: if API returns empty, try to restore the most recent conversation from session storage
+      if ((!result.conversations || result.conversations.length === 0) && !selectedConversation) {
+        // Check persistent cache first (survives logout)
+        const cachedList = readCachedConversations();
+        if (cachedList.length > 0) {
+          const mapped: ConversationListItem[] = cachedList.map((head: any) => ({
+            id: head.id,
+            subject: head.subject || 'No Subject',
+            buyer: { id: '', name: head.to || 'Unknown', avatar: '' },
+            lastMessage: {
+              id: `m-${Date.now()}`,
+              content: head.body || '',
+              senderId: 'me',
+              isFromSeller: true,
+              timestamp: head.timestamp || new Date().toISOString(),
+              read: true,
+            },
+            unreadCount: 0,
+            category: 'support',
+            priority: 'normal',
+            archived: false,
+            timestamp: head.timestamp || new Date().toISOString(),
+          } as any));
+          setConversations(mapped);
+          setSelectedConversation(mapped[0]);
+          setTotalPages(1);
+          if (filter !== 'sent') setFilter('sent');
+          return;
+        }
+        const cached = sessionStorage.getItem('seller:lastConversation');
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            const tempConv: ConversationListItem = {
+              id: data.id,
+              subject: data.subject || 'No Subject',
+              buyer: { id: '', name: data.to || 'Unknown', avatar: '' },
+              lastMessage: {
+                id: `m-${Date.now()}`,
+                content: data.body || '',
+                senderId: 'me',
+                isFromSeller: true,
+                timestamp: data.timestamp || new Date().toISOString(),
+                read: true,
+              },
+              unreadCount: 0,
+              category: 'support',
+              priority: 'normal',
+              archived: false,
+              timestamp: data.timestamp || new Date().toISOString(),
+            } as any;
+            setConversations([tempConv]);
+            setSelectedConversation(tempConv);
+            // Also switch to Sent to keep UX consistent
+            if (filter !== 'sent') setFilter('sent');
+          } catch {}
+        }
+      }
     } catch (error: any) {
       console.error('Failed to load conversations:', error);
       toast.error(error?.response?.data?.message || 'Failed to load conversations');
@@ -155,6 +348,49 @@ const SellerMessages: React.FC = () => {
     loadConversations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filter, searchTerm, categoryFilter, rowsPerPage]);
+
+  // Lightweight realtime: refresh on window focus and every 12s
+  useEffect(() => {
+    const onFocus = () => { loadConversations(); };
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => { loadConversations(); }, 12000);
+    return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SSE live updates
+  useEffect(() => {
+    // Find token from common places
+    const token = (localStorage.getItem('authToken') || localStorage.getItem('token') || '') as string;
+    const base = (import.meta as any)?.env?.VITE_PUBLIC_API_BASE_URL || (import.meta as any)?.env?.VITE_API_BASE_URL || (import.meta as any)?.env?.VITE_API_URL || '';
+    const apiBase = String(base || '').replace(/\/$/, '');
+    if (!apiBase) return;
+    const url = `${apiBase}/seller/messages/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource(url, { withCredentials: false });
+      const onAny = () => { loadConversations(); if (selectedConversation?.id) loadThread(selectedConversation.id); };
+      es.addEventListener('message.new', onAny as any);
+      es.addEventListener('conversation.updated', onAny as any);
+      es.addEventListener('conversation.deleted', onAny as any);
+      es.addEventListener('update', onAny as any);
+      es.onerror = () => { /* silently ignore; polling still active */ };
+    } catch {}
+    return () => { try { es && es.close(); } catch {} };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id]);
+
+  // Debounced search - mirrors buyer UX
+  useEffect(() => {
+    if (searchTimer) clearTimeout(searchTimer);
+    const t = setTimeout(() => {
+      setPage(1);
+      loadConversations();
+    }, 350);
+    setSearchTimer(t);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, categoryFilter, filter]);
 
   // Open compose from query params (?compose=email&subject=...)
   useEffect(() => {
@@ -187,13 +423,28 @@ const SellerMessages: React.FC = () => {
       setLoadingThread(true);
       const result = await sellerApi.messages.getConversationMessages(conversationId);
       setThread(result.messages || []);
+      try { await saveThread(conversationId, result.messages || []); } catch {}
       
       // Reload conversations to update unread counts
       await loadConversations();
     } catch (error: any) {
       console.error('Failed to load thread:', error);
-      toast.error(error?.response?.data?.message || 'Failed to load conversation');
-      setThread([]);
+      const status = error?.response?.status;
+      // If conversation was deleted or no longer accessible, clear selection gracefully
+      if (status === 400 || status === 404 || status === 401) {
+        setThread([]);
+        setSelectedConversation((prev) => {
+          if (!prev || prev.id !== conversationId) return prev;
+          return null;
+        });
+        // Remove from local list to keep UI consistent
+        setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+        try { await removeConversation(conversationId); } catch {}
+        toast.info('Conversation is no longer available');
+      } else {
+        toast.error(error?.response?.data?.message || 'Failed to load conversation');
+        setThread([]);
+      }
     } finally {
       setLoadingThread(false);
     }
@@ -273,6 +524,27 @@ const SellerMessages: React.FC = () => {
       
       // Reload conversations to update last message
       await loadConversations();
+      try {
+        await upsertConversation({
+          id: selectedConversation.id,
+          subject: selectedConversation.subject,
+          buyer: selectedConversation.buyer,
+          lastMessage: {
+            id: newMessage.id,
+            content: newMessage.content,
+            senderId: newMessage.sender.id,
+            isFromSeller: true,
+            timestamp: newMessage.timestamp,
+            read: true,
+          },
+          unreadCount: 0,
+          category: selectedConversation.category,
+          priority: selectedConversation.priority,
+          archived: selectedConversation.archived,
+          timestamp: newMessage.timestamp,
+        });
+        await saveThread(selectedConversation.id, [...thread, newMessage]);
+      } catch {}
       
       toast.success('Reply sent successfully');
     } catch (error: any) {
@@ -298,10 +570,32 @@ const SellerMessages: React.FC = () => {
     if (!selectedConversation) return;
     
     try {
-      await sellerApi.messages.deleteMessages(selectedConversation.id, [messageId]);
-      setThread((prev) => prev.filter((m) => m.id !== messageId));
+      // Prefer single-message deletion to avoid removing entire chat
+      if ((sellerApi as any).messages.deleteSingleMessage) {
+        await sellerApi.messages.deleteSingleMessage(selectedConversation.id, messageId);
+      } else {
+        await sellerApi.messages.deleteMessages(selectedConversation.id, [messageId]);
+      }
+      let nextLength = 0;
+      setThread((prev) => {
+        const filtered = prev.filter((m) => m.id !== messageId);
+        nextLength = filtered.length;
+        return filtered;
+      });
       toast.success('Message deleted');
-      await loadThread(selectedConversation.id);
+      // If no messages remain, the backend may have deleted the conversation as well
+      if (nextLength === 0 && selectedConversation) {
+        setConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
+        setSelectedConversation(null);
+        try { await removeConversation(selectedConversation.id); } catch {}
+        return;
+      }
+      // Otherwise, try to refresh thread but ignore 400/404 gracefully
+      try {
+        await loadThread(selectedConversation.id);
+        const msgs = await getThread(selectedConversation.id);
+        if (msgs) await saveThread(selectedConversation.id, msgs);
+      } catch {}
     } catch (error: any) {
       console.error('Failed to delete message:', error);
       toast.error(error?.response?.data?.message || 'Failed to delete message');
@@ -349,9 +643,43 @@ const SellerMessages: React.FC = () => {
     }
   };
 
+  const fallbackList = useMemo(() => {
+    if (conversations.length === 0 && selectedConversation) {
+      const conv = selectedConversation as any;
+      return [{
+        id: selectedConversation.id,
+        sender: {
+          name: selectedConversation.buyer?.name || 'Unknown',
+          avatar: conv.carImage || selectedConversation.buyer?.avatar || '',
+          type: (selectedConversation.buyer ? 'buyer' : 'admin') as 'buyer' | 'seller' | 'admin'
+        },
+        subject: conv.carTitle || selectedConversation.subject,
+        message: selectedConversation.lastMessage?.content || '',
+        timestamp: selectedConversation.lastMessage?.timestamp || selectedConversation.timestamp,
+        read: selectedConversation.lastMessage?.read ?? true,
+        priority: (selectedConversation.priority || 'normal') as 'low' | 'normal' | 'high',
+        category: (selectedConversation.category || 'support') as 'inquiry' | 'offer' | 'complaint' | 'support',
+        unreadCount: selectedConversation.unreadCount || 0,
+      }];
+    }
+    return [] as any[];
+  }, [conversations.length, selectedConversation]);
+
   const paged = useMemo(() => {
-    return messagesForList;
-  }, [messagesForList]);
+    let list = messagesForList.length > 0 ? messagesForList : fallbackList;
+    // Apply buyer-like tabs
+    if (tabValue === 1) {
+      // Sent: where lastMessage is from seller, or we lack info – keep as is but filter by isFromSeller if present
+      list = list.filter((c: any) => c.lastMessage ? c.lastMessage.isFromSeller : true);
+    } else if (tabValue === 2) {
+      // Starred
+      list = list.filter((c: any) => starredIds.has(c.id));
+    }
+    if (filterUnread) {
+      list = list.filter((c: any) => (c.unreadCount || 0) > 0);
+    }
+    return list;
+  }, [messagesForList, fallbackList, tabValue, filterUnread, starredIds]);
 
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
@@ -412,56 +740,53 @@ const SellerMessages: React.FC = () => {
     <SellerLayout>
       <Box sx={{ flexGrow: 1 }}>
         {/* Three-pane layout */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '260px 1fr', lg: '280px 1.1fr 1.4fr' }, gap: 2 }}>
-          {/* Folders */}
-          <Card sx={{ height: { md: 'calc(100vh - 140px)' }, position: { md: 'sticky' as any }, top: { md: 80 } }}>
-            <CardContent>
-              <Typography variant="overline" color="text.secondary">Folders</Typography>
-              <List>
-                {[
-                  { key: 'inbox', label: 'Inbox', count: totalUnreadCount },
-                  { key: 'archived', label: 'Archived', count: 0 },
-                  { key: 'sent', label: 'Sent', count: 0 },
-                ].map((f: any) => (
-                  <ListItem key={f.key} disablePadding>
-                    <ListItemButton selected={filter === f.key} onClick={() => setFilter(f.key)}>
-                      <ListItemText primary={f.label} />
-                      {f.count ? <Chip size="small" label={f.count} /> : null}
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-
-          {/* Messages list with toolbar */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 1.4fr' }, gap: 2 }}>
+          {/* Messages list with buyer-like toolbar */}
           <Card>
             <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: { md: 'calc(100vh - 140px)' } }}>
-              <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: 1, borderColor: 'divider' }}>
+              <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: 1, borderColor: 'divider', flexWrap: 'wrap' }}>
                 <Checkbox
                   indeterminate={selectedIds.size > 0 && selectedIds.size < paged.length}
                   checked={paged.length > 0 && selectedIds.size === paged.length}
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
-                <TextField 
-                  size="small" 
-                  placeholder="Search messages..." 
-                  value={searchTerm} 
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
-                  onKeyDown={(e) => { if (e.key === 'Enter') loadConversations(); }}
-                  InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} 
-                  sx={{ flex: 1 }} 
-                />
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Category</InputLabel>
-                  <Select value={categoryFilter} label="Category" onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
-                    <MenuItem value="all">All</MenuItem>
-                    <MenuItem value="inquiry">Inquiries</MenuItem>
-                    <MenuItem value="offer">Offers</MenuItem>
-                    <MenuItem value="complaint">Complaints</MenuItem>
-                    <MenuItem value="support">Support</MenuItem>
-                  </Select>
-                </FormControl>
+                {!searchOpen ? (
+                  <Tooltip title="Search">
+                    <IconButton onClick={() => setSearchOpen(true)}>
+                      <SearchIcon />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <TextField 
+                    size="small" 
+                    placeholder="Search conversations" 
+                    value={searchTerm} 
+                    autoFocus
+                    onBlur={() => { if (!searchTerm) setSearchOpen(false); }}
+                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
+                    InputProps={{ 
+                      startAdornment: <SearchIcon sx={{ mx: 1, color: 'text.secondary' }} />, 
+                      endAdornment: (
+                        <IconButton size="small" onClick={() => { setSearchTerm(''); setSearchOpen(false); }}><CloseIcon fontSize="small" /></IconButton>
+                      )
+                    }} 
+                    sx={{ 
+                      flex: '0 0 auto',
+                      width: { xs: 240, sm: 320, md: 360 },
+                      mr: 1,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 999,
+                        bgcolor: (t) => t.palette.mode === 'dark' ? 'background.default' : '#f3f6fb',
+                      }
+                    }} 
+                  />
+                )}
+                <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36 } }}>
+                  <Tab label="Inbox" />
+                  <Tab label="Sent" />
+                  <Tab label="Starred" />
+                </Tabs>
+                <Chip label="Unread" color={filterUnread ? 'primary' : 'default'} variant={filterUnread ? 'filled' : 'outlined'} size="small" onClick={() => setFilterUnread(!filterUnread)} />
                 <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkMarkRead}><MarkReadIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={bulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
                 <Button 
@@ -515,14 +840,14 @@ const SellerMessages: React.FC = () => {
                             alignItems: 'flex-start'
                           }}
                         >
-                          <ListItemAvatar>
+                           <ListItemAvatar>
                             <Badge color="error" variant="dot" invisible={message.unreadCount === 0}>
                               <Avatar src={message.sender.avatar || undefined} sx={{ bgcolor: 'primary.main' }}>
                                 {message.sender.name.charAt(0)}
                               </Avatar>
                             </Badge>
                           </ListItemAvatar>
-                          <ListItemText
+                           <ListItemText
                             primaryTypographyProps={{ component: 'div' }}
                             secondaryTypographyProps={{ component: 'div' }}
                             primary={
@@ -530,8 +855,7 @@ const SellerMessages: React.FC = () => {
                                 <Typography variant="subtitle1" component="span" fontWeight={message.read ? 400 : 600} noWrap>
                                   {message.sender.name}
                                 </Typography>
-                                <Chip label={message.category} size="small" color={getCategoryColor(message.category) as any} />
-                                <Chip label={message.priority} size="small" color={getPriorityColor(message.priority) as any} />
+                                {starredIds.has(message.id) ? <Chip label="★" size="small" color="warning" /> : null}
                               </Box>
                             }
                             secondary={
@@ -545,6 +869,11 @@ const SellerMessages: React.FC = () => {
                               </>
                             }
                           />
+                          <Tooltip title={starredIds.has(message.id) ? 'Unstar' : 'Star'}>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setStarredIds((prev) => { const next = new Set(prev); if (next.has(message.id)) next.delete(message.id); else next.add(message.id); return next; }); }}>
+                              {starredIds.has(message.id) ? <StarIcon color="warning" /> : <StarBorderIcon />}
+                            </IconButton>
+                          </Tooltip>
                         </ListItemButton>
                       </ListItem>
                       {index < paged.length - 1 && <Divider />}
@@ -599,7 +928,19 @@ const SellerMessages: React.FC = () => {
                               <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteThreadMessage(msg.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
                             )}
                           </Box>
-                          <Paper sx={{ p: 1, bgcolor: msg.sender.type === 'seller' ? 'primary.light' : 'background.paper' }}>
+                          <Paper sx={{ 
+                            p: 1, 
+                            bgcolor: (t) => {
+                              const secondary = (t.palette as any).secondary?.main || t.palette.grey[500];
+                              const lightBuyer = alpha(secondary, 0.12);
+                              const darkBuyer = alpha(secondary, 0.18);
+                              // Seller bubbles: neutral background; Buyer bubbles: tinted
+                              if (msg.sender.type === 'seller') {
+                                return 'background.paper';
+                              }
+                              return t.palette.mode === 'light' ? lightBuyer : darkBuyer;
+                            }
+                          }}>
                             <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                           </Paper>
                           {msg.sender.type === 'seller' && (
@@ -694,16 +1035,18 @@ const SellerMessages: React.FC = () => {
                             archived: false,
                             timestamp: new Date().toISOString(),
                           };
-                          // If it existed, refresh and select to avoid duplicates
-                          if (created.existed) {
-                            await loadConversations();
-                            const after = (prev => prev);
-                            const found = conversations.find(c => c.id === created.id);
-                            setSelectedConversation(found || conv);
-                          } else {
+                          // Persist last conversation so it survives reload
+                          sessionStorage.setItem('seller:lastConversation', JSON.stringify({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() }));
+                          writeCachedConversation({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() });
+                          // Switch to Sent and refresh list so the new conversation appears
+                          setFilter('sent');
+                          await loadConversations();
+                          let found = conversations.find(c => c.id === created.id);
+                          if (!found) {
                             setConversations((prev) => [conv, ...prev]);
-                            setSelectedConversation(conv);
+                            found = conv as any;
                           }
+                          setSelectedConversation(found || conv);
                         } else {
                           await loadConversations();
                         }
@@ -769,14 +1112,17 @@ const SellerMessages: React.FC = () => {
                   archived: false,
                   timestamp: new Date().toISOString(),
                 };
-                if (created.existed) {
-                  await loadConversations();
-                  const found = conversations.find(c => c.id === created.id);
-                  setSelectedConversation(found || conv);
-                } else {
+                // Persist last conversation so it survives reload
+                sessionStorage.setItem('seller:lastConversation', JSON.stringify({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() }));
+                writeCachedConversation({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() });
+                setFilter('sent');
+                await loadConversations();
+                let found = conversations.find(c => c.id === created.id);
+                if (!found) {
                   setConversations((prev) => [conv, ...prev]);
-                  setSelectedConversation(conv);
+                  found = conv as any;
                 }
+                setSelectedConversation(found || conv);
               } else {
                 await loadConversations();
               }

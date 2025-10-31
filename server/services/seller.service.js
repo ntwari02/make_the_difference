@@ -842,6 +842,12 @@ const startConversation = async (sellerUserId, { to, subject, content }) => {
       await executeQuery(`
         UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `, [conversationId]);
+
+      // Emit live update for seller stream
+      try {
+        const bus = global.__SELLER_MSG_BUS__;
+        bus && bus.emit('seller.messages', { event: 'message.new', userId: sellerUserId, conversationId, messageId });
+      } catch (_) {}
     }
 
     return { id: conversationId, buyer_id: buyerId, subject: subject || null, existed: existing.length > 0 };
@@ -939,7 +945,7 @@ const getSellerConversations = async (userId, filters = {}) => {
 
     const params = [userId, userId, userId, sellerRows[0].id, sellerRows[0].id];
 
-    // Filter by folder (inbox, sent, archived)
+    // Filter by folder (inbox, sent, archived, all)
     if (filters.folder === 'archived') {
       query += ` AND JSON_EXTRACT(seller_participant.settings, '$.archived') = 1`;
     } else if (filters.folder === 'sent') {
@@ -950,6 +956,9 @@ const getSellerConversations = async (userId, filters = {}) => {
           AND m2.sender_id = ?
         )`;
       params.push(userId);
+    } else if (filters.folder === 'all') {
+      // show everything (archived and non-archived)
+      // no additional filter
     } else {
       // inbox (default)
       query += ` AND (JSON_EXTRACT(seller_participant.settings, '$.archived') IS NULL 
@@ -1017,6 +1026,9 @@ const getSellerConversations = async (userId, filters = {}) => {
           AND m2.sender_id = ?
         )`;
       countParams.push(userId);
+    } else if (filters.folder === 'all') {
+      // show everything (archived and non-archived)
+      // no additional filter
     } else {
       countQuery += ` AND (JSON_EXTRACT(seller_participant.settings, '$.archived') IS NULL 
         OR JSON_EXTRACT(seller_participant.settings, '$.archived') = 0)`;
@@ -1174,7 +1186,7 @@ const getConversationMessages = async (userId, conversationId) => {
 // Send a message (reply to conversation)
 const sendMessage = async (userId, conversationId, content, options = {}) => {
   try {
-    // Verify seller is a participant
+    // Verify seller is a participant OR the owner of the conversation (backward compatibility)
     const participantCheck = await executeQuery(`
       SELECT conversation_id
       FROM conversation_participants
@@ -1185,7 +1197,12 @@ const sendMessage = async (userId, conversationId, content, options = {}) => {
     `, [conversationId, userId]);
 
     if (participantCheck.length === 0) {
-      throw new Error('Conversation not found or unauthorized');
+      const ownerCheck = await executeQuery(`
+        SELECT id FROM conversations WHERE id = ? AND seller_id = ? LIMIT 1
+      `, [conversationId, userId]);
+      if (ownerCheck.length === 0) {
+        throw new Error('Conversation not found or unauthorized');
+      }
     }
 
     const messageId = require('crypto').randomUUID();
@@ -1239,6 +1256,18 @@ const sendMessage = async (userId, conversationId, content, options = {}) => {
     }
 
     const m = createdMsg[0];
+    // Emit live updates to both sides
+    try {
+      const bus = global.__SELLER_MSG_BUS__;
+      if (bus) {
+        bus.emit('seller.messages', { event: 'message.new', userId, conversationId, messageId });
+        const others = await executeQuery(`
+          SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND user_id <> ? AND left_at IS NULL LIMIT 5
+        `, [conversationId, userId]);
+        (others || []).forEach(row => bus.emit('seller.messages', { event: 'message.new', userId: row.user_id, conversationId, messageId }));
+      }
+    } catch (_) {}
+
     return {
       id: m.id,
       sender: {
@@ -1293,6 +1322,18 @@ const markMessagesAsRead = async (userId, conversationId, messageIds = null) => 
         WHERE conversation_id = ? AND is_read = 0 AND sender_id != ?
       `, [conversationId, userId]);
     }
+
+    // Emit a read event to sender and participants
+    try {
+      const bus = global.__SELLER_MSG_BUS__;
+      if (bus) {
+        bus.emit('seller.messages', { event: 'message.read', userId, conversationId, messageIds: messageIds || 'all' });
+        const others = await executeQuery(`
+          SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND user_id <> ? AND left_at IS NULL LIMIT 5
+        `, [conversationId, userId]);
+        (others || []).forEach(row => bus.emit('seller.messages', { event: 'message.read', userId: row.user_id, conversationId, messageIds: messageIds || 'all' }));
+      }
+    } catch (_) {}
 
     return { success: true };
   } catch (err) {

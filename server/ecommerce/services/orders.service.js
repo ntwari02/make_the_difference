@@ -256,6 +256,10 @@ class OrdersService {
 
   async updateOrderStatus(orderId, status, changedBy, changedByType = 'seller', notes = null) {
     try {
+      // Read current status to prevent double inventory adjustments
+      const currentRows = await executeQuery(`SELECT status FROM ${this.tableName} WHERE id = ?`, [orderId]);
+      const previousStatus = currentRows?.[0]?.status || null;
+
       const updateQuery = `
         UPDATE ${this.tableName}
         SET status = ?, updated_at = NOW()
@@ -269,6 +273,31 @@ class OrdersService {
 
       // Add to status history
       await this.addStatusHistory(orderId, status, changedBy, notes);
+
+      // If the order transitioned to a terminal fulfilled state, decrement inventory for ordered cars
+      const isNowCompleted = ['delivered', 'completed'].includes(String(status || '').toLowerCase());
+      const wasCompleted = ['delivered', 'completed'].includes(String(previousStatus || '').toLowerCase());
+      if (isNowCompleted && !wasCompleted) {
+        try {
+          const items = await executeQuery(`SELECT item_id, item_type, quantity FROM ${this.orderItemsTable} WHERE order_id = ?`, [orderId]);
+          for (const it of (items || [])) {
+            const type = (it.item_type || '').toLowerCase();
+            const qty = Math.max(1, parseInt(it.quantity || 1, 10));
+            const itemId = it.item_id;
+            if (type === 'car' && itemId) {
+              // Decrement quantity, clamp to 0
+              await executeQuery(`
+                UPDATE cars
+                SET quantity = GREATEST(0, COALESCE(quantity, 0) - ?), updated_at = NOW()
+                WHERE id = ?
+              `, [qty, itemId]);
+            }
+          }
+        } catch (invErr) {
+          console.error('Inventory adjustment failed for order', orderId, invErr);
+          // Non-fatal
+        }
+      }
 
       return await this.getOrderById(orderId);
     } catch (error) {
@@ -340,15 +369,18 @@ class OrdersService {
           COUNT(CASE WHEN status = 'processing' THEN 1 END) as processing_orders,
           COUNT(CASE WHEN status = 'shipped' THEN 1 END) as shipped_orders,
           COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered_orders,
+          COUNT(CASE WHEN (status = 'completed' OR status = 'delivered' OR payment_status = 'completed') THEN 1 END) as completed_orders,
           COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_orders,
           COUNT(CASE WHEN payment_status = 'pending' THEN 1 END) as pending_payments,
           COUNT(CASE WHEN payment_status = 'completed' THEN 1 END) as completed_payments,
-          COALESCE(SUM(CASE WHEN payment_status = 'completed' THEN total_amount ELSE 0 END), 0) as total_revenue
+          COALESCE(SUM(CASE WHEN payment_status = 'completed' THEN total_amount ELSE 0 END), 0) as total_revenue,
+          (SELECT COUNT(DISTINCT buyer_id) FROM ${this.tableName} WHERE seller_id = ?) as total_customers,
+          (SELECT COUNT(*) FROM cars WHERE seller_id = ?) as total_products
         FROM ${this.tableName}
         WHERE seller_id = ?
       `;
 
-      const stats = await executeQuery(statsQuery, [sellerId]);
+      const stats = await executeQuery(statsQuery, [sellerId, sellerId, sellerId]);
       return stats[0] || {};
     } catch (error) {
       console.error('Error getting order stats:', error);

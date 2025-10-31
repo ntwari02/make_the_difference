@@ -9,6 +9,36 @@ const { authenticateToken, authorizeRoles } = require('../../middleware/auth.mid
 
 // ==================== ORDERS CRUD ROUTES ====================
 
+// Convenience alias: Get orders for the authenticated seller (same as :sellerId using req.user.id)
+router.get('/seller/me', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const filters = {
+      status: req.query.status,
+      payment_status: req.query.payment_status,
+      start_date: req.query.start_date,
+      end_date: req.query.end_date,
+      search: req.query.search,
+      page: req.query.page,
+      limit: req.query.limit
+    };
+
+    const result = await ordersService.getOrdersBySeller(sellerId, filters);
+
+    res.json({
+      success: true,
+      data: result.orders,
+      pagination: result.pagination
+    });
+  } catch (error) {
+    console.error('Error getting orders (me):', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Get orders for seller (with filters and pagination)
 router.get('/seller/:sellerId', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
   try {
@@ -201,6 +231,25 @@ router.patch('/:orderId/notes', authenticateToken, authorizeRoles(['seller', 'ad
     });
   } catch (error) {
     console.error('Error updating seller notes:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Convenience alias: stats for authenticated seller
+router.get('/seller/me/stats', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const stats = await ordersService.getOrderStats(sellerId);
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting order stats (me):', error);
     res.status(400).json({
       success: false,
       message: error.message

@@ -15,6 +15,7 @@ const SellerAnalytics: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [stats, setStats] = useState<any>(null);
 
   // Use real data from API - no mock fallbacks
   const chartData = useMemo(() => {
@@ -51,13 +52,91 @@ const SellerAnalytics: React.FC = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await sellerApi.analytics.getSellerAnalytics({ period, start_date: startDate || undefined, end_date: endDate || undefined });
-        console.log('Analytics API Response:', JSON.stringify(res, null, 2));
-        console.log('Sales by period count:', res?.sales_by_period?.length || 0);
-        console.log('Top models count:', res?.top_selling_models?.length || 0);
-        console.log('Channel data:', res?.sales_by_channel);
-        console.log('Conversion rate:', res?.conversion_rate);
-        dispatch(setAnalytics(res));
+        const [analyticsRes, statsRes] = await Promise.all([
+          sellerApi.analytics.getSellerAnalytics({ period, start_date: startDate || undefined, end_date: endDate || undefined }),
+          sellerApi.orders.stats().catch(() => null),
+        ]);
+        console.log('Analytics API Response:', JSON.stringify(analyticsRes, null, 2));
+        console.log('Sales by period count:', analyticsRes?.sales_by_period?.length || 0);
+        console.log('Top models count:', analyticsRes?.top_selling_models?.length || 0);
+        console.log('Channel data:', analyticsRes?.sales_by_channel);
+        console.log('Conversion rate:', analyticsRes?.conversion_rate);
+        // If analytics is missing series data, derive from recent orders as a fallback
+        let enriched = analyticsRes as any;
+        if (!Array.isArray(analyticsRes?.sales_by_period) || analyticsRes.sales_by_period.length === 0
+            || !Array.isArray(analyticsRes?.top_selling_models) || !Array.isArray(analyticsRes?.sales_by_channel) || !Array.isArray(analyticsRes?.sales_by_location)) {
+          try {
+            const ordersResp = await sellerApi.orders.listMy({ page: 1, limit: 500 });
+            const orders = Array.isArray((ordersResp as any)?.orders) ? (ordersResp as any).orders : [];
+            const groups: Record<string, { sales_count: number; total_revenue: number }> = {};
+            const modelGroups: Record<string, { units: number; revenue: number }> = {};
+            const upsert = (key: string, amount: number) => {
+              if (!groups[key]) groups[key] = { sales_count: 0, total_revenue: 0 };
+              groups[key].sales_count += 1;
+              groups[key].total_revenue += Number(amount || 0);
+            };
+            for (const o of orders) {
+              const dt = new Date(o.created_at || Date.now());
+              if (period === 'week') {
+                const day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+                upsert(day, o.total_amount);
+              } else if (period === 'month') {
+                const wk = `Week ${Math.ceil(dt.getDate() / 7)}`;
+                upsert(wk, o.total_amount);
+              } else {
+                const mon = dt.toLocaleString('en', { month: 'short' });
+                upsert(mon, o.total_amount);
+              }
+
+              // Aggregate top models/products by first item name
+              const item = (o.items || [])[0] || {};
+              const modelName = item.item_name || item.name || 'Unknown Model';
+              if (!modelGroups[modelName]) modelGroups[modelName] = { units: 0, revenue: 0 };
+              modelGroups[modelName].units += Number(item.quantity || 1);
+              modelGroups[modelName].revenue += Number(o.total_amount || 0);
+            }
+            const labels = period === 'week'
+              ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+              : period === 'month'
+              ? ['Week 1','Week 2','Week 3','Week 4','Week 5']
+              : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const sales_by_period = labels.map(label => ({
+              period: label,
+              sales_count: groups[label]?.sales_count || 0,
+              total_revenue: groups[label]?.total_revenue || 0,
+            }));
+            const top_selling_models = Object.entries(modelGroups)
+              .map(([model, v]) => ({ model, units: v.units, revenue: v.revenue }))
+              .sort((a, b) => b.units - a.units)
+              .slice(0, 10);
+            let sales_by_channel = [{ channel: 'Marketplace', sales: orders.length }];
+            let totalRevenue = orders.reduce((s: number, o: any) => s + Number(o.total_amount || 0), 0);
+            let sales_by_location = [{ region: 'Online', revenue: totalRevenue }];
+            if (orders.length === 0 && statsRes) {
+              // fallback to stats if orders list is empty (e.g., pagination/permissions)
+              sales_by_channel = [{ channel: 'Marketplace', sales: Number(statsRes.total_orders || 0) }];
+              totalRevenue = Number(statsRes.total_revenue || 0);
+              sales_by_location = [{ region: 'Online', revenue: totalRevenue }];
+            }
+            const conversion_rate = (() => {
+              const t = Number(statsRes?.total_orders || 0);
+              const c = Number(statsRes?.completed_orders || 0);
+              return t ? Math.min(100, Math.max(0, (c / t) * 100)) : 0;
+            })();
+            enriched = { 
+              ...analyticsRes, 
+              sales_by_period: analyticsRes?.sales_by_period?.length ? analyticsRes.sales_by_period : sales_by_period,
+              top_selling_models: analyticsRes?.top_selling_models || top_selling_models,
+              sales_by_channel: analyticsRes?.sales_by_channel || sales_by_channel,
+              sales_by_location: analyticsRes?.sales_by_location || sales_by_location,
+              conversion_rate: (analyticsRes as any)?.conversion_rate ?? conversion_rate,
+            } as any;
+          } catch (e) {
+            // keep original analyticsRes if orders fetch fails
+          }
+        }
+        dispatch(setAnalytics(enriched));
+        if (statsRes) setStats(statsRes);
         console.log('Analytics dispatched to Redux');
       } catch (error: any) {
         console.error('Failed to load analytics:', error);
@@ -99,68 +178,26 @@ const SellerAnalytics: React.FC = () => {
   };
 
   const totals = useMemo(() => {
-    const totalRevenue = chartData.reduce((s, p) => s + (p.revenue || 0), 0);
-    const totalSales = chartData.reduce((s, p) => s + (p.sales || 0), 0);
+    // Prefer backend stats (same as dashboard) when available
+    const statRevenue = Number(stats?.total_revenue) || 0;
+    const statOrders = Number(stats?.total_orders) || 0;
+    const fallbackRevenue = chartData.reduce((s, p) => s + (p.revenue || 0), 0);
+    const fallbackSales = chartData.reduce((s, p) => s + (p.sales || 0), 0);
+    const totalRevenue = statRevenue || fallbackRevenue;
+    const totalSales = statOrders || fallbackSales;
     const avgOrderValue = totalSales ? Math.round(totalRevenue / totalSales) : 0;
     return { totalRevenue, totalSales, avgOrderValue };
+  }, [chartData, stats]);
+
+  // Selling statistics: use real API chart data
+  const sellingStatsData = useMemo(() => {
+    return chartData;
   }, [chartData]);
 
-  // Generate selling statistics data based on period filter
-  const sellingStatsData = useMemo(() => {
-    if (period === 'week') {
-      // Last 7 days
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return days.map((day, idx) => ({
-        period: day,
-        sales: Math.floor(Math.random() * 20) + 10,
-        revenue: Math.floor(Math.random() * 15000) + 5000,
-      }));
-    } else if (period === 'month') {
-      // Last 12 months
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return months.map((month, idx) => ({
-        period: month,
-        sales: Math.floor(Math.random() * 30) + 15,
-        revenue: Math.floor(Math.random() * 25000) + 10000,
-      }));
-    } else {
-      // Last 5 years
-      const currentYear = new Date().getFullYear();
-      return Array.from({ length: 5 }, (_, idx) => ({
-        period: String(currentYear - 4 + idx),
-        sales: Math.floor(Math.random() * 200) + 100,
-        revenue: Math.floor(Math.random() * 200000) + 100000,
-      }));
-    }
-  }, [period]);
-
-  // Generate orders statistics data for radar chart based on period
+  // Orders radar: map from real chart data
   const ordersStatsData = useMemo(() => {
-    const categories = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    
-    if (period === 'week') {
-      // Orders by day of week
-      return categories.map((day, idx) => ({
-        category: day.substring(0, 3),
-        orders: Math.floor(Math.random() * 50) + 20,
-        fullValue: Math.floor(Math.random() * 100) + 50,
-      }));
-    } else if (period === 'month') {
-      // Orders by week of month
-      return ['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((week, idx) => ({
-        category: week,
-        orders: Math.floor(Math.random() * 100) + 50,
-        fullValue: Math.floor(Math.random() * 200) + 100,
-      }));
-    } else {
-      // Orders by quarter
-      return ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => ({
-        category: quarter,
-        orders: Math.floor(Math.random() * 500) + 200,
-        fullValue: Math.floor(Math.random() * 1000) + 500,
-      }));
-    }
-  }, [period]);
+    return chartData.map((p: any) => ({ category: p.period, orders: p.sales, fullValue: (p.revenue || 0) / 1000 }));
+  }, [chartData]);
 
   return (
     <SellerLayout>

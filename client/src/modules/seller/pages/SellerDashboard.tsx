@@ -22,13 +22,10 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  TrendingUp,
-  TrendingDown,
   ShoppingCart,
   AttachMoney,
   People,
   Inventory,
-  Star,
   Notifications,
   Visibility,
   Assessment,
@@ -44,160 +41,88 @@ import {
 } from '@mui/icons-material';
 import SellerLayout from '../components/layout/SellerLayout';
 import { ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend } from 'recharts';
+import { sellerApi } from '../services/sellerApi';
 
-// Mock data for demonstration
-const mockStats = {
-  totalRevenue: 125430,
-  totalOrders: 1247,
-  totalCustomers: 892,
-  totalProducts: 156,
-  revenueGrowth: 12.5,
-  ordersGrowth: 8.3,
-  customersGrowth: 15.7,
-  productsGrowth: 5.2,
+// Defaults used only as fallback while loading
+const fallbackStats = {
+  totalRevenue: 0,
+  totalOrders: 0,
+  totalCustomers: 0,
+  totalProducts: 0,
+  revenueGrowth: 0,
+  ordersGrowth: 0,
+  customersGrowth: 0,
+  productsGrowth: 0,
 };
 
-const mockRecentOrders = [
-  {
-    id: 'ORD-001',
-    customer: 'John Smith',
-    amount: 1250,
-    status: 'completed',
-    date: '2024-01-15',
-    avatar: '/avatars/john.jpg',
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Sarah Johnson',
-    amount: 890,
-    status: 'pending',
-    date: '2024-01-15',
-    avatar: '/avatars/sarah.jpg',
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Mike Wilson',
-    amount: 2100,
-    status: 'processing',
-    date: '2024-01-14',
-    avatar: '/avatars/mike.jpg',
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Emily Davis',
-    amount: 675,
-    status: 'completed',
-    date: '2024-01-14',
-    avatar: '/avatars/emily.jpg',
-  },
-  {
-    id: 'ORD-005',
-    customer: 'David Brown',
-    amount: 1450,
-    status: 'shipped',
-    date: '2024-01-13',
-    avatar: '/avatars/david.jpg',
-  },
-];
-
-const mockTopProducts = [
-  {
-    id: 1,
-    name: 'Premium Car Engine Oil',
-    sales: 245,
-    revenue: 12250,
-    growth: 15.2,
-    rating: 4.8,
-    image: '/products/oil.jpg',
-  },
-  {
-    id: 2,
-    name: 'Brake Pad Set',
-    sales: 189,
-    revenue: 9450,
-    growth: 8.7,
-    rating: 4.6,
-    image: '/products/brake.jpg',
-  },
-  {
-    id: 3,
-    name: 'Air Filter',
-    sales: 156,
-    revenue: 4680,
-    growth: 12.3,
-    rating: 4.7,
-    image: '/products/filter.jpg',
-  },
-  {
-    id: 4,
-    name: 'Spark Plugs',
-    sales: 134,
-    revenue: 4020,
-    growth: 6.8,
-    rating: 4.5,
-    image: '/products/spark.jpg',
-  },
-];
-
-const mockNotifications = [
-  {
-    id: 1,
-    title: 'New Order Received',
-    message: 'Order #ORD-001 has been placed by John Smith',
-    type: 'success',
-    time: '2 minutes ago',
-    read: false,
-  },
-  {
-    id: 2,
-    title: 'Low Stock Alert',
-    message: 'Brake Pad Set is running low (5 items left)',
-    type: 'warning',
-    time: '15 minutes ago',
-    read: false,
-  },
-  {
-    id: 3,
-    title: 'Payment Received',
-    message: 'Payment of $1,250 received for Order #ORD-001',
-    type: 'info',
-    time: '1 hour ago',
-    read: true,
-  },
-  {
-    id: 4,
-    title: 'Customer Review',
-    message: 'New 5-star review received for Premium Car Engine Oil',
-    type: 'success',
-    time: '2 hours ago',
-    read: true,
-  },
-];
+// Humanize relative time for notifications
+const timeAgo = (date: Date) => {
+  const diff = Math.max(0, Date.now() - date.getTime());
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+};
 
 const SellerDashboard: React.FC = () => {
   const theme = useTheme();
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [orderMenuAnchor, setOrderMenuAnchor] = useState<{ el: HTMLElement; orderId: string } | null>(null);
-  
+  const [stats, setStats] = useState<any>(fallbackStats);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const notifications = React.useMemo(() => {
+    const items: Array<{ id: string; title: string; message: string; type: 'success' | 'warning' | 'error' | 'info'; time: string; read: boolean; }> = [];
+    recentOrders.slice(0, 8).forEach((o: any) => {
+      const created = new Date(o.created_at || Date.now());
+      // New order
+      items.push({
+        id: `${o.id}-new`,
+        title: 'New Order Received',
+        message: `Order ${o.order_number} placed by ${o.first_name || ''} ${o.last_name || ''}`.trim(),
+        type: 'success',
+        time: timeAgo(created),
+        read: false,
+      });
+      // Payment updates
+      if (o.payment_status === 'completed') {
+        items.push({
+          id: `${o.id}-payment`,
+          title: 'Payment Received',
+          message: `Payment received for ${o.order_number}`,
+          type: 'info',
+          time: timeAgo(new Date(o.updated_at || created)),
+          read: false,
+        });
+      }
+      // Pending warning
+      if (o.status === 'pending') {
+        items.push({
+          id: `${o.id}-pending`,
+          title: 'Order Pending',
+          message: `${o.order_number} is awaiting confirmation`,
+          type: 'warning',
+          time: timeAgo(created),
+          read: false,
+        });
+      }
+    });
+    // Limit and return
+    return items.slice(0, 10);
+  }, [recentOrders]);
+
   // Additional state from collaborator's changes
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  // reserved UI state (not used currently)
+  // const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  // const [openDialog, setOpenDialog] = useState(false);
   const refreshInterval = 30000; // 30 seconds
   
   // Auto-refresh preference (default to true).
   // We avoid using context hooks here to prevent provider ordering issues.
   const autoRefresh = true;
   
-  // Quick Add Dialog form state
-  const [quickAddForm, setQuickAddForm] = useState({
-    productName: '',
-    unitPrice: '',
-    quantity: '',
-    category: '',
-    description: '',
-    isActive: true
-  });
-
   // Auto-refresh functionality - respects user preference from settings
   useEffect(() => {
     if (!autoRefresh) {
@@ -205,13 +130,13 @@ const SellerDashboard: React.FC = () => {
       return;
     }
     
-    let interval: NodeJS.Timeout | null = null;
+    let interval: any | null = null;
     let mounted = true;
     
     interval = setInterval(() => {
       if (mounted) {
-        // Simulate data refresh
-        console.log('Refreshing dashboard data...');
+        // Refresh live data
+        void refreshData();
       }
     }, refreshInterval);
     
@@ -221,12 +146,38 @@ const SellerDashboard: React.FC = () => {
     };
   }, [refreshInterval, autoRefresh]);
 
-  const handleOrderMenuOpen = (event: React.MouseEvent<HTMLElement>, orderId: string) => {
-    setOrderMenuAnchor({ el: event.currentTarget, orderId });
+  useEffect(() => {
+    void refreshData();
+  }, [period]);
+
+  const refreshData = async () => {
+    try {
+      // Stats
+      const s = await sellerApi.orders.stats();
+      setStats({
+        totalRevenue: s?.total_revenue ?? 0,
+        totalOrders: s?.total_orders ?? 0,
+        totalCustomers: s?.total_customers ?? 0, // backend may not provide; keep 0
+        totalProducts: s?.total_products ?? 0,   // backend may not provide; keep 0
+        revenueGrowth: 0,
+        ordersGrowth: 0,
+        customersGrowth: 0,
+        productsGrowth: 0,
+      });
+
+      // Recent orders
+      const res = await sellerApi.orders.listMy({ page: 1, limit: 10 });
+      const list = (res as any)?.orders || [];
+      setRecentOrders(list);
+    } catch (e) {
+      console.error('Failed to refresh dashboard data', e);
+    } finally {
+      // no-op
+    }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleOrderMenuOpen = (event: React.MouseEvent<HTMLElement>, orderId: string) => {
+    setOrderMenuAnchor({ el: event.currentTarget, orderId });
   };
 
   const handleOrderMenuClose = () => {
@@ -273,64 +224,41 @@ const SellerDashboard: React.FC = () => {
     }).format(amount);
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
-  };
-
-  // Generate selling statistics data based on period filter (for Bar Chart)
+  // Derive chart data from recent orders
   const sellingStatsData = React.useMemo(() => {
-    if (period === 'week') {
-      // Last 7 days
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return days.map((day) => ({
-        period: day,
-        sales: Math.floor(Math.random() * 20) + 10,
-        revenue: Math.floor(Math.random() * 15000) + 5000,
-      }));
-    } else if (period === 'month') {
-      // Last 12 months
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return months.map((month) => ({
-        period: month,
-        sales: Math.floor(Math.random() * 30) + 15,
-        revenue: Math.floor(Math.random() * 25000) + 10000,
-      }));
-    } else {
-      // Last 5 years
-      const currentYear = new Date().getFullYear();
-      return Array.from({ length: 5 }, (_, idx) => ({
-        period: String(currentYear - 4 + idx),
-        sales: Math.floor(Math.random() * 200) + 100,
-        revenue: Math.floor(Math.random() * 200000) + 100000,
-      }));
-    }
-  }, [period]);
+    // Derive from recentOrders totals; fallback to zeros
+    const orders = recentOrders;
+    const byKey: Record<string, { sales: number; revenue: number }> = {};
+    const upsert = (key: string, amt: number) => {
+      byKey[key] = byKey[key] || { sales: 0, revenue: 0 };
+      byKey[key].sales += 1;
+      byKey[key].revenue += Number(amt || 0);
+    };
+    orders.forEach((o: any) => {
+      const dt = new Date(o.created_at || o.date || Date.now());
+      if (period === 'week') {
+        const day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+        upsert(day, o.total_amount);
+      } else if (period === 'month') {
+        const week = `Week ${Math.ceil((dt.getDate()) / 7)}`;
+        upsert(week, o.total_amount);
+      } else {
+        const month = dt.toLocaleString('en', { month: 'short' });
+        upsert(month, o.total_amount);
+      }
+    });
+    const labels = period === 'week'
+      ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+      : period === 'month'
+      ? ['Week 1','Week 2','Week 3','Week 4','Week 5']
+      : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return labels.map(l => ({ period: l, sales: byKey[l]?.sales || 0, revenue: byKey[l]?.revenue || 0 }));
+  }, [period, recentOrders]);
 
-  // Generate orders statistics data for radar chart based on period
   const ordersStatsData = React.useMemo(() => {
-    if (period === 'week') {
-      // Orders by day of week
-      return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
-        category: day,
-        orders: Math.floor(Math.random() * 50) + 20,
-        fullValue: Math.floor(Math.random() * 100) + 50,
-      }));
-    } else if (period === 'month') {
-      // Orders by week of month
-      return ['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((week) => ({
-        category: week,
-        orders: Math.floor(Math.random() * 100) + 50,
-        fullValue: Math.floor(Math.random() * 200) + 100,
-      }));
-    } else {
-      // Orders by quarter
-      return ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
-        category: quarter,
-        orders: Math.floor(Math.random() * 500) + 200,
-        fullValue: Math.floor(Math.random() * 1000) + 500,
-      }));
-    }
-  }, [period]);
+    const source = sellingStatsData;
+    return source.map(row => ({ category: row.period, orders: row.sales, fullValue: row.revenue / 1000 }));
+  }, [sellingStatsData]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -455,34 +383,34 @@ const SellerDashboard: React.FC = () => {
         }}>
           <StatCard
             title="Total Revenue"
-            value={formatCurrency(mockStats.totalRevenue)}
+            value={formatCurrency(stats.totalRevenue)}
             icon={<AttachMoney sx={{ fontSize: 20 }} />}
             color="success"
-            trend={mockStats.revenueGrowth}
+            trend={stats.revenueGrowth}
             subtitle="Last 30 days"
           />
           <StatCard
             title="Total Orders"
-            value={mockStats.totalOrders.toLocaleString()}
+            value={(stats.totalOrders || 0).toLocaleString()}
             icon={<ShoppingCart sx={{ fontSize: 20 }} />}
             color="primary"
-            trend={mockStats.ordersGrowth}
+            trend={stats.ordersGrowth}
             subtitle="This month"
           />
           <StatCard
             title="Total Customers"
-            value={mockStats.totalCustomers.toLocaleString()}
+            value={(stats.totalCustomers || 0).toLocaleString()}
             icon={<People sx={{ fontSize: 20 }} />}
             color="info"
-            trend={mockStats.customersGrowth}
+            trend={stats.customersGrowth}
             subtitle="Active users"
           />
           <StatCard
             title="Total Products"
-            value={mockStats.totalProducts.toLocaleString()}
+            value={(stats.totalProducts || 0).toLocaleString()}
             icon={<Inventory sx={{ fontSize: 20 }} />}
             color="warning"
-            trend={mockStats.productsGrowth}
+            trend={stats.productsGrowth}
             subtitle="In catalog"
           />
         </Box>
@@ -616,7 +544,7 @@ const SellerDashboard: React.FC = () => {
                 </Button>
               </Box>
               <Stack spacing={2}>
-                {mockRecentOrders.map((order) => (
+                {recentOrders.map((order: any) => (
                   <Box
                     key={order.id}
                     sx={{
@@ -636,19 +564,19 @@ const SellerDashboard: React.FC = () => {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                      <Avatar src={order.avatar} sx={{ width: 48, height: 48 }} />
+                      <Avatar sx={{ width: 48, height: 48 }}>{(order.first_name?.[0] || 'U')}</Avatar>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="body1" fontWeight={600} noWrap>
-                          {order.customer}
+                          {order.first_name} {order.last_name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                          {order.id} • {order.date}
+                          {order.order_number} • {new Date(order.created_at).toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 2 }}>
                       <Typography variant="h6" fontWeight={600} color="primary.main">
-                        {formatCurrency(order.amount)}
+                        {formatCurrency(order.total_amount)}
                       </Typography>
                       <Chip
                         label={order.status}
@@ -733,12 +661,12 @@ const SellerDashboard: React.FC = () => {
                 <Typography variant="h6" fontWeight={600}>
                   Notifications
                 </Typography>
-                <Badge badgeContent={2} color="error">
+                <Badge badgeContent={notifications.filter(n => !n.read).length} color="error">
                   <Notifications />
                 </Badge>
               </Box>
               <Stack spacing={2}>
-                {mockNotifications.map((notification) => (
+                {notifications.map((notification) => (
                   <Alert
                     key={notification.id}
                     severity={notification.type as any}
@@ -786,50 +714,7 @@ const SellerDashboard: React.FC = () => {
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
               gap: 2 
             }}>
-              {mockTopProducts.map((product) => (
-                <Card key={product.id} sx={{ 
-                  borderRadius: 2,
-                  transition: 'all 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-                  }
-                }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar
-                        src={product.image}
-                        sx={{ width: 40, height: 40, mr: 2 }}
-                      />
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body1" fontWeight={600} noWrap>
-                          {product.name}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Star sx={{ fontSize: 16, color: 'warning.main' }} />
-                          <Typography variant="caption">
-                            {product.rating}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Sales: {product.sales}
-                      </Typography>
-                      <Chip
-                        label={formatPercentage(product.growth)}
-                        size="small"
-                        color={product.growth > 0 ? 'success' : 'error'}
-                        icon={product.growth > 0 ? <TrendingUp sx={{ fontSize: 14 }} /> : <TrendingDown sx={{ fontSize: 14 }} />}
-                      />
-                    </Box>
-                    <Typography variant="h6" fontWeight={600} color="primary">
-                      {formatCurrency(product.revenue)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
+              {/* In absence of a dedicated products API on dashboard, we keep placeholders here. */}
             </Box>
           </CardContent>
         </Card>
