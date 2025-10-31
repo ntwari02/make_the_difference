@@ -28,7 +28,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Send as SendIcon, Search as SearchIcon, AttachFile as AttachIcon, MoreVert as MoreIcon, Star as StarIcon, StarBorder as StarBorderIcon, DoneAll as DoneAllIcon, Archive as ArchiveIcon } from '@mui/icons-material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import { buyerMessagesApi } from '../services/messagesApi';
 
 interface Conversation {
@@ -159,7 +158,6 @@ const BuyerMessages: React.FC = () => {
   };
 
   return (
-    <BuyerLayout>
       <Box>
         <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box>
@@ -307,7 +305,6 @@ const BuyerMessages: React.FC = () => {
           </DialogActions>
         </Dialog>
       </Box>
-    </BuyerLayout>
   );
 };
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography, GridLegacy as Grid, Button, TextField, Divider, Chip, List, ListItem, ListItemText } from '@mui/material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 
 const BuyerPayments: React.FC = () => {
   const [cardNumber, setCardNumber] = React.useState('');
@@ -13,7 +12,6 @@ const BuyerPayments: React.FC = () => {
   ];
 
   return (
-    <BuyerLayout>
       <Box>
         <Box sx={{ mb: 3, p: 3, borderRadius: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)', border: (theme) => `1px solid ${theme.palette.divider}` }}>
           <Typography variant="h4" fontWeight={800}>Payments</Typography>
@@ -62,7 +60,6 @@ const BuyerPayments: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
-    </BuyerLayout>
   );
 };
 

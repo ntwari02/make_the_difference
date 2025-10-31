@@ -12,8 +12,9 @@ import {
   Divider,
   FormControlLabel,
   Switch,
+  Tabs,
+  Tab,
 } from '@mui/material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import { buyerApi } from '../services/buyerApi';
 import authApi from '../../auth/services/authApi';
 import type { BuyerProfile as BuyerProfileType } from '../types';
@@ -35,6 +36,7 @@ const BuyerProfile: React.FC = () => {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+  const [profileTab, setProfileTab] = React.useState<number>(0);
 
   const [emailAlerts, setEmailAlerts] = React.useState(true);
   const [priceAlerts, setPriceAlerts] = React.useState(true);
@@ -156,17 +158,10 @@ const BuyerProfile: React.FC = () => {
   };
 
   return (
-    <BuyerLayout>
       <Box>
-        {/* Header */}
-        <Box sx={{ mb: 3, p: 3, borderRadius: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)', border: (theme) => `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="h4" fontWeight={800}>My Profile</Typography>
-          <Typography variant="body2" color="text.secondary">Manage your personal information, security, and preferences</Typography>
-        </Box>
-
         <Grid container spacing={2}>
           {/* Left column - Avatar and quick stats */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ mb: 2 }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
                 <Avatar sx={{ width: 96, height: 96 }} src={avatar}>{!avatar && ((firstName || lastName || 'B')[0])}</Avatar>
@@ -193,82 +188,72 @@ const BuyerProfile: React.FC = () => {
           </Grid>
 
           {/* Right column - Forms */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ mb: 2 }}>
               <CardContent>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Personal Information</Typography>
-                {loading && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <CircularProgress size={20} />
-                    <Typography variant="body2">Loading profile...</Typography>
+                <Tabs value={profileTab} onChange={(_, v) => setProfileTab(v)} sx={{ mb: 2 }}>
+                  <Tab label="Personal Information" />
+                  <Tab label="Security" />
+                </Tabs>
+
+                {/* Fixed-height content area to prevent layout shift when switching tabs */}
+                <Box sx={{ minHeight: 420 }}>
+                {profileTab === 0 && (
+                  <Box>
+                    {loading && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <CircularProgress size={20} />
+                        <Typography variant="body2">Loading profile...</Typography>
+                      </Box>
+                    )}
+                    {error && (
+                      <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+                    )}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth label="Location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button variant="contained" onClick={onSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+                      </Grid>
+                    </Grid>
                   </Box>
                 )}
-                {error && (
-                  <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+
+                {profileTab === 1 && (
+                  <Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth type="password" label="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth type="password" label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField fullWidth type="password" label="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button variant="outlined" onClick={onChangePassword} disabled={saving}>{saving ? 'Saving...' : 'Update Password'}</Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
                 )}
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Location" value={location} onChange={(e) => setLocation(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button variant="contained" onClick={onSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save Changes'}</Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Security</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button variant="outlined" onClick={onChangePassword} disabled={saving}>{saving ? 'Saving...' : 'Update Password'}</Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Preferences</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Preferred Make" placeholder="e.g., Tesla, Toyota" />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Preferred Body Type" placeholder="e.g., Sedan, SUV" />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Max Budget ($)" placeholder="e.g., 40000" />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button variant="outlined" onClick={onSavePreferences} disabled={saving}>{saving ? 'Saving...' : 'Save Preferences'}</Button>
-                  </Grid>
-                </Grid>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -277,7 +262,6 @@ const BuyerProfile: React.FC = () => {
           <Alert onClose={() => setSuccess(null)} severity="success" variant="filled">{success}</Alert>
         </Snackbar>
       </Box>
-    </BuyerLayout>
   );
 };
 

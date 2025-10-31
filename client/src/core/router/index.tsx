@@ -50,6 +50,7 @@ const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/Deale
 // Buyer pages
 const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BrowsePage = React.lazy(() => import('../../modules/buyer/pages/BrowsePage')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SparePartsBrowse = React.lazy(() => import('../../modules/buyer/pages/SparePartsBrowse')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerFavorites = React.lazy(() => import('../../modules/buyer/pages/BuyerFavorites')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerMessages = React.lazy(() => import('../../modules/buyer/pages/BuyerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerProfile = React.lazy(() => import('../../modules/buyer/pages/BuyerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -242,6 +243,14 @@ const router = createBrowserRouter([
     element: (
       <React.Suspense fallback={<Fallback />}>
         <BrowsePage />
+      </React.Suspense>
+    ),
+  },
+  {
+    path: '/spare-parts',
+    element: (
+      <React.Suspense fallback={<Fallback />}>
+        <SparePartsBrowse />
       </React.Suspense>
     ),
   },

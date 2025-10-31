@@ -14,7 +14,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Send as SendIcon, SmartToy as BotIcon, Refresh as RefreshIcon, Bolt as BoltIcon } from '@mui/icons-material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import aiChatApi from '../services/aiChatApi';
 
 interface ChatMessage {
@@ -84,7 +83,6 @@ const BuyerAIChat: React.FC = () => {
   };
 
   return (
-    <BuyerLayout>
       <Box>
         <Box sx={{ mb: 3, p: 3, borderRadius: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)', border: (theme) => `1px solid ${theme.palette.divider}` }}>
           <Typography variant="h4" fontWeight={800}>AI Car Assistant</Typography>
@@ -152,7 +150,6 @@ const BuyerAIChat: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
-    </BuyerLayout>
   );
 };
 

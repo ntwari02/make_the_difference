@@ -50,24 +50,49 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
 	}, []);
 
 	return (
-		<Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', overflow: 'hidden', width: '100%' }}>
+		<Box sx={{
+			display: 'flex',
+			minHeight: '100vh',
+			bgcolor: (theme) => theme.palette.mode === 'dark'
+				? 'linear-gradient(180deg, #0f172a 0%, #111827 60%, #0b1220 100%)'
+				: 'linear-gradient(180deg, #f8fafc 0%, #f3f4f6 60%, #eef2ff 100%)',
+			overflow: 'hidden',
+			position: 'relative',
+			width: '100%',
+		}}>
+			{/* Header at top spanning full width */}
+			<BuyerHeader onMenuClick={() => setSidebarOpen((o) => !o)} />
+
 			{/* Sidebar */}
 			<BuyerSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} drawerWidth={DRAWER_WIDTH} collapsedWidth={COLLAPSED_DRAWER_WIDTH} />
 
 			{/* Main Content */}
-			<Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-				{/* Header */}
-				<BuyerHeader onMenuClick={() => setSidebarOpen((o) => !o)} />
-
+			<Box component="main" sx={{
+				flexGrow: 1,
+				display: 'flex',
+				flexDirection: 'column',
+				minHeight: '100vh',
+				width: '100%',
+				ml: 0,
+				transition: theme.transitions.create(['margin', 'width'], {
+					easing: theme.transitions.easing.sharp,
+					duration: theme.transitions.duration.leavingScreen,
+				}),
+				backdropFilter: 'saturate(120%)',
+			}}>
 				{/* Page Content */}
-				<Box sx={{ flexGrow: 1, mt: '64px', width: '100%', maxWidth: '100%', pl: 2, pr: 3, py: 2 }}>
-					<Container maxWidth="xl">
-						{children}
-					</Container>
+				<Box sx={{
+					flexGrow: 1,
+					mt: '64px', // Header height
+					width: '100%',
+					maxWidth: '100%',
+					pl: { xs: 2, md: 3 },
+					pr: { xs: 2, md: 3 },
+					py: 2,
+				}}>
+					{children}
 				</Box>
 			</Box>
-
-			
 		</Box>
 	);
 };

@@ -19,7 +19,6 @@ import {
 	Alert,
 	Snackbar,
 } from '@mui/material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import { buyerApi } from '../services/buyerApi';
 import authApi from '../../auth/services/authApi';
 
@@ -203,14 +202,8 @@ const BuyerSettings: React.FC = () => {
 	};
 
 	return (
-		<BuyerLayout>
+			<>
 			<Box>
-				{/* Header */}
-				<Box sx={{ mb: 3, p: 3, borderRadius: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)', border: (theme) => `1px solid ${theme.palette.divider}` }}>
-					<Typography variant="h4" fontWeight={800}>Settings</Typography>
-					<Typography variant="body2" color="text.secondary">Control notifications, privacy, security, and preferences</Typography>
-				</Box>
-
 				<Grid container spacing={2}>
 					{/* Left column */}
 					<Grid item xs={12} md={6}>
@@ -308,32 +301,13 @@ const BuyerSettings: React.FC = () => {
 								<Button variant="outlined" sx={{ mr: 1 }} onClick={saveSettings} disabled={saving || loading}>Change Password</Button>
 							</CardContent>
 						</Card>
-
-						{/* Sessions */}
-						<Card>
-							<CardContent>
-								<Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Active Sessions</Typography>
-								<List>
-									{(showAllSessions ? sessions : sessions.slice(0, 5)).map((s) => (
-										<ListItem key={s.id} divider secondaryAction={<Button size="small" onClick={() => revokeSession(s.id)}>Sign out</Button>}>
-											<ListItemText primary={`Session`} secondary={`Created: ${formatDate(s.created_at)} · Expires: ${formatDate(s.expires_at)}`} />
-										</ListItem>
-									))}
-								</List>
-								<Divider sx={{ my: 1.5 }} />
-								<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-									<Button variant="outlined" onClick={revokeAll}>Sign out of all devices</Button>
-									<Button variant="text" onClick={() => setShowAllSessions((v) => !v)}>{showAllSessions ? 'Show less' : 'Show all'}</Button>
-								</Box>
-							</CardContent>
-						</Card>
 					</Grid>
 				</Grid>
 			</Box>
 			<Snackbar open={!!success} autoHideDuration={2500} onClose={() => setSuccess(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
 				<Alert onClose={() => setSuccess(null)} severity="success" variant="filled">{success}</Alert>
 			</Snackbar>
-		</BuyerLayout>
+		</>
 	);
 };
 

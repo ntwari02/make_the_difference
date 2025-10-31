@@ -19,7 +19,6 @@ import {
   DirectionsCar as CarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { MoreVert as MoreIcon } from '@mui/icons-material';
 
@@ -76,7 +75,6 @@ const BuyerDashboard: React.FC = () => {
   ];
 
   return (
-    <BuyerLayout>
       <Box>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
@@ -100,7 +98,7 @@ const BuyerDashboard: React.FC = () => {
                     transition: 'transform 0.3s ease',
                     boxShadow: theme.shadows[8],
                   },
-                  borderRadius: 3,
+                  borderRadius: 1,
                   boxShadow: theme.shadows[2],
                   border: `1px solid ${theme.palette.divider}`,
                   height: '100%',
@@ -109,7 +107,7 @@ const BuyerDashboard: React.FC = () => {
               >
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: `${stat.color}20`, color: stat.color, width: 56, height: 56, boxShadow: `0 6px 16px ${stat.color}40` }}>
+                    <Avatar sx={{ bgcolor: `${stat.color}20`, color: stat.color, width: 40, height: 40, boxShadow: `0 4px 10px ${stat.color}30`, '& .MuiSvgIcon-root': { fontSize: 18 } }}>
                       {stat.icon}
                     </Avatar>
                     <Box>
@@ -128,7 +126,7 @@ const BuyerDashboard: React.FC = () => {
         </Grid>
 
         {/* Two-column layout: Charts left, Content right */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 2fr' }, gap: 3, mb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3, mb: 4 }}>
           {/* Left Column: Charts */}
           <Box sx={{ display: 'grid', gap: 2 }}>
             <Card>
@@ -287,10 +285,6 @@ const BuyerDashboard: React.FC = () => {
         </Box>
 
       </Box>
-      
-      {/* Debug Tool - Remove in Production */}
-      
-    </BuyerLayout>
   );
 };
 

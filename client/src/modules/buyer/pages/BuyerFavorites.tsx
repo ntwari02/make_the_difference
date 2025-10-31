@@ -17,7 +17,6 @@ import {
   Delete as DeleteIcon,
   DirectionsCar as CarIcon,
 } from '@mui/icons-material';
-import BuyerLayout from '../components/layout/BuyerLayout';
 
 // Reuse simple brand/body mapping from Browse for consistent images
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
@@ -60,7 +59,6 @@ const BuyerFavorites: React.FC = () => {
   const remove = (id: string) => setItems((prev) => prev.filter((x) => x.id !== id));
 
   return (
-    <BuyerLayout>
       <Box>
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
           <Typography variant="h4" fontWeight={700}>My Favorites</Typography>
@@ -128,7 +126,6 @@ const BuyerFavorites: React.FC = () => {
           </Grid>
         )}
       </Box>
-    </BuyerLayout>
   );
 };
 

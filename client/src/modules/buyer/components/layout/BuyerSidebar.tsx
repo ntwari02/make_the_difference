@@ -18,9 +18,9 @@ import {
   Favorite as FavoriteIcon,
   Message as MessageIcon,
   SmartToy as AIIcon,
-  Payment as PaymentIcon,
   Settings as SettingsIcon,
   Person as ProfileIcon,
+  Build as SparePartsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -41,9 +41,9 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { title: 'Dashboard', path: '/buyer/dashboard', icon: <DashboardIcon /> },
   { title: 'Browse', path: '/browse', icon: <BrowseIcon /> },
+  { title: 'Spare Parts', path: '/spare-parts', icon: <SparePartsIcon /> },
   { title: 'Favorites', path: '/buyer/favorites', icon: <FavoriteIcon /> },
   { title: 'Messages', path: '/buyer/messages', icon: <MessageIcon />, badge: 2 },
-  { title: 'Payments', path: '/buyer/payments', icon: <PaymentIcon /> },
   { title: 'Profile', path: '/buyer/profile', icon: <ProfileIcon /> },
   { title: 'Settings', path: '/buyer/settings', icon: <SettingsIcon /> },
 ];

@@ -34,56 +34,11 @@ import { useNavigate } from 'react-router-dom';
 import { vehicleApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 
-// Image sources by brand/body with a solid fallback
+// Fallback image for when real image fails to load
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
-const IMAGE_MAP: Record<string, string[]> = {
-  tesla: [
-    'https://images.unsplash.com/photo-1549921296-3ecf9a1f1bda?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=1600&auto=format&fit=crop',
-  ],
-  toyota: [
-    'https://images.unsplash.com/photo-1541443131876-b76fe6b3c59b?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1584345604476-8ec0f33c2b9e?q=80&w=1600&auto=format&fit=crop',
-  ],
-  bmw: [
-    'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=1600&auto=format&fit=crop',
-  ],
-  honda: [
-    'https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1571607388063-6730f31c439b?q=80&w=1600&auto=format&fit=crop',
-  ],
-  sedan: [
-    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1600&auto=format&fit=crop',
-  ],
-  suv: [
-    'https://images.unsplash.com/photo-1593941707874-ef25b8b4a92f?q=80&w=1600&auto=format&fit=crop',
-  ],
-  hatchback: [
-    'https://images.unsplash.com/photo-1517940310602-75f38f447b04?q=80&w=1600&auto=format&fit=crop',
-  ],
-  pickup: [
-    'https://images.unsplash.com/photo-1607374858067-87e1a71012f8?q=80&w=1600&auto=format&fit=crop',
-  ],
-};
-
-const chooseImageFor = (title: string, body: string, seed: number): string => {
-  const t = title.toLowerCase();
-  const b = (body || '').toLowerCase();
-  const pick = (arr: string[]) => arr[(seed + arr.length) % arr.length] || FALLBACK_IMAGE;
-  if (t.includes('tesla')) return pick(IMAGE_MAP.tesla);
-  if (t.includes('toyota')) return pick(IMAGE_MAP.toyota);
-  if (t.includes('bmw')) return pick(IMAGE_MAP.bmw);
-  if (t.includes('honda')) return pick(IMAGE_MAP.honda);
-  if (b.includes('sedan')) return pick(IMAGE_MAP.sedan);
-  if (b.includes('suv')) return pick(IMAGE_MAP.suv);
-  if (b.includes('hatch')) return pick(IMAGE_MAP.hatchback);
-  if (b.includes('pickup')) return pick(IMAGE_MAP.pickup);
-  return FALLBACK_IMAGE;
-};
 
 // Robustly extract a primary image from various backend shapes
-const extractPrimaryImage = (car: any, seed: number, titleHint: string, bodyHint: string): string => {
+const extractPrimaryImage = (car: any): string | null => {
   const tryParseArray = (val: any): string[] => {
     if (!val) return [];
     if (Array.isArray(val)) return val as any[];
@@ -94,30 +49,42 @@ const extractPrimaryImage = (car: any, seed: number, titleHint: string, bodyHint
       } catch {}
       // comma-separated paths
       if (val.includes(',')) return val.split(',').map((s) => s.trim());
-      return [val];
+      // Single string path
+      if (val.trim()) return [val.trim()];
     }
     return [];
   };
 
-  const candidatesRaw: any[] = (
-    tryParseArray(car.images) || []
-  ).concat(
-    tryParseArray(car.photos) || []
-  ).concat(
-    tryParseArray(car.images_json) || []
-  );
+  const candidatesRaw: any[] = [];
 
-  // Also consider common single fields
-  const singleFields = [car.image, car.photo, car.thumbnail, car.main_image, car.mainImage, car.cover, car.cover_image, car.imageUrl, car.photoUrl];
-  for (const f of singleFields) {
-    if (typeof f === 'string' && f.trim()) candidatesRaw.unshift(f.trim());
+  // Priority 1: Check images field (most common)
+  if (car.images) {
+    candidatesRaw.push(...tryParseArray(car.images));
   }
 
-  // Heuristic: scan all keys that look like they contain image paths
+  // Priority 2: Check photos field
+  if (car.photos) {
+    candidatesRaw.push(...tryParseArray(car.photos));
+  }
+
+  // Priority 3: Check images_json field
+  if (car.images_json) {
+    candidatesRaw.push(...tryParseArray(car.images_json));
+  }
+
+  // Priority 4: Check single image fields
+  const singleFields = [car.image, car.photo, car.thumbnail, car.main_image, car.mainImage, car.cover, car.cover_image, car.imageUrl, car.photoUrl];
+  for (const f of singleFields) {
+    if (typeof f === 'string' && f.trim()) {
+      candidatesRaw.push(f.trim());
+    }
+  }
+
+  // Priority 5: Heuristic scan for image-related fields
   try {
     Object.keys(car || {}).forEach((k) => {
       const lk = k.toLowerCase();
-      if (lk.includes('image') || lk.includes('photo') || lk.includes('thumbnail') || lk.includes('thumb')) {
+      if ((lk.includes('image') || lk.includes('photo') || lk.includes('thumbnail') || lk.includes('thumb')) && !candidatesRaw.some(c => c === (car as any)[k])) {
         const v = (car as any)[k];
         const arr = tryParseArray(v);
         if (arr.length > 0) {
@@ -134,16 +101,16 @@ const extractPrimaryImage = (car: any, seed: number, titleHint: string, bodyHint
     });
   } catch {}
 
-  // Normalize to string URLs
+  // Normalize to string URLs - filter out empty and convert to proper URLs
   const normalized: string[] = candidatesRaw
     .map((item) => {
       if (!item) return '';
-      if (typeof item === 'string') return item;
+      if (typeof item === 'string') return item.trim();
       if (typeof item === 'object') {
         // common object shapes { url } or { path }
-        if (item.url) return String(item.url);
-        if (item.path) return String(item.path);
-        if (item.src) return String(item.src);
+        if (item.url) return String(item.url).trim();
+        if (item.path) return String(item.path).trim();
+        if (item.src) return String(item.src).trim();
       }
       return '';
     })
@@ -151,11 +118,39 @@ const extractPrimaryImage = (car: any, seed: number, titleHint: string, bodyHint
 
   if (normalized.length > 0) {
     const first = normalized[0];
-    return getImageUrl(first);
+    
+    // If it's already a full path, use it
+    if (first.startsWith('/uploads/cars/')) {
+      return getImageUrl(first);
+    }
+    
+    // If it's a full path with /uploads/, use it
+    if (first.startsWith('/uploads/')) {
+      return getImageUrl(first);
+    }
+    
+    // If it's already an absolute URL, return it
+    if (first.startsWith('http://') || first.startsWith('https://')) {
+      return first;
+    }
+    
+    // If it's just a filename (like "1761820541820-8688-car-image-1.webp"), 
+    // try to reconstruct the path using car ID
+    if (first && car.id && !first.includes('/')) {
+      // Try to reconstruct: /uploads/cars/{carId}/{filename}
+      const reconstructed = `/uploads/cars/${car.id}/${first}`;
+      return getImageUrl(reconstructed);
+    }
+    
+    // Otherwise, try getImageUrl which handles relative paths
+    const url = getImageUrl(first);
+    if (url && !url.includes('images.unsplash.com')) {
+      return url;
+    }
   }
 
-  // Fallback to a deterministic stock image by brand/body
-  return chooseImageFor(titleHint, bodyHint, seed);
+  // Return null instead of fallback - let the component handle it
+  return null;
 };
 
 type Listing = {
@@ -205,7 +200,8 @@ const BrowsePage: React.FC = () => {
         const vehicles = Array.isArray((res as any)?.vehicles) ? (res as any).vehicles : (Array.isArray(res as any) ? (res as any) : (res as any)?.data || []);
         const mapped: Listing[] = vehicles.map((v: any, idx: number) => {
           const title = v.title || [v.brand, v.model].filter(Boolean).join(' ') || 'Vehicle';
-          const image = extractPrimaryImage(v, idx, title, v.body_type || v.body || '');
+          const image = extractPrimaryImage(v);
+          // Only use real images from database
           return {
             id: String(v.id ?? v._id ?? `${idx}`),
             title,
@@ -216,7 +212,7 @@ const BrowsePage: React.FC = () => {
             fuel: v.fuel_type || v.fuel,
             transmission: v.transmission,
             body: v.body_type || v.body,
-            thumbnail: image,
+            thumbnail: image || undefined, // Don't use fallback here - handle in render
           };
         });
         if ((import.meta as any).env?.DEV) {
@@ -391,13 +387,31 @@ const BrowsePage: React.FC = () => {
   const ListingCard: React.FC<{ item: Listing; view: 'grid' | 'list' }> = ({ item, view }) => (
     <Card sx={{ height: '100%' }}>
       <Box sx={{ position: 'relative' }}>
-        <Box
-          component="img"
-          src={item.thumbnail || FALLBACK_IMAGE}
-          alt={item.title}
-          sx={{ width: '100%', height: view === 'grid' ? 180 : 220, objectFit: 'cover' }}
-          onError={(e: any) => { e.currentTarget.src = FALLBACK_IMAGE; }}
-        />
+        {item.thumbnail ? (
+          <Box
+            component="img"
+            src={item.thumbnail}
+            alt={item.title}
+            sx={{ width: '100%', height: view === 'grid' ? 180 : 220, objectFit: 'cover' }}
+            onError={(e: any) => { 
+              // Only fallback if image fails to load
+              e.currentTarget.src = FALLBACK_IMAGE; 
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              width: '100%',
+              height: view === 'grid' ? 180 : 220,
+              bgcolor: 'grey.200',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">No Image</Typography>
+          </Box>
+        )}
         <IconButton
           onClick={() => toggleFavorite(item.id)}
           sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
