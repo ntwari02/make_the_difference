@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 import { Send as SendIcon, Search as SearchIcon, AttachFile as AttachIcon, MoreVert as MoreIcon, Star as StarIcon, StarBorder as StarBorderIcon, DoneAll as DoneAllIcon, Archive as ArchiveIcon } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
+import { buyerMessagesApi } from '../services/messagesApi';
 
 interface Conversation {
   id: string;
@@ -78,7 +79,7 @@ const BuyerMessages: React.FC = () => {
   const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
 
   // Local copy so we can toggle starred/unread in UI
-  const [convList, setConvList] = React.useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [convList, setConvList] = React.useState<Conversation[]>([]);
 
   const [filters, setFilters] = React.useState<{ new: boolean; unread: boolean; important: boolean }>({ new: false, unread: false, important: false });
 
@@ -111,11 +112,49 @@ const BuyerMessages: React.FC = () => {
   const markAllAsRead = () => setConvList((list) => list.map((c) => ({ ...c, unread: 0 })));
   const archiveFiltered = () => setConvList((list) => list.filter((c) => !conversations.some((fc) => fc.id === c.id)));
 
-  const messages = MOCK_MESSAGES[activeId] || [];
+  const [messages, setMessages] = React.useState<Message[]>([]);
 
-  const sendMessage = () => {
-    if (!draft.trim()) return;
-    messages.push({ id: `${Date.now()}`, from: 'buyer', text: draft.trim(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const data = await buyerMessagesApi.getConversations({ page: 1, limit: 50 });
+      if (!mounted) return;
+      const list = (data.conversations || []).map((c: any) => ({
+        id: c.id,
+        dealer: c.subject || 'Conversation',
+        lastMessage: c.lastMessage?.content || '',
+        avatar: '',
+        unread: c.unreadCount || 0,
+        starred: false,
+      }));
+      setConvList(list);
+      if (list[0]) setActiveId(list[0].id);
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const loadThread = async () => {
+      if (!activeId) { setMessages([]); return; }
+      const data = await buyerMessagesApi.getThread(activeId);
+      if (!mounted) return;
+      const thread = (data.messages || []).map((m: any) => ({
+        id: m.id,
+        from: m.sender?.type === 'buyer' ? 'buyer' : 'dealer',
+        text: m.content || ''
+      }));
+      setMessages(thread);
+    };
+    loadThread();
+    return () => { mounted = false; };
+  }, [activeId]);
+
+  const sendMessage = async () => {
+    if (!draft.trim() || !activeId) return;
+    const created = await buyerMessagesApi.sendMessage(activeId, { content: draft.trim() });
+    setMessages((prev) => [...prev, { id: created.id, from: 'buyer', text: created.content }]);
     setDraft('');
   };
 

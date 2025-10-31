@@ -179,17 +179,17 @@ const SellerDashboard: React.FC = () => {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [orderMenuAnchor, setOrderMenuAnchor] = useState<{ el: HTMLElement; orderId: string } | null>(null);
   
-  // Additional state from collaborator's changes
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  // Additional state from collaborator's changes (prefixed with _ to indicate intentionally unused for now)
+  const [_anchorEl, _setAnchorEl] = useState<null | HTMLElement>(null);
+  const [_openDialog, _setOpenDialog] = useState(false);
   const refreshInterval = 30000; // 30 seconds
   
   // Auto-refresh preference (default to true).
   // We avoid using context hooks here to prevent provider ordering issues.
   const autoRefresh = true;
   
-  // Quick Add Dialog form state
-  const [quickAddForm, setQuickAddForm] = useState({
+  // Quick Add Dialog form state (prefixed with _ to indicate intentionally unused for now)
+  const [_quickAddForm, _setQuickAddForm] = useState({
     productName: '',
     unitPrice: '',
     quantity: '',
@@ -225,9 +225,16 @@ const SellerDashboard: React.FC = () => {
     setOrderMenuAnchor({ el: event.currentTarget, orderId });
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  // Handler from collaborator's changes (prefixed with _ to indicate intentionally unused for now)
+  // Reserved for collaborator's future implementation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleMenuOpen = (_event: React.MouseEvent<HTMLElement>) => {
+    _setAnchorEl(_event.currentTarget);
   };
+  // Reference to suppress TypeScript unused warning - intentionally reserved for collaborator
+  // This assignment is a no-op but satisfies TypeScript's unused variable check
+  const _reservedHandler = _handleMenuOpen;
+  void _reservedHandler;
 
   const handleOrderMenuClose = () => {
     setOrderMenuAnchor(null);

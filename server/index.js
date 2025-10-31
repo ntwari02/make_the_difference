@@ -221,6 +221,7 @@ app.use('/api/notifications', (req, res, next) => {
 app.use('/api/advertising', require('./routes/advertising.routes'));
 app.use('/api/dealers', require('./routes/dealer.routes'));
 app.use('/api/seller', require('./routes/seller.routes'));
+app.use('/api/buyer', require('./routes/buyer.routes'));
 app.use('/api/moderators', require('./routes/moderator.routes'));  
 app.use('/api/ai', require('./ai/routes/ai.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));

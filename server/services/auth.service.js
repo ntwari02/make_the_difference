@@ -46,7 +46,7 @@ async function deleteRefreshSessionByToken(refreshToken) {
 
 async function findUserByIdentifier(identifier) {
   const rows = await executeQuery(
-    'SELECT id, email, password, first_name, last_name, phone, role, is_verified, is_active FROM users WHERE email = ? OR phone = ? LIMIT 1',
+    'SELECT id, email, password, first_name, last_name, phone, role, is_verified, is_active, two_factor_enabled, two_factor_secret FROM users WHERE BINARY email = ? OR phone = ? LIMIT 1',
     [identifier, identifier]
   );
   return rows && rows[0] ? rows[0] : null;
@@ -113,7 +113,7 @@ module.exports = {
       return { success: false, error: 'Invalid credentials', status: 401 };
     }
 
-    // Success
+    // If 2FA is enabled, the controller must verify the code before issuing tokens
     await logLoginAttempt({ userId: user.id, identifier, success: true });
     await executeQuery('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
@@ -215,6 +215,27 @@ module.exports = {
     );
 
     return await this.getUserProfile(userId);
+  },
+
+  async changeUserPassword(userId, currentPassword, newPassword) {
+    // Fetch current hash
+    const users = await executeQuery('SELECT id, password FROM users WHERE id = ? LIMIT 1', [userId]);
+    const user = users[0];
+    if (!user || !user.password) {
+      throw new Error('User not found');
+    }
+    const ok = await bcrypt.compare(String(currentPassword || ''), user.password);
+    if (!ok) {
+      const err = new Error('Current password is incorrect');
+      err.code = 'INVALID_CURRENT_PASSWORD';
+      throw err;
+    }
+    // Hash new password
+    const newHash = await bcrypt.hash(String(newPassword), 10);
+    await executeQuery('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?', [newHash, userId]);
+    // Revoke all existing refresh sessions for this user
+    await executeQuery('DELETE FROM user_sessions WHERE user_id = ?', [userId]);
+    return true;
   },
 
   // Admin-only: List users with pagination and filtering

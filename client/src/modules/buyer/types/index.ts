@@ -12,6 +12,8 @@ export interface BuyerProfile {
     priceAlerts: boolean;
     savedSearches: boolean;
   };
+  bio?: string;
+  address?: any;
   created_at: string;
   updated_at: string;
 }
