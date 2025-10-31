@@ -14,16 +14,146 @@ import {
   Switch,
 } from '@mui/material';
 import BuyerLayout from '../components/layout/BuyerLayout';
+import { buyerApi } from '../services/buyerApi';
+import authApi from '../../auth/services/authApi';
+import type { BuyerProfile as BuyerProfileType } from '../types';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 
 const BuyerProfile: React.FC = () => {
-  const [name, setName] = React.useState('Buyer User');
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
   const [email, setEmail] = React.useState('buyer@example.com');
   const [phone, setPhone] = React.useState('');
   const [location, setLocation] = React.useState('');
   const [bio, setBio] = React.useState('Car enthusiast exploring the best deals.');
+  const [favoritesCount, setFavoritesCount] = React.useState<number | null>(null);
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [avatar, setAvatar] = React.useState<string | undefined>(undefined);
+  const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
 
   const [emailAlerts, setEmailAlerts] = React.useState(true);
   const [priceAlerts, setPriceAlerts] = React.useState(true);
+  const [savedSearchesPref, setSavedSearchesPref] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const profile: BuyerProfileType = await buyerApi.getProfile();
+        if (!mounted) return;
+        setFirstName(profile.firstName || '');
+        setLastName(profile.lastName || '');
+        setEmail(profile.email);
+        setPhone(profile.phone || '');
+        setAvatar(profile.avatar);
+        setBio(profile.bio || '');
+        const addr = (profile.address as any) || {};
+        setLocation(addr?.location || addr?.city || '');
+        const prefs = profile.preferences || { notifications: true, priceAlerts: true, savedSearches: true };
+        setEmailAlerts(!!prefs.notifications);
+        setPriceAlerts(!!prefs.priceAlerts);
+        setSavedSearchesPref(!!prefs.savedSearches);
+        // Fetch favorites count
+        try {
+          const { favorites } = await buyerApi.getFavorites(1, 500);
+          setFavoritesCount(Array.isArray(favorites) ? favorites.length : (favorites?.length ?? 0));
+        } catch {
+          setFavoritesCount(null);
+        }
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.response?.data?.message || 'Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const onSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      const updated = await buyerApi.updateProfile({
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
+        avatar,
+        bio,
+        address: location ? { location } : undefined,
+        preferences: {
+          notifications: emailAlerts,
+          priceAlerts: priceAlerts,
+          savedSearches: savedSearchesPref,
+        },
+      });
+      setFirstName(updated.firstName || '');
+      setLastName(updated.lastName || '');
+      setEmail(updated.email);
+      setPhone(updated.phone || '');
+      setAvatar(updated.avatar);
+      setSuccess('Profile updated');
+      // Refresh favorites count lightly
+      try {
+        const { favorites } = await buyerApi.getFavorites(1, 200);
+        setFavoritesCount(Array.isArray(favorites) ? favorites.length : (favorites?.length ?? 0));
+      } catch {}
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSavePreferences = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      await buyerApi.updateProfile({
+        preferences: {
+          notifications: emailAlerts,
+          priceAlerts: priceAlerts,
+          savedSearches: savedSearchesPref,
+        },
+      });
+      setSuccess('Preferences updated');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to save preferences');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('Please fill all password fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    try {
+      setSaving(true);
+      setError(null);
+      await authApi.changePassword(currentPassword, newPassword);
+      setSuccess('Password updated');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <BuyerLayout>
@@ -39,15 +169,15 @@ const BuyerProfile: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Card sx={{ mb: 2 }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
-                <Avatar sx={{ width: 96, height: 96 }}>B</Avatar>
+                <Avatar sx={{ width: 96, height: 96 }} src={avatar}>{!avatar && ((firstName || lastName || 'B')[0])}</Avatar>
                 <Typography variant="h6" fontWeight={700}>{name}</Typography>
                 <Typography variant="body2" color="text.secondary">{email}</Typography>
-                <Button variant="outlined">Change Avatar</Button>
+                <Button variant="outlined" disabled>{saving ? 'Saving...' : 'Change Avatar'}</Button>
                 <Divider sx={{ width: '100%', my: 1.5 }} />
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <Chip label="12 Favorites" color="primary" variant="outlined" />
-                  <Chip label="8 Viewed" variant="outlined" />
-                  <Chip label="3 Saved Searches" variant="outlined" />
+                  <Chip label={`${favoritesCount ?? '—'} Favorites`} color="primary" variant="outlined" />
+                  <Chip label="— Viewed" variant="outlined" />
+                  <Chip label="— Saved Searches" variant="outlined" />
                 </Box>
               </CardContent>
             </Card>
@@ -57,6 +187,7 @@ const BuyerProfile: React.FC = () => {
                 <Typography variant="subtitle1" fontWeight={700} gutterBottom>Notifications</Typography>
                 <FormControlLabel control={<Switch checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} />} label="Email notifications" />
                 <FormControlLabel control={<Switch checked={priceAlerts} onChange={(e) => setPriceAlerts(e.target.checked)} />} label="Price drop alerts" />
+                <FormControlLabel control={<Switch checked={savedSearchesPref} onChange={(e) => setSavedSearchesPref(e.target.checked)} />} label="Saved searches alerts" />
               </CardContent>
             </Card>
           </Grid>
@@ -66,9 +197,21 @@ const BuyerProfile: React.FC = () => {
             <Card sx={{ mb: 2 }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Personal Information</Typography>
+                {loading && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2">Loading profile...</Typography>
+                  </Box>
+                )}
+                {error && (
+                  <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+                )}
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
+                    <TextField fullWidth label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField fullWidth label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField fullWidth label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -83,7 +226,7 @@ const BuyerProfile: React.FC = () => {
                     <TextField fullWidth label="Bio" multiline rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
                   </Grid>
                   <Grid item xs={12}>
-                    <Button variant="contained">Save Changes</Button>
+                    <Button variant="contained" onClick={onSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save Changes'}</Button>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -94,16 +237,16 @@ const BuyerProfile: React.FC = () => {
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Security</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="Current Password" />
+                    <TextField fullWidth type="password" label="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="New Password" />
+                    <TextField fullWidth type="password" label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <TextField fullWidth type="password" label="Confirm New Password" />
+                    <TextField fullWidth type="password" label="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   </Grid>
                   <Grid item xs={12}>
-                    <Button variant="outlined">Update Password</Button>
+                    <Button variant="outlined" onClick={onChangePassword} disabled={saving}>{saving ? 'Saving...' : 'Update Password'}</Button>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -123,13 +266,16 @@ const BuyerProfile: React.FC = () => {
                     <TextField fullWidth label="Max Budget ($)" placeholder="e.g., 40000" />
                   </Grid>
                   <Grid item xs={12}>
-                    <Button variant="outlined">Save Preferences</Button>
+                    <Button variant="outlined" onClick={onSavePreferences} disabled={saving}>{saving ? 'Saving...' : 'Save Preferences'}</Button>
                   </Grid>
                 </Grid>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
+        <Snackbar open={!!success} autoHideDuration={2500} onClose={() => setSuccess(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+          <Alert onClose={() => setSuccess(null)} severity="success" variant="filled">{success}</Alert>
+        </Snackbar>
       </Box>
     </BuyerLayout>
   );

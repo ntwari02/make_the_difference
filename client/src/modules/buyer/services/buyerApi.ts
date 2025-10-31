@@ -1,24 +1,6 @@
-import axios from 'axios';
-import { ENV } from '../../../core/config/environment';
 import { api as coreApi } from '../../../core/services/api/apiClient';
 import type { Vehicle, Favorite, Review, SearchFilters, BuyerProfile } from '../types';
-
-const api = axios.create({
-  baseURL: ENV.API_BASE_URL,
-  timeout: 10000,
-});
-
-// Add auth token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+const api = coreApi;
 
 // Public Vehicle APIs
 export const vehicleApi = {
@@ -59,36 +41,70 @@ export const buyerApi = {
   },
   // Favorites
   addToFavorites: async (vehicleId: string): Promise<Favorite> => {
-    const { data } = await api.post(`/ecommerce/cars/${vehicleId}/favorite`);
+    const { data } = await api.post(`/cars/${vehicleId}/favorite`);
     return data.data || data;
   },
 
   removeFromFavorites: async (vehicleId: string): Promise<void> => {
-    await api.delete(`/ecommerce/cars/${vehicleId}/favorite`);
+    await api.delete(`/cars/${vehicleId}/favorite`);
   },
 
   getFavorites: async (page: number = 1, limit: number = 20): Promise<{ favorites: Favorite[]; pagination: any }> => {
-    const { data } = await api.get('/ecommerce/cars/buyer/favorites', { params: { page, limit } });
+    const { data } = await api.get('/cars/buyer/favorites', { params: { page, limit } });
     return data.data || data;
   },
 
   // Reviews
   createReview: async (vehicleId: string, reviewData: { rating: number; title: string; comment: string }): Promise<Review> => {
-    const { data } = await api.post(`/ecommerce/cars/${vehicleId}/review`, reviewData);
+    const { data } = await api.post(`/cars/${vehicleId}/review`, reviewData);
     return data.data || data;
   },
 
   // Profile
   getProfile: async (): Promise<BuyerProfile> => {
-    const { data } = await api.get('/users/profile');
-    return data.data || data;
+    const { data } = await api.get('/user/profile');
+    const raw = data.data || data;
+    return mapServerToBuyerProfile(raw);
   },
 
   updateProfile: async (profileData: Partial<BuyerProfile>): Promise<BuyerProfile> => {
-    const { data } = await api.put('/users/profile', profileData);
-    return data.data || data;
+    const payload = mapBuyerProfileToServer(profileData);
+    const { data } = await api.put('/user/profile', payload);
+    const raw = data.data || data;
+    return mapServerToBuyerProfile(raw);
   },
 };
 
 export default api;
+
+// Mapping helpers
+function mapServerToBuyerProfile(u: any): BuyerProfile {
+  return {
+    id: u.id,
+    firstName: u.first_name,
+    lastName: u.last_name,
+    email: u.email,
+    phone: u.phone,
+    avatar: u.profile_image,
+    bio: u.bio,
+    address: u.address,
+    preferences: u.preferences || undefined,
+    created_at: u.created_at,
+    updated_at: u.updated_at,
+  } as BuyerProfile;
+}
+
+function mapBuyerProfileToServer(p: Partial<BuyerProfile>): any {
+  const out: any = {};
+  if (p.firstName !== undefined) out.first_name = p.firstName;
+  if (p.lastName !== undefined) out.last_name = p.lastName;
+  if (p.email !== undefined) out.email = p.email; // note: backend may ignore email updates
+  if (p.phone !== undefined) out.phone = p.phone;
+  if (p.avatar !== undefined) out.profile_image = p.avatar;
+  if (p.bio !== undefined) out.bio = p.bio;
+  if (p.address !== undefined) out.address = p.address;
+  if (p.preferences !== undefined) out.preferences = p.preferences;
+  // created_at/updated_at are server-managed
+  return out;
+}
 
