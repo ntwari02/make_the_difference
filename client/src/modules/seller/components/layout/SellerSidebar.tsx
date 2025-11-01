@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   List,
@@ -28,6 +28,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../core/store';
+import { sellerApi } from '../../services/sellerApi';
 
 interface SellerSidebarProps {
   open: boolean;
@@ -39,7 +40,7 @@ interface SellerSidebarProps {
 interface MenuItem {
   title: string;
   path: string;
-  badge?: number;
+  badge?: number | null; // null means dynamic badge
   icon: React.ReactNode;
 }
 
@@ -50,7 +51,7 @@ const menuItems: MenuItem[] = [
   { title: '🔧 Spare Parts', path: '/seller/spare-parts', icon: <SparePartsIcon /> },
   { title: '📋 Orders', path: '/seller/orders', icon: <OrdersIcon /> },
   { title: '📊 Insights', path: '/seller/analytics', icon: <InsightsIcon /> },
-  { title: '💬 Messages', path: '/seller/messages', badge: 3, icon: <MessagesIcon /> },
+  { title: '💬 Messages', path: '/seller/messages', badge: null, icon: <MessagesIcon /> },
   { title: '⭐ Reviews', path: '/seller/reviews', icon: <ReviewsIcon /> },
   { title: '👤 Profile', path: '/seller/profile', icon: <ProfileIcon /> },
   { title: '⚙️ Settings', path: '/seller/settings', icon: <SettingsIcon /> },
@@ -69,6 +70,33 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
 
   const profile = useSelector((state: RootState) => state.seller.profile);
   const unreadNotifications = useSelector((state: RootState) => state.seller.unreadNotifications);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+
+  // Fetch unread messages count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const result = await sellerApi.messages.getConversations({
+          page: 1,
+          limit: 100, // Fetch enough to get accurate count
+          folder: 'inbox',
+        });
+        const conversations = result.conversations || [];
+        const totalUnread = conversations.reduce((sum: number, conv: any) => {
+          return sum + (conv.unreadCount || 0);
+        }, 0);
+        setUnreadMessagesCount(totalUnread);
+      } catch (error) {
+        console.error('Failed to fetch unread messages count:', error);
+        setUnreadMessagesCount(0);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -87,7 +115,9 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
       <List sx={{ flex: 1, py: 2, px: 1, overflow: 'hidden' }}>
         {menuItems.map((item) => {
           const isActive = isActivePath(item.path);
-          const showBadge = item.badge && item.badge > 0;
+          // Use dynamic badge for Messages, static badge for others
+          const badgeCount = item.badge === null ? unreadMessagesCount : (item.badge || 0);
+          const showBadge = badgeCount > 0;
           const label = item.title.split(' ').slice(1).join(' ');
 
           return (
@@ -196,7 +226,7 @@ const SellerSidebar: React.FC<SellerSidebarProps> = ({
                           mr: open ? 2 : 0,
                         }}
                       >
-                        {item.badge}
+                        {badgeCount}
                       </Box>
                     )}
                   </>

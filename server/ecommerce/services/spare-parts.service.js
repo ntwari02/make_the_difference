@@ -1248,6 +1248,48 @@ class SparePartsService {
     }
   }
 
+  async updatePriceComparison(comparisonId, comparisonData) {
+    try {
+      const {
+        competitor_name,
+        competitor_url,
+        competitor_price,
+        competitor_currency
+      } = comparisonData;
+
+      const updateQuery = `
+        UPDATE ${this.priceComparisonTable}
+        SET competitor_name = ?,
+            competitor_url = ?,
+            competitor_price = ?,
+            competitor_currency = ?,
+            last_checked_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ?
+      `;
+
+      await executeQuery(updateQuery, [
+        competitor_name, competitor_url || null, competitor_price, competitor_currency || 'USD', comparisonId
+      ]);
+
+      return { success: true, message: 'Price comparison updated successfully' };
+    } catch (error) {
+      console.error('Error updating price comparison:', error);
+      throw new Error(`Failed to update price comparison: ${error.message}`);
+    }
+  }
+
+  async deletePriceComparison(comparisonId) {
+    try {
+      const deleteQuery = `DELETE FROM ${this.priceComparisonTable} WHERE id = ?`;
+      await executeQuery(deleteQuery, [comparisonId]);
+      return { success: true, message: 'Price comparison deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting price comparison:', error);
+      throw new Error(`Failed to delete price comparison: ${error.message}`);
+    }
+  }
+
   async getPriceAnalysis(sparePartId) {
     try {
       const query = `
@@ -1285,6 +1327,83 @@ class SparePartsService {
     }
   }
 
+  async getAllSparePartsWithPriceComparisons(sellerId) {
+    try {
+      // Get all spare parts for seller with price comparison data
+      const query = `
+        SELECT 
+          sp.id,
+          sp.name,
+          sp.sku,
+          sp.price as our_price,
+          sp.currency as our_currency,
+          AVG(pc.competitor_price) as avg_competitor_price,
+          MIN(pc.competitor_price) as min_competitor_price,
+          MAX(pc.competitor_price) as max_competitor_price,
+          COUNT(pc.id) as competitor_count
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.priceComparisonTable} pc ON sp.id = pc.spare_part_id
+        WHERE sp.seller_id = ?
+        GROUP BY sp.id, sp.name, sp.sku, sp.price, sp.currency
+        ORDER BY sp.name ASC
+      `;
+
+      const parts = await executeQuery(query, [sellerId]);
+
+      // For each part, get detailed competitor prices
+      for (const part of parts) {
+        const competitorQuery = `
+          SELECT 
+            id,
+            competitor_name,
+            competitor_url,
+            competitor_price,
+            competitor_currency,
+            price_difference,
+            price_difference_percentage,
+            last_checked_at
+          FROM ${this.priceComparisonTable}
+          WHERE spare_part_id = ?
+          ORDER BY competitor_price ASC
+        `;
+        
+        part.competitors = await executeQuery(competitorQuery, [part.id]);
+
+        // Calculate savings and rank
+        if (part.avg_competitor_price) {
+          part.savings = Number(part.avg_competitor_price) - Number(part.our_price);
+          part.savings_percentage = (part.savings / Number(part.avg_competitor_price)) * 100;
+          
+          // Determine rank based on price compared to competitors
+          const sortedCompetitors = part.competitors
+            .map(c => Number(c.competitor_price))
+            .sort((a, b) => a - b);
+          
+          const ourPrice = Number(part.our_price);
+          let rank = sortedCompetitors.length + 1;
+          
+          for (let i = 0; i < sortedCompetitors.length; i++) {
+            if (ourPrice <= sortedCompetitors[i]) {
+              rank = i + 1;
+              break;
+            }
+          }
+          
+          part.rank = rank;
+        } else {
+          part.savings = 0;
+          part.savings_percentage = 0;
+          part.rank = null;
+        }
+      }
+
+      return parts;
+    } catch (error) {
+      console.error('Error getting spare parts with price comparisons:', error);
+      throw new Error(`Failed to get spare parts with price comparisons: ${error.message}`);
+    }
+  }
+
   // ==================== BUNDLE MANAGEMENT ====================
 
   async createBundle(bundleData) {
@@ -1292,37 +1411,25 @@ class SparePartsService {
       const {
         name,
         description,
-        bundle_type,
-        total_price,
-        bundle_discount,
+        bundle_price,
+        discount_percentage,
         currency = 'USD',
-        target_vehicle_make,
-        target_vehicle_model,
-        target_vehicle_year_from,
-        target_vehicle_year_to,
-        installation_included = false,
-        installation_cost = 0,
-        warranty_period,
         seller_id,
+        status = 'active',
         items = []
       } = bundleData;
 
-      // Update basic fields
-        // Create bundle
-        const bundleId = uuidv4();
-        const insertQuery = `
-          INSERT INTO ${this.bundlesTable} 
-          (id, name, description, bundle_type, total_price, bundle_discount, currency,
-           target_vehicle_make, target_vehicle_model, target_vehicle_year_from, target_vehicle_year_to,
-           installation_included, installation_cost, warranty_period, seller_id, status, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
-        `;
+      // Create bundle - only use columns that actually exist in the table
+      const bundleId = uuidv4();
+      const insertQuery = `
+        INSERT INTO ${this.bundlesTable} 
+        (id, seller_id, name, description, bundle_price, currency, discount_percentage, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `;
 
-        await executeQuery(insertQuery, [
-          bundleId, name, description, bundle_type, total_price, bundle_discount, currency,
-          target_vehicle_make, target_vehicle_model, target_vehicle_year_from, target_vehicle_year_to,
-          installation_included, installation_cost, warranty_period, seller_id
-        ]);
+      await executeQuery(insertQuery, [
+        bundleId, seller_id, name, description, bundle_price, currency, discount_percentage || null, status
+      ]);
 
         // Add bundle items
         if (items.length > 0) {
@@ -1340,13 +1447,13 @@ class SparePartsService {
     try {
       const insertQuery = `
         INSERT INTO ${this.bundleItemsTable} 
-        (id, bundle_id, spare_part_id, quantity, unit_price, created_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
+        (id, bundle_id, spare_part_id, quantity, created_at)
+        VALUES (?, ?, ?, ?, NOW())
       `;
 
       for (const item of items) {
         await executeQuery(insertQuery, [
-          uuidv4(), bundleId, item.spare_part_id, item.quantity, item.unit_price
+          uuidv4(), bundleId, item.spare_part_id, item.quantity
         ]);
       }
 
@@ -1354,6 +1461,67 @@ class SparePartsService {
     } catch (error) {
       console.error('Error adding bundle items:', error);
       throw new Error(`Failed to add bundle items: ${error.message}`);
+    }
+  }
+
+  async getBundles(sellerId, filters = {}) {
+    try {
+      const { status, page = 1, limit = 20 } = filters;
+      const offset = (page - 1) * limit;
+
+      // sellerId here is actually user_id (from req.user.id)
+      // Join with sellers table using user_id
+      let query = `
+        SELECT 
+          b.*,
+          s.business_name as seller_name,
+          s.rating as seller_rating,
+          COUNT(DISTINCT bi.id) as item_count
+        FROM ${this.bundlesTable} b
+        LEFT JOIN sellers s ON b.seller_id = s.user_id
+        LEFT JOIN ${this.bundleItemsTable} bi ON b.id = bi.bundle_id
+        WHERE b.seller_id = ?
+      `;
+
+      const params = [sellerId];
+
+      if (status) {
+        query += ' AND b.status = ?';
+        params.push(status);
+      }
+
+      // LIMIT and OFFSET cannot be parameterized in MySQL - must be inserted directly
+      const safeLimit = parseInt(limit) || 20;
+      const safeOffset = parseInt(offset) || 0;
+      query += ` GROUP BY b.id ORDER BY b.created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`;
+
+      const bundles = await executeQuery(query, params);
+
+      // Get bundle items for each bundle
+      for (const bundle of bundles) {
+        const itemsQuery = `
+          SELECT 
+            bi.*,
+            sp.name as spare_part_name,
+            sp.sku as spare_part_sku,
+            sp.description as spare_part_description,
+            sp.price as spare_part_price,
+            br.name as brand_name,
+            c.name as category_name
+          FROM ${this.bundleItemsTable} bi
+          JOIN ${this.tableName} sp ON bi.spare_part_id = sp.id
+          JOIN ${this.brandsTable} br ON sp.brand_id = br.id
+          JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+          WHERE bi.bundle_id = ?
+          ORDER BY bi.created_at ASC
+        `;
+        bundle.items = await executeQuery(itemsQuery, [bundle.id]);
+      }
+
+      return bundles;
+    } catch (error) {
+      console.error('Error getting bundles:', error);
+      throw new Error(`Failed to get bundles: ${error.message}`);
     }
   }
 
@@ -1365,7 +1533,7 @@ class SparePartsService {
           s.business_name as seller_name,
           s.rating as seller_rating
         FROM ${this.bundlesTable} b
-        LEFT JOIN sellers s ON b.seller_id = s.id
+        LEFT JOIN sellers s ON b.seller_id = s.user_id
         WHERE b.id = ?
       `;
 
@@ -1383,11 +1551,12 @@ class SparePartsService {
           sp.name as spare_part_name,
           sp.sku as spare_part_sku,
           sp.description as spare_part_description,
-          b.name as brand_name,
+          sp.price as spare_part_price,
+          br.name as brand_name,
           c.name as category_name
         FROM ${this.bundleItemsTable} bi
         JOIN ${this.tableName} sp ON bi.spare_part_id = sp.id
-        JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        JOIN ${this.brandsTable} br ON sp.brand_id = br.id
         JOIN ${this.categoriesTable} c ON sp.category_id = c.id
         WHERE bi.bundle_id = ?
         ORDER BY bi.created_at ASC
@@ -1399,6 +1568,58 @@ class SparePartsService {
     } catch (error) {
       console.error('Error getting bundle:', error);
       throw new Error(`Failed to get bundle: ${error.message}`);
+    }
+  }
+
+  async updateBundle(bundleId, bundleData) {
+    try {
+      const {
+        name,
+        description,
+        bundle_price,
+        discount_percentage,
+        currency,
+        status,
+        items = []
+      } = bundleData;
+
+      // Update bundle - only use columns that actually exist in the table
+      const updateQuery = `
+        UPDATE ${this.bundlesTable}
+        SET name = ?, description = ?, bundle_price = ?, discount_percentage = ?,
+            currency = ?, status = ?, updated_at = NOW()
+        WHERE id = ?
+      `;
+
+      await executeQuery(updateQuery, [
+        name, description, bundle_price, discount_percentage || null, currency, status, bundleId
+      ]);
+
+      // Update bundle items if provided
+      if (items.length > 0) {
+        // Delete existing items
+        await executeQuery(`DELETE FROM ${this.bundleItemsTable} WHERE bundle_id = ?`, [bundleId]);
+        // Add new items
+        await this.addBundleItems(bundleId, items);
+      }
+
+      return await this.getBundleById(bundleId);
+    } catch (error) {
+      console.error('Error updating bundle:', error);
+      throw new Error(`Failed to update bundle: ${error.message}`);
+    }
+  }
+
+  async deleteBundle(bundleId) {
+    try {
+      // Delete bundle items first
+      await executeQuery(`DELETE FROM ${this.bundleItemsTable} WHERE bundle_id = ?`, [bundleId]);
+      // Delete bundle
+      await executeQuery(`DELETE FROM ${this.bundlesTable} WHERE id = ?`, [bundleId]);
+      return { success: true, message: 'Bundle deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting bundle:', error);
+      throw new Error(`Failed to delete bundle: ${error.message}`);
     }
   }
 
@@ -1533,6 +1754,256 @@ class SparePartsService {
       console.error('Error getting seller stats:', error);
       throw new Error(`Failed to get seller stats: ${error.message}`);
     }
+  }
+
+  async getInventoryForSeller(sellerId) {
+    try {
+      const query = `
+        SELECT 
+          sp.id,
+          sp.name,
+          sp.sku,
+          sp.price,
+          sp.currency,
+          COALESCE(sp.quantity_available, 0) as quantity_available,
+          COALESCE(sp.reorder_point, 0) as reorder_point,
+          COALESCE(sp.max_stock_level, 0) as max_stock_level,
+          sp.last_restocked_at,
+          sp.last_sold_at,
+          sp.status,
+          CASE
+            WHEN COALESCE(sp.quantity_available, 0) <= 0 THEN 'out'
+            WHEN COALESCE(sp.quantity_available, 0) <= COALESCE(sp.reorder_point, 0) THEN 'low'
+            ELSE 'good'
+          END as stock_status
+        FROM ${this.tableName} sp
+        WHERE sp.seller_id = ?
+        ORDER BY 
+          CASE
+            WHEN COALESCE(sp.quantity_available, 0) <= 0 THEN 1
+            WHEN COALESCE(sp.quantity_available, 0) <= COALESCE(sp.reorder_point, 0) THEN 2
+            ELSE 3
+          END,
+          sp.name ASC
+      `;
+
+      return await executeQuery(query, [sellerId]);
+    } catch (error) {
+      console.error('Error getting inventory for seller:', error);
+      throw new Error(`Failed to get inventory: ${error.message}`);
+    }
+  }
+
+  async updateStock(sparePartId, stockData) {
+    try {
+      const {
+        quantity_available,
+        reorder_point,
+        max_stock_level
+      } = stockData;
+
+      const updateQuery = `
+        UPDATE ${this.tableName}
+        SET quantity_available = ?,
+            reorder_point = ?,
+            max_stock_level = ?,
+            last_restocked_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ?
+      `;
+
+      await executeQuery(updateQuery, [
+        quantity_available, 
+        reorder_point || null, 
+        max_stock_level || null,
+        sparePartId
+      ]);
+
+      return { success: true, message: 'Stock updated successfully' };
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      throw new Error(`Failed to update stock: ${error.message}`);
+    }
+  }
+
+  async restockItem(sparePartId, quantityToAdd) {
+    try {
+      // Get current stock
+      const currentQuery = `SELECT quantity_available FROM ${this.tableName} WHERE id = ?`;
+      const current = await executeQuery(currentQuery, [sparePartId]);
+      
+      if (current.length === 0) {
+        throw new Error('Spare part not found');
+      }
+
+      const currentStock = current[0].quantity_available || 0;
+      const newStock = currentStock + quantityToAdd;
+
+      const updateQuery = `
+        UPDATE ${this.tableName}
+        SET quantity_available = ?,
+            last_restocked_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ?
+      `;
+
+      await executeQuery(updateQuery, [newStock, sparePartId]);
+
+      return { success: true, message: 'Item restocked successfully', newStock };
+    } catch (error) {
+      console.error('Error restocking item:', error);
+      throw new Error(`Failed to restock item: ${error.message}`);
+    }
+  }
+
+  async exportSpareParts(sellerId, options = {}) {
+    try {
+      const {
+        format = 'csv',
+        dateRange = 'all',
+        includeInventory = true,
+        includeSales = false,
+        includeAnalytics = false,
+        includeBundles = false
+      } = options;
+
+      // Calculate date filter
+      let dateFilter = '';
+      const dateParams = [];
+      const now = new Date();
+      
+      if (dateRange !== 'all') {
+        let monthsBack = 1;
+        if (dateRange === '3m') monthsBack = 3;
+        else if (dateRange === '6m') monthsBack = 6;
+        else if (dateRange === '1y') monthsBack = 12;
+        
+        const fromDate = new Date(now);
+        fromDate.setMonth(fromDate.getMonth() - monthsBack);
+        dateFilter = 'AND sp.created_at >= ?';
+        dateParams.push(fromDate.toISOString().split('T')[0]);
+      }
+
+      // Base query for spare parts
+      let query = `
+        SELECT 
+          sp.id,
+          sp.sku,
+          sp.name,
+          sp.description,
+          sp.price,
+          sp.currency,
+          sp.quantity_available,
+          sp.reorder_point,
+          sp.max_stock_level,
+          sp.status,
+          sp.created_at,
+          sp.updated_at,
+          sp.last_restocked_at,
+          sp.last_sold_at,
+          c.name as category_name,
+          b.name as brand_name
+        FROM ${this.tableName} sp
+        LEFT JOIN ${this.categoriesTable} c ON sp.category_id = c.id
+        LEFT JOIN ${this.brandsTable} b ON sp.brand_id = b.id
+        WHERE sp.seller_id = ?
+        ${dateFilter}
+        ORDER BY sp.name ASC
+      `;
+
+      const parts = await executeQuery(query, [sellerId, ...dateParams]);
+
+      // Get bundles if requested
+      let bundles = [];
+      if (includeBundles) {
+        const bundlesQuery = `
+          SELECT 
+            b.id,
+            b.name,
+            b.description,
+            b.bundle_price,
+            b.discount_percentage,
+            b.currency,
+            b.status,
+            b.created_at,
+            COUNT(bi.id) as item_count
+          FROM ${this.bundlesTable} b
+          LEFT JOIN ${this.bundleItemsTable} bi ON b.id = bi.bundle_id
+          WHERE b.seller_id = ?
+          GROUP BY b.id
+          ORDER BY b.created_at DESC
+        `;
+        bundles = await executeQuery(bundlesQuery, [sellerId]);
+      }
+
+      // Format data based on export type
+      const exportData = {
+        spareParts: parts.map(part => ({
+          SKU: part.sku,
+          Name: part.name,
+          Description: part.description || '',
+          Category: part.category_name || '',
+          Brand: part.brand_name || '',
+          Price: part.price,
+          Currency: part.currency || 'USD',
+          QuantityAvailable: part.quantity_available || 0,
+          ReorderPoint: part.reorder_point || 0,
+          MaxStockLevel: part.max_stock_level || 0,
+          Status: part.status,
+          CreatedAt: part.created_at ? new Date(part.created_at).toLocaleDateString() : '',
+          LastRestocked: part.last_restocked_at ? new Date(part.last_restocked_at).toLocaleDateString() : '',
+          LastSold: part.last_sold_at ? new Date(part.last_sold_at).toLocaleDateString() : ''
+        })),
+        bundles: bundles.length > 0 ? bundles.map(bundle => ({
+          Name: bundle.name,
+          Description: bundle.description || '',
+          BundlePrice: bundle.bundle_price,
+          DiscountPercentage: bundle.discount_percentage || 0,
+          Currency: bundle.currency || 'USD',
+          ItemCount: bundle.item_count || 0,
+          Status: bundle.status,
+          CreatedAt: bundle.created_at ? new Date(bundle.created_at).toLocaleDateString() : ''
+        })) : null,
+        metadata: {
+          exportedAt: new Date().toISOString(),
+          sellerId,
+          format,
+          dateRange,
+          totalParts: parts.length,
+          totalBundles: bundles.length
+        }
+      };
+
+      return { data: exportData, format };
+    } catch (error) {
+      console.error('Error exporting spare parts:', error);
+      throw new Error(`Failed to export spare parts: ${error.message}`);
+    }
+  }
+
+  convertToCSV(data) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return '';
+    }
+
+    // Get headers from first object
+    const headers = Object.keys(data[0]);
+    const csvHeaders = headers.join(',');
+
+    // Convert rows to CSV
+    const csvRows = data.map(row => {
+      return headers.map(header => {
+        const value = row[header] || '';
+        // Escape quotes and wrap in quotes if contains comma or quote
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      }).join(',');
+    });
+
+    return [csvHeaders, ...csvRows].join('\n');
   }
 }
 

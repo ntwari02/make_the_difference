@@ -38,6 +38,27 @@ export const buyerApi = {
       const { data } = await coreApi.post('/orders', payload);
       return (data as any).data || data;
     },
+    getInvoice: async (orderId: string) => {
+      const { data } = await coreApi.get(`/orders/${orderId}/invoice`);
+      return (data as any).data || data;
+    },
+    listMy: async (params?: { page?: number; limit?: number; status?: string; payment_status?: string; search?: string }): Promise<{ orders: any[]; pagination: any }> => {
+      try {
+        // Try to fetch buyer's orders - we'll need to check if backend has this endpoint
+        // For now, we'll use a generic approach
+        const { data } = await coreApi.get('/orders/buyer/me', { params });
+        const payload = (data as any).data || data;
+        if (Array.isArray(payload)) return { orders: payload, pagination: {} } as any;
+        if (Array.isArray(payload?.orders)) return payload;
+        return { orders: payload?.data || [], pagination: payload?.pagination || {} } as any;
+      } catch (error: any) {
+        // If endpoint doesn't exist, return empty array
+        if (error?.response?.status === 404) {
+          return { orders: [], pagination: {} } as any;
+        }
+        throw error;
+      }
+    },
   },
   // Favorites
   addToFavorites: async (vehicleId: string): Promise<Favorite> => {

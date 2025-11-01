@@ -19,8 +19,14 @@ import { buyerApi } from '../services/buyerApi';
 import authApi from '../../auth/services/authApi';
 import type { BuyerProfile as BuyerProfileType } from '../types';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../../core/store';
+import { updateUser } from '../../../core/store/auth/authSlice';
+import PhotoUpload from '../../../shared/components/PhotoUpload';
 
 const BuyerProfile: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
   const [email, setEmail] = React.useState('buyer@example.com');
@@ -62,6 +68,15 @@ const BuyerProfile: React.FC = () => {
         setEmailAlerts(!!prefs.notifications);
         setPriceAlerts(!!prefs.priceAlerts);
         setSavedSearchesPref(!!prefs.savedSearches);
+        
+        // Update Redux auth state with latest profile data, especially avatar
+        if (profile.avatar) {
+          dispatch(updateUser({ 
+            profile_image: profile.avatar,
+            avatar: profile.avatar 
+          }));
+        }
+        
         // Fetch favorites count
         try {
           const { favorites } = await buyerApi.getFavorites(1, 500);
@@ -78,7 +93,7 @@ const BuyerProfile: React.FC = () => {
     };
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [dispatch]);
 
   const onSave = async () => {
     try {
@@ -103,6 +118,15 @@ const BuyerProfile: React.FC = () => {
       setEmail(updated.email);
       setPhone(updated.phone || '');
       setAvatar(updated.avatar);
+      // Update Redux auth state so header shows updated profile
+      dispatch(updateUser({ 
+        first_name: updated.firstName,
+        last_name: updated.lastName,
+        email: updated.email,
+        phone: updated.phone,
+        profile_image: updated.avatar,
+        avatar: updated.avatar 
+      }));
       setSuccess('Profile updated');
       // Refresh favorites count lightly
       try {
@@ -164,10 +188,54 @@ const BuyerProfile: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card sx={{ mb: 2 }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
-                <Avatar sx={{ width: 96, height: 96 }} src={avatar}>{!avatar && ((firstName || lastName || 'B')[0])}</Avatar>
-                <Typography variant="h6" fontWeight={700}>{name}</Typography>
+                <PhotoUpload
+                  images={avatar ? [avatar] : []}
+                  onImagesChange={(newImages) => {
+                    const newAvatar = newImages.length > 0 ? newImages[0] : undefined;
+                    setAvatar(newAvatar);
+                    // Auto-save avatar when uploaded
+                    if (newAvatar) {
+                      buyerApi.updateProfile({ avatar: newAvatar }).then((updated) => {
+                        setAvatar(updated.avatar);
+                        // Update Redux auth state so header shows the new image
+                        dispatch(updateUser({ 
+                          profile_image: updated.avatar,
+                          avatar: updated.avatar 
+                        }));
+                        setSuccess('Avatar updated successfully');
+                      }).catch((e: any) => {
+                        setError(e?.response?.data?.message || 'Failed to update avatar');
+                      });
+                    } else if (newImages.length === 0) {
+                      // Image was deleted
+                      buyerApi.updateProfile({ avatar: undefined }).then((updated) => {
+                        setAvatar(updated.avatar);
+                        // Update Redux auth state to clear the image
+                        dispatch(updateUser({ 
+                          profile_image: null,
+                          avatar: undefined 
+                        }));
+                        setSuccess('Avatar removed successfully');
+                      }).catch((e: any) => {
+                        setError(e?.response?.data?.message || 'Failed to remove avatar');
+                      });
+                    }
+                  }}
+                  maxImages={1}
+                  maxFileSize={5}
+                  uploadEndpoint="/api/buyer/profile/images"
+                  entityId={user?.id || ''}
+                  entityType="profile"
+                  disabled={saving || loading}
+                  profileMode={true}
+                  avatarSize={96}
+                  showLabel={false}
+                  fallbackText={(firstName || lastName || 'B')[0].toUpperCase()}
+                />
+                <Typography variant="h6" fontWeight={700}>
+                  {firstName || lastName ? `${firstName} ${lastName}`.trim() : email}
+                </Typography>
                 <Typography variant="body2" color="text.secondary">{email}</Typography>
-                <Button variant="outlined" disabled>{saving ? 'Saving...' : 'Change Avatar'}</Button>
                 <Divider sx={{ width: '100%', my: 1.5 }} />
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <Chip label={`${favoritesCount ?? '—'} Favorites`} color="primary" variant="outlined" />

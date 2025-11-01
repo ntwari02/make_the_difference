@@ -28,8 +28,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
+import type { RootState } from '../../../../core/store';
+import { getImageUrl } from '../../../../shared/utils/imageUtils';
 
 interface BuyerHeaderProps {
   onMenuClick: () => void;
@@ -41,11 +43,27 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const { mode, toggleColorMode } = useThemeMode();
   const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
 
   const unreadNotifications = 0;
+
+  // Get avatar URL from user profile
+  const avatarUrl = user?.profile_image || user?.avatar || undefined;
+  const avatarSrc = avatarUrl ? getImageUrl(avatarUrl) : undefined;
+  
+  // Get user initials for fallback
+  const userInitial = (user?.first_name || user?.last_name || user?.email || 'B')[0].toUpperCase();
+  
+  // Get display name
+  const displayName = user?.first_name || user?.last_name 
+    ? `${user?.first_name || ''} ${user?.last_name || ''}`.trim() 
+    : 'Buyer';
+  
+  // Get email
+  const userEmail = user?.email || 'buyer@example.com';
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -190,7 +208,13 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
         </IconButton>
 
         <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
-          <Avatar sx={{ width: 40, height: 40 }}>B</Avatar>
+          <Avatar 
+            src={avatarSrc}
+            sx={{ width: 40, height: 40 }}
+            alt={displayName}
+          >
+            {userInitial}
+          </Avatar>
         </IconButton>
 
         <Menu
@@ -212,10 +236,10 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
         >
           <Box sx={{ px: 2, py: 1.5 }}>
             <Typography variant="subtitle1" fontWeight={600}>
-              Buyer
+              {displayName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              buyer@example.com
+              {userEmail}
             </Typography>
           </Box>
           <Divider />

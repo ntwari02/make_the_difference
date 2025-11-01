@@ -137,3 +137,8 @@ export const {
 
 export default buyerSlice.reducer;
 
+// Selectors
+export const selectRecentlyViewed = (state: { buyer: BuyerState }) => state.buyer.recentlyViewed;
+export const selectFavorites = (state: { buyer: BuyerState }) => state.buyer.favorites;
+export const selectBuyerProfile = (state: { buyer: BuyerState }) => state.buyer.profile;
+

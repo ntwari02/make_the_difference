@@ -42,6 +42,8 @@ import {
 import SellerLayout from '../components/layout/SellerLayout';
 import { ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend } from 'recharts';
 import { sellerApi } from '../services/sellerApi';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
+import toast from 'react-hot-toast';
 
 // Defaults used only as fallback while loading
 const fallbackStats = {
@@ -203,33 +205,65 @@ const SellerDashboard: React.FC = () => {
     setOrderMenuAnchor(null);
   };
 
-  const handleOrderAction = (action: string, orderId: string) => {
+  const handleOrderAction = async (action: string, orderId: string) => {
     handleOrderMenuClose();
+    
+    // Find the order to get details
+    const order = recentOrders.find((o: any) => o.id === orderId);
+    
     // Handle different actions
     switch (action) {
       case 'view':
-        console.log('View order:', orderId);
-        // Navigate to order details
+        // Navigate to order details page
+        window.location.href = `/seller/orders?order=${orderId}`;
         break;
       case 'edit':
-        console.log('Edit order:', orderId);
         // Navigate to order edit page
+        window.location.href = `/seller/orders?order=${orderId}&edit=true`;
         break;
       case 'complete':
-        console.log('Complete order:', orderId);
         // Update order status to completed
+        try {
+          await sellerApi.orders.updateStatus(orderId, 'completed');
+          toast.success('Order marked as completed');
+          // Refresh orders
+          const res = await sellerApi.orders.listMy({ page: 1, limit: 10 });
+          const list = (res as any)?.orders || [];
+          setRecentOrders(list);
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || 'Failed to update order status');
+        }
         break;
       case 'cancel':
-        console.log('Cancel order:', orderId);
         // Cancel the order
+        try {
+          await sellerApi.orders.updateStatus(orderId, 'cancelled');
+          toast.success('Order cancelled');
+          // Refresh orders
+          const res = await sellerApi.orders.listMy({ page: 1, limit: 10 });
+          const list = (res as any)?.orders || [];
+          setRecentOrders(list);
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || 'Failed to cancel order');
+        }
         break;
       case 'print':
-        console.log('Print invoice:', orderId);
-        // Print invoice
+        // Print invoice - open in new window
+        try {
+          const printUrl = `/seller/orders/${orderId}/invoice`;
+          window.open(printUrl, '_blank');
+        } catch (err) {
+          toast.error('Failed to open invoice');
+        }
         break;
       case 'customer':
-        console.log('View customer:', orderId);
-        // View customer profile
+        // View customer profile - navigate if buyer_id is available
+        if (order?.buyer_id) {
+          // Navigate to customer details if available
+          toast('Customer profile view coming soon', { icon: 'ℹ️' });
+        } else {
+          toast('Customer information not available', { icon: 'ℹ️' });
+        }
         break;
       default:
         break;
@@ -558,7 +592,13 @@ const SellerDashboard: React.FC = () => {
                 <Typography variant="h6" fontWeight={600}>
                   Recent Orders
                 </Typography>
-                <Button size="small" variant="outlined" startIcon={<Visibility />}>
+                <Button 
+                  size="small" 
+                  variant="outlined" 
+                  startIcon={<Visibility />}
+                  onClick={() => window.location.href = '/seller/orders'}
+                  sx={{ flexShrink: 0 }}
+                >
                   View All
                 </Button>
               </Box>
@@ -582,30 +622,70 @@ const SellerDashboard: React.FC = () => {
                       }
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                      <Avatar sx={{ width: 48, height: 48 }}>{(order.first_name?.[0] || 'U')}</Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body1" fontWeight={600} noWrap>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flex: 1, minWidth: 0 }}>
+                      <Avatar 
+                        sx={{ width: { xs: 40, sm: 48 }, height: { xs: 40, sm: 48 }, flexShrink: 0 }}
+                        src={order.profile_image ? getImageUrl(order.profile_image) : undefined}
+                      >
+                        {!order.profile_image && (order.first_name?.[0] || 'U')}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                        <Typography variant="body1" fontWeight={600} noWrap sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                           {order.first_name} {order.last_name}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          sx={{ 
+                            mt: 0.5, 
+                            display: 'block',
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
                           {order.order_number} • {new Date(order.created_at).toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 2 }}>
-                      <Typography variant="h6" fontWeight={600} color="primary.main">
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: { xs: 1, sm: 2 }, 
+                      ml: { xs: 0, sm: 2 },
+                      flexShrink: 0,
+                      flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                      justifyContent: { xs: 'flex-start', sm: 'flex-start' },
+                      width: { xs: '100%', sm: 'auto' },
+                      mt: { xs: 1, sm: 0 }
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        fontWeight={600} 
+                        color="primary.main"
+                        sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                      >
                         {formatCurrency(order.total_amount)}
                       </Typography>
                       <Chip
                         label={order.status}
                         size="small"
                         color={getStatusColor(order.status) as any}
-                        sx={{ textTransform: 'capitalize', minWidth: 90, justifyContent: 'center' }}
+                        sx={{ 
+                          textTransform: 'capitalize', 
+                          minWidth: { xs: 70, sm: 90 }, 
+                          justifyContent: 'center',
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                          height: { xs: 20, sm: 24 }
+                        }}
                       />
                       <IconButton 
                         size="small" 
-                        sx={{ ml: 0.5 }}
+                        sx={{ 
+                          ml: { xs: 0, sm: 0.5 },
+                          p: { xs: 0.5, sm: 1 }
+                        }}
                         onClick={(e) => handleOrderMenuOpen(e, order.id)}
                       >
                         <MoreVert />

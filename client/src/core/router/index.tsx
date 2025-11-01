@@ -51,6 +51,7 @@ const DealerSettings = React.lazy(() => import('../../modules/dealer/pages/Deale
 const BuyerDashboard = React.lazy(() => import('../../modules/buyer/pages/BuyerDashboard')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BrowsePage = React.lazy(() => import('../../modules/buyer/pages/BrowsePage')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const SparePartsBrowse = React.lazy(() => import('../../modules/buyer/pages/SparePartsBrowse')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const SparePartDetails = React.lazy(() => import('../../modules/buyer/pages/SparePartDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerFavorites = React.lazy(() => import('../../modules/buyer/pages/BuyerFavorites')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerMessages = React.lazy(() => import('../../modules/buyer/pages/BuyerMessages')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerProfile = React.lazy(() => import('../../modules/buyer/pages/BuyerProfile')) as React.LazyExoticComponent<React.ComponentType<any>>;
@@ -85,6 +86,8 @@ const SellerCarsInventory = React.lazy(() => import('../../modules/seller/pages/
 const SellerCarsExport = React.lazy(() => import('../../modules/seller/pages/SellerCarsExport')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAIChat')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerInvoice = React.lazy(() => import('../../modules/buyer/pages/BuyerInvoice')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const BuyerOrders = React.lazy(() => import('../../modules/buyer/pages/BuyerOrders')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const CarDetails = React.lazy(() => import('../../modules/buyer/pages/CarDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
 // Student pages (static imports to avoid dynamic import issues during dev)
 import StudentDashboard from '../../modules/student/pages/StudentDashboard';
@@ -251,6 +254,15 @@ const router = createBrowserRouter([
     element: (
       <React.Suspense fallback={<Fallback />}>
         <SparePartsBrowse />
+      </React.Suspense>
+    ),
+  },
+  // Public spare parts details
+  {
+    path: '/spare-parts/:id',
+    element: (
+      <React.Suspense fallback={<Fallback />}>
+        <SparePartDetails />
       </React.Suspense>
     ),
   },
@@ -562,6 +574,22 @@ const router = createBrowserRouter([
         element: (
           <React.Suspense fallback={<Fallback />}>
             <BuyerPayments />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerOrders />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'invoice/:orderId',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <BuyerInvoice />
           </React.Suspense>
         ),
       },

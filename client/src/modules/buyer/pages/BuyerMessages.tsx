@@ -1,313 +1,1151 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
-  GridLegacy as Grid,
   Card,
   CardContent,
   Typography,
-  TextField,
-  IconButton,
   List,
   ListItem,
-  ListItemButton,
+  ListItemAvatar,
   ListItemText,
-  Divider,
   Avatar,
+  TextField,
   Button,
+  IconButton,
+  Divider,
+  Paper,
   Chip,
   Badge,
-  InputAdornment,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Pagination,
+  Tooltip,
+  ListItemButton,
+  Snackbar,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Tabs,
-  Tab,
-  Menu,
-  MenuItem,
-  useTheme,
 } from '@mui/material';
-import { Send as SendIcon, Search as SearchIcon, AttachFile as AttachIcon, MoreVert as MoreIcon, Star as StarIcon, StarBorder as StarBorderIcon, DoneAll as DoneAllIcon, Archive as ArchiveIcon } from '@mui/icons-material';
+import { Tabs, Tab } from '@mui/material';
+import {
+  Send as SendIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+  FilterList as FilterIcon,
+  MoreVert as MoreIcon,
+  Reply as ReplyIcon,
+  Archive as ArchiveIcon,
+  Delete as DeleteIcon,
+  Markunread as MarkUnreadIcon,
+  MarkEmailRead as MarkReadIcon,
+  AttachFile as AttachIcon,
+  ForwardToInbox as ForwardIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+} from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../core/store';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { buyerMessagesApi } from '../services/messagesApi';
+import toast from 'react-hot-toast';
+import { LinearProgress } from '@mui/material';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
+import { alpha } from '@mui/material/styles';
 
-interface Conversation {
+// Conversation in list view
+interface ConversationListItem {
   id: string;
-  dealer: string;
-  lastMessage: string;
-  avatar: string;
-  unread?: number;
-  starred?: boolean;
+  subject: string;
+  dealer?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  lastMessage?: {
+    id: string;
+    content: string;
+    senderId: string;
+    isFromBuyer: boolean;
+    timestamp: string;
+    read: boolean;
+  };
+  unreadCount: number;
+  category: string;
+  priority: string;
+  archived: boolean;
+  timestamp: string;
+  read: boolean;
+  hasBuyerMessages?: boolean; // Flag indicating buyer has sent at least one message
 }
 
 interface Message {
   id: string;
-  from: 'buyer' | 'dealer';
-  text: string;
-  time: string;
+  sender: {
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'buyer' | 'seller' | 'admin';
+  };
+  content: string;
+  messageType?: string;
+  fileUrl?: string;
+  read: boolean;
+  category: string;
+  priority: string;
+  timestamp: string;
+  replyTo?: {
+    id: string;
+    content: string;
+    sender: {
+      id: string;
+      name: string;
+      avatar?: string;
+      type: 'buyer' | 'seller' | 'admin';
+    };
+  };
 }
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  { id: 'c1', dealer: 'Prime Autos', lastMessage: 'We can do a test drive tomorrow.', avatar: 'https://i.pravatar.cc/100?img=12', unread: 2, starred: true },
-  { id: 'c2', dealer: 'City Motors', lastMessage: 'Price is slightly negotiable.', avatar: 'https://i.pravatar.cc/100?img=5', unread: 0, starred: false },
-  { id: 'c3', dealer: 'Luxury Wheels', lastMessage: 'Sure, sending more photos.', avatar: 'https://i.pravatar.cc/100?img=20', unread: 1, starred: false },
-];
-
-const MOCK_MESSAGES: Record<string, Message[]> = {
-  c1: [
-    { id: 'm1', from: 'dealer', text: 'Hello! Thanks for your interest in the Model 3.', time: '09:12' },
-    { id: 'm2', from: 'buyer', text: 'Hi! Can I schedule a test drive this week?', time: '09:14' },
-    { id: 'm3', from: 'dealer', text: 'We can do a test drive tomorrow.', time: '09:15' },
-  ],
-  c2: [
-    { id: 'm1', from: 'buyer', text: 'Is the price negotiable?', time: '08:01' },
-    { id: 'm2', from: 'dealer', text: 'Price is slightly negotiable.', time: '08:05' },
-  ],
-  c3: [
-    { id: 'm1', from: 'buyer', text: 'Could you share interior photos?', time: '10:20' },
-    { id: 'm2', from: 'dealer', text: 'Sure, sending more photos.', time: '10:22' },
-  ],
-};
-
 const BuyerMessages: React.FC = () => {
-  const theme = useTheme();
-  const [query, setQuery] = React.useState('');
-  const [activeId, setActiveId] = React.useState('c1');
-  const [draft, setDraft] = React.useState('');
-  const [composeOpen, setComposeOpen] = React.useState(false);
-  const [tabValue, setTabValue] = React.useState(0);
-  const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Local copy so we can toggle starred/unread in UI
-  const [convList, setConvList] = React.useState<Conversation[]>([]);
-
-  const [filters, setFilters] = React.useState<{ new: boolean; unread: boolean; important: boolean }>({ new: false, unread: false, important: false });
-
-  const toggleFilter = (key: 'new' | 'unread' | 'important') => setFilters((f) => ({ ...f, [key]: !f[key] }));
-
-  const filteredByQuery = React.useMemo(
-    () => convList.filter((c) => (query ? c.dealer.toLowerCase().includes(query.toLowerCase()) : true)),
-    [convList, query]
+  const [conversations, setConversations] = useState<ConversationListItem[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationListItem | null>(null);
+  const [thread, setThread] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [sending, setSending] = useState(false);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<{ [key: string]: string }>({});
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>(
+    { open: false, message: '', severity: 'success' }
   );
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  
+  // Compose dialog
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [inlineCompose, setInlineCompose] = useState(false);
+  
+  // Delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
+  const [isBulkDelete, setIsBulkDelete] = useState(false);
+  
+  // Ref for scrollable message container
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const conversations = React.useMemo(() => {
-    let result = filteredByQuery;
-    // Tabs: 0 Inbox (all), 1 Sent (none in mock), 2 Starred
-    if (tabValue === 2) {
-      result = result.filter((c) => c.starred);
-    }
-    // Chips
-    if (filters.unread || filters.new) {
-      result = result.filter((c) => (c.unread || 0) > 0);
-    }
-    if (filters.important) {
-      result = result.filter((c) => c.starred);
-    }
-    return result;
-  }, [filteredByQuery, tabValue, filters]);
+  // Tabs and filters
+  const [tabValue, setTabValue] = useState<number>(() => {
+    const saved = localStorage.getItem('buyer:msgTab');
+    return saved ? parseInt(saved, 10) || 0 : 0;
+  });
+  const [filterUnread, setFilterUnread] = useState(false);
+  const [starredIds, setStarredIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('buyer:starredConversations');
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch { return new Set<string>(); }
+  });
 
-  const inboxCount = convList.length;
-  const starredCount = convList.filter((c) => c.starred).length;
+  // Persist tab value
+  useEffect(() => {
+    try { localStorage.setItem('buyer:msgTab', String(tabValue)); } catch {}
+  }, [tabValue]);
+  useEffect(() => {
+    try { localStorage.setItem('buyer:starredConversations', JSON.stringify(Array.from(starredIds))); } catch {}
+  }, [starredIds]);
 
-  const markAllAsRead = () => setConvList((list) => list.map((c) => ({ ...c, unread: 0 })));
-  const archiveFiltered = () => setConvList((list) => list.filter((c) => !conversations.some((fc) => fc.id === c.id)));
-
-  const [messages, setMessages] = React.useState<Message[]>([]);
-
-  React.useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      const data = await buyerMessagesApi.getConversations({ page: 1, limit: 50 });
-      if (!mounted) return;
-      const list = (data.conversations || []).map((c: any) => ({
+  // Load conversations list
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const result = await buyerMessagesApi.getConversations({
+        page,
+        limit: rowsPerPage,
+        search: searchTerm || undefined,
+      });
+      
+      const conversationsData = result.conversations || [];
+      const mapped: ConversationListItem[] = conversationsData.map((c: any) => ({
         id: c.id,
-        dealer: c.subject || 'Conversation',
-        lastMessage: c.lastMessage?.content || '',
-        avatar: '',
-        unread: c.unreadCount || 0,
-        starred: false,
+        subject: c.subject || 'Conversation',
+        dealer: {
+          id: c.dealer_id || c.seller_id || '',
+          name: c.dealer_name || c.seller_name || 'Dealer',
+          avatar: c.dealer_avatar || c.seller_avatar || '',
+        },
+        lastMessage: c.lastMessage ? {
+          id: c.lastMessage.id || c.lastMessage_id || '',
+          content: c.lastMessage.content || c.last_message_content || '',
+          senderId: c.lastMessage.sender_id || c.last_message_sender_id || '',
+          isFromBuyer: c.lastMessage.isFromBuyer !== undefined ? c.lastMessage.isFromBuyer : (c.lastMessage.sender_id === user?.id),
+          timestamp: c.lastMessage.timestamp || c.last_message_timestamp || c.last_message_at || new Date().toISOString(),
+          read: c.lastMessage.read !== undefined ? c.lastMessage.read : (c.last_message_read !== undefined ? !!c.last_message_read : true),
+        } : undefined,
+        unreadCount: c.unreadCount || c.unread_count || 0,
+        category: c.category || 'inquiry',
+        priority: c.priority || 'normal',
+        archived: c.archived || false,
+        timestamp: c.timestamp || c.lastMessage?.timestamp || c.last_message_at || c.created_at || new Date().toISOString(),
+        read: c.read !== undefined ? c.read : true,
+        hasBuyerMessages: c.hasBuyerMessages !== undefined ? c.hasBuyerMessages : (c.lastMessage?.isFromBuyer || false),
       }));
-      setConvList(list);
-      if (list[0]) setActiveId(list[0].id);
-    };
-    load();
-    return () => { mounted = false; };
+      
+      setConversations(mapped);
+      setTotalPages(result.pagination?.totalPages || 1);
+      
+      // Auto-select first conversation if none selected
+      if (!selectedConversation && mapped.length > 0) {
+        setSelectedConversation(mapped[0]);
+      }
+    } catch (error: any) {
+      console.error('Failed to load conversations:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load conversations');
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, searchTerm]);
+
+  // Refresh on window focus
+  useEffect(() => {
+    const onFocus = () => { loadConversations(); };
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => { loadConversations(); }, 12000);
+    return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  React.useEffect(() => {
-    let mounted = true;
-    const loadThread = async () => {
-      if (!activeId) { setMessages([]); return; }
-      const data = await buyerMessagesApi.getThread(activeId);
-      if (!mounted) return;
-      const thread = (data.messages || []).map((m: any) => ({
-        id: m.id,
-        from: m.sender?.type === 'buyer' ? 'buyer' : 'dealer',
-        text: m.content || ''
-      }));
-      setMessages(thread);
-    };
-    loadThread();
-    return () => { mounted = false; };
-  }, [activeId]);
+  // Load conversation thread when a conversation is selected
+  useEffect(() => {
+    if (selectedConversation?.id) {
+      loadThread(selectedConversation.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id]);
 
-  const sendMessage = async () => {
-    if (!draft.trim() || !activeId) return;
-    const created = await buyerMessagesApi.sendMessage(activeId, { content: draft.trim() });
-    setMessages((prev) => [...prev, { id: created.id, from: 'buyer', text: created.content }]);
-    setDraft('');
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    });
+  };
+
+  // Auto-scroll to bottom when thread changes
+  useEffect(() => {
+    if (thread.length > 0 && !loadingThread) {
+      // Delay to ensure DOM has rendered
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread, loadingThread]);
+
+  const loadThread = async (conversationId: string) => {
+    try {
+      setLoadingThread(true);
+      const result = await buyerMessagesApi.getThread(conversationId);
+      const messagesData = result.messages || [];
+      
+      const mapped: Message[] = messagesData.map((m: any) => ({
+        id: m.id,
+        sender: {
+          id: m.sender?.id || m.sender_id || '',
+          name: m.sender?.name || 'Unknown',
+          avatar: m.sender?.avatar || '',
+          type: m.sender?.type || (m.sender_id === user?.id ? 'buyer' : 'seller'),
+        },
+        content: m.content || '',
+        messageType: m.messageType || m.message_type || 'text',
+        fileUrl: m.fileUrl || m.file_url || null,
+        read: m.read !== false,
+        category: m.category || 'inquiry',
+        priority: m.priority || 'normal',
+        timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+        replyTo: m.replyTo || m.reply_to || m.parentMessage ? {
+          id: m.replyTo?.id || m.reply_to?.id || m.parentMessage?.id || '',
+          content: m.replyTo?.content || m.reply_to?.content || m.parentMessage?.content || '',
+          sender: {
+            id: m.replyTo?.sender?.id || m.reply_to?.sender_id || m.parentMessage?.sender_id || '',
+            name: m.replyTo?.sender?.name || m.reply_to?.sender_name || m.parentMessage?.sender_name || 'Unknown',
+            avatar: m.replyTo?.sender?.avatar || m.reply_to?.sender_avatar || m.parentMessage?.sender_avatar || '',
+            type: (m.replyTo?.sender?.id || m.reply_to?.sender_id || m.parentMessage?.sender_id) === user?.id ? 'buyer' : 'seller' as 'buyer' | 'seller' | 'admin',
+          }
+        } : undefined
+      }));
+      
+      setThread(mapped);
+      
+      // Reload conversations to update unread counts
+      await loadConversations();
+    } catch (error: any) {
+      console.error('Failed to load thread:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load conversation');
+      setThread([]);
+    } finally {
+      setLoadingThread(false);
+    }
+  };
+
+  // Convert conversations to messages format for display
+  const messagesForList = conversations.map(conv => ({
+    id: conv.id,
+    sender: {
+      name: conv.dealer?.name || 'Dealer',
+      avatar: conv.dealer?.avatar || '',
+      type: 'seller' as 'buyer' | 'seller' | 'admin'
+    },
+    subject: conv.subject,
+    message: conv.lastMessage?.content || '',
+    timestamp: conv.lastMessage?.timestamp || conv.timestamp,
+    read: conv.lastMessage?.read ?? true,
+    priority: (conv.priority || 'normal') as 'low' | 'normal' | 'high',
+    category: (conv.category || 'inquiry') as 'inquiry' | 'offer' | 'complaint' | 'support',
+    unreadCount: conv.unreadCount
+  }));
+
+  const handleMessageClick = async (conversationId: string) => {
+    const conv = conversations.find(c => c.id === conversationId);
+    if (conv) {
+      setSelectedConversation(conv);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedConversation || (!replyText.trim() && attachments.length === 0)) return;
+    
+    try {
+      setSending(true);
+      
+      // Upload attachments first if any
+      let fileUrls: string[] = [];
+      if (attachments.length > 0) {
+        try {
+          fileUrls = await buyerMessagesApi.uploadAttachments(selectedConversation.id, attachments);
+          if (fileUrls.length === 0 && attachments.length > 0) {
+            toast.error('Failed to upload attachments');
+            return;
+          }
+        } catch (uploadError: any) {
+          console.error('Failed to upload attachments:', uploadError);
+          toast.error(uploadError?.response?.data?.message || 'Failed to upload attachments');
+          return;
+        }
+      }
+      
+      // Send message with file URLs (if multiple files, use first one or comma-separated)
+      const fileUrl = fileUrls.length > 0 ? (fileUrls.length === 1 ? fileUrls[0] : fileUrls.join(',')) : undefined;
+      
+      // If only attachments (no text), use a default message
+      const messageContent = replyText.trim() || (fileUrl ? 'Sent attachment(s)' : '');
+      
+      if (!messageContent) {
+        toast.error('Please enter a message or attach a file');
+        setSending(false);
+        return;
+      }
+      
+      const sentMessage = await buyerMessagesApi.sendMessage(selectedConversation.id, {
+        content: messageContent,
+        category: 'inquiry',
+        priority: 'normal',
+        parentMessageId: replyTo?.id, // Include parent message ID if replying
+        fileUrl: fileUrl // Include file URL(s)
+      });
+      
+      // Add to thread optimistically
+      const newMessage: Message = {
+        id: sentMessage.id || `m-${Date.now()}`,
+        sender: {
+          id: user?.id || '',
+          name: 'You',
+          avatar: user?.avatar || '',
+          type: 'buyer'
+        },
+        content: sentMessage.content || messageContent || replyText.trim(),
+        messageType: sentMessage.messageType || 'text',
+        fileUrl: sentMessage.fileUrl || fileUrl || null,
+        read: true,
+        category: sentMessage.category || 'inquiry',
+        priority: sentMessage.priority || 'normal',
+        timestamp: sentMessage.timestamp || new Date().toISOString(),
+        replyTo: replyTo ? {
+          id: replyTo.id,
+          content: replyTo.content,
+          sender: replyTo.sender
+        } : undefined
+      };
+      
+      setThread((prev) => [...prev, newMessage]);
+      setReplyText('');
+      // Clean up object URLs before clearing attachments
+      Object.values(attachmentPreviews).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      setAttachmentPreviews({});
+      setAttachments([]);
+      setReplyTo(null);
+      
+      // Scroll to bottom after adding new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+      
+      // Reload conversations to update last message
+      await loadConversations();
+      
+      toast.success('Message sent successfully');
+    } catch (error: any) {
+      console.error('Failed to send reply:', error);
+      toast.error(error?.response?.data?.message || 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
+    
+    const newFiles = Array.from(files);
+    console.log('Files selected:', newFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
+    
+    // Create object URLs for image files
+    const newPreviews: { [key: string]: string } = {};
+    newFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        newPreviews[file.name] = url;
+        console.log('Created preview URL for:', file.name, url);
+      }
+    });
+    
+    setAttachments((prev) => {
+      const updated = [...prev, ...newFiles];
+      console.log('Updated attachments:', updated.length, updated.map(f => f.name));
+      return updated;
+    });
+    setAttachmentPreviews((prev) => {
+      const updated = { ...prev, ...newPreviews };
+      console.log('Updated preview URLs:', Object.keys(updated));
+      return updated;
+    });
+    e.target.value = '';
+  };
+
+  const removeAttachment = (fileName: string) => {
+    setAttachments((prev) => prev.filter((f) => f.name !== fileName));
+    // Clean up object URL if it exists
+    setAttachmentPreviews((prev) => {
+      if (prev[fileName]) {
+        URL.revokeObjectURL(prev[fileName]);
+      }
+      const newPreviews = { ...prev };
+      delete newPreviews[fileName];
+      return newPreviews;
+    });
+  };
+  
+  // Clean up all object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(attachmentPreviews).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
+
+  const paged = useMemo(() => {
+    let list = messagesForList;
+    // Apply tabs
+    if (tabValue === 1) {
+      // Sent: where buyer has sent at least one message
+      list = list.filter((c: any) => {
+        // Check if buyer has sent messages (preferred check)
+        if (c.hasBuyerMessages !== undefined) {
+          return c.hasBuyerMessages;
+        }
+        // Fallback: check if last message is from buyer
+        return c.lastMessage ? c.lastMessage.isFromBuyer : false;
+      });
+    } else if (tabValue === 2) {
+      // Starred
+      list = list.filter((c: any) => starredIds.has(c.id));
+    }
+    if (filterUnread) {
+      list = list.filter((c: any) => (c.unreadCount || 0) > 0);
+    }
+    return list;
+  }, [messagesForList, tabValue, filterUnread, starredIds]);
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) setSelectedIds(new Set(paged.map((m) => m.id)));
+    else setSelectedIds(new Set());
+  };
+
+  // Delete conversation handler
+  const handleDeleteConversation = (conversationId: string) => {
+    setDeleteTargetId(conversationId);
+    setDeleteTargetIds([]);
+    setIsBulkDelete(false);
+    setDeleteDialogOpen(true);
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    setDeleteTargetId(null);
+    setDeleteTargetIds(Array.from(selectedIds));
+    setIsBulkDelete(true);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete action
+  const confirmDelete = async () => {
+    try {
+      if (isBulkDelete && deleteTargetIds.length > 0) {
+        // Bulk delete
+        await Promise.all(deleteTargetIds.map(id => buyerMessagesApi.deleteConversation(id)));
+        toast.success(`${deleteTargetIds.length} conversation(s) deleted`);
+        setSelectedIds(new Set());
+        // Optimistically remove from UI
+        setConversations((prev) => prev.filter((c) => !deleteTargetIds.includes(c.id)));
+        // Clear selection if deleted conversation was selected
+        if (selectedConversation && deleteTargetIds.includes(selectedConversation.id)) {
+          setSelectedConversation(null);
+          setThread([]);
+        }
+      } else if (deleteTargetId) {
+        // Single delete
+        await buyerMessagesApi.deleteConversation(deleteTargetId);
+        toast.success('Conversation deleted');
+        // Optimistically remove from UI
+        setConversations((prev) => prev.filter((c) => c.id !== deleteTargetId));
+        // Clear selection if deleted conversation was selected
+        if (selectedConversation && selectedConversation.id === deleteTargetId) {
+          setSelectedConversation(null);
+          setThread([]);
+        }
+      }
+      // Reload conversations to sync with backend
+      await loadConversations();
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
+      setDeleteTargetIds([]);
+    } catch (error: any) {
+      console.error('Failed to delete conversation:', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete conversation');
+    }
   };
 
   return (
-      <Box>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" fontWeight={700}>Messages</Typography>
-            <Typography variant="body2" color="text.secondary">Chat with dealers and manage conversations</Typography>
-          </Box>
-          <Button variant="contained" startIcon={<SendIcon />} onClick={() => setComposeOpen(true)} sx={{ background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)` }}>
-            Compose
-          </Button>
-        </Box>
-
-        <Card sx={{ mb: 2 }}>
-          <CardContent sx={{ pt: 1 }}>
-            <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography>Inbox</Typography><Chip label={inboxCount} size="small" color="primary" /></Box>} />
-              <Tab label="Sent" />
-              <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><StarIcon fontSize="small" /> Starred<Chip label={starredCount} size="small" /></Box>} />
-            </Tabs>
-            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Chip label="New" color="success" variant={filters.new ? 'filled' : 'outlined'} onClick={() => toggleFilter('new')} clickable />
-              <Chip label="Unread" color="primary" variant={filters.unread ? 'filled' : 'outlined'} onClick={() => toggleFilter('unread')} clickable />
-              <Chip label="Important" color="warning" variant={filters.important ? 'filled' : 'outlined'} onClick={() => toggleFilter('important')} clickable />
-            </Box>
-          </CardContent>
-        </Card>
-        <Grid container spacing={2}>
-          {/* Conversations list */}
-          <Grid item xs={12} md={4} lg={3}>
-            <Card sx={{ height: { md: 'calc(100vh - 260px)' }, display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ pb: 1 }}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  placeholder="Search dealers..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  InputProps={{ endAdornment: (<InputAdornment position="end"><SearchIcon fontSize="small" /></InputAdornment>) }}
+    <Box sx={{ flexGrow: 1 }}>
+      {/* Two-pane layout */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 1.4fr' }, gap: 2 }}>
+          {/* Messages list with toolbar */}
+          <Card>
+            <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: { md: 'calc(100vh - 140px)' } }}>
+              <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: 1, borderColor: 'divider', flexWrap: 'wrap' }}>
+                <Checkbox
+                  indeterminate={selectedIds.size > 0 && selectedIds.size < paged.length}
+                  checked={paged.length > 0 && selectedIds.size === paged.length}
+                  onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
-              </CardContent>
-              <Divider />
-              <Box sx={{ px: 2, py: 1, display: 'flex', gap: 1, justifyContent: 'space-between', alignItems: 'center' }}>
-                <Button size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={markAllAsRead}>
-                  Mark all read
-                </Button>
-                <Button size="small" color="warning" variant="outlined" startIcon={<ArchiveIcon />} onClick={archiveFiltered}>
-                  Archive filtered
+                {!searchOpen ? (
+                  <Tooltip title="Search">
+                    <IconButton onClick={() => setSearchOpen(true)}>
+                      <SearchIcon />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <TextField 
+                    size="small" 
+                    placeholder="Search conversations" 
+                    value={searchTerm} 
+                    autoFocus
+                    onBlur={() => { if (!searchTerm) setSearchOpen(false); }}
+                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }} 
+                    InputProps={{ 
+                      startAdornment: <SearchIcon sx={{ mx: 1, color: 'text.secondary' }} />, 
+                      endAdornment: (
+                        <IconButton size="small" onClick={() => { setSearchTerm(''); setSearchOpen(false); }}><CloseIcon fontSize="small" /></IconButton>
+                      )
+                    }} 
+                    sx={{ 
+                      flex: '0 0 auto',
+                      width: { xs: 240, sm: 320, md: 360 },
+                      mr: 1,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 999,
+                        bgcolor: (t) => t.palette.mode === 'dark' ? 'background.default' : '#f3f6fb',
+                      }
+                    }} 
+                  />
+                )}
+                <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36 } }}>
+                  <Tab label="Inbox" />
+                  <Tab label="Sent" />
+                  <Tab label="Starred" />
+                </Tabs>
+                <Chip label="Unread" color={filterUnread ? 'primary' : 'default'} variant={filterUnread ? 'filled' : 'outlined'} size="small" onClick={() => setFilterUnread(!filterUnread)} />
+                <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={async () => {
+                  // Mark as read functionality can be added later
+                  toast.info('Mark as read functionality coming soon');
+                }}><MarkReadIcon /></IconButton></span></Tooltip>
+                <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={handleBulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
+                <Button 
+                  variant="contained" 
+                  size="small"
+                  startIcon={<ForwardIcon />} 
+                  onClick={() => { 
+                    setComposeTo(''); 
+                    setComposeSubject(''); 
+                    setComposeBody(''); 
+                    setSelectedConversation(null); 
+                    setInlineCompose(true); 
+                  }}
+                >
+                  New Chat
                 </Button>
               </Box>
-              <Divider />
-              <List sx={{ overflowY: 'auto' }}>
-                {conversations.map((c) => (
-                  <ListItem
-                    key={c.id}
-                    selected={activeId === c.id}
-                    secondaryAction={
-                      <IconButton edge="end" onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
-                        <MoreIcon />
-                      </IconButton>
-                    }
-                    disablePadding
-                  >
-                    <ListItemButton onClick={() => setActiveId(c.id)}>
-                      <Badge color="error" badgeContent={c.unread || 0} overlap="circular" invisible={!c.unread} sx={{ mr: 2 }}>
-                        <Avatar src={c.avatar} />
-                      </Badge>
-                      <ListItemText
-                        primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography fontWeight={700}>{c.dealer}</Typography>{c.starred ? (
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setConvList((list) => list.map((x) => x.id === c.id ? { ...x, starred: false } : x)); }}><StarIcon fontSize="small" color="warning" /></IconButton>
-                        ) : (
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setConvList((list) => list.map((x) => x.id === c.id ? { ...x, starred: true } : x)); }}><StarBorderIcon fontSize="small" sx={{ color: 'text.disabled' }} /></IconButton>
-                        )}</Box>}
-                        secondaryTypographyProps={{ component: 'div' }}
-                        secondary={<Typography variant="body2" color="text.secondary" noWrap>{c.lastMessage}</Typography>}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            </Card>
-          </Grid>
-
-          {/* Chat pane */}
-          <Grid item xs={12} md={8} lg={9}>
-            <Card sx={{ height: { md: 'calc(100vh - 260px)' }, display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flex: 1, overflowY: 'auto' }}>
+              {loading && <LinearProgress />}
+              <Box sx={{ overflowY: 'auto' }}>
+                {!loading && paged.length === 0 && (
+                  <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>No conversations found</Typography>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<ForwardIcon />} 
+                      onClick={() => { 
+                        setComposeTo(''); 
+                        setComposeSubject(''); 
+                        setComposeBody(''); 
+                        setSelectedConversation(null); 
+                        setInlineCompose(true); 
+                      }}
+                    >
+                      Start a New Chat
+                    </Button>
+                  </Box>
+                )}
                 <List>
-                  {messages.map((m) => (
-                    <ListItem key={m.id} sx={{ justifyContent: m.from === 'buyer' ? 'flex-end' : 'flex-start' }}>
-                      {m.from === 'dealer' && <Avatar sx={{ mr: 1 }} />}
-                      <Box
-                        sx={{
-                          px: 2,
-                          py: 1,
-                          borderRadius: 2,
-                          bgcolor: m.from === 'buyer' ? 'primary.main' : (theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200'),
-                          color: m.from === 'buyer' ? '#fff' : 'text.primary',
-                          maxWidth: '70%',
-                        }}
+                  {paged.map((message, index) => (
+                    <React.Fragment key={message.id}>
+                      <ListItem
+                        secondaryAction={<Checkbox edge="end" onChange={() => toggleSelectOne(message.id)} checked={selectedIds.has(message.id)} />}
+                        disablePadding
+                        sx={{ alignItems: 'flex-start' }}
                       >
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{m.text}</Typography>
-                        <Typography variant="caption" sx={{ opacity: 0.7 }}>{m.time}</Typography>
-                      </Box>
-                      {m.from === 'buyer' && <Avatar sx={{ ml: 1 }} />}
-                    </ListItem>
+                        <ListItemButton
+                          onClick={() => handleMessageClick(message.id)}
+                          sx={{
+                            bgcolor: !message.read ? 'action.hover' : 'transparent',
+                            '&:hover': { bgcolor: 'action.selected' },
+                            alignItems: 'flex-start'
+                          }}
+                        >
+                           <ListItemAvatar>
+                            <Badge color="error" variant="dot" invisible={message.unreadCount === 0}>
+                              <Avatar src={message.sender.avatar || undefined} sx={{ bgcolor: 'primary.main' }}>
+                                {message.sender.name.charAt(0)}
+                              </Avatar>
+                            </Badge>
+                          </ListItemAvatar>
+                           <ListItemText
+                            primaryTypographyProps={{ component: 'div' }}
+                            secondaryTypographyProps={{ component: 'div' }}
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle1" component="span" fontWeight={message.read ? 400 : 600} noWrap>
+                                  {message.sender.name}
+                                </Typography>
+                                {starredIds.has(message.id) ? <Chip label="★" size="small" color="warning" /> : null}
+                              </Box>
+                            }
+                            secondary={
+                              <>
+                                <Typography variant="body2" component="span" color="text.primary" noWrap>
+                                  {message.subject}
+                                </Typography>
+                                <Typography variant="caption" component="span" color="text.secondary" sx={{ ml: 1 }}>
+                                  {new Date(message.timestamp).toLocaleDateString()} {new Date(message.timestamp).toLocaleTimeString()}
+                                </Typography>
+                              </>
+                            }
+                          />
+                          <Tooltip title={starredIds.has(message.id) ? 'Unstar' : 'Star'}>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setStarredIds((prev) => { const next = new Set(prev); if (next.has(message.id)) next.delete(message.id); else next.add(message.id); return next; }); }}>
+                              {starredIds.has(message.id) ? <StarIcon color="warning" /> : <StarBorderIcon />}
+                            </IconButton>
+                          </Tooltip>
+                        </ListItemButton>
+                      </ListItem>
+                      {index < paged.length - 1 && <Divider />}
+                    </React.Fragment>
                   ))}
                 </List>
-              </CardContent>
-              <Divider />
-              <Box sx={{ p: 1.5, display: 'flex', gap: 1 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Type a message..."
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
-                />
-                <IconButton color="default">
-                  <AttachIcon />
-                </IconButton>
-                <IconButton color="primary" onClick={sendMessage}>
-                  <SendIcon />
-                </IconButton>
               </Box>
-            </Card>
-          </Grid>
-        </Grid>
-        <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={() => setMenuAnchorEl(null)}>
-          <MenuItem onClick={() => setMenuAnchorEl(null)}>Mark as Read</MenuItem>
-          <MenuItem onClick={() => setMenuAnchorEl(null)}>Star/Unstar</MenuItem>
-          <MenuItem onClick={() => setMenuAnchorEl(null)}>Delete</MenuItem>
-        </Menu>
+              <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
+                <Pagination page={page} onChange={(_, p) => setPage(p)} count={totalPages} color="primary" />
+              </Box>
+            </CardContent>
+          </Card>
 
-        <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>New Message</DialogTitle>
-          <DialogContent>
-            <TextField fullWidth label="To" sx={{ mb: 2, mt: 1 }} />
-            <TextField fullWidth label="Subject" sx={{ mb: 2 }} />
-            <TextField fullWidth multiline rows={8} placeholder="Type your message..." />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setComposeOpen(false)}>Cancel</Button>
-            <Button startIcon={<AttachIcon />} variant="outlined">Attach</Button>
-            <Button variant="contained" startIcon={<SendIcon />} onClick={() => setComposeOpen(false)}>Send</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+          {/* Detail pane */}
+          <Card sx={{ display: { xs: selectedConversation ? 'block' : 'none', lg: 'block' } }}>
+            <CardContent sx={{ height: { md: 'calc(100vh - 140px)' }, display: 'flex', flexDirection: 'column' }}>
+              {selectedConversation ? (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar src={selectedConversation.dealer?.avatar || undefined} sx={{ bgcolor: 'primary.main' }}>
+                      {selectedConversation.dealer?.name.charAt(0) || '?'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6">
+                        {selectedConversation.dealer?.name || 'Dealer'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedConversation.subject}
+                      </Typography>
+                    </Box>
+                    <Tooltip title="Delete conversation">
+                      <IconButton 
+                        color="error" 
+                        size="small" 
+                        onClick={() => handleDeleteConversation(selectedConversation.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  {loadingThread && <LinearProgress />}
+                  <Paper 
+                    ref={messagesContainerRef}
+                    variant="outlined" 
+                    sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}
+                  >
+                    {!loadingThread && thread.length === 0 && (
+                      <Box sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
+                        <Typography variant="body2">No messages yet</Typography>
+                      </Box>
+                    )}
+                    {thread.map((msg) => (
+                      <Box key={msg.id} sx={{ display: 'flex', justifyContent: msg.sender.type === 'buyer' ? 'flex-end' : 'flex-start', mb: 1.5, px: { xs: 0.5, sm: 0 } }}>
+                        <Box sx={{ maxWidth: { xs: '92%', sm: '80%' }, position: 'relative', '&:hover .msg-actions': { opacity: msg.sender.type !== 'buyer' ? 1 : 0 } }}>
+                          <Paper sx={{ 
+                            p: 1, 
+                            position: 'relative',
+                            bgcolor: (t) => {
+                              // Buyer messages (sent): Gray
+                              // Seller/Dealer messages (received): System blue (from dark mode)
+                              if (msg.sender.type === 'buyer') {
+                                return t.palette.mode === 'light' ? '#f5f5f5' : '#424242'; // Light gray / Dark gray
+                              }
+                              return t.palette.mode === 'light' ? '#e3f2fd' : '#64b5f6'; // Light blue / Dark mode blue
+                            }
+                          }}>
+                            {msg.replyTo && (
+                              <Box sx={{ 
+                                mb: 1, 
+                                pb: 1, 
+                                borderLeft: 2, 
+                                borderColor: 'primary.main',
+                                pl: 1,
+                                bgcolor: (t) => alpha(t.palette.primary.main, 0.05)
+                              }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                  <ReplyIcon fontSize="small" sx={{ fontSize: 14, color: 'primary.main' }} />
+                                  <Typography variant="caption" color="primary.main" fontWeight={600}>
+                                    {msg.replyTo.sender.name}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ 
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  fontSize: '0.75rem',
+                                  lineHeight: 1.3
+                                }}>
+                                  {msg.replyTo.content}
+                                </Typography>
+                              </Box>
+                            )}
+                            {msg.fileUrl && (
+                              <Box sx={{ mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                {msg.fileUrl.split(',').map((url, idx) => {
+                                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                                  const attachmentUrl = getImageUrl(url); // Use shared utility for deployment support
+                                  return (
+                                    <Box key={idx} sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                                      {isImage ? (
+                                        <Box
+                                          component="img"
+                                          src={attachmentUrl}
+                                          alt={`Attachment ${idx + 1}`}
+                                          sx={{
+                                            maxWidth: '200px',
+                                            maxHeight: '200px',
+                                            borderRadius: 1,
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.8 }
+                                          }}
+                                          onClick={() => window.open(attachmentUrl, '_blank')}
+                                        />
+                                      ) : (
+                                        <Chip
+                                          icon={<AttachIcon />}
+                                          label={url.split('/').pop() || `File ${idx + 1}`}
+                                          onClick={() => window.open(attachmentUrl, '_blank')}
+                                          sx={{ cursor: 'pointer' }}
+                                        />
+                                      )}
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            )}
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', pr: msg.sender.type !== 'buyer' ? 4 : 1 }}>{msg.content}</Typography>
+                            {msg.sender.type !== 'buyer' && (
+                              <Tooltip title="Reply">
+                                <IconButton
+                                  size="small"
+                                  className="msg-actions"
+                                  onClick={() => {
+                                    setReplyTo(msg);
+                                    // Scroll to reply input after a short delay
+                                    setTimeout(() => {
+                                      const replyInput = document.querySelector('textarea[placeholder*="Reply"]') as HTMLTextAreaElement;
+                                      if (replyInput) {
+                                        replyInput.focus();
+                                      }
+                                    }, 100);
+                                  }}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    opacity: 0,
+                                    transition: 'opacity 0.2s',
+                                    bgcolor: 'background.paper',
+                                    '&:hover': {
+                                      bgcolor: 'action.hover',
+                                    }
+                                  }}
+                                >
+                                  <ReplyIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Paper>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, justifyContent: msg.sender.type === 'buyer' ? 'flex-end' : 'flex-start' }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(msg.timestamp).toLocaleTimeString()}
+                            </Typography>
+                            {msg.sender.type !== 'buyer' && (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                                • {msg.sender.name}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+                    {/* Invisible element at bottom for scroll target */}
+                    <div ref={messagesEndRef} style={{ height: 1 }} />
+                  </Paper>
+                  <Box>
+                    {replyTo && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Chip size="small" label={`Replying to ${replyTo.sender.name}`} onDelete={() => setReplyTo(null)} />
+                        <Typography variant="caption" color="text.secondary" noWrap maxWidth={240}>
+                          {replyTo.content}
+                        </Typography>
+                      </Box>
+                    )}
+                    <Box sx={{ position: 'relative', mb: 1.5 }}>
+                      <TextField 
+                        fullWidth 
+                        multiline 
+                        rows={3} 
+                        placeholder={`Reply to ${selectedConversation.dealer?.name || 'dealer'}...`} 
+                        value={replyText} 
+                        onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && replyText.trim()) {
+                            handleSendReply();
+                          }
+                        }}
+                      />
+                      <IconButton size="small" component="label" sx={{ position: 'absolute', right: 8, bottom: 8 }}>
+                        <AttachIcon />
+                        <input hidden multiple type="file" onChange={handleAttach} />
+                      </IconButton>
+                    </Box>
+                    {/* File Previews */}
+                    {attachments.length > 0 && (
+                      <Box 
+                        sx={{ 
+                          mb: 1.5, 
+                          p: 1.5, 
+                          bgcolor: 'background.paper', 
+                          border: 2, 
+                          borderColor: 'primary.main', 
+                          borderRadius: 1,
+                          minHeight: 80
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                          Attachments ({attachments.length})
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {attachments.map((file, idx) => {
+                            const isImage = file.type.startsWith('image/');
+                            const objectUrl = isImage ? attachmentPreviews[file.name] : null;
+                            
+                            console.log(`Rendering file ${idx}:`, file.name, 'isImage:', isImage, 'hasPreview:', !!objectUrl);
+                            
+                            return (
+                              <Box
+                                key={`${file.name}-${idx}`}
+                                sx={{
+                                  position: 'relative',
+                                  border: 2,
+                                  borderColor: 'primary.main',
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  bgcolor: 'background.default',
+                                  minWidth: 120,
+                                }}
+                              >
+                                {isImage && objectUrl ? (
+                                  <Box
+                                    sx={{
+                                      width: 120,
+                                      height: 120,
+                                      position: 'relative',
+                                      cursor: 'pointer',
+                                      '&:hover': { opacity: 0.8 }
+                                    }}
+                                    onClick={() => {
+                                      const previewWindow = window.open('', '_blank');
+                                      if (previewWindow) {
+                                        previewWindow.document.write(`
+                                          <html>
+                                            <head><title>Preview: ${file.name}</title></head>
+                                            <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000">
+                                              <img src="${objectUrl}" style="max-width:100%;max-height:100vh;object-fit:contain" />
+                                            </body>
+                                          </html>
+                                        `);
+                                      }
+                                    }}
+                                  >
+                                    <Box
+                                      component="img"
+                                      src={objectUrl}
+                                      alt={file.name}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                      }}
+                                      onError={(e) => {
+                                        console.error('Failed to load image preview:', file.name, e);
+                                      }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bgcolor: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        px: 0.5,
+                                        py: 0.25,
+                                      }}
+                                    >
+                                      <Typography variant="caption" noWrap sx={{ fontSize: '0.7rem' }}>
+                                        {file.name}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ p: 1, minWidth: 120 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                      <AttachIcon fontSize="small" color="action" />
+                                      <Typography variant="caption" noWrap sx={{ flex: 1, fontSize: '0.75rem' }}>
+                                        {file.name}
+                                      </Typography>
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                      {(file.size / 1024).toFixed(2)} KB
+                                    </Typography>
+                                  </Box>
+                                )}
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeAttachment(file.name)}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    bgcolor: 'rgba(255,255,255,0.95)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,1)' },
+                                    width: 24,
+                                    height: 24,
+                                    zIndex: 1,
+                                  }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Box>
+                    )}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                      <Button variant="outlined" onClick={() => setSelectedConversation(null)}>Close</Button>
+                      <Button 
+                        variant="contained" 
+                        startIcon={<SendIcon />} 
+                        onClick={handleSendReply} 
+                        disabled={(!replyText.trim() && attachments.length === 0) || sending}
+                      >
+                        {sending ? 'Sending...' : 'Send'}
+                      </Button>
+                    </Box>
+                  </Box>
+                </>
+              ) : inlineCompose ? (
+                <>
+                  <Typography variant="h6" sx={{ mb: 2 }}>New Message</Typography>
+                  <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2 }} />
+                  <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
+                  <TextField fullWidth multiline rows={10} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} sx={{ mb: 2 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button onClick={() => setInlineCompose(false)}>Cancel</Button>
+                    <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
+                      try {
+                        toast.success('Message functionality coming soon');
+                        setInlineCompose(false);
+                      } catch {
+                        toast.error('Failed to send message');
+                      }
+                    }}>
+                      Send
+                    </Button>
+                  </Box>
+                </>
+              ) : (
+                <Box sx={{ display: 'grid', placeItems: 'center', height: '100%', color: 'text.secondary' }}>
+                  <Typography variant="body2">Select a conversation to view details</Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      {/* Compose Dialog */}
+      <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>New Message</DialogTitle>
+        <DialogContent>
+          <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2, mt: 1 }} />
+          <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
+          <TextField fullWidth multiline rows={8} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setComposeOpen(false)}>Cancel</Button>
+          <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
+            try {
+              toast.success('Message functionality coming soon');
+              setComposeOpen(false);
+            } catch (err) {
+              toast.error('Failed to send message');
+            }
+          }}>
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Conversation{isBulkDelete ? 's' : ''}?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {isBulkDelete 
+              ? `Are you sure you want to delete ${deleteTargetIds.length} conversation(s)? This action cannot be undone.`
+              : 'Are you sure you want to delete this conversation? This action cannot be undone.'
+            }
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={confirmDelete}
+            startIcon={<DeleteIcon />}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 
 export default BuyerMessages;
-
-

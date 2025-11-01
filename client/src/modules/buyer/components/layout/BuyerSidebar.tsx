@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   List,
@@ -21,8 +21,10 @@ import {
   Settings as SettingsIcon,
   Person as ProfileIcon,
   Build as SparePartsIcon,
+  Receipt as InvoiceIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { buyerMessagesApi } from '../../services/messagesApi';
 
 interface BuyerSidebarProps {
   open: boolean;
@@ -35,7 +37,7 @@ interface MenuItem {
   title: string;
   path: string;
   icon: React.ReactElement;
-  badge?: number;
+  badge?: number | null; // null means dynamic badge
 }
 
 const menuItems: MenuItem[] = [
@@ -43,7 +45,8 @@ const menuItems: MenuItem[] = [
   { title: 'Browse', path: '/browse', icon: <BrowseIcon /> },
   { title: 'Spare Parts', path: '/spare-parts', icon: <SparePartsIcon /> },
   { title: 'Favorites', path: '/buyer/favorites', icon: <FavoriteIcon /> },
-  { title: 'Messages', path: '/buyer/messages', icon: <MessageIcon />, badge: 2 },
+  { title: 'Messages', path: '/buyer/messages', icon: <MessageIcon />, badge: null },
+  { title: 'Orders', path: '/buyer/orders', icon: <InvoiceIcon /> },
   { title: 'Profile', path: '/buyer/profile', icon: <ProfileIcon /> },
   { title: 'Settings', path: '/buyer/settings', icon: <SettingsIcon /> },
 ];
@@ -58,6 +61,32 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+
+  // Fetch unread messages count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const result = await buyerMessagesApi.getConversations({
+          page: 1,
+          limit: 100, // Fetch enough to get accurate count
+        });
+        const conversations = result.conversations || [];
+        const totalUnread = conversations.reduce((sum: number, conv: any) => {
+          return sum + (conv.unreadCount || 0);
+        }, 0);
+        setUnreadMessagesCount(totalUnread);
+      } catch (error) {
+        console.error('Failed to fetch unread messages count:', error);
+        setUnreadMessagesCount(0);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -77,7 +106,9 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
       <List sx={{ flex: 1, py: 2, px: 1, overflow: 'hidden' }}>
         {menuItems.map((item) => {
           const isActive = isActivePath(item.path);
-          const showBadge = item.badge && item.badge > 0;
+          // Use dynamic badge for Messages, static badge for others
+          const badgeCount = item.badge === null ? unreadMessagesCount : (item.badge || 0);
+          const showBadge = badgeCount > 0;
           const label = item.title;
 
           return (
@@ -164,7 +195,7 @@ const BuyerSidebar: React.FC<BuyerSidebarProps> = ({
                           mr: open ? 2 : 0,
                         }}
                       >
-                        {item.badge}
+                        {badgeCount}
                       </Box>
                     )}
                   </>

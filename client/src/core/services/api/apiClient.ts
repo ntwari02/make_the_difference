@@ -16,9 +16,14 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
     // Get token directly from localStorage (it's stored as a plain string, not JSON)
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
+    let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
     
-    if (token && config.headers) {
+    // Clean token - remove quotes and whitespace that might be added by storage
+    if (token) {
+      token = token.trim().replace(/^"+|"+$/g, '');
+    }
+    
+    if (token && token.trim() !== '' && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('🔐 Debug - Token attached:', token.substring(0, 20) + '...');
     } else {

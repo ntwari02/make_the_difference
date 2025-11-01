@@ -860,26 +860,35 @@ const startConversation = async (sellerUserId, { to, subject, content }) => {
 // Get seller conversations (inbox, sent, archived)
 const getSellerConversations = async (userId, filters = {}) => {
   try {
-    const sellerRows = await executeQuery(`SELECT id FROM sellers WHERE user_id = ? LIMIT 1`, [userId]);
-    if (sellerRows.length === 0) {
-      return {
-        conversations: [],
-        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }
-      };
-    }
-
     const page = Math.max(1, parseInt(filters.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(filters.limit) || 20));
     const offset = (page - 1) * limit;
 
-    // Get conversations where seller is a participant
-    // For direct conversations, get the other participant (buyer)
+    // Build base WHERE conditions - similar to buyer query
+    const where = [
+      `cp.user_id = ?`,
+      `cp.role IN ('seller','member','admin')`,
+      `cp.left_at IS NULL`,
+      `c.status = 'active'`
+    ];
+    const params = [userId];
+
+    if (filters.search && filters.search.trim()) {
+      where.push(`(c.subject LIKE ? OR c.title LIKE ?)`);
+      params.push(`%${filters.search.trim()}%`, `%${filters.search.trim()}%`);
+    }
+
+    // Get seller_id from sellers table (for car subqueries)
+    const sellerRows = await executeQuery(`SELECT id FROM sellers WHERE user_id = ? LIMIT 1`, [userId]);
+    const sellerId = sellerRows.length > 0 ? sellerRows[0].id : null;
+
+    // Build query - start from conversation_participants (like buyer query)
     let query = `
       SELECT 
         c.id,
-        c.subject,
-        c.title,
+        COALESCE(c.subject, c.title, 'Conversation') AS subject,
         c.last_message_at,
+        COALESCE(c.updated_at, c.created_at) as updated_at,
         c.created_at,
         c.type,
         c.status,
@@ -888,8 +897,8 @@ const getSellerConversations = async (userId, filters = {}) => {
         buyer_user.first_name,
         buyer_user.last_name,
         buyer_user.profile_image as buyer_avatar,
-        -- Car info from most recent order between this seller and buyer
-        (
+        -- Car info from most recent order between this seller and buyer (only if seller_id exists)
+        ${sellerId ? `(
           SELECT CONCAT(coalesce(car.brand,''),' ',coalesce(car.model,''))
           FROM orders o
           INNER JOIN order_items oi ON o.id = oi.order_id
@@ -906,63 +915,72 @@ const getSellerConversations = async (userId, filters = {}) => {
           WHERE o.seller_id = ? AND o.buyer_id = buyer_participant.user_id
           ORDER BY o.created_at DESC
           LIMIT 1
-        ) as car_image,
+        ) as car_image,` : 'NULL as car_title, NULL as car_image,'}
         -- Get last message
-        m.id as last_message_id,
-        m.content as last_message_content,
-        m.sender_id as last_message_sender_id,
-        m.created_at as last_message_created_at,
-        m.is_read,
-        m.category,
-        m.priority,
+        last_msg.id as last_message_id,
+        last_msg.content as last_message_content,
+        last_msg.sender_id as last_message_sender_id,
+        last_msg.created_at as last_message_timestamp,
+        last_msg.is_read as last_message_read,
+        last_msg.category,
+        last_msg.priority,
         -- Get seller archive status from settings JSON
-        JSON_EXTRACT(seller_participant.settings, '$.archived') as seller_archived,
-        -- Count unread messages
-        (SELECT COUNT(*) FROM messages m2 
-         WHERE m2.conversation_id = c.id 
-           AND m2.is_read = 0 
-           AND m2.sender_id != ?) as unread_count
-      FROM conversations c
-      INNER JOIN conversation_participants seller_participant 
-        ON c.id = seller_participant.conversation_id 
-        AND seller_participant.user_id = ?
-        AND seller_participant.role IN ('seller', 'member', 'admin')
-        AND seller_participant.left_at IS NULL
+        JSON_EXTRACT(cp.settings, '$.archived') as seller_archived,
+        -- Count unread messages (messages not from seller)
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM messages m 
+          WHERE m.conversation_id = c.id 
+            AND m.is_read = 0 
+            AND m.sender_id != ?
+        ), 0) AS unread_count,
+        -- Check if seller has sent any messages in this conversation
+        COALESCE((
+          SELECT COUNT(*) > 0
+          FROM messages m 
+          WHERE m.conversation_id = c.id 
+            AND m.sender_id = ?
+        ), 0) AS has_seller_messages
+      FROM conversation_participants cp
+      INNER JOIN conversations c ON cp.conversation_id = c.id
       LEFT JOIN conversation_participants buyer_participant 
         ON c.id = buyer_participant.conversation_id 
         AND buyer_participant.user_id != ?
         AND buyer_participant.role IN ('buyer', 'member', 'support')
         AND buyer_participant.left_at IS NULL
       LEFT JOIN users buyer_user ON buyer_participant.user_id = buyer_user.id
-      LEFT JOIN messages m ON c.id = m.conversation_id 
-        AND m.created_at = (
+      LEFT JOIN messages last_msg ON c.id = last_msg.conversation_id 
+        AND last_msg.created_at = (
           SELECT MAX(created_at) 
           FROM messages 
           WHERE conversation_id = c.id
         )
-      WHERE c.status = 'active'
+      WHERE ${where.join(' AND ')}
     `;
 
-    const params = [userId, userId, userId, sellerRows[0].id, sellerRows[0].id];
+    // Build query parameters: sellerId (2x for car queries if exists), userId for unread subquery, userId for has_seller_messages, userId for buyer join, then WHERE params
+    const queryParams = sellerId 
+      ? [sellerId, sellerId, userId, userId, userId, ...params]
+      : [userId, userId, userId, ...params];
 
     // Filter by folder (inbox, sent, archived, all)
     if (filters.folder === 'archived') {
-      query += ` AND JSON_EXTRACT(seller_participant.settings, '$.archived') = 1`;
+      query += ` AND JSON_EXTRACT(cp.settings, '$.archived') = 1`;
     } else if (filters.folder === 'sent') {
-      query += ` AND JSON_EXTRACT(seller_participant.settings, '$.archived') != 1
+      query += ` AND (JSON_EXTRACT(cp.settings, '$.archived') IS NULL OR JSON_EXTRACT(cp.settings, '$.archived') = 0)
         AND EXISTS (
           SELECT 1 FROM messages m2 
           WHERE m2.conversation_id = c.id 
           AND m2.sender_id = ?
         )`;
-      params.push(userId);
+      queryParams.push(userId);
     } else if (filters.folder === 'all') {
       // show everything (archived and non-archived)
       // no additional filter
     } else {
       // inbox (default)
-      query += ` AND (JSON_EXTRACT(seller_participant.settings, '$.archived') IS NULL 
-        OR JSON_EXTRACT(seller_participant.settings, '$.archived') = 0)`;
+      query += ` AND (JSON_EXTRACT(cp.settings, '$.archived') IS NULL 
+        OR JSON_EXTRACT(cp.settings, '$.archived') = 0)`;
     }
 
     // Search filter
@@ -971,55 +989,53 @@ const getSellerConversations = async (userId, filters = {}) => {
         c.subject LIKE ? 
         OR c.title LIKE ?
         OR CONCAT(buyer_user.first_name, ' ', buyer_user.last_name) LIKE ?
-        OR m.content LIKE ?
+        OR last_msg.content LIKE ?
       )`;
       const searchTerm = `%${filters.search.trim()}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     // Category filter
     if (filters.category && filters.category !== 'all') {
-      query += ` AND m.category = ?`;
-      params.push(filters.category);
+      query += ` AND last_msg.category = ?`;
+      queryParams.push(filters.category);
     }
 
     // Sort by last message date (most recent first)
-    query += ` ORDER BY COALESCE(c.last_message_at, c.created_at) DESC`;
+    query += ` ORDER BY COALESCE(c.last_message_at, c.updated_at, c.created_at) DESC`;
 
     // Pagination - embed directly in query
     query += ` LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
 
-    const conversations = await executeQuery(query, params);
+    const conversations = await executeQuery(query, queryParams);
 
     // Count total (similar query without pagination)
     let countQuery = `
       SELECT COUNT(DISTINCT c.id) as total
-      FROM conversations c
-      INNER JOIN conversation_participants seller_participant 
-        ON c.id = seller_participant.conversation_id 
-        AND seller_participant.user_id = ?
-        AND seller_participant.role IN ('seller', 'member', 'admin')
-        AND seller_participant.left_at IS NULL
+      FROM conversation_participants cp
+      INNER JOIN conversations c ON cp.conversation_id = c.id
       LEFT JOIN conversation_participants buyer_participant 
         ON c.id = buyer_participant.conversation_id 
         AND buyer_participant.user_id != ?
         AND buyer_participant.role IN ('buyer', 'member', 'support')
         AND buyer_participant.left_at IS NULL
       LEFT JOIN users buyer_user ON buyer_participant.user_id = buyer_user.id
-      LEFT JOIN messages m ON c.id = m.conversation_id 
-        AND m.created_at = (
+      LEFT JOIN messages last_msg ON c.id = last_msg.conversation_id 
+        AND last_msg.created_at = (
           SELECT MAX(created_at) 
           FROM messages 
           WHERE conversation_id = c.id
         )
-      WHERE c.status = 'active'
+      WHERE ${where.join(' AND ')}
     `;
-    const countParams = [userId, userId];
+    
+    const countParams = [userId];
 
+    // Apply same filters as main query
     if (filters.folder === 'archived') {
-      countQuery += ` AND JSON_EXTRACT(seller_participant.settings, '$.archived') = 1`;
+      countQuery += ` AND JSON_EXTRACT(cp.settings, '$.archived') = 1`;
     } else if (filters.folder === 'sent') {
-      countQuery += ` AND JSON_EXTRACT(seller_participant.settings, '$.archived') != 1
+      countQuery += ` AND (JSON_EXTRACT(cp.settings, '$.archived') IS NULL OR JSON_EXTRACT(cp.settings, '$.archived') = 0)
         AND EXISTS (
           SELECT 1 FROM messages m2 
           WHERE m2.conversation_id = c.id 
@@ -1030,8 +1046,9 @@ const getSellerConversations = async (userId, filters = {}) => {
       // show everything (archived and non-archived)
       // no additional filter
     } else {
-      countQuery += ` AND (JSON_EXTRACT(seller_participant.settings, '$.archived') IS NULL 
-        OR JSON_EXTRACT(seller_participant.settings, '$.archived') = 0)`;
+      // inbox (default)
+      countQuery += ` AND (JSON_EXTRACT(cp.settings, '$.archived') IS NULL 
+        OR JSON_EXTRACT(cp.settings, '$.archived') = 0)`;
     }
 
     if (filters.search && filters.search.trim()) {
@@ -1039,16 +1056,19 @@ const getSellerConversations = async (userId, filters = {}) => {
         c.subject LIKE ? 
         OR c.title LIKE ?
         OR CONCAT(buyer_user.first_name, ' ', buyer_user.last_name) LIKE ?
-        OR m.content LIKE ?
+        OR last_msg.content LIKE ?
       )`;
       const searchTerm = `%${filters.search.trim()}%`;
       countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (filters.category && filters.category !== 'all') {
-      countQuery += ` AND m.category = ?`;
+      countQuery += ` AND last_msg.category = ?`;
       countParams.push(filters.category);
     }
+
+    // Add base WHERE params (userId for cp.user_id = ?)
+    countParams.push(...params);
 
     const countResult = await executeQuery(countQuery, countParams);
     const total = parseInt(countResult[0]?.total) || 0;
@@ -1068,15 +1088,16 @@ const getSellerConversations = async (userId, filters = {}) => {
         content: c.last_message_content,
         senderId: c.last_message_sender_id,
         isFromSeller: c.last_message_sender_id === userId,
-        timestamp: c.last_message_created_at,
-        read: !!c.is_read
+        timestamp: c.last_message_timestamp || c.last_message_at,
+        read: !!c.last_message_read
       } : null,
-      unreadCount: parseInt(c.unread_count) || 0,
+      unreadCount: parseInt(c.unread_count || 0),
       category: c.category || 'inquiry',
       priority: c.priority || 'normal',
       archived: !!c.seller_archived || false,
       createdAt: c.created_at,
-      lastMessageAt: c.last_message_at
+      lastMessageAt: c.last_message_at,
+      hasSellerMessages: !!c.has_seller_messages
     }));
 
     return {
@@ -1127,26 +1148,70 @@ const getConversationMessages = async (userId, conversationId) => {
       LIMIT 1
     `, [conversationId, userId]);
 
-    // Get all messages in the conversation
-    const messages = await executeQuery(`
-      SELECT 
-        m.id,
-        m.sender_id,
-        m.content,
-        m.message_type,
-        m.file_url,
-        m.is_read,
-        m.category,
-        m.priority,
-        m.created_at,
-        u.first_name,
-        u.last_name,
-        u.profile_image as sender_avatar
-      FROM messages m
-      LEFT JOIN users u ON m.sender_id = u.id
-      WHERE m.conversation_id = ?
-      ORDER BY m.created_at ASC
-    `, [conversationId]);
+    // Get all messages in the conversation with parent message info for replies
+    // Note: parent_message_id column might not exist yet, so we handle it gracefully
+    let messages;
+    try {
+      messages = await executeQuery(`
+        SELECT 
+          m.id,
+          m.sender_id,
+          m.content,
+          m.message_type,
+          m.file_url,
+          m.is_read,
+          m.category,
+          m.priority,
+          m.created_at,
+          m.parent_message_id,
+          u.first_name,
+          u.last_name,
+          u.profile_image as sender_avatar,
+          pm.content AS parent_message_content,
+          pmu.first_name AS parent_sender_first_name,
+          pmu.last_name AS parent_sender_last_name,
+          pmu.profile_image AS parent_sender_avatar,
+          pm.sender_id AS parent_sender_id
+        FROM messages m
+        LEFT JOIN users u ON m.sender_id = u.id
+        LEFT JOIN messages pm ON m.parent_message_id = pm.id
+        LEFT JOIN users pmu ON pm.sender_id = pmu.id
+        WHERE m.conversation_id = ?
+        ORDER BY m.created_at ASC
+      `, [conversationId]);
+    } catch (err) {
+      // If parent_message_id column doesn't exist, fall back to query without it
+      console.error('Query error (trying fallback):', err.message);
+      if (err.message && (err.message.includes('parent_message_id') || err.message.includes('Unknown column') || err.code === 'ER_BAD_FIELD_ERROR')) {
+        messages = await executeQuery(`
+          SELECT 
+            m.id,
+            m.sender_id,
+            m.content,
+            m.message_type,
+            m.file_url,
+            m.is_read,
+            m.category,
+            m.priority,
+            m.created_at,
+            NULL as parent_message_id,
+            u.first_name,
+            u.last_name,
+            u.profile_image as sender_avatar,
+            NULL AS parent_message_content,
+            NULL AS parent_sender_first_name,
+            NULL AS parent_sender_last_name,
+            NULL AS parent_sender_avatar,
+            NULL AS parent_sender_id
+          FROM messages m
+          LEFT JOIN users u ON m.sender_id = u.id
+          WHERE m.conversation_id = ?
+          ORDER BY m.created_at ASC
+        `, [conversationId]);
+      } else {
+        throw err;
+      }
+    }
 
     const formattedMessages = messages.map(m => ({
       id: m.id,
@@ -1164,7 +1229,17 @@ const getConversationMessages = async (userId, conversationId) => {
       read: !!m.is_read,
       category: m.category || 'inquiry',
       priority: m.priority || 'normal',
-      timestamp: m.created_at
+      timestamp: m.created_at,
+      replyTo: m.parent_message_id ? {
+        id: m.parent_message_id,
+        content: m.parent_message_content,
+        sender: {
+          id: m.parent_sender_id,
+          name: `${m.parent_sender_first_name || ''} ${m.parent_sender_last_name || ''}`.trim() || 'Unknown',
+          avatar: m.parent_sender_avatar || '',
+          type: m.parent_sender_id === userId ? 'seller' : 'buyer'
+        }
+      } : undefined
     }));
 
     return {
@@ -1181,6 +1256,29 @@ const getConversationMessages = async (userId, conversationId) => {
     console.error('Error getting conversation messages:', err);
     throw err;
   }
+};
+
+// Check if user is a participant in conversation
+const checkParticipant = async (userId, conversationId) => {
+  const participantCheck = await executeQuery(`
+    SELECT conversation_id
+    FROM conversation_participants
+    WHERE conversation_id = ? 
+      AND user_id = ?
+      AND role IN ('seller', 'member', 'admin')
+      AND left_at IS NULL
+  `, [conversationId, userId]);
+  
+  if (participantCheck.length > 0) {
+    return true;
+  }
+  
+  // Backward compatibility: check if seller owns the conversation
+  const ownerCheck = await executeQuery(`
+    SELECT id FROM conversations WHERE id = ? AND seller_id = ? LIMIT 1
+  `, [conversationId, userId]);
+  
+  return ownerCheck.length > 0;
 };
 
 // Send a message (reply to conversation)
@@ -1207,22 +1305,48 @@ const sendMessage = async (userId, conversationId, content, options = {}) => {
 
     const messageId = require('crypto').randomUUID();
 
-    // Insert message
-    await executeQuery(`
-      INSERT INTO messages (
-        id, conversation_id, sender_id, content, 
-        message_type, file_url, category, priority, is_read, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
-    `, [
-      messageId,
-      conversationId,
-      userId,
-      content.trim(),
-      options.messageType || 'text',
-      options.fileUrl || null,
-      options.category || 'support',
-      options.priority || 'normal'
-    ]);
+    // Insert message with parent_message_id for replies (if column exists)
+    // Try with parent_message_id first, fall back if column doesn't exist
+    try {
+      await executeQuery(`
+        INSERT INTO messages (
+          id, conversation_id, sender_id, content, 
+          message_type, file_url, category, priority, is_read, created_at, parent_message_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, ?)
+      `, [
+        messageId,
+        conversationId,
+        userId,
+        content ? content.trim() : '',
+        options.messageType || 'text',
+        options.fileUrl || null,
+        options.category || 'support',
+        options.priority || 'normal',
+        options.parentMessageId || null
+      ]);
+    } catch (err) {
+      // If parent_message_id column doesn't exist, insert without it
+      console.error('Insert error (trying fallback):', err.message);
+      if (err.message && (err.message.includes('parent_message_id') || err.message.includes('Unknown column') || err.code === 'ER_BAD_FIELD_ERROR')) {
+        await executeQuery(`
+          INSERT INTO messages (
+            id, conversation_id, sender_id, content, 
+            message_type, file_url, category, priority, is_read, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+        `, [
+          messageId,
+          conversationId,
+          userId,
+          content ? content.trim() : '',
+          options.messageType || 'text',
+          options.fileUrl || null,
+          options.category || 'support',
+          options.priority || 'normal'
+        ]);
+      } else {
+        throw err;
+      }
+    }
 
     // Update conversation last_message_at
     await executeQuery(`
@@ -1232,24 +1356,65 @@ const sendMessage = async (userId, conversationId, content, options = {}) => {
       WHERE id = ?
     `, [conversationId]);
 
-    // Get the created message
-    const createdMsg = await executeQuery(`
-      SELECT 
-        m.id,
-        m.sender_id,
-        m.content,
-        m.message_type,
-        m.file_url,
-        m.category,
-        m.priority,
-        m.created_at,
-        u.first_name,
-        u.last_name,
-        u.profile_image as sender_avatar
-      FROM messages m
-      LEFT JOIN users u ON m.sender_id = u.id
-      WHERE m.id = ?
-    `, [messageId]);
+    // Get the created message with parent message info if it's a reply
+    let createdMsg;
+    try {
+      createdMsg = await executeQuery(`
+        SELECT 
+          m.id,
+          m.sender_id,
+          m.content,
+          m.message_type,
+          m.file_url,
+          m.category,
+          m.priority,
+          m.created_at,
+          m.parent_message_id,
+          u.first_name,
+          u.last_name,
+          u.profile_image as sender_avatar,
+          pm.content AS parent_message_content,
+          pmu.first_name AS parent_sender_first_name,
+          pmu.last_name AS parent_sender_last_name,
+          pmu.profile_image AS parent_sender_avatar,
+          pm.sender_id AS parent_sender_id
+        FROM messages m
+        LEFT JOIN users u ON m.sender_id = u.id
+        LEFT JOIN messages pm ON m.parent_message_id = pm.id
+        LEFT JOIN users pmu ON pm.sender_id = pmu.id
+        WHERE m.id = ?
+      `, [messageId]);
+    } catch (err) {
+      // If parent_message_id column doesn't exist, fall back to query without it
+      console.error('Select error (trying fallback):', err.message);
+      if (err.message && (err.message.includes('parent_message_id') || err.message.includes('Unknown column') || err.code === 'ER_BAD_FIELD_ERROR')) {
+        createdMsg = await executeQuery(`
+          SELECT 
+            m.id,
+            m.sender_id,
+            m.content,
+            m.message_type,
+            m.file_url,
+            m.category,
+            m.priority,
+            m.created_at,
+            NULL as parent_message_id,
+            u.first_name,
+            u.last_name,
+            u.profile_image as sender_avatar,
+            NULL AS parent_message_content,
+            NULL AS parent_sender_first_name,
+            NULL AS parent_sender_last_name,
+            NULL AS parent_sender_avatar,
+            NULL AS parent_sender_id
+          FROM messages m
+          LEFT JOIN users u ON m.sender_id = u.id
+          WHERE m.id = ?
+        `, [messageId]);
+      } else {
+        throw err;
+      }
+    }
 
     if (createdMsg.length === 0) {
       throw new Error('Failed to retrieve created message');
@@ -1281,7 +1446,17 @@ const sendMessage = async (userId, conversationId, content, options = {}) => {
       fileUrl: m.file_url || null,
       category: m.category || 'support',
       priority: m.priority || 'normal',
-      timestamp: m.created_at
+      timestamp: m.created_at,
+      replyTo: m.parent_message_id ? {
+        id: m.parent_message_id,
+        content: m.parent_message_content,
+        sender: {
+          id: m.parent_sender_id,
+          name: `${m.parent_sender_first_name || ''} ${m.parent_sender_last_name || ''}`.trim() || 'Unknown',
+          avatar: m.parent_sender_avatar || '',
+          type: m.parent_sender_id === userId ? 'seller' : 'buyer'
+        }
+      } : undefined
     };
   } catch (err) {
     console.error('Error sending message:', err);
@@ -1678,6 +1853,7 @@ module.exports = {
   deleteMessages,
   deleteConversationForSeller,
   getSellerAnalytics,
+  checkParticipant,
 };
 
 

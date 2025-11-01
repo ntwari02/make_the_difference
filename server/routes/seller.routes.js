@@ -30,6 +30,32 @@ const upload = multer({
   },
 });
 
+// Upload handler for message attachments (supports multiple files)
+const uploadMessageAttachments = multer({
+  storage,
+  limits: {
+    fileSize: 15 * 1024 * 1024, // 15MB per file
+    files: 10, // Max 10 files
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and common document types
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not allowed`), false);
+    }
+  },
+});
+
 
 // GET /api/seller/profile - seller business profile
 router.get('/profile', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
@@ -550,7 +576,101 @@ router.get('/messages/:conversationId', authenticate, authorizeRoles('seller','a
     return res.json({ success: true, data: result });
   } catch (err) {
     console.error('Get conversation messages error:', err);
-    return res.status(400).json({ success: false, message: err.message || 'Failed to get messages' });
+    console.error('Error stack:', err.stack);
+    return res.status(400).json({ 
+      success: false, 
+      message: err.message || 'Failed to get messages',
+      error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  }
+});
+
+// POST /api/seller/messages/:conversationId/attachments - Upload message attachments
+router.post('/messages/:conversationId/attachments', authenticate, authorizeRoles('seller','admin'), uploadMessageAttachments.array('files', 10), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { conversationId } = req.params;
+    const files = req.files || [];
+    
+    if (files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
+    }
+
+    // Verify user has access to this conversation
+    const participantCheck = await sellerService.checkParticipant(userId, conversationId);
+    if (!participantCheck) {
+      return res.status(403).json({ success: false, message: 'Access denied to this conversation' });
+    }
+
+    const uploadsRoot = path.join(__dirname, '..', 'uploads');
+    const messagesDir = path.join(uploadsRoot, 'messages', conversationId);
+    
+    // Ensure directory exists
+    await fs.mkdir(messagesDir, { recursive: true });
+
+    const uploadedFiles = [];
+    
+    for (const file of files) {
+      try {
+        const timestamp = Date.now();
+        const baseName = (file.originalname || 'attachment')
+          .toLowerCase()
+          .replace(/[^a-z0-9\.\-_]+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$|\.+$/g, '');
+        
+        let filename;
+        let outPath;
+        
+        // Process images with sharp, store other files as-is
+        if (file.mimetype.startsWith('image/')) {
+          filename = `${timestamp}-${baseName || 'image'}`.replace(/\.+$/, '') + '.webp';
+          outPath = path.join(messagesDir, filename);
+          
+          // Optimize and convert images to webp
+          await sharp(file.buffer)
+            .rotate()
+            .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 85, effort: 6 })
+            .toFile(outPath);
+        } else {
+          // For non-image files, keep original extension
+          const ext = path.extname(file.originalname) || '.bin';
+          filename = `${timestamp}-${baseName || 'file'}${ext}`;
+          outPath = path.join(messagesDir, filename);
+          
+          // Write file as-is
+          await fs.writeFile(outPath, file.buffer);
+        }
+        
+        const publicUrl = `/uploads/messages/${conversationId}/${filename}`;
+        uploadedFiles.push({
+          url: publicUrl,
+          originalName: file.originalname,
+          size: file.size,
+          type: file.mimetype
+        });
+      } catch (fileError) {
+        console.error(`Failed to process ${file.originalname}:`, fileError);
+        // Continue with other files
+      }
+    }
+
+    if (uploadedFiles.length === 0) {
+      return res.status(400).json({ success: false, message: 'Failed to process uploaded files' });
+    }
+
+    return res.status(201).json({ 
+      success: true, 
+      message: `Successfully uploaded ${uploadedFiles.length} file(s)`, 
+      data: { 
+        files: uploadedFiles,
+        urls: uploadedFiles.map(f => f.url)
+      } 
+    });
+  } catch (error) {
+    console.error('Message attachment upload failed:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Failed to upload attachments' });
   }
 });
 
@@ -558,17 +678,19 @@ router.get('/messages/:conversationId', authenticate, authorizeRoles('seller','a
 router.post('/messages/:conversationId', authenticate, authorizeRoles('seller','admin'), async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const { content, messageType, fileUrl, category, priority } = req.body || {};
+    const { content, messageType, fileUrl, category, priority, parentMessageId } = req.body || {};
     
-    if (!content || !String(content).trim()) {
-      return res.status(400).json({ success: false, message: 'Message content is required' });
+    // Allow messages with only attachments (fileUrl) or content
+    if ((!content || !String(content).trim()) && !fileUrl) {
+      return res.status(400).json({ success: false, message: 'Message content or file attachment is required' });
     }
 
-    const message = await sellerService.sendMessage(req.user.id, conversationId, content, {
+    const message = await sellerService.sendMessage(req.user.id, conversationId, content || '', {
       messageType,
       fileUrl,
       category,
-      priority
+      priority,
+      parentMessageId
     });
     
     return res.json({ success: true, data: message, message: 'Message sent successfully' });

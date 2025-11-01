@@ -21,15 +21,18 @@ import {
 } from '@mui/material';
 import { buyerApi } from '../services/buyerApi';
 import authApi from '../../auth/services/authApi';
+import { useThemeMode } from '../../../core/theme/ThemeProvider';
+import toast from 'react-hot-toast';
 
 const BuyerSettings: React.FC = () => {
+	const { themeMode, setThemeMode } = useThemeMode();
 	const [emailAlerts, setEmailAlerts] = React.useState(true);
 	const [priceAlerts, setPriceAlerts] = React.useState(true);
 	const [marketingEmails, setMarketingEmails] = React.useState(false);
 	const [pushAlerts, setPushAlerts] = React.useState(true);
 
 	const [location, setLocation] = React.useState('');
-	const [themePref, setThemePref] = React.useState<'system' | 'light' | 'dark'>('system');
+	const [themePref, setThemePref] = React.useState<'system' | 'light' | 'dark'>(themeMode);
 	const [topicFav, setTopicFav] = React.useState(true);
 	const [topicNew, setTopicNew] = React.useState(true);
 	const [topicPrice, setTopicPrice] = React.useState(true);
@@ -60,7 +63,14 @@ const BuyerSettings: React.FC = () => {
 				setPriceAlerts(!!prefs.priceAlerts);
 				setMarketingEmails(!!prefs.marketingEmails);
 				setPushAlerts(!!prefs.pushAlerts);
-				if (prefs.theme === 'light' || prefs.theme === 'dark' || prefs.theme === 'system') setThemePref(prefs.theme);
+				if (prefs.theme === 'light' || prefs.theme === 'dark' || prefs.theme === 'system') {
+					setThemePref(prefs.theme);
+					// Apply theme immediately when loading
+					setThemeMode(prefs.theme);
+				} else {
+					// Sync with current theme mode if no preference found
+					setThemePref(themeMode);
+				}
 				const topics = prefs.topics || {};
 				setTopicFav(topics.favorites !== false);
 				setTopicNew(topics.newListings !== false);
@@ -204,7 +214,7 @@ const BuyerSettings: React.FC = () => {
 	return (
 			<>
 			<Box>
-				<Grid container spacing={2}>
+				<Grid container spacing={2} sx={{ alignItems: 'flex-start' }}>
 					{/* Left column */}
 					<Grid item xs={12} md={6}>
 						{/* Notifications */}
@@ -230,36 +240,30 @@ const BuyerSettings: React.FC = () => {
 						</Card>
 
 						{/* Privacy */}
-						<Card sx={{ mb: 2 }}>
-							<CardContent>
-								<Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Privacy</Typography>
-								<FormControlLabel control={<Switch defaultChecked />} label="Show profile to dealers" />
-								<FormControlLabel control={<Switch />} label="Allow messages from all dealers" />
-								<FormControlLabel control={<Switch defaultChecked />} label="Share approximate location" />
-								<Divider sx={{ my: 1.5 }} />
-								<Button variant="outlined" onClick={async () => {
-									try {
-										const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/auth/export`, {
-											method: 'GET',
-											headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-										});
-										const blob = await res.blob();
-										const url = URL.createObjectURL(blob);
-										const a = document.createElement('a');
-										a.href = url; a.download = 'account-export.json'; a.click();
-										URL.revokeObjectURL(url);
-									} catch {}
-								}}>Export My Data</Button>
-							</CardContent>
-						</Card>
-
-						{/* Danger Zone */}
-						<Card>
-							<CardContent>
-								<Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'error.main' }}>Danger Zone</Typography>
-								<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Deleting your account is irreversible. Your data will be permanently removed.</Typography>
-								<Button variant="outlined" color="error" sx={{ mr: 1 }} onClick={deleteAccount} disabled={saving}>Deactivate Account</Button>
-								<Button variant="contained" color="error" onClick={deleteAccount} disabled={saving}>Delete Account</Button>
+						<Card sx={{ display: 'flex', flexDirection: 'column', height: { md: '100%' } }}>
+							<CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+								<Box>
+									<Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Privacy</Typography>
+									<FormControlLabel control={<Switch defaultChecked />} label="Show profile to dealers" />
+									<FormControlLabel control={<Switch />} label="Allow messages from all dealers" />
+									<FormControlLabel control={<Switch defaultChecked />} label="Share approximate location" />
+								</Box>
+								<Box>
+									<Divider sx={{ my: 1.5 }} />
+									<Button variant="outlined" onClick={async () => {
+										try {
+											const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/auth/export`, {
+												method: 'GET',
+												headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+											});
+											const blob = await res.blob();
+											const url = URL.createObjectURL(blob);
+											const a = document.createElement('a');
+											a.href = url; a.download = 'account-export.json'; a.click();
+											URL.revokeObjectURL(url);
+										} catch {}
+									}}>Export My Data</Button>
+								</Box>
 							</CardContent>
 						</Card>
 					</Grid>
@@ -272,7 +276,26 @@ const BuyerSettings: React.FC = () => {
 								<Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Preferences</Typography>
 								<TextField fullWidth label="Preferred Location" value={location} onChange={(e) => setLocation(e.target.value)} sx={{ mb: 2 }} />
 								<Typography variant="subtitle2" sx={{ mb: 1 }}>Theme</Typography>
-								<RadioGroup row value={themePref} onChange={(e) => setThemePref(e.target.value as any)}>
+								<RadioGroup 
+									row 
+									value={themePref} 
+									onChange={(e) => {
+										const newTheme = e.target.value as 'system' | 'light' | 'dark';
+										setThemePref(newTheme);
+										// Apply theme immediately
+										setThemeMode(newTheme);
+										// Auto-save to backend
+										buyerApi.updateProfile({
+											preferences: {
+												theme: newTheme,
+											} as any,
+										}).then(() => {
+											toast.success('Theme updated');
+										}).catch(() => {
+											toast.error('Failed to save theme preference');
+										});
+									}}
+								>
 									<FormControlLabel value="system" control={<Radio />} label="System" />
 									<FormControlLabel value="light" control={<Radio />} label="Light" />
 									<FormControlLabel value="dark" control={<Radio />} label="Dark" />
@@ -297,8 +320,20 @@ const BuyerSettings: React.FC = () => {
 										</Box>
 									</Box>
 								)}
-								<Divider sx={{ my: 1.5 }} />
-								<Button variant="outlined" sx={{ mr: 1 }} onClick={saveSettings} disabled={saving || loading}>Change Password</Button>
+							</CardContent>
+						</Card>
+
+						{/* Danger Zone */}
+						<Card sx={{ display: 'flex', flexDirection: 'column', height: { md: '100%' } }}>
+							<CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+								<Box>
+									<Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'error.main' }}>Danger Zone</Typography>
+									<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Deleting your account is irreversible. Your data will be permanently removed.</Typography>
+								</Box>
+								<Box>
+									<Button variant="outlined" color="error" sx={{ mr: 1 }} onClick={deleteAccount} disabled={saving}>Deactivate Account</Button>
+									<Button variant="contained" color="error" onClick={deleteAccount} disabled={saving}>Delete Account</Button>
+								</Box>
 							</CardContent>
 						</Card>
 					</Grid>

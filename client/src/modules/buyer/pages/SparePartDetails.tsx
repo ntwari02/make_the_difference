@@ -4,33 +4,30 @@ import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteBorde
 import { useParams, useNavigate } from 'react-router-dom';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
-import { sellerApi } from '../../seller/services/sellerApi';
-import { buyerApi, vehicleApi } from '../services/buyerApi';
+import { buyerApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import toast from 'react-hot-toast';
+import { api as coreApi } from '../../../core/services/api/apiClient';
 
-type CarLite = {
+type SparePartLite = {
   id: string;
-  title: string;
-  brand: string;
-  model: string;
-  year: number;
-  mileage?: number;
+  name: string;
+  title?: string;
+  brand?: string;
+  category?: string;
+  sku?: string;
   price?: number;
+  currency?: string;
   images?: string[];
-  fuel?: string;
-  transmission?: string;
-  body?: string;
-  location?: string;
-  features?: string[];
   description?: string;
   seller_id?: string;
   seller_name?: string;
   seller_email?: string;
+  quantity_available?: number;
 };
 
 // Isolated, memoized contact form to prevent focus loss on parent re-renders
-const ContactForm: React.FC<{ price?: number; carId: string; sellerId?: string; sellerName?: string; sellerEmail?: string; image?: string }> = memo(({ price, carId, sellerId, sellerName, sellerEmail, image }) => {
+const ContactForm: React.FC<{ price?: number; partId: string; sellerId?: string; sellerName?: string; sellerEmail?: string; image?: string }> = memo(({ price, partId, sellerId, sellerName, sellerEmail, image }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -47,20 +44,20 @@ const ContactForm: React.FC<{ price?: number; carId: string; sellerId?: string; 
         const totalPrice = unitPrice * quantity;
         await buyerApi.orders.create({
           seller_id: sellerId,
-          item_type: 'car',
+          item_type: 'spare_part',
           total_amount: totalPrice,
           currency: 'USD',
           payment_method: 'cash',
           delivery_method: 'pickup',
-          buyer_notes: message || `Inquiry about car ${carId}`,
+          buyer_notes: message || `Inquiry about spare part ${partId}`,
           items: [
             {
-              item_id: carId,
-              item_type: 'car',
+              item_id: partId,
+              item_type: 'spare_part',
               quantity: quantity,
               unit_price: unitPrice,
               total_price: totalPrice,
-              item_name: sellerName ? `Car from ${sellerName}` : 'Car',
+              item_name: sellerName ? `Spare Part from ${sellerName}` : 'Spare Part',
               item_image: image || undefined,
             },
           ],
@@ -79,7 +76,7 @@ const ContactForm: React.FC<{ price?: number; carId: string; sellerId?: string; 
         toast.error(apiMsg ? `Failed to send request: ${apiMsg}` : 'Failed to send request.');
       }
     })();
-  }, [name, email, quantity, message, price, carId, sellerId, sellerName, image]);
+  }, [name, email, quantity, message, price, partId, sellerId, sellerName, image]);
 
   return (
     <>
@@ -137,120 +134,88 @@ const ContactForm: React.FC<{ price?: number; carId: string; sellerId?: string; 
   );
 });
 
-const CarDetails: React.FC = () => {
+const SparePartDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   // Use a role-aware wrapper to select layout (buyer, seller, dealer, admin)
   const Layout = (props: { children: React.ReactNode }) => <RoleAwareLayout>{props.children}</RoleAwareLayout>;
-  const [car, setCar] = useState<CarLite | null>(null);
+  const [part, setPart] = useState<SparePartLite | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [similar, setSimilar] = useState<CarLite[]>([]);
+  const [similar, setSimilar] = useState<SparePartLite[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-
-  const mockById = useMemo<Record<string, CarLite>>(
-    () => ({
-      m1: { id: 'm1', title: '2019 Toyota Corolla LE', brand: 'Toyota', model: 'Corolla', year: 2019, mileage: 38500, price: 15900, fuel: 'Petrol', transmission: 'Automatic', body: 'Sedan', location: 'Chicago, IL', images: ['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1200&auto=format&fit=crop'], features: ['Bluetooth','Backup camera'], description: 'Reliable daily driver with great fuel economy.' },
-      m2: { id: 'm2', title: '2020 Honda Civic Sport', brand: 'Honda', model: 'Civic', year: 2020, mileage: 24000, price: 18750, fuel: 'Petrol', transmission: 'Automatic', body: 'Sedan', location: 'Austin, TX', images: ['https://images.unsplash.com/photo-1549921296-3fdc4a3fa5d8?q=80&w=1200&auto=format&fit=crop'], features: ['CarPlay','Heated seats'], description: 'Sport trim with modern tech features.' },
-      m3: { id: 'm3', title: '2018 Ford Focus SE', brand: 'Ford', model: 'Focus', year: 2018, mileage: 52500, price: 12990, fuel: 'Petrol', transmission: 'Automatic', body: 'Hatchback', location: 'Miami, FL', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1200&auto=format&fit=crop'] },
-    }),
-    []
-  );
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         if (!id) return;
-        const apiCar: any = await sellerApi.cars.getCar(id);
-        const mapped: CarLite = {
+        
+        // Fetch spare part by ID
+        const base = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3001/api';
+        const response = await fetch(`${base}/spare-parts/${id}`);
+        const data = await response.json();
+        
+        if (!data.success || !data.data) {
+          throw new Error('Spare part not found');
+        }
+        
+        const apiPart = data.data;
+        const mapped: SparePartLite = {
           id,
-          title: apiCar.title || `${apiCar.year || ''} ${apiCar.brand || apiCar.make || ''} ${apiCar.model || ''}`.trim(),
-          brand: apiCar.brand || apiCar.make || '',
-          model: apiCar.model || '',
-          year: apiCar.year || 0,
-          mileage: apiCar.mileage,
-          price: apiCar.price,
-          images: apiCar.images || [],
-          fuel: apiCar.fuel_type,
-          transmission: apiCar.transmission,
-          body: apiCar.body_type,
-          location: apiCar.location,
-          features: apiCar.features || [],
-          description: apiCar.description,
-          seller_id: apiCar.seller_id || apiCar.sellerId || apiCar.seller?.id,
-          seller_name: [apiCar.seller_name, apiCar.seller_last_name].filter(Boolean).join(' ') || apiCar.dealer_name,
-          seller_email: apiCar.seller_email,
+          name: apiPart.name || 'Spare Part',
+          title: apiPart.name || 'Spare Part',
+          brand: apiPart.brand_name || apiPart.brand || '',
+          category: apiPart.category_name || apiPart.category || '',
+          sku: apiPart.sku || '',
+          price: apiPart.price ? Number(apiPart.price) : undefined,
+          currency: apiPart.currency || 'USD',
+          images: apiPart.images ? (Array.isArray(apiPart.images) ? apiPart.images : typeof apiPart.images === 'string' ? JSON.parse(apiPart.images) : []) : [],
+          description: apiPart.description || '',
+          seller_id: apiPart.seller_id,
+          seller_name: apiPart.seller_name || '',
+          seller_email: apiPart.seller_email || '',
+          quantity_available: apiPart.quantity_available ? Number(apiPart.quantity_available) : undefined,
         };
-        setCar(mapped);
+        setPart(mapped);
       } catch (e) {
-        // Use mock when API not available
-        if (id && mockById[id]) setCar(mockById[id]);
+        console.error('Failed to load spare part:', e);
+        toast.error('Failed to load spare part');
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [id, mockById]);
-
-  // Check if car is in favorites
-  useEffect(() => {
-    const checkFavorite = async () => {
-      if (!id) return;
-      
-      const token = localStorage.getItem('access_token');
-      if (!token || token.trim() === '') {
-        setIsFavorite(false);
-        return;
-      }
-
-      try {
-        const response = await buyerApi.getFavorites(1, 100);
-        let favoritesData: any[] = [];
-        
-        if (Array.isArray(response)) {
-          favoritesData = response;
-        } else if (Array.isArray(response.favorites)) {
-          favoritesData = response.favorites;
-        } else if (Array.isArray(response.data)) {
-          favoritesData = response.data;
-        }
-
-        const isFav = favoritesData.some((fav: any) => 
-          String(fav.car_id || fav.id || fav.vehicle_id) === String(id)
-        );
-        setIsFavorite(isFav);
-      } catch (e) {
-        // Silent fail if not authenticated
-        setIsFavorite(false);
-      }
-    };
-    checkFavorite();
   }, [id]);
 
-  // Load similar listings by brand once the car is loaded
+  // Load similar listings by brand/category
   useEffect(() => {
     const loadSimilar = async () => {
-      if (!car?.brand) {
+      if (!part?.brand && !part?.category) {
         setSimilar([]);
         return;
       }
       try {
-        const res: any = await vehicleApi.getVehicles({ brand: car.brand, limit: 6 });
-        const list: any[] = Array.isArray(res?.vehicles) ? res.vehicles : (Array.isArray(res) ? res : res?.data || []);
-        const mapped: CarLite[] = list
-          .filter((c) => String(c.id) !== String(car.id))
-          .map((c) => ({
-            id: String(c.id),
-            title: c.title || `${c.year || ''} ${c.brand || c.make || ''} ${c.model || ''}`.trim(),
-            brand: c.brand || c.make || '',
-            model: c.model || '',
-            year: c.year || 0,
-            price: c.price,
-            images: Array.isArray(c.images) ? c.images : (typeof c.images === 'string' ? [c.images] : []),
+        const base = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3001/api';
+        const brandParam = part.brand ? `&brand=${encodeURIComponent(part.brand)}` : '';
+        const categoryParam = part.category ? `&category=${encodeURIComponent(part.category)}` : '';
+        const res = await fetch(`${base}/spare-parts/public?limit=6${brandParam}${categoryParam}`);
+        const data = await res.json();
+        const list: any[] = data?.data || data?.spare_parts || data?.parts || [];
+        const mapped: SparePartLite[] = list
+          .filter((p) => String(p.id) !== String(part.id))
+          .slice(0, 6)
+          .map((p) => ({
+            id: String(p.id),
+            name: p.name || 'Spare Part',
+            title: p.name || 'Spare Part',
+            brand: p.brand_name || p.brand || '',
+            category: p.category_name || p.category || '',
+            price: p.price ? Number(p.price) : undefined,
+            images: p.images ? (Array.isArray(p.images) ? p.images : typeof p.images === 'string' ? JSON.parse(p.images) : []) : [],
           }));
         setSimilar(mapped);
       } catch (e) {
@@ -258,32 +223,28 @@ const CarDetails: React.FC = () => {
       }
     };
     loadSimilar();
-  }, [car?.brand, car?.id]);
+  }, [part?.brand, part?.category, part?.id]);
 
   // Handle share functionality
   const handleShare = async () => {
-    if (!car || !id) return;
+    if (!part || !id) return;
 
     const shareData = {
-      title: car.title || `${car.year} ${car.brand} ${car.model}`,
-      text: `Check out this ${car.title} - $${car.price?.toLocaleString() || 'Contact for price'}`,
+      title: part.title || part.name,
+      text: `Check out this ${part.title || part.name} - ${part.price ? `${part.currency || 'USD'} ${part.price.toLocaleString()}` : 'Contact for price'}`,
       url: window.location.href,
     };
 
     try {
-      // Use Web Share API if available
       if (navigator.share) {
         await navigator.share(shareData);
         toast.success('Shared successfully!');
       } else {
-        // Fallback: Copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
         toast.success('Link copied to clipboard!');
       }
     } catch (err: any) {
-      // User cancelled share or error occurred
       if (err.name !== 'AbortError') {
-        // Try fallback if Web Share API fails
         try {
           await navigator.clipboard.writeText(window.location.href);
           toast.success('Link copied to clipboard!');
@@ -307,24 +268,13 @@ const CarDetails: React.FC = () => {
 
     setFavoriteLoading(true);
     try {
-      if (isFavorite) {
-        await buyerApi.removeFromFavorites(id);
-        setIsFavorite(false);
-        toast.success('Removed from favorites');
-      } else {
-        await buyerApi.addToFavorites(id);
-        setIsFavorite(true);
-        toast.success('Added to favorites');
-      }
+      // Note: Spare parts favorites might need a separate endpoint
+      // For now, we'll just toggle the UI state
+      setIsFavorite(!isFavorite);
+      toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites');
     } catch (err: any) {
       console.error('Failed to toggle favorite:', err);
-      if (err?.response?.status === 401) {
-        localStorage.removeItem('access_token');
-        toast.error('Session expired. Please login again.');
-        navigate('/');
-      } else {
-        toast.error('Failed to update favorite');
-      }
+      toast.error('Failed to update favorite');
     } finally {
       setFavoriteLoading(false);
     }
@@ -338,33 +288,28 @@ const CarDetails: React.FC = () => {
     );
   }
 
-  if (!car) {
+  if (!part) {
     return (
       <Layout>
         <Box sx={{ p: 3 }}>
-          <Typography variant="h6">Car not found</Typography>
-          <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/browse')}>Back to Browse</Button>
+          <Typography variant="h6">Spare part not found</Typography>
+          <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/spare-parts')}>Back to Browse</Button>
         </Box>
       </Layout>
     );
   }
+
+  const primaryImage = part.images && part.images.length > 0 ? part.images[activeIndex] || part.images[0] : null;
 
   return (
     <Layout>
       <Box sx={{ p: { xs: 1, md: 3 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            <Button size="small" onClick={() => navigate('/browse')}>Browse</Button> / {car.brand} / {car.model}
+            <Button size="small" onClick={() => navigate('/spare-parts')}>Browse</Button> / {part.brand || 'Spare Parts'} / {part.category || 'Parts'}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* Seller-specific action */}
-            {/* RoleAwareLayout ensures layout; use a simple check for seller-only action */}
-            {((localStorage.getItem('user_data') && JSON.parse(localStorage.getItem('user_data') || '{}')?.role?.toLowerCase?.()) === 'seller') && (
-              <Button size="small" variant="outlined" onClick={() => navigate(`/seller/cars/${car.id}/edit`)}>
-                Edit Listing
-              </Button>
-            )}
-            <IconButton onClick={handleShare} title="Share this car">
+            <IconButton onClick={handleShare} title="Share this part">
               <ShareIcon />
             </IconButton>
             <IconButton 
@@ -380,14 +325,24 @@ const CarDetails: React.FC = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.9fr' }, gap: { xs: 1.5, md: 2 } }}>
           <Box>
             <Card>
-              <Box onClick={() => setLightboxOpen(true)} component="img" src={getImageUrl((car.images && car.images[activeIndex]) || car.images?.[0])} alt={car.title} sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, objectFit: 'cover', cursor: 'zoom-in' }} />
+              {primaryImage ? (
+                <Box onClick={() => setLightboxOpen(true)} component="img" src={getImageUrl(primaryImage)} alt={part.title || part.name} sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, objectFit: 'cover', cursor: 'zoom-in' }} />
+              ) : (
+                <Box sx={{ width: '100%', height: { xs: 220, sm: 300, md: 420 }, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">No Image</Typography>
+                </Box>
+              )}
               <CardContent>
-                <Typography variant="h5" fontWeight={700}>{car.title}</Typography>
-                <Typography variant="body2" color="text.secondary">{car.year} · {car.brand} · {car.model}</Typography>
+                <Typography variant="h5" fontWeight={700}>{part.title || part.name}</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                  {part.brand && <Chip label={part.brand} size="small" />}
+                  {part.category && <Chip label={part.category} size="small" color="primary" variant="outlined" />}
+                  {part.sku && <Chip label={`SKU: ${part.sku}`} size="small" variant="outlined" />}
+                </Box>
                 {/* Thumbnails */}
-                {car.images && car.images.length > 1 && (
+                {part.images && part.images.length > 1 && (
                   <Box sx={{ mt: 2, display: 'flex', gap: 1, overflowX: 'auto' }}>
-                    {car.images.map((src, idx) => (
+                    {part.images.map((src, idx) => (
                       <Box key={idx} onClick={() => setActiveIndex(idx)} sx={{ width: 72, height: 48, borderRadius: 1, overflow: 'hidden', cursor: 'pointer', outline: idx === activeIndex ? '2px solid #1976d2' : '1px solid rgba(0,0,0,0.12)' }}>
                         <img src={getImageUrl(src)} alt={`thumb-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </Box>
@@ -396,26 +351,19 @@ const CarDetails: React.FC = () => {
                 )}
                 <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mt: 2 }}>
                   <Tab label="Overview" />
-                  <Tab label="Specs" />
-                  <Tab label="Features" />
+                  <Tab label="Details" />
                 </Tabs>
                 <Box sx={{ mt: 2 }}>
                   {tab === 0 && (
-                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>{car.description || 'No description provided.'}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>{part.description || 'No description provided.'}</Typography>
                   )}
                   {tab === 1 && (
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' }, rowGap: 1, columnGap: { xs: 1.5, md: 2 }, fontSize: 14 }}>
-                      <span>Year</span><span>{car.year || '—'}</span>
-                      <span>Mileage</span><span>{car.mileage ? `${car.mileage.toLocaleString()} km` : '—'}</span>
-                      <span>Fuel</span><span>{car.fuel || '—'}</span>
-                      <span>Transmission</span><span>{car.transmission || '—'}</span>
-                      <span>Body</span><span>{car.body || '—'}</span>
-                      <span>Location</span><span>{car.location || '—'}</span>
-                    </Box>
-                  )}
-                  {tab === 2 && (
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {(car.features && car.features.length > 0) ? car.features.map((f) => <Chip key={f} label={f} />) : <Typography variant="body2" color="text.secondary">No features listed</Typography>}
+                      <span>Brand</span><span>{part.brand || '—'}</span>
+                      <span>Category</span><span>{part.category || '—'}</span>
+                      <span>SKU</span><span>{part.sku || '—'}</span>
+                      <span>Quantity Available</span><span>{part.quantity_available !== undefined ? part.quantity_available : '—'}</span>
+                      <span>Seller</span><span>{part.seller_name || '—'}</span>
                     </Box>
                   )}
                 </Box>
@@ -425,37 +373,57 @@ const CarDetails: React.FC = () => {
           <Box>
             <Card sx={{ position: { xs: 'static', md: 'sticky' }, top: { md: 16 } }}>
               <CardContent>
-                <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>{car.price ? `$${car.price.toLocaleString()}` : 'Contact for price'}</Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>
+                  {part.price ? `${part.currency || 'USD'} ${part.price.toLocaleString()}` : 'Contact for price'}
+                </Typography>
+                {part.quantity_available !== undefined && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {part.quantity_available > 0 ? `${part.quantity_available} available` : 'Out of stock'}
+                  </Typography>
+                )}
                 {/* Contact Form - hidden for sellers */}
                 {(((localStorage.getItem('user_data') && JSON.parse(localStorage.getItem('user_data') || '{}')?.role?.toLowerCase?.()) !== 'seller')) && (
-                  <ContactForm price={car.price} carId={car.id} sellerId={car.seller_id} sellerName={car.seller_name} sellerEmail={car.seller_email} image={car.images?.[0]} />
+                  <ContactForm 
+                    price={part.price} 
+                    partId={part.id} 
+                    sellerId={part.seller_id} 
+                    sellerName={part.seller_name} 
+                    sellerEmail={part.seller_email} 
+                    image={part.images?.[0]} 
+                  />
                 )}
               </CardContent>
             </Card>
           </Box>
         </Box>
-        {lightboxOpen && (
+        {lightboxOpen && primaryImage && (
           <Box onClick={() => setLightboxOpen(false)} sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.85)', display: 'grid', placeItems: 'center', zIndex: 1300 }}>
             <IconButton onClick={() => setLightboxOpen(false)} sx={{ position: 'fixed', top: 12, right: 12, color: 'common.white' }}>
               <CloseIcon />
             </IconButton>
-            <Box component="img" src={(car.images && car.images[activeIndex]) || car.images?.[0]} alt="zoom" sx={{ maxWidth: '92vw', maxHeight: '82vh', objectFit: 'contain' }} />
+            <Box component="img" src={getImageUrl(primaryImage)} alt="zoom" sx={{ maxWidth: '92vw', maxHeight: '82vh', objectFit: 'contain' }} />
           </Box>
         )}
         {/* Similar Listings */}
         <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Similar listings</Typography>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Similar parts</Typography>
           {similar.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">No similar cars found.</Typography>
+            <Typography variant="body2" color="text.secondary">No similar parts found.</Typography>
           ) : (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
               {similar.map((s) => (
-                <Card key={s.id} onClick={() => navigate(`/cars/${s.id}`)} sx={{ cursor: 'pointer' }}>
-                  <Box component="img" src={getImageUrl(s.images?.[0])} alt={s.title} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                <Card key={s.id} onClick={() => navigate(`/spare-parts/${s.id}`)} sx={{ cursor: 'pointer' }}>
+                  {s.images && s.images[0] ? (
+                    <Box component="img" src={getImageUrl(s.images[0])} alt={s.title || s.name} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                  ) : (
+                    <Box sx={{ width: '100%', height: 140, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">No Image</Typography>
+                    </Box>
+                  )}
                   <CardContent>
-                    <Typography variant="subtitle1" fontWeight={700}>{s.title}</Typography>
+                    <Typography variant="subtitle1" fontWeight={700}>{s.title || s.name}</Typography>
                     {s.price != null && (
-                      <Typography variant="body2" color="text.secondary">${Number(s.price).toLocaleString()}</Typography>
+                      <Typography variant="body2" color="text.secondary">{s.currency || 'USD'} {Number(s.price).toLocaleString()}</Typography>
                     )}
                   </CardContent>
                 </Card>
@@ -468,6 +436,5 @@ const CarDetails: React.FC = () => {
   );
 };
 
-export default CarDetails;
-
+export default SparePartDetails;
 

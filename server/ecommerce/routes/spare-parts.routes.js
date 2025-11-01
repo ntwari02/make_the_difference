@@ -950,6 +950,152 @@ router.get('/meta/brands', async (req, res) => {
   }
 });
 
+// ==================== BUNDLE MANAGEMENT ROUTES ====================
+// IMPORTANT: Bundle routes must be defined BEFORE /:id route to avoid route conflicts
+
+// Get bundles for seller
+router.get('/bundles', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sellerId = req.user.role === 'admin' ? req.query.seller_id : req.user.id;
+    
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seller ID is required'
+      });
+    }
+    
+    const filters = {
+      status: req.query.status,
+      page: req.query.page || 1,
+      limit: req.query.limit || 20
+    };
+    
+    const bundles = await sparePartsService.getBundles(sellerId, filters);
+    res.json({
+      success: true,
+      data: bundles
+    });
+  } catch (error) {
+    console.error('Error getting bundles:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Create bundle
+router.post('/bundles', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const bundleData = {
+      ...req.body,
+      seller_id: req.user.role === 'admin' ? req.body.seller_id : req.user.id
+    };
+    
+    const bundle = await sparePartsService.createBundle(bundleData);
+    res.status(201).json({
+      success: true,
+      message: 'Bundle created successfully',
+      data: bundle
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get bundle by ID (must come after /bundles route)
+router.get('/bundles/:id', async (req, res) => {
+  try {
+    const bundle = await sparePartsService.getBundleById(req.params.id);
+    res.json({
+      success: true,
+      data: bundle
+    });
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Update bundle
+router.put('/bundles/:id', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    // Check ownership (unless admin)
+    // seller_id in bundles table is user_id
+    if (req.user.role !== 'admin') {
+      const bundle = await sparePartsService.getBundleById(req.params.id);
+      if (bundle && bundle.seller_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to update this bundle'
+        });
+      }
+    }
+    
+    const bundle = await sparePartsService.updateBundle(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: 'Bundle updated successfully',
+      data: bundle
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Delete bundle
+router.delete('/bundles/:id', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    // Check ownership (unless admin)
+    // seller_id in bundles table is user_id
+    if (req.user.role !== 'admin') {
+      const bundle = await sparePartsService.getBundleById(req.params.id);
+      if (bundle && bundle.seller_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to delete this bundle'
+        });
+      }
+    }
+    
+    const result = await sparePartsService.deleteBundle(req.params.id);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Add bundle items
+router.post('/bundles/:id/items', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const result = await sparePartsService.addBundleItems(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Get spare part by ID (must be after specific routes)
 router.get('/:id', async (req, res) => {
   try {
@@ -1113,6 +1259,151 @@ router.get('/inventory/low-stock', authenticateToken, authorizeRoles(['seller', 
   }
 });
 
+// Get all inventory for seller
+router.get('/inventory/all', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sellerId = req.user.role === 'admin' && req.query.seller_id ? req.query.seller_id : req.user.id;
+    const inventory = await sparePartsService.getInventoryForSeller(sellerId);
+    res.json({
+      success: true,
+      data: inventory
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Update stock (enhanced method)
+router.put('/:id/stock/update', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const result = await sparePartsService.updateStock(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Restock item (add quantity to existing stock)
+router.post('/:id/stock/restock', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const { quantity_to_add } = req.body;
+    if (!quantity_to_add || quantity_to_add <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid quantity_to_add is required'
+      });
+    }
+    const result = await sparePartsService.restockItem(req.params.id, quantity_to_add);
+    res.json({
+      success: true,
+      message: result.message,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ==================== EXPORT ROUTES ====================
+
+// Export spare parts data
+router.post('/export', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const sellerId = req.user.role === 'admin' && req.body.seller_id ? req.body.seller_id : req.user.id;
+    const {
+      format = 'csv',
+      date_range = 'all',
+      include_inventory = true,
+      include_sales = false,
+      include_analytics = false,
+      include_bundles = false
+    } = req.body;
+
+    const exportResult = await sparePartsService.exportSpareParts(sellerId, {
+      format,
+      dateRange: date_range,
+      includeInventory: include_inventory,
+      includeSales: include_sales,
+      includeAnalytics: include_analytics,
+      includeBundles: include_bundles
+    });
+
+    const { data, format: exportFormat } = exportResult;
+
+    // Generate filename
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `spare-parts-export-${timestamp}`;
+    let contentType = 'application/json';
+    let exportContent = '';
+
+    if (exportFormat === 'csv') {
+      // Generate CSV content
+      let csvContent = sparePartsService.convertToCSV(data.spareParts);
+      
+      // Add bundles if included
+      if (data.bundles && data.bundles.length > 0) {
+        csvContent += '\n\nBundles\n';
+        csvContent += sparePartsService.convertToCSV(data.bundles);
+      }
+
+      contentType = 'text/csv';
+      filename += '.csv';
+      exportContent = csvContent;
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(exportContent);
+    } else if (exportFormat === 'json') {
+      contentType = 'application/json';
+      filename += '.json';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.json(data);
+    } else if (exportFormat === 'excel') {
+      // For Excel, we'll return JSON format for now
+      // In production, you'd use a library like exceljs to generate .xlsx files
+      contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      filename += '.xlsx';
+      
+      // Convert to CSV format (simple Excel-compatible format)
+      let csvContent = sparePartsService.convertToCSV(data.spareParts);
+      
+      if (data.bundles && data.bundles.length > 0) {
+        csvContent += '\n\nBundles\n';
+        csvContent += sparePartsService.convertToCSV(data.bundles);
+      }
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename.replace('.xlsx', '.csv')}"`);
+      res.send(csvContent);
+    } else {
+      // Default to JSON
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+      res.json(data);
+    }
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // ==================== VEHICLE COMPATIBILITY ROUTES ====================
 
 // Add vehicle compatibility
@@ -1197,6 +1488,38 @@ router.get('/:id/price-comparison', async (req, res) => {
   }
 });
 
+// Update price comparison
+router.put('/price-comparison/:comparisonId', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const result = await sparePartsService.updatePriceComparison(req.params.comparisonId, req.body);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Delete price comparison
+router.delete('/price-comparison/:comparisonId', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+  try {
+    const result = await sparePartsService.deletePriceComparison(req.params.comparisonId);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // Get price analysis
 router.get('/:id/price-analysis', async (req, res) => {
   try {
@@ -1213,53 +1536,14 @@ router.get('/:id/price-analysis', async (req, res) => {
   }
 });
 
-// ==================== BUNDLE MANAGEMENT ROUTES ====================
-
-// Create bundle
-router.post('/bundles', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
+// Get all spare parts with price comparisons for seller
+router.get('/price-comparison/all', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
   try {
-    const bundleData = {
-      ...req.body,
-      seller_id: req.user.role === 'admin' ? req.body.seller_id : req.user.id
-    };
-    
-    const bundle = await sparePartsService.createBundle(bundleData);
-    res.status(201).json({
-      success: true,
-      message: 'Bundle created successfully',
-      data: bundle
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Get bundle by ID
-router.get('/bundles/:id', async (req, res) => {
-  try {
-    const bundle = await sparePartsService.getBundleById(req.params.id);
+    const sellerId = req.user.role === 'admin' && req.query.seller_id ? req.query.seller_id : req.user.id;
+    const parts = await sparePartsService.getAllSparePartsWithPriceComparisons(sellerId);
     res.json({
       success: true,
-      data: bundle
-    });
-  } catch (error) {
-    res.status(404).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Add bundle items
-router.post('/bundles/:id/items', authenticateToken, authorizeRoles(['seller', 'admin']), async (req, res) => {
-  try {
-    const result = await sparePartsService.addBundleItems(req.params.id, req.body);
-    res.json({
-      success: true,
-      message: result.message
+      data: parts
     });
   } catch (error) {
     res.status(400).json({

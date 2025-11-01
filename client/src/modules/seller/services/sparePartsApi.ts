@@ -291,6 +291,46 @@ export const sparePartsApi = {
     return response.data;
   },
 
+  async getAllPriceComparisons() {
+    const response = await api.get('/spare-parts/price-comparison/all');
+    return response.data;
+  },
+
+  async getPriceComparison(id: string) {
+    const response = await api.get(`/spare-parts/${id}/price-comparison`);
+    return response.data;
+  },
+
+  async getPriceAnalysis(id: string) {
+    const response = await api.get(`/spare-parts/${id}/price-analysis`);
+    return response.data;
+  },
+
+  async addPriceComparison(id: string, data: {
+    competitor_name: string;
+    competitor_url?: string;
+    competitor_price: number;
+    competitor_currency?: string;
+  }) {
+    const response = await api.post(`/spare-parts/${id}/price-comparison`, data);
+    return response.data;
+  },
+
+  async updatePriceComparison(comparisonId: string, data: {
+    competitor_name: string;
+    competitor_url?: string;
+    competitor_price: number;
+    competitor_currency?: string;
+  }) {
+    const response = await api.put(`/spare-parts/price-comparison/${comparisonId}`, data);
+    return response.data;
+  },
+
+  async deletePriceComparison(comparisonId: string) {
+    const response = await api.delete(`/spare-parts/price-comparison/${comparisonId}`);
+    return response.data;
+  },
+
   // Search and Filtering
   async search(query: string, filters?: {
     category_id?: string;
@@ -545,14 +585,31 @@ export const sparePartsApi = {
   },
 
   async exportToFile(params?: {
-    format?: 'csv' | 'excel' | 'pdf';
-    filters?: any;
-    include_images?: boolean;
+    format?: 'csv' | 'excel' | 'json';
+    date_range?: '1m' | '3m' | '6m' | '1y' | 'all';
+    include_inventory?: boolean;
+    include_sales?: boolean;
+    include_analytics?: boolean;
+    include_bundles?: boolean;
   }) {
     const response = await api.post('/spare-parts/export', params, {
-      responseType: 'blob',
+      responseType: params?.format === 'json' ? 'json' : 'blob',
     });
     return response.data;
+  },
+
+  async exportData(params: {
+    format: 'csv' | 'excel' | 'json';
+    date_range?: '1m' | '3m' | '6m' | '1y' | 'all';
+    include_inventory?: boolean;
+    include_sales?: boolean;
+    include_analytics?: boolean;
+    include_bundles?: boolean;
+  }) {
+    const response = await api.post('/spare-parts/export', params, {
+      responseType: params.format === 'json' ? 'json' : 'blob',
+    });
+    return response;
   },
 
   // Seller-specific operations
@@ -647,6 +704,33 @@ export const sparePartsApi = {
     time_range?: string;
   }) {
     const response = await api.get('/spare-parts/analytics/trending', { params });
+    return response.data;
+  },
+
+  // Inventory Management
+  async getAllInventory() {
+    const response = await api.get('/spare-parts/inventory/all');
+    return response.data;
+  },
+
+  async updateStock(id: string, data: {
+    quantity_available: number;
+    reorder_point?: number;
+    max_stock_level?: number;
+  }) {
+    const response = await api.put(`/spare-parts/${id}/stock/update`, data);
+    return response.data;
+  },
+
+  async restockItem(id: string, quantityToAdd: number) {
+    const response = await api.post(`/spare-parts/${id}/stock/restock`, {
+      quantity_to_add: quantityToAdd
+    });
+    return response.data;
+  },
+
+  async getLowStockItems() {
+    const response = await api.get('/spare-parts/inventory/low-stock');
     return response.data;
   }
 };

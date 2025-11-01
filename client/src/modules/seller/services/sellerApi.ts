@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { SellerProfile, Car, SellerStats, SellerAnalytics, Notification, Activity } from '../types';
 import { sparePartsApi } from './sparePartsApi';
+import { api as sharedApi } from '../../../core/services/api/apiClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
@@ -349,6 +350,10 @@ export const ordersApi = {
     const { data } = await api.patch(`/orders/${orderId}/payment`, { payment_status, transaction_id, payment_date });
     return (data as any).data || data;
   },
+  sendInvoice: async (orderId: string): Promise<any> => {
+    const { data } = await api.patch(`/orders/${orderId}/invoice/send`);
+    return (data as any).data || data;
+  },
   stats: async (): Promise<any> => {
     const { data } = await api.get('/orders/seller/me/stats');
     return (data as any).data || data;
@@ -392,9 +397,20 @@ export const messagesApi = {
     fileUrl?: string;
     category?: string;
     priority?: string;
+    parentMessageId?: string;
   }): Promise<any> => {
     const { data } = await api.post(`/seller/messages/${conversationId}`, payload);
     return data.data || data;
+  },
+  
+  // Upload message attachments
+  uploadAttachments: async (conversationId: string, files: File[]): Promise<string[]> => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    const { data } = await sharedApi.upload(`/seller/messages/${conversationId}/attachments`, formData);
+    return data.data?.urls || data.data?.files?.map((f: any) => f.url) || [];
   },
 
   // Mark messages as read

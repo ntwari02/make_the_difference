@@ -31,8 +31,9 @@ import {
 } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import { useNavigate } from 'react-router-dom';
-import { vehicleApi } from '../services/buyerApi';
+import { vehicleApi, buyerApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
+import { STORAGE_KEYS } from '../../../core/config/constants';
 
 // Fallback image for when real image fails to load
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
@@ -187,9 +188,76 @@ const BrowsePage: React.FC = () => {
   const [transmission, setTransmission] = React.useState('');
   const [sortBy, setSortBy] = React.useState('relevance');
 
-  const toggleFavorite = (id: string) => {
-    setFavoriteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleFavorite = async (id: string) => {
+    // Check authentication first
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
+    if (!token || token.trim() === '') {
+      // If not authenticated, redirect to login
+      navigate('/');
+      return;
+    }
+
+    const isCurrentlyFavorite = favoriteIds.includes(id);
+    
+    try {
+      if (isCurrentlyFavorite) {
+        // Remove from favorites
+        await buyerApi.removeFromFavorites(id);
+        setFavoriteIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        // Add to favorites
+        await buyerApi.addToFavorites(id);
+        setFavoriteIds((prev) => [...prev, id]);
+      }
+    } catch (e: any) {
+      console.error('Failed to toggle favorite:', e);
+      // Show error but don't break the UI
+      if (e?.response?.status === 401) {
+        // Token expired, redirect to login
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem('access_token');
+        window.location.href = '/';
+      }
+    }
   };
+
+  // Load existing favorites when component mounts (if user is authenticated)
+  React.useEffect(() => {
+    const loadFavorites = async () => {
+      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        return; // Not authenticated, skip loading favorites
+      }
+
+      try {
+        const response = await buyerApi.getFavorites(1, 100);
+        
+        // Backend returns cars directly as an array (from the join query)
+        let favoritesData: any[] = [];
+        
+        if (Array.isArray(response)) {
+          favoritesData = response;
+        } else if (Array.isArray(response.favorites)) {
+          favoritesData = response.favorites;
+        } else if (response && typeof response === 'object' && 'data' in response && Array.isArray((response as any).data)) {
+          favoritesData = (response as any).data;
+        }
+        
+        // Extract car IDs from favorites (car.id from the join query)
+        const favoriteCarIds = favoritesData.map((car: any) => {
+          return String(car.id || car.car_id || '');
+        }).filter(Boolean);
+        
+        console.log('🔍 Loaded favorite car IDs:', favoriteCarIds);
+        setFavoriteIds(favoriteCarIds);
+      } catch (e: any) {
+        // Silently fail - favorites are optional
+        console.debug('Could not load favorites:', e);
+      }
+    };
+
+    loadFavorites();
+  }, []);
 
   React.useEffect(() => {
     const fetchAll = async () => {

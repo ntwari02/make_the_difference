@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Card,
@@ -58,7 +58,7 @@ import { sellerApi } from '../services/sellerApi';
 import { getAllConversations, saveConversations, saveThread, getThread, upsertConversation, removeConversation } from '../services/messagesDb';
 import toast from 'react-hot-toast';
 import { LinearProgress } from '@mui/material';
-import { getImageUrl } from '../../shared/utils/imageUtils';
+import { getImageUrl } from '../../../shared/utils/imageUtils';
 import { alpha } from '@mui/material/styles';
 
 // Conversation in list view (mapped from backend)
@@ -101,6 +101,16 @@ interface Message {
   category: string;
   priority: string;
   timestamp: string;
+  replyTo?: {
+    id: string;
+    content: string;
+    sender: {
+      id: string;
+      name: string;
+      avatar: string;
+      type: 'buyer' | 'seller' | 'admin';
+    };
+  };
 }
 
 const SellerMessages: React.FC = () => {
@@ -130,10 +140,19 @@ const SellerMessages: React.FC = () => {
   const [rowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<{ [key: string]: string }>({});
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>(
     { open: false, message: '', severity: 'success' }
   );
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  
+  // Refs for auto-scrolling to latest messages
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Track recently deleted conversation IDs to prevent them from being restored from cache
+  const [recentlyDeletedIds, setRecentlyDeletedIds] = useState<Set<string>>(new Set());
+  
   // Compose dialog (start new conversation)
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState('');
@@ -202,20 +221,21 @@ const SellerMessages: React.FC = () => {
     (async () => {
       try {
         const persisted = await getAllConversations();
-        if (Array.isArray(persisted) && persisted.length > 0 && conversations.length === 0) {
-          setConversations(persisted as any);
-          setSelectedConversation(persisted[0] as any);
+        const filteredPersisted = persisted.filter((c: any) => !recentlyDeletedIds.has(c.id));
+        if (Array.isArray(filteredPersisted) && filteredPersisted.length > 0 && conversations.length === 0) {
+          setConversations(filteredPersisted as any);
+          setSelectedConversation(filteredPersisted[0] as any);
         }
       } catch {}
     })();
-    // Prefer full cached list first
-    const full = readCachedConversationsFull();
+    // Prefer full cached list first (but exclude recently deleted)
+    const full = readCachedConversationsFull().filter((c: any) => !recentlyDeletedIds.has(c.id));
     if (full.length > 0 && conversations.length === 0) {
       setConversations(full as any);
       setSelectedConversation(full[0] as any);
       if (filter !== 'all') setFilter('all');
     }
-    const cachedList = readCachedConversations();
+    const cachedList = readCachedConversations().filter((c: any) => !recentlyDeletedIds.has(c.id));
     if (cachedList.length > 0 && conversations.length === 0) {
       const mapped: ConversationListItem[] = cachedList.map((head: any) => ({
         id: head.id,
@@ -243,7 +263,7 @@ const SellerMessages: React.FC = () => {
   }, []);
 
   // Load conversations list
-  const loadConversations = async () => {
+  const loadConversations = async (forceRefresh = false) => {
     try {
       setLoading(true);
       const result = await sellerApi.messages.getConversations({
@@ -252,25 +272,48 @@ const SellerMessages: React.FC = () => {
         folder: firstLoaded ? filter : 'all',
         search: searchTerm || undefined,
         category: categoryFilter !== 'all' ? categoryFilter as any : undefined,
+        // Add cache-busting timestamp when force refreshing after deletion
+        ...(forceRefresh ? { _t: Date.now() } : {}),
       });
       
-      setConversations(result.conversations || []);
+      // Filter out recently deleted conversations from the API response
+      const filteredConversations = (result.conversations || []).filter((c: any) => !recentlyDeletedIds.has(c.id));
+      
+      setConversations(filteredConversations);
       setTotalPages(result.pagination?.totalPages || 1);
-      if (Array.isArray(result.conversations) && result.conversations.length > 0) {
+      
+      // Clear recently deleted IDs that are confirmed gone (not in API response)
+      // Keep IDs in the set if they still appear in API (in case deletion failed)
+      setRecentlyDeletedIds((prev) => {
+        if (prev.size === 0) return prev;
+        const next = new Set(prev);
+        const apiIds = new Set(result.conversations?.map((c: any) => c.id) || []);
+        // Remove IDs from deleted set if they don't appear in API response (confirmed deleted)
+        prev.forEach((deletedId) => {
+          if (!apiIds.has(deletedId)) {
+            next.delete(deletedId);
+          }
+        });
+        return next;
+      });
+      
+      if (Array.isArray(filteredConversations) && filteredConversations.length > 0) {
         // Persist a full copy to avoid empty UI on next login
-        writeCachedConversationsFull(result.conversations);
+        writeCachedConversationsFull(filteredConversations);
         // Also persist permanently in IndexedDB
-        try { await saveConversations(result.conversations); } catch {}
+        try { await saveConversations(filteredConversations); } catch {}
       }
 
       // Fallback: if nothing returned, try a broad fetch (folder=all, no search) to avoid empty UI
-      if ((!result.conversations || result.conversations.length === 0)) {
+      if ((!filteredConversations || filteredConversations.length === 0)) {
         try {
           const broad = await sellerApi.messages.getConversations({ page: 1, limit: rowsPerPage, folder: 'all' });
-          if (Array.isArray(broad.conversations) && broad.conversations.length > 0) {
-            setConversations(broad.conversations);
+          // Filter out recently deleted conversations
+          const filteredBroad = (broad.conversations || []).filter((c: any) => !recentlyDeletedIds.has(c.id));
+          if (Array.isArray(filteredBroad) && filteredBroad.length > 0) {
+            setConversations(filteredBroad);
             setTotalPages(broad.pagination?.totalPages || 1);
-            writeCachedConversationsFull(broad.conversations);
+            writeCachedConversationsFull(filteredBroad);
             if (filter !== 'all') setFilter('all');
           }
         } catch {}
@@ -278,9 +321,10 @@ const SellerMessages: React.FC = () => {
       if (!firstLoaded) setFirstLoaded(true);
 
       // Fallback: if API returns empty, try to restore the most recent conversation from session storage
+      // BUT exclude recently deleted conversations to prevent them from reappearing
       if ((!result.conversations || result.conversations.length === 0) && !selectedConversation) {
         // Check persistent cache first (survives logout)
-        const cachedList = readCachedConversations();
+        const cachedList = readCachedConversations().filter((c: any) => !recentlyDeletedIds.has(c.id));
         if (cachedList.length > 0) {
           const mapped: ConversationListItem[] = cachedList.map((head: any) => ({
             id: head.id,
@@ -417,13 +461,68 @@ const SellerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id]);
 
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    });
+  };
+
+  // Auto-scroll to bottom when thread changes
+  useEffect(() => {
+    if (thread.length > 0 && !loadingThread) {
+      // Delay to ensure DOM has rendered
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread, loadingThread]);
+
   const loadThread = async (conversationId: string) => {
     if (conversationId.startsWith('temp')) return;
     try {
       setLoadingThread(true);
       const result = await sellerApi.messages.getConversationMessages(conversationId);
-      setThread(result.messages || []);
-      try { await saveThread(conversationId, result.messages || []); } catch {}
+      const messagesData = result.messages || [];
+      
+      // Map messages with replyTo information
+      const mapped: Message[] = messagesData.map((m: any) => ({
+        id: m.id,
+        sender: {
+          id: m.sender?.id || m.sender_id || '',
+          name: m.sender?.name || 'Unknown',
+          avatar: m.sender?.avatar || '',
+          type: m.sender?.type || (m.sender_id === profile?.id ? 'seller' : 'buyer') as 'buyer' | 'seller' | 'admin',
+        },
+        content: m.content || '',
+        messageType: m.messageType || m.message_type || 'text',
+        fileUrl: m.fileUrl || m.file_url || null,
+        read: m.read !== false,
+        category: m.category || 'inquiry',
+        priority: m.priority || 'normal',
+        timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+        replyTo: m.replyTo || m.reply_to || m.parentMessage ? {
+          id: m.replyTo?.id || m.reply_to?.id || m.parentMessage?.id || '',
+          content: m.replyTo?.content || m.reply_to?.content || m.parentMessage?.content || '',
+          sender: {
+            id: m.replyTo?.sender?.id || m.reply_to?.sender_id || m.parentMessage?.sender_id || '',
+            name: m.replyTo?.sender?.name || m.reply_to?.sender_name || m.parentMessage?.sender_name || 'Unknown',
+            avatar: m.replyTo?.sender?.avatar || m.reply_to?.sender_avatar || m.parentMessage?.sender_avatar || '',
+            type: (m.replyTo?.sender?.type || m.reply_to?.sender_type || m.parentMessage?.sender_type || 'buyer') as 'buyer' | 'seller' | 'admin',
+          }
+        } : undefined
+      }));
+      
+      setThread(mapped);
+      try { await saveThread(conversationId, mapped); } catch {}
       
       // Reload conversations to update unread counts
       await loadConversations();
@@ -483,7 +582,7 @@ const SellerMessages: React.FC = () => {
   };
 
   const handleSendReply = async () => {
-    if (!selectedConversation || !replyText.trim()) return;
+    if (!selectedConversation || (!replyText.trim() && attachments.length === 0)) return;
     if (selectedConversation.id.startsWith('temp')) {
       toast.error('Conversation is not ready yet. Please start a new one.');
       await loadConversations();
@@ -493,10 +592,41 @@ const SellerMessages: React.FC = () => {
     
     try {
       setSending(true);
+      
+      // Upload attachments first if any
+      let fileUrls: string[] = [];
+      if (attachments.length > 0) {
+        try {
+          fileUrls = await sellerApi.messages.uploadAttachments(selectedConversation.id, attachments);
+          if (fileUrls.length === 0 && attachments.length > 0) {
+            toast.error('Failed to upload attachments');
+            return;
+          }
+        } catch (uploadError: any) {
+          console.error('Failed to upload attachments:', uploadError);
+          toast.error(uploadError?.response?.data?.message || 'Failed to upload attachments');
+          return;
+        }
+      }
+      
+      // Send message with file URLs (if multiple files, use first one or comma-separated)
+      const fileUrl = fileUrls.length > 0 ? (fileUrls.length === 1 ? fileUrls[0] : fileUrls.join(',')) : undefined;
+      
+      // If only attachments (no text), use a default message
+      const messageContent = replyText.trim() || (fileUrl ? 'Sent attachment(s)' : '');
+      
+      if (!messageContent) {
+        toast.error('Please enter a message or attach a file');
+        setSending(false);
+        return;
+      }
+      
       const sentMessage = await sellerApi.messages.sendMessage(selectedConversation.id, {
-        content: replyText.trim(),
+        content: messageContent,
         category: categoryFilter !== 'all' ? categoryFilter : 'support',
-        priority: 'normal'
+        priority: 'normal',
+        fileUrl: fileUrl,
+        parentMessageId: replyTo?.id // Include parent message ID if replying
       });
       
       // Add to thread optimistically
@@ -508,19 +638,34 @@ const SellerMessages: React.FC = () => {
           avatar: sentMessage.sender.avatar,
           type: 'seller'
         },
-        content: sentMessage.content,
+        content: sentMessage.content || messageContent,
         messageType: sentMessage.messageType,
-        fileUrl: sentMessage.fileUrl,
+        fileUrl: sentMessage.fileUrl || fileUrl || null,
         read: sentMessage.read || false,
         category: sentMessage.category,
         priority: sentMessage.priority,
-        timestamp: sentMessage.timestamp
+        timestamp: sentMessage.timestamp,
+        replyTo: sentMessage.replyTo || (replyTo ? {
+          id: replyTo.id,
+          content: replyTo.content,
+          sender: replyTo.sender
+        } : undefined)
       };
       
       setThread((prev) => [...prev, newMessage]);
       setReplyText('');
+      // Clean up object URLs before clearing attachments
+      Object.values(attachmentPreviews).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      setAttachmentPreviews({});
       setAttachments([]);
       setReplyTo(null);
+      
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 50);
       
       // Reload conversations to update last message
       await loadConversations();
@@ -557,14 +702,44 @@ const SellerMessages: React.FC = () => {
 
   const handleAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
-    setAttachments((prev) => [...prev, ...Array.from(files)]);
+    if (!files || files.length === 0) return;
+    
+    const newFiles = Array.from(files);
+    
+    // Create object URLs for image files
+    const newPreviews: { [key: string]: string } = {};
+    newFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        newPreviews[file.name] = URL.createObjectURL(file);
+      }
+    });
+    
+    setAttachments((prev) => [...prev, ...newFiles]);
+    setAttachmentPreviews((prev) => ({ ...prev, ...newPreviews }));
     e.target.value = '';
   };
 
   const removeAttachment = (fileName: string) => {
     setAttachments((prev) => prev.filter((f) => f.name !== fileName));
+    // Clean up object URL if it exists
+    setAttachmentPreviews((prev) => {
+      if (prev[fileName]) {
+        URL.revokeObjectURL(prev[fileName]);
+      }
+      const newPreviews = { ...prev };
+      delete newPreviews[fileName];
+      return newPreviews;
+    });
   };
+  
+  // Clean up all object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(attachmentPreviews).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
 
   const handleDeleteThreadMessage = async (messageId: string) => {
     if (!selectedConversation) return;
@@ -713,26 +888,50 @@ const SellerMessages: React.FC = () => {
     if (selectedIds.size === 0) return;
     try {
       const ids = Array.from(selectedIds).filter(id => !id.startsWith('temp'));
-      if (filter === 'archived') {
-        // In archived folder, permanently remove (leave) conversations
-        await Promise.all(ids.map((id) => sellerApi.messages.deleteConversation(id)));
-      } else {
-        // In inbox/sent, archive them
-        await Promise.all(ids.map((id) => sellerApi.messages.archiveConversation(id, true)));
-      }
-      // Optimistically remove from UI
+      
+      // Permanently delete (leave) conversations from any folder
+      // This ensures they don't reappear in the inbox
+      await Promise.all(ids.map((id) => sellerApi.messages.deleteConversation(id)));
+      
+      // Remove from cache/localStorage (await all deletions)
+      await Promise.all(ids.map((id) => removeConversation(id).catch(() => {})));
+      
+      // Also remove from localStorage cache
+      try {
+        const cachedList = readCachedConversations().filter((c: any) => !ids.includes(c.id));
+        localStorage.setItem(cacheKey, JSON.stringify(cachedList));
+        
+        const cachedFull = readCachedConversationsFull().filter((c: any) => !ids.includes(c.id));
+        localStorage.setItem(cacheFullKey, JSON.stringify(cachedFull));
+      } catch {}
+      
+      // Track deleted IDs to prevent cache restoration
+      setRecentlyDeletedIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach(id => next.add(id));
+        return next;
+      });
+      
+      // Remove from UI state
       setConversations((prev) => prev.filter((c) => !ids.includes(c.id)));
-      toast.success('Conversation(s) deleted');
       setSelectedIds(new Set());
-      // Refresh in background to stay in sync
-      loadConversations();
+      
+      // Clear selected conversation if it was deleted
       if (selectedConversation && ids.includes(selectedConversation.id)) {
         setSelectedConversation(null);
         setThread([]);
       }
+      
+      // Refresh conversations list after deletion completes with force refresh
+      // This will fetch fresh data from backend, ensuring deleted conversations don't reappear
+      await loadConversations(true);
+      
+      toast.success('Conversation(s) deleted');
     } catch (error: any) {
       console.error('Bulk delete failed:', error);
       toast.error(error?.response?.data?.message || 'Failed to delete conversations');
+      // Reload conversations to restore UI state on error
+      await loadConversations();
     }
   };
 
@@ -909,7 +1108,11 @@ const SellerMessages: React.FC = () => {
                     </IconButton>
                   </Box>
                   {loadingThread && <LinearProgress />}
-                  <Paper variant="outlined" sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}>
+                  <Paper 
+                    variant="outlined" 
+                    ref={messagesContainerRef}
+                    sx={{ p: 2, mb: 2, flex: 1, overflowY: 'auto' }}
+                  >
                     {!loadingThread && thread.length === 0 && (
                       <Box sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
                         <Typography variant="body2">No messages yet</Typography>
@@ -931,16 +1134,76 @@ const SellerMessages: React.FC = () => {
                           <Paper sx={{ 
                             p: 1, 
                             bgcolor: (t) => {
-                              const secondary = (t.palette as any).secondary?.main || t.palette.grey[500];
-                              const lightBuyer = alpha(secondary, 0.12);
-                              const darkBuyer = alpha(secondary, 0.18);
-                              // Seller bubbles: neutral background; Buyer bubbles: tinted
+                              // Seller messages (sent): Gray
+                              // Buyer messages (received): System blue (from dark mode)
                               if (msg.sender.type === 'seller') {
-                                return 'background.paper';
+                                return t.palette.mode === 'light' ? '#f5f5f5' : '#424242'; // Light gray / Dark gray
                               }
-                              return t.palette.mode === 'light' ? lightBuyer : darkBuyer;
+                              return t.palette.mode === 'light' ? '#e3f2fd' : '#64b5f6'; // Light blue / Dark mode blue
                             }
                           }}>
+                            {msg.replyTo && (
+                              <Box sx={{ 
+                                mb: 1, 
+                                pb: 1, 
+                                borderLeft: 2, 
+                                borderColor: 'primary.main',
+                                pl: 1,
+                                bgcolor: (t) => alpha(t.palette.primary.main, 0.05)
+                              }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                  <ReplyIcon fontSize="small" sx={{ fontSize: 14, color: 'primary.main' }} />
+                                  <Typography variant="caption" color="primary.main" fontWeight={600}>
+                                    {msg.replyTo.sender.name}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ 
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  fontSize: '0.75rem',
+                                  lineHeight: 1.3
+                                }}>
+                                  {msg.replyTo.content}
+                                </Typography>
+                              </Box>
+                            )}
+                            {msg.fileUrl && (
+                              <Box sx={{ mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                {msg.fileUrl.split(',').map((url, idx) => {
+                                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                                  const attachmentUrl = getImageUrl(url); // Use shared utility for deployment support
+                                  return (
+                                    <Box key={idx} sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                                      {isImage ? (
+                                        <Box
+                                          component="img"
+                                          src={attachmentUrl}
+                                          alt={`Attachment ${idx + 1}`}
+                                          sx={{
+                                            maxWidth: '200px',
+                                            maxHeight: '200px',
+                                            borderRadius: 1,
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.8 }
+                                          }}
+                                          onClick={() => window.open(attachmentUrl, '_blank')}
+                                        />
+                                      ) : (
+                                        <Chip
+                                          icon={<AttachIcon />}
+                                          label={url.split('/').pop() || `File ${idx + 1}`}
+                                          onClick={() => window.open(attachmentUrl, '_blank')}
+                                          sx={{ cursor: 'pointer' }}
+                                        />
+                                      )}
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            )}
                             <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                           </Paper>
                           {msg.sender.type === 'seller' && (
@@ -951,6 +1214,8 @@ const SellerMessages: React.FC = () => {
                         </Box>
                       </Box>
                     ))}
+                    {/* Scroll target for auto-scrolling */}
+                    <div ref={messagesEndRef} />
                   </Paper>
                   <Box>
                     {/* Reply context (quote) */}
@@ -982,18 +1247,133 @@ const SellerMessages: React.FC = () => {
                         <input hidden multiple type="file" onChange={handleAttach} />
                       </IconButton>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                      {attachments.map((f) => (
-                        <Chip key={f.name} label={f.name} onDelete={() => removeAttachment(f.name)} />
-                      ))}
-                    </Box>
+                    {/* File Previews */}
+                    {attachments.length > 0 && (
+                      <Box 
+                        sx={{ 
+                          mb: 1.5, 
+                          p: 1.5, 
+                          bgcolor: 'background.paper', 
+                          border: 2, 
+                          borderColor: 'primary.main', 
+                          borderRadius: 1,
+                          minHeight: 80
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                          Attachments ({attachments.length})
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {attachments.map((file, idx) => {
+                            const isImage = file.type.startsWith('image/');
+                            const objectUrl = isImage ? attachmentPreviews[file.name] : null;
+                            
+                            return (
+                              <Box
+                                key={`${file.name}-${idx}`}
+                                sx={{
+                                  position: 'relative',
+                                  border: 2,
+                                  borderColor: 'primary.main',
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  bgcolor: 'background.default',
+                                  minWidth: 120,
+                                }}
+                              >
+                                {isImage && objectUrl ? (
+                                  <Box
+                                    sx={{
+                                      width: 120,
+                                      height: 120,
+                                      position: 'relative',
+                                      cursor: 'pointer',
+                                      '&:hover': { opacity: 0.8 }
+                                    }}
+                                    onClick={() => {
+                                      const previewWindow = window.open('', '_blank');
+                                      if (previewWindow) {
+                                        previewWindow.document.write(`
+                                          <html>
+                                            <head><title>Preview: ${file.name}</title></head>
+                                            <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000">
+                                              <img src="${objectUrl}" style="max-width:100%;max-height:100vh;object-fit:contain" />
+                                            </body>
+                                          </html>
+                                        `);
+                                      }
+                                    }}
+                                  >
+                                    <Box
+                                      component="img"
+                                      src={objectUrl}
+                                      alt={file.name}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                      }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bgcolor: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        px: 0.5,
+                                        py: 0.25,
+                                      }}
+                                    >
+                                      <Typography variant="caption" noWrap sx={{ fontSize: '0.7rem' }}>
+                                        {file.name}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ p: 1, minWidth: 120 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                      <AttachIcon fontSize="small" color="action" />
+                                      <Typography variant="caption" noWrap sx={{ flex: 1, fontSize: '0.75rem' }}>
+                                        {file.name}
+                                      </Typography>
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                      {(file.size / 1024).toFixed(2)} KB
+                                    </Typography>
+                                  </Box>
+                                )}
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeAttachment(file.name)}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    bgcolor: 'rgba(255,255,255,0.95)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,1)' },
+                                    width: 24,
+                                    height: 24,
+                                    zIndex: 1,
+                                  }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Box>
+                    )}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                       <Button variant="outlined" onClick={() => setSelectedConversation(null)}>Close</Button>
                       <Button 
                         variant="contained" 
                         startIcon={<SendIcon />} 
                         onClick={handleSendReply} 
-                        disabled={!replyText.trim() || sending}
+                        disabled={(!replyText.trim() && attachments.length === 0) || sending}
                       >
                         {sending ? 'Sending...' : 'Send'}
                       </Button>
