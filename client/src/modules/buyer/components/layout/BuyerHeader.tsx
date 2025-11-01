@@ -32,6 +32,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../../../../core/store/auth/authSlice';
 import type { RootState } from '../../../../core/store';
 import { getImageUrl } from '../../../../shared/utils/imageUtils';
+import { buyerApi } from '../../services/buyerApi';
 
 interface BuyerHeaderProps {
   onMenuClick: () => void;
@@ -50,9 +51,66 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
 
   const unreadNotifications = 0;
 
-  // Get avatar URL from user profile
-  const avatarUrl = user?.profile_image || user?.avatar || undefined;
-  const avatarSrc = avatarUrl ? getImageUrl(avatarUrl) : undefined;
+  // Get cached profile image immediately from localStorage for instant display
+  const [instantAvatarSrc, setInstantAvatarSrc] = React.useState<string | undefined>(undefined);
+  
+  React.useEffect(() => {
+    try {
+      const cache = localStorage.getItem('buyer_profile_cache');
+      if (cache) {
+        const p = JSON.parse(cache);
+        const avatar = p?.avatar || p?.profile_image || null;
+        if (avatar) {
+          const src = avatar.startsWith('data:') ? avatar : getImageUrl(avatar);
+          setInstantAvatarSrc(src);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Ensure header has profile data immediately after login/navigation
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        // Load profile if user data doesn't have profile_image
+        if (user && !user.profile_image && !user.avatar) {
+          const data = await buyerApi.getProfile();
+          if (!mounted) return;
+          // Cache profile data for instant display
+          try {
+            localStorage.setItem('buyer_profile_cache', JSON.stringify(data));
+            // Update instant avatar if available
+            const avatar = data.avatar || (data as any).profile_image;
+            if (avatar) {
+              const src = avatar.startsWith('data:') ? avatar : getImageUrl(avatar);
+              setInstantAvatarSrc(src);
+            }
+          } catch {}
+        }
+      } catch {}
+    };
+    load();
+    return () => { mounted = false; };
+  }, [user]);
+
+  // Get avatar URL from user profile with multiple fallbacks
+  const avatarSrc = (() => {
+    // Priority 1: Redux auth user profile_image
+    if (user?.profile_image) {
+      const img = user.profile_image;
+      return img.startsWith('data:') ? img : getImageUrl(img);
+    }
+    // Priority 2: Redux auth user avatar
+    if (user?.avatar) {
+      const img = user.avatar;
+      return img.startsWith('data:') ? img : getImageUrl(img);
+    }
+    // Priority 3: Instant cached image
+    if (instantAvatarSrc) return instantAvatarSrc;
+    // Fallback
+    return undefined;
+  })();
   
   // Get user initials for fallback
   const userInitial = (user?.first_name || user?.last_name || user?.email || 'B')[0].toUpperCase();

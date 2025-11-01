@@ -5,7 +5,6 @@ import {
   CardContent,
   Typography,
   GridLegacy as Grid,
-  Avatar,
   Button,
   TextField,
   Chip,
@@ -74,13 +73,19 @@ const BuyerProfile: React.FC = () => {
           dispatch(updateUser({ 
             profile_image: profile.avatar,
             avatar: profile.avatar 
-          }));
+          } as any));
         }
+        
+        // Cache profile data for header to use immediately
+        try {
+          localStorage.setItem('buyer_profile_cache', JSON.stringify(profile));
+        } catch {}
         
         // Fetch favorites count
         try {
-          const { favorites } = await buyerApi.getFavorites(1, 500);
-          setFavoritesCount(Array.isArray(favorites) ? favorites.length : (favorites?.length ?? 0));
+          const response = await buyerApi.getFavorites(1, 500);
+          const favorites = response?.favorites || [];
+          setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
         } catch {
           setFavoritesCount(null);
         }
@@ -126,36 +131,46 @@ const BuyerProfile: React.FC = () => {
         phone: updated.phone,
         profile_image: updated.avatar,
         avatar: updated.avatar 
-      }));
+      } as any));
+      // Cache updated profile data for header
+      try {
+        localStorage.setItem('buyer_profile_cache', JSON.stringify(updated));
+      } catch {}
       setSuccess('Profile updated');
       // Refresh favorites count lightly
       try {
-        const { favorites } = await buyerApi.getFavorites(1, 200);
-        setFavoritesCount(Array.isArray(favorites) ? favorites.length : (favorites?.length ?? 0));
+        const response = await buyerApi.getFavorites(1, 200);
+        const favorites = response?.favorites || [];
+        setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
       } catch {}
     } finally {
       setSaving(false);
     }
   };
 
-  const onSavePreferences = async () => {
-    try {
-      setSaving(true);
-      setError(null);
-      await buyerApi.updateProfile({
-        preferences: {
-          notifications: emailAlerts,
-          priceAlerts: priceAlerts,
-          savedSearches: savedSearchesPref,
-        },
-      });
-      setSuccess('Preferences updated');
-    } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to save preferences');
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Note: onSavePreferences is kept for potential future use with separate preferences tab
+  // const onSavePreferences = async () => {
+  //   try {
+  //     setSaving(true);
+  //     setError(null);
+  //     const updated = await buyerApi.updateProfile({
+  //       preferences: {
+  //         notifications: emailAlerts,
+  //         priceAlerts: priceAlerts,
+  //         savedSearches: savedSearchesPref,
+  //       },
+  //     });
+  //     // Cache updated profile data for header
+  //     try {
+  //       localStorage.setItem('buyer_profile_cache', JSON.stringify(updated));
+  //     } catch {}
+  //     setSuccess('Preferences updated');
+  //   } catch (e: any) {
+  //     setError(e?.response?.data?.message || 'Failed to save preferences');
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
 
   const onChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -201,7 +216,11 @@ const BuyerProfile: React.FC = () => {
                         dispatch(updateUser({ 
                           profile_image: updated.avatar,
                           avatar: updated.avatar 
-                        }));
+                        } as any));
+                        // Cache updated profile data for header
+                        try {
+                          localStorage.setItem('buyer_profile_cache', JSON.stringify(updated));
+                        } catch {}
                         setSuccess('Avatar updated successfully');
                       }).catch((e: any) => {
                         setError(e?.response?.data?.message || 'Failed to update avatar');
@@ -214,7 +233,11 @@ const BuyerProfile: React.FC = () => {
                         dispatch(updateUser({ 
                           profile_image: null,
                           avatar: undefined 
-                        }));
+                        } as any));
+                        // Cache updated profile data for header
+                        try {
+                          localStorage.setItem('buyer_profile_cache', JSON.stringify(updated));
+                        } catch {}
                         setSuccess('Avatar removed successfully');
                       }).catch((e: any) => {
                         setError(e?.response?.data?.message || 'Failed to remove avatar');

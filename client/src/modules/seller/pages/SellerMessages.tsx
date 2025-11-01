@@ -16,11 +16,6 @@ import {
   Paper,
   Chip,
   Badge,
-  
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Checkbox,
   Pagination,
   Tooltip,
@@ -37,15 +32,11 @@ import {
   Send as SendIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  FilterList as FilterIcon,
-  MoreVert as MoreIcon,
   Reply as ReplyIcon,
   Archive as ArchiveIcon,
   Delete as DeleteIcon,
-  Markunread as MarkUnreadIcon,
   MarkEmailRead as MarkReadIcon,
   AttachFile as AttachIcon,
-  Undo as UndoIcon,
   ForwardToInbox as ForwardIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
@@ -133,7 +124,7 @@ const SellerMessages: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTimer, setSearchTimer] = useState<any>(null);
   const [firstLoaded, setFirstLoaded] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter] = useState('all');
   const [replyText, setReplyText] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
@@ -263,13 +254,13 @@ const SellerMessages: React.FC = () => {
   }, []);
 
   // Load conversations list
-  const loadConversations = async (forceRefresh = false) => {
+  const loadConversations = async (forceRefresh = false, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const result = await sellerApi.messages.getConversations({
         page,
         limit: rowsPerPage,
-        folder: firstLoaded ? filter : 'all',
+        folder: firstLoaded ? (filter === 'all' ? undefined : filter) : undefined,
         search: searchTerm || undefined,
         category: categoryFilter !== 'all' ? categoryFilter as any : undefined,
         // Add cache-busting timestamp when force refreshing after deletion
@@ -307,7 +298,7 @@ const SellerMessages: React.FC = () => {
       // Fallback: if nothing returned, try a broad fetch (folder=all, no search) to avoid empty UI
       if ((!filteredConversations || filteredConversations.length === 0)) {
         try {
-          const broad = await sellerApi.messages.getConversations({ page: 1, limit: rowsPerPage, folder: 'all' });
+          const broad = await sellerApi.messages.getConversations({ page: 1, limit: rowsPerPage, folder: undefined });
           // Filter out recently deleted conversations
           const filteredBroad = (broad.conversations || []).filter((c: any) => !recentlyDeletedIds.has(c.id));
           if (Array.isArray(filteredBroad) && filteredBroad.length > 0) {
@@ -384,7 +375,7 @@ const SellerMessages: React.FC = () => {
       toast.error(error?.response?.data?.message || 'Failed to load conversations');
       setConversations([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -393,14 +384,16 @@ const SellerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filter, searchTerm, categoryFilter, rowsPerPage]);
 
-  // Lightweight realtime: refresh on window focus and every 12s
+  // Real-time polling: Refresh conversations list every 3 seconds
   useEffect(() => {
-    const onFocus = () => { loadConversations(); };
+    const onFocus = () => { loadConversations(false, false); };
     window.addEventListener('focus', onFocus);
-    const interval = setInterval(() => { loadConversations(); }, 12000);
+    const interval = setInterval(() => { 
+      loadConversations(false, true); // silent=true to avoid loading flicker during polling
+    }, 3000); // Poll every 3 seconds for real-time updates
     return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, filter, categoryFilter, searchTerm]);
 
   // SSE live updates
   useEffect(() => {
@@ -461,6 +454,18 @@ const SellerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id]);
 
+  // Real-time polling: Refresh thread messages every 2 seconds when a conversation is selected
+  useEffect(() => {
+    if (!selectedConversation?.id || selectedConversation.id.startsWith('temp')) return;
+    
+    const interval = setInterval(() => {
+      loadThread(selectedConversation.id, true); // silent=true to avoid loading flicker
+    }, 2000); // Poll thread every 2 seconds for real-time updates
+    
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id]);
+
   // Scroll to bottom function
   const scrollToBottom = () => {
     // Use requestAnimationFrame to ensure DOM has updated
@@ -486,10 +491,10 @@ const SellerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread, loadingThread]);
 
-  const loadThread = async (conversationId: string) => {
+  const loadThread = async (conversationId: string, silent = false) => {
     if (conversationId.startsWith('temp')) return;
     try {
-      setLoadingThread(true);
+      if (!silent) setLoadingThread(true);
       const result = await sellerApi.messages.getConversationMessages(conversationId);
       const messagesData = result.messages || [];
       
@@ -539,13 +544,13 @@ const SellerMessages: React.FC = () => {
         // Remove from local list to keep UI consistent
         setConversations((prev) => prev.filter((c) => c.id !== conversationId));
         try { await removeConversation(conversationId); } catch {}
-        toast.info('Conversation is no longer available');
+        toast('Conversation is no longer available');
       } else {
         toast.error(error?.response?.data?.message || 'Failed to load conversation');
         setThread([]);
       }
     } finally {
-      setLoadingThread(false);
+      if (!silent) setLoadingThread(false);
     }
   };
 
@@ -565,8 +570,6 @@ const SellerMessages: React.FC = () => {
     category: (conv.category || 'inquiry') as 'inquiry' | 'offer' | 'complaint' | 'support',
     unreadCount: conv.unreadCount
   }));
-
-  const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
   const handleMessageClick = async (conversationId: string) => {
     if (conversationId.startsWith('temp')) {
@@ -796,25 +799,6 @@ const SellerMessages: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to archive:', error);
       toast.error(error?.response?.data?.message || 'Failed to archive conversation');
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'error';
-      case 'normal': return 'default';
-      case 'low': return 'info';
-      default: return 'default';
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'inquiry': return 'primary';
-      case 'offer': return 'success';
-      case 'complaint': return 'error';
-      case 'support': return 'info';
-      default: return 'default';
     }
   };
 

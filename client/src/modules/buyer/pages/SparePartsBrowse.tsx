@@ -31,9 +31,11 @@ import {
 } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import { useNavigate } from 'react-router-dom';
-import { buyerApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import { STORAGE_KEYS } from '../../../core/config/constants';
+import { api as coreApi } from '../../../core/services/api/apiClient';
+import toast from 'react-hot-toast';
+import { LinearProgress, CircularProgress } from '@mui/material';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
 
@@ -58,9 +60,12 @@ const SparePartsBrowse: React.FC = () => {
   const [items, setItems] = React.useState<SparePartItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [retryCount, setRetryCount] = React.useState(0);
+  const searchDebounceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Filters state
   const [query, setQuery] = React.useState('');
+  const [debouncedQuery, setDebouncedQuery] = React.useState('');
   const [priceRange, setPriceRange] = React.useState<number[]>([0, 10000]);
   const [isFullPriceRange, setIsFullPriceRange] = React.useState<boolean>(true);
   const [brand, setBrand] = React.useState('');
@@ -101,45 +106,125 @@ const SparePartsBrowse: React.FC = () => {
     }
   };
 
-  const load = React.useCallback(async () => {
+  // Debounced search effect
+  React.useEffect(() => {
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500); // 500ms debounce
+    
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [query]);
+
+  const load = React.useCallback(async (retryAttempt = 0): Promise<void> => {
     setLoading(true);
+    setError(null);
+    
     try {
-      const base = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3001/api';
-      const searchParam = query ? `&q=${encodeURIComponent(query)}` : '';
-      const res = await fetch(`${base}/spare-parts/public?limit=100${searchParam}`);
-      const data = await res.json();
+      // Use core API client with proper error handling and timeout
+      const searchParam = debouncedQuery ? `&q=${encodeURIComponent(debouncedQuery)}` : '';
       
-      const list = (data?.data || data?.spare_parts || data?.parts || []) as any[];
+      const response = await coreApi.get(`/spare-parts/public?limit=100${searchParam}`, {
+        timeout: 15000, // 15 seconds timeout for slower connections
+      });
       
-      setItems(list.map((x) => ({
+      // Handle different response structures
+      const responseData = response.data || {};
+      let list: any[] = [];
+      
+      // Try multiple possible data paths
+      if (Array.isArray(responseData)) {
+        list = responseData;
+      } else if (Array.isArray(responseData.data)) {
+        list = responseData.data;
+      } else if (Array.isArray(responseData.spare_parts)) {
+        list = responseData.spare_parts;
+      } else if (Array.isArray(responseData.parts)) {
+        list = responseData.parts;
+      } else if (responseData.results && Array.isArray(responseData.results)) {
+        list = responseData.results;
+      }
+      
+      // Map items with fallbacks for missing fields
+      const mappedItems = list.map((x: any) => ({
         id: x.id || x.part_id || x._id || Math.random().toString(36).slice(2),
         name: x.name || x.title || 'Spare Part',
-        title: x.title || x.name,
-        price: Number(x.price ?? x.unit_price ?? 0),
+        title: x.title || x.name || 'Spare Part',
+        price: Number(x.price ?? x.unit_price ?? x.amount ?? 0),
         currency: x.currency || 'USD',
-        images: x.images,
-        seller_name: x.seller_name || x.seller || '',
-        brand: x.brand || x.brand_name || '',
-        category: x.category || x.category_name || '',
-        sku: x.sku || '',
-      })));
+        images: x.images || x.image || [],
+        seller_name: x.seller_name || x.seller?.name || x.seller || '',
+        brand: x.brand || x.brand_name || x.brand_id || '',
+        category: x.category || x.category_name || x.category_id || '',
+        sku: x.sku || x.sku_code || '',
+      }));
+      
+      setItems(mappedItems);
+      setRetryCount(0); // Reset retry count on success
       
       // Update price range based on loaded items
-      const prices = list.map(x => Number(x.price ?? x.unit_price ?? 0)).filter(p => p > 0);
+      const prices = mappedItems.map(item => item.price).filter(p => p > 0);
       if (prices.length > 0) {
         const maxPrice = Math.max(...prices);
-        setPriceRange([0, Math.max(maxPrice, 10000)]);
+        setPriceRange((prev) => [prev[0], Math.max(maxPrice, 10000)]);
       }
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Failed to load spare parts:', error);
-      setError('Failed to load spare parts');
+      
+      // Retry logic for network errors or 5xx errors
+      const shouldRetry = retryAttempt < 2 && (
+        !error.response || // Network error
+        error.response.status >= 500 || // Server error
+        error.code === 'ECONNABORTED' || // Timeout
+        error.message === 'Network Error'
+      );
+      
+      if (shouldRetry) {
+        // Exponential backoff: wait 1s, 2s, etc.
+        const delay = Math.min(1000 * Math.pow(2, retryAttempt), 5000);
+        console.log(`Retrying after ${delay}ms (attempt ${retryAttempt + 1})...`);
+        
+        setTimeout(() => {
+          load(retryAttempt + 1);
+        }, delay);
+        
+        setRetryCount(retryAttempt + 1);
+        return;
+      }
+      
+      // Determine user-friendly error message
+      let errorMessage = 'Failed to load spare parts';
+      if (!navigator.onLine) {
+        errorMessage = 'No internet connection. Please check your network.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Spare parts service not found. Please try again later.';
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again in a moment.';
+      } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      setError(errorMessage);
       setItems([]);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [debouncedQuery]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  // Load data when debounced query changes
+  React.useEffect(() => { 
+    load(); 
+  }, [load]);
 
   const toggleFavorite = async (id: string) => {
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('access_token');
@@ -166,10 +251,10 @@ const SparePartsBrowse: React.FC = () => {
   };
 
   const filtered = items.filter((item) => {
-    const matchesQuery = query
-      ? item.name.toLowerCase().includes(query.toLowerCase()) || 
-        (item.sku && item.sku.toLowerCase().includes(query.toLowerCase())) ||
-        (item.brand && item.brand.toLowerCase().includes(query.toLowerCase()))
+    const matchesQuery = debouncedQuery
+      ? item.name.toLowerCase().includes(debouncedQuery.toLowerCase()) || 
+        (item.sku && item.sku.toLowerCase().includes(debouncedQuery.toLowerCase())) ||
+        (item.brand && item.brand.toLowerCase().includes(debouncedQuery.toLowerCase()))
       : true;
     const price = item.price;
     const matchesPrice = isFullPriceRange || price === undefined || (price >= priceRange[0] && price <= priceRange[1]);
@@ -394,20 +479,66 @@ const SparePartsBrowse: React.FC = () => {
           {/* Results */}
           <Grid item xs={12}>
             <Grid container spacing={2}>
-              {loading && (
-                <Box sx={{ p: 2, color: 'text.secondary' }}>Loading spare parts...</Box>
+              {loading && retryCount === 0 && (
+                <Box sx={{ width: '100%', p: 2 }}>
+                  <LinearProgress />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                    Loading spare parts...
+                  </Typography>
+                </Box>
+              )}
+              {loading && retryCount > 0 && (
+                <Box sx={{ width: '100%', p: 2, textAlign: 'center' }}>
+                  <CircularProgress size={24} sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary" component="span">
+                    Retrying... (Attempt {retryCount + 1})
+                  </Typography>
+                </Box>
               )}
               {error && !loading && (
-                <Box sx={{ p: 2, color: 'error.main' }}>{error}</Box>
+                <Box sx={{ width: '100%', p: 3, textAlign: 'center' }}>
+                  <Typography variant="body1" color="error.main" sx={{ mb: 2 }}>
+                    {error}
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={() => {
+                      setError(null);
+                      setRetryCount(0);
+                      load();
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </Box>
               )}
               {!loading && !error && filtered.length === 0 && (
-                <Box sx={{ p: 2, color: 'text.secondary' }}>No spare parts found.</Box>
+                <Box sx={{ width: '100%', p: 3, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                    No spare parts found.
+                  </Typography>
+                  {debouncedQuery && (
+                    <Typography variant="body2" color="text.secondary">
+                      Try adjusting your search or filters.
+                    </Typography>
+                  )}
+                </Box>
               )}
-              {!loading && !error && filtered.map((item) => (
-                <Grid key={item.id} item xs={12} sm={view === 'grid' ? 6 : 12} md={view === 'grid' ? 4 : 12}>
-                  <ListingCard item={item} view={view} />
-                </Grid>
-              ))}
+              {!loading && !error && filtered.length > 0 && (
+                <>
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
+                      Found {filtered.length} spare part{filtered.length !== 1 ? 's' : ''}
+                    </Typography>
+                  </Grid>
+                  {filtered.map((item) => (
+                    <Grid key={item.id} item xs={12} sm={view === 'grid' ? 6 : 12} md={view === 'grid' ? 4 : 12}>
+                      <ListingCard item={item} view={view} />
+                    </Grid>
+                  ))}
+                </>
+              )}
             </Grid>
           </Grid>
         </Grid>

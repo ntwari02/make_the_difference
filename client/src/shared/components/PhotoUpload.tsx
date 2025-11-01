@@ -134,6 +134,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${cleanToken}`,
         },
+        timeout: 120000, // 120 seconds for file uploads
       });
 
       const uploaded = response.data?.data?.images || response.data?.images || [];

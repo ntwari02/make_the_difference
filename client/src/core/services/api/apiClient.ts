@@ -185,10 +185,11 @@ export const api = {
     return apiClient.delete(url, config);
   },
   
-  // Upload file
+  // Upload file (with extended timeout for large files)
   upload: <T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     return apiClient.post(url, formData, {
       ...config,
+      timeout: config?.timeout || 120000, // 120 seconds for file uploads (default), can be overridden
       headers: {
         ...config?.headers,
         'Content-Type': 'multipart/form-data',

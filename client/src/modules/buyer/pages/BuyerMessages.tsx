@@ -17,10 +17,6 @@ import {
   Chip,
   Badge,
   Checkbox,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Pagination,
   Tooltip,
   ListItemButton,
@@ -36,12 +32,8 @@ import {
   Send as SendIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  FilterList as FilterIcon,
-  MoreVert as MoreIcon,
   Reply as ReplyIcon,
-  Archive as ArchiveIcon,
   Delete as DeleteIcon,
-  Markunread as MarkUnreadIcon,
   MarkEmailRead as MarkReadIcon,
   AttachFile as AttachIcon,
   ForwardToInbox as ForwardIcon,
@@ -50,7 +42,6 @@ import {
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { buyerMessagesApi } from '../services/messagesApi';
 import toast from 'react-hot-toast';
 import { LinearProgress } from '@mui/material';
@@ -112,8 +103,6 @@ interface Message {
 
 const BuyerMessages: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const location = useLocation();
-  const navigate = useNavigate();
 
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationListItem | null>(null);
@@ -176,9 +165,9 @@ const BuyerMessages: React.FC = () => {
   }, [starredIds]);
 
   // Load conversations list
-  const loadConversations = async () => {
+  const loadConversations = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const result = await buyerMessagesApi.getConversations({
         page,
         limit: rowsPerPage,
@@ -223,7 +212,7 @@ const BuyerMessages: React.FC = () => {
       toast.error(error?.response?.data?.message || 'Failed to load conversations');
       setConversations([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -232,20 +221,34 @@ const BuyerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, searchTerm]);
 
-  // Refresh on window focus
+  // Real-time polling: Refresh conversations list every 3 seconds
   useEffect(() => {
     const onFocus = () => { loadConversations(); };
     window.addEventListener('focus', onFocus);
-    const interval = setInterval(() => { loadConversations(); }, 12000);
+    const interval = setInterval(() => { 
+      loadConversations(true); // silent=true to avoid loading flicker during polling
+    }, 3000); // Poll every 3 seconds for real-time updates
     return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, searchTerm]);
 
   // Load conversation thread when a conversation is selected
   useEffect(() => {
     if (selectedConversation?.id) {
       loadThread(selectedConversation.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id]);
+
+  // Real-time polling: Refresh thread messages every 2 seconds when a conversation is selected
+  useEffect(() => {
+    if (!selectedConversation?.id) return;
+    
+    const interval = setInterval(() => {
+      loadThread(selectedConversation.id, true); // silent=true to avoid loading flicker
+    }, 2000); // Poll thread every 2 seconds for real-time updates
+    
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id]);
 
@@ -274,9 +277,9 @@ const BuyerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread, loadingThread]);
 
-  const loadThread = async (conversationId: string) => {
+  const loadThread = async (conversationId: string, silent = false) => {
     try {
-      setLoadingThread(true);
+      if (!silent) setLoadingThread(true);
       const result = await buyerMessagesApi.getThread(conversationId);
       const messagesData = result.messages || [];
       
@@ -316,7 +319,7 @@ const BuyerMessages: React.FC = () => {
       toast.error(error?.response?.data?.message || 'Failed to load conversation');
       setThread([]);
     } finally {
-      setLoadingThread(false);
+      if (!silent) setLoadingThread(false);
     }
   };
 
@@ -392,7 +395,7 @@ const BuyerMessages: React.FC = () => {
         sender: {
           id: user?.id || '',
           name: 'You',
-          avatar: user?.avatar || '',
+          avatar: (user as any)?.profile_image || (user as any)?.avatar || '',
           type: 'buyer'
         },
         content: sentMessage.content || messageContent || replyText.trim(),
@@ -634,7 +637,7 @@ const BuyerMessages: React.FC = () => {
                 <Chip label="Unread" color={filterUnread ? 'primary' : 'default'} variant={filterUnread ? 'filled' : 'outlined'} size="small" onClick={() => setFilterUnread(!filterUnread)} />
                 <Tooltip title="Mark as read"><span><IconButton disabled={selectedIds.size === 0} onClick={async () => {
                   // Mark as read functionality can be added later
-                  toast.info('Mark as read functionality coming soon');
+                  toast('Mark as read functionality coming soon');
                 }}><MarkReadIcon /></IconButton></span></Tooltip>
                 <Tooltip title="Delete"><span><IconButton disabled={selectedIds.size === 0} onClick={handleBulkDelete} color="error"><DeleteIcon /></IconButton></span></Tooltip>
                 <Button 
