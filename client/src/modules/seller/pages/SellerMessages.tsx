@@ -1000,8 +1000,15 @@ const SellerMessages: React.FC = () => {
                     setComposeTo(''); 
                     setComposeSubject(''); 
                     setComposeBody(''); 
-                    setSelectedConversation(null); 
+                    setSelectedConversation(null);
+                    setThread([]); // Clear thread when starting new chat
                     setInlineCompose(true); 
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #6a4190 100%)',
+                    }
                   }}
                 >
                   New Chat
@@ -1019,8 +1026,18 @@ const SellerMessages: React.FC = () => {
                         setComposeTo(''); 
                         setComposeSubject(''); 
                         setComposeBody(''); 
-                        setSelectedConversation(null); 
+                        setSelectedConversation(null);
+                        setThread([]); // Clear thread
                         setInlineCompose(true); 
+                      }}
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #6a4190 100%)',
+                          border: 'none',
+                        }
                       }}
                     >
                       Start a New Chat
@@ -1386,60 +1403,120 @@ const SellerMessages: React.FC = () => {
                 </>
               ) : inlineCompose ? (
                 <>
-                  <Typography variant="h6" sx={{ mb: 2 }}>New Message</Typography>
-                  <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2 }} />
-                  <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
-                  <TextField fullWidth multiline rows={10} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} sx={{ mb: 2 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                    <Button onClick={() => setInlineCompose(false)}>Cancel</Button>
-                    <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
-                      try {
-                        const created = await sellerApi.messages.startConversation({ to: composeTo, subject: composeSubject, content: composeBody });
-                        if (created?.id) {
-                          if (created.existed) {
-                            toast.success('Existing conversation found. Opening it.');
-                          } else {
-                            toast.success('Message sent');
-                          }
-                          const conv: any = {
-                            id: created.id,
-                            subject: composeSubject || 'No Subject',
-                            buyer: { id: created?.buyer_id || '', name: composeTo, avatar: '' },
-                            lastMessage: {
-                              id: `m-${Date.now()}`,
-                              content: composeBody,
-                              senderId: 'me',
-                              isFromSeller: true,
-                              timestamp: new Date().toISOString(),
-                              read: true,
-                            },
-                            unreadCount: 0,
-                            category: 'support',
-                            priority: 'normal',
-                            archived: false,
-                            timestamp: new Date().toISOString(),
-                          };
-                          // Persist last conversation so it survives reload
-                          sessionStorage.setItem('seller:lastConversation', JSON.stringify({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() }));
-                          writeCachedConversation({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() });
-                          // Switch to Sent and refresh list so the new conversation appears
-                          setFilter('sent');
-                          await loadConversations();
-                          let found = conversations.find(c => c.id === created.id);
-                          if (!found) {
-                            setConversations((prev) => [conv, ...prev]);
-                            found = conv as any;
-                          }
-                          setSelectedConversation(found || conv);
-                        } else {
-                          await loadConversations();
-                        }
-                        setInlineCompose(false);
-                      } catch {
-                        toast.error('Failed to send message');
-                      }
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">New Message</Typography>
+                    <IconButton size="small" onClick={() => {
+                      setInlineCompose(false);
+                      setComposeTo('');
+                      setComposeSubject('');
+                      setComposeBody('');
                     }}>
-                      Send
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                  <TextField 
+                    fullWidth 
+                    label="To (buyer email)" 
+                    value={composeTo} 
+                    onChange={(e) => setComposeTo(e.target.value)} 
+                    sx={{ mb: 2 }}
+                    placeholder="Enter buyer email address"
+                    helperText="Enter the email of the buyer you want to message"
+                  />
+                  <TextField 
+                    fullWidth 
+                    label="Subject (Optional)" 
+                    value={composeSubject} 
+                    onChange={(e) => setComposeSubject(e.target.value)} 
+                    sx={{ mb: 2 }}
+                    placeholder="What is this message about?"
+                  />
+                  <TextField 
+                    fullWidth 
+                    multiline 
+                    rows={8} 
+                    placeholder="Type your message..." 
+                    value={composeBody} 
+                    onChange={(e) => setComposeBody(e.target.value)} 
+                    sx={{ mb: 2 }} 
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button onClick={() => {
+                      setInlineCompose(false);
+                      setComposeTo('');
+                      setComposeSubject('');
+                      setComposeBody('');
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      startIcon={<SendIcon />} 
+                      onClick={async () => {
+                        if (!composeTo.trim()) {
+                          toast.error('Please enter a recipient email');
+                          return;
+                        }
+                        if (!composeBody.trim()) {
+                          toast.error('Please enter a message');
+                          return;
+                        }
+                        try {
+                          setSending(true);
+                          const created = await sellerApi.messages.startConversation({ to: composeTo, subject: composeSubject, content: composeBody });
+                          if (created?.id) {
+                            if (created.existed) {
+                              toast.success('Existing conversation found. Opening it.');
+                            } else {
+                              toast.success('Message sent');
+                            }
+                            const conv: any = {
+                              id: created.id,
+                              subject: composeSubject || 'No Subject',
+                              buyer: { id: created?.buyer_id || '', name: composeTo, avatar: '' },
+                              lastMessage: {
+                                id: `m-${Date.now()}`,
+                                content: composeBody,
+                                senderId: 'me',
+                                isFromSeller: true,
+                                timestamp: new Date().toISOString(),
+                                read: true,
+                              },
+                              unreadCount: 0,
+                              category: 'support',
+                              priority: 'normal',
+                              archived: false,
+                              timestamp: new Date().toISOString(),
+                            };
+                            // Persist last conversation so it survives reload
+                            sessionStorage.setItem('seller:lastConversation', JSON.stringify({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() }));
+                            writeCachedConversation({ id: created.id, to: composeTo, subject: composeSubject, body: composeBody, timestamp: new Date().toISOString() });
+                            // Switch to Sent and refresh list so the new conversation appears
+                            setFilter('sent');
+                            await loadConversations();
+                            let found = conversations.find(c => c.id === created.id);
+                            if (!found) {
+                              setConversations((prev) => [conv, ...prev]);
+                              found = conv as any;
+                            }
+                            setSelectedConversation(found || conv);
+                            setInlineCompose(false);
+                            setComposeTo('');
+                            setComposeSubject('');
+                            setComposeBody('');
+                          } else {
+                            await loadConversations();
+                          }
+                        } catch (err: any) {
+                          console.error('Failed to send message:', err);
+                          toast.error(err?.response?.data?.message || 'Failed to send message');
+                        } finally {
+                          setSending(false);
+                        }
+                      }}
+                      disabled={sending || !composeTo.trim() || !composeBody.trim()}
+                    >
+                      {sending ? 'Sending...' : 'Send'}
                     </Button>
                   </Box>
                 </>

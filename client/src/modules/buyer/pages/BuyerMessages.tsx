@@ -669,7 +669,14 @@ const BuyerMessages: React.FC = () => {
                     setComposeSubject(''); 
                     setComposeBody(''); 
                     setSelectedConversation(null); 
-                    setInlineCompose(true); 
+                    setInlineCompose(true);
+                    setThread([]); // Clear thread when starting new chat
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #6a4190 100%)',
+                    }
                   }}
                 >
                   New Chat
@@ -687,8 +694,18 @@ const BuyerMessages: React.FC = () => {
                         setComposeTo(''); 
                         setComposeSubject(''); 
                         setComposeBody(''); 
-                        setSelectedConversation(null); 
+                        setSelectedConversation(null);
+                        setThread([]); // Clear thread
                         setInlineCompose(true); 
+                      }}
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #6a4190 100%)',
+                          border: 'none',
+                        }
                       }}
                     >
                       Start a New Chat
@@ -1090,21 +1107,95 @@ const BuyerMessages: React.FC = () => {
                 </>
               ) : inlineCompose ? (
                 <>
-                  <Typography variant="h6" sx={{ mb: 2 }}>New Message</Typography>
-                  <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2 }} />
-                  <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
-                  <TextField fullWidth multiline rows={10} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} sx={{ mb: 2 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">New Message</Typography>
+                    <IconButton size="small" onClick={() => setInlineCompose(false)}>
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                  <TextField 
+                    fullWidth 
+                    label="To (seller/dealer email)" 
+                    value={composeTo} 
+                    onChange={(e) => setComposeTo(e.target.value)} 
+                    sx={{ mb: 2 }} 
+                    placeholder="Enter seller or dealer email address"
+                    helperText="Enter the email of the seller or dealer you want to message"
+                  />
+                  <TextField 
+                    fullWidth 
+                    label="Subject (Optional)" 
+                    value={composeSubject} 
+                    onChange={(e) => setComposeSubject(e.target.value)} 
+                    sx={{ mb: 2 }}
+                    placeholder="What is this message about?"
+                  />
+                  <TextField 
+                    fullWidth 
+                    multiline 
+                    rows={8} 
+                    placeholder="Type your message..." 
+                    value={composeBody} 
+                    onChange={(e) => setComposeBody(e.target.value)} 
+                    sx={{ mb: 2 }} 
+                  />
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                    <Button onClick={() => setInlineCompose(false)}>Cancel</Button>
-                    <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
-                      try {
-                        toast.success('Message functionality coming soon');
-                        setInlineCompose(false);
-                      } catch {
-                        toast.error('Failed to send message');
-                      }
+                    <Button onClick={() => {
+                      setInlineCompose(false);
+                      setComposeTo('');
+                      setComposeSubject('');
+                      setComposeBody('');
                     }}>
-                      Send
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      startIcon={<SendIcon />} 
+                      onClick={async () => {
+                        if (!composeTo.trim()) {
+                          toast.error('Please enter a recipient email');
+                          return;
+                        }
+                        if (!composeBody.trim()) {
+                          toast.error('Please enter a message');
+                          return;
+                        }
+                        try {
+                          setSending(true);
+                          // First, try to find existing conversation with this seller
+                          const result = await buyerMessagesApi.getConversations({ page: 1, limit: 100 });
+                          const existingConv = result.conversations?.find((c: any) => 
+                            c.dealer_name?.toLowerCase().includes(composeTo.toLowerCase()) ||
+                            c.dealer_id === composeTo
+                          );
+                          
+                          if (existingConv) {
+                            // Send message to existing conversation
+                            await buyerMessagesApi.sendMessage(existingConv.id, {
+                              content: composeBody,
+                              category: 'inquiry',
+                              priority: 'normal'
+                            });
+                            toast.success('Message sent');
+                            // Load the conversation
+                            setSelectedConversation(existingConv);
+                            setInlineCompose(false);
+                            await loadThread(existingConv.id);
+                          } else {
+                            // For new conversations, we need seller to initiate or use order system
+                            // For now, show helpful message
+                            toast.error('Please contact the seller through their product listing or place an order first');
+                          }
+                        } catch (err: any) {
+                          console.error('Failed to send message:', err);
+                          toast.error(err?.response?.data?.message || 'Failed to send message. Please contact seller through their listing.');
+                        } finally {
+                          setSending(false);
+                        }
+                      }}
+                      disabled={sending || !composeTo.trim() || !composeBody.trim()}
+                    >
+                      {sending ? 'Sending...' : 'Send'}
                     </Button>
                   </Box>
                 </>
@@ -1122,24 +1213,95 @@ const BuyerMessages: React.FC = () => {
         </Alert>
       </Snackbar>
       {/* Compose Dialog */}
-      <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={composeOpen} onClose={() => {
+        setComposeOpen(false);
+        setComposeTo('');
+        setComposeSubject('');
+        setComposeBody('');
+      }} maxWidth="md" fullWidth>
         <DialogTitle>New Message</DialogTitle>
         <DialogContent>
-          <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2, mt: 1 }} />
-          <TextField fullWidth label="Subject" value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth multiline rows={8} placeholder="Type your message..." value={composeBody} onChange={(e) => setComposeBody(e.target.value)} />
+          <TextField 
+            fullWidth 
+            label="To (seller/dealer email)" 
+            value={composeTo} 
+            onChange={(e) => setComposeTo(e.target.value)} 
+            sx={{ mb: 2, mt: 1 }}
+            placeholder="Enter seller or dealer email address"
+            helperText="Enter the email of the seller or dealer you want to message"
+          />
+          <TextField 
+            fullWidth 
+            label="Subject (Optional)" 
+            value={composeSubject} 
+            onChange={(e) => setComposeSubject(e.target.value)} 
+            sx={{ mb: 2 }}
+            placeholder="What is this message about?"
+          />
+          <TextField 
+            fullWidth 
+            multiline 
+            rows={8} 
+            placeholder="Type your message..." 
+            value={composeBody} 
+            onChange={(e) => setComposeBody(e.target.value)} 
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setComposeOpen(false)}>Cancel</Button>
-          <Button variant="contained" startIcon={<SendIcon />} onClick={async () => {
-            try {
-              toast.success('Message functionality coming soon');
-              setComposeOpen(false);
-            } catch (err) {
-              toast.error('Failed to send message');
-            }
+          <Button onClick={() => {
+            setComposeOpen(false);
+            setComposeTo('');
+            setComposeSubject('');
+            setComposeBody('');
           }}>
-            Send
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            startIcon={<SendIcon />} 
+            onClick={async () => {
+              if (!composeTo.trim()) {
+                toast.error('Please enter a recipient email');
+                return;
+              }
+              if (!composeBody.trim()) {
+                toast.error('Please enter a message');
+                return;
+              }
+              try {
+                setSending(true);
+                const result = await buyerMessagesApi.getConversations({ page: 1, limit: 100 });
+                const existingConv = result.conversations?.find((c: any) => 
+                  c.dealer_name?.toLowerCase().includes(composeTo.toLowerCase()) ||
+                  c.dealer_id === composeTo
+                );
+                
+                if (existingConv) {
+                  await buyerMessagesApi.sendMessage(existingConv.id, {
+                    content: composeBody,
+                    category: 'inquiry',
+                    priority: 'normal'
+                  });
+                  toast.success('Message sent');
+                  setComposeOpen(false);
+                  setSelectedConversation(existingConv);
+                  await loadThread(existingConv.id);
+                  setComposeTo('');
+                  setComposeSubject('');
+                  setComposeBody('');
+                } else {
+                  toast.error('Please contact the seller through their product listing or place an order first');
+                }
+              } catch (err: any) {
+                console.error('Failed to send message:', err);
+                toast.error(err?.response?.data?.message || 'Failed to send message. Please contact seller through their listing.');
+              } finally {
+                setSending(false);
+              }
+            }}
+            disabled={sending || !composeTo.trim() || !composeBody.trim()}
+          >
+            {sending ? 'Sending...' : 'Send'}
           </Button>
         </DialogActions>
       </Dialog>

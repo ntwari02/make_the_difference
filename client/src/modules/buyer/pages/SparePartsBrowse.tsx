@@ -29,6 +29,7 @@ import {
   Tune as TuneIcon,
   Build as PartIcon,
   ShoppingCart as ShoppingCartIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import { useNavigate } from 'react-router-dom';
@@ -37,8 +38,8 @@ import { STORAGE_KEYS } from '../../../core/config/constants';
 import { api as coreApi } from '../../../core/services/api/apiClient';
 import toast from 'react-hot-toast';
 import { LinearProgress, CircularProgress } from '@mui/material';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../store/cartSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, selectCanAddToCart, selectIsCartEmpty, selectIsItemInCart } from '../store/cartSlice';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
 
@@ -62,10 +63,14 @@ const SparePartsBrowse: React.FC = () => {
   const dispatch = useDispatch();
   const [view, setView] = React.useState<'grid' | 'list'>('grid');
   const [favoriteIds, setFavoriteIds] = React.useState<string[]>([]);
+  const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [items, setItems] = React.useState<SparePartItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [retryCount, setRetryCount] = React.useState(0);
+  const [brands, setBrands] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [categories, setCategories] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [loadingFilters, setLoadingFilters] = React.useState(false);
   const searchDebounceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Filters state
@@ -76,6 +81,18 @@ const SparePartsBrowse: React.FC = () => {
   const [brand, setBrand] = React.useState('');
   const [category, setCategory] = React.useState('');
   const [sortBy, setSortBy] = React.useState('relevance');
+  
+  // Cart selectors
+  const cartState = useSelector((state: any) => state.cart);
+  const isCartEmpty = useSelector(selectIsCartEmpty);
+  
+  const canAddToCart = React.useCallback((sellerId: string | null | undefined) => {
+    return selectCanAddToCart({ cart: cartState }, sellerId);
+  }, [cartState]);
+
+  const isItemInCart = React.useCallback((itemId: string, sellerId?: string) => {
+    return selectIsItemInCart({ cart: cartState }, itemId, sellerId);
+  }, [cartState]);
 
   const imgFrom = (p: SparePartItem) => {
     try {
@@ -231,6 +248,60 @@ const SparePartsBrowse: React.FC = () => {
     }
   }, [debouncedQuery]);
 
+  // Load brands and categories
+  React.useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        setLoadingFilters(true);
+        const [brandsResponse, categoriesResponse] = await Promise.all([
+          coreApi.get('/spare-parts/brands').catch(() => ({ data: { data: [] } })),
+          coreApi.get('/spare-parts/categories').catch(() => ({ data: { data: [] } }))
+        ]);
+        
+        const brandsData = brandsResponse?.data?.data || brandsResponse?.data || [];
+        const categoriesData = categoriesResponse?.data?.data || categoriesResponse?.data || [];
+        
+        // Extract unique brands and categories from loaded items if API doesn't return them
+        if (Array.isArray(brandsData) && brandsData.length > 0) {
+          setBrands(brandsData.map((b: any) => ({ 
+            id: b.id || b.name, 
+            name: b.name || b.id 
+          })));
+        }
+        
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          setCategories(categoriesData.map((c: any) => ({ 
+            id: c.id || c.name, 
+            name: c.name || c.id 
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to load filters:', err);
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+    
+    loadFilters();
+  }, []);
+
+  // Extract unique brands and categories from items if API doesn't provide them
+  React.useEffect(() => {
+    if (items.length > 0 && (brands.length === 0 || categories.length === 0)) {
+      const uniqueBrands = Array.from(new Set(items.map(item => item.brand).filter(Boolean)))
+        .map(b => ({ id: b!, name: b! }));
+      const uniqueCategories = Array.from(new Set(items.map(item => item.category).filter(Boolean)))
+        .map(c => ({ id: c!, name: c! }));
+      
+      if (uniqueBrands.length > 0 && brands.length === 0) {
+        setBrands(uniqueBrands);
+      }
+      if (uniqueCategories.length > 0 && categories.length === 0) {
+        setCategories(uniqueCategories);
+      }
+    }
+  }, [items, brands.length, categories.length]);
+
   // Load data when debounced query changes
   React.useEffect(() => { 
     load(); 
@@ -335,11 +406,21 @@ const SparePartsBrowse: React.FC = () => {
                 label="Brand"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
+                disabled={loadingFilters}
               >
                 <MenuItem value="">Any</MenuItem>
-                {Array.from(new Set(items.map(i => i.brand).filter(Boolean))).map(b => (
-                  <MenuItem key={b} value={b}>{b}</MenuItem>
-                ))}
+                {brands.length > 0 ? (
+                  brands.map((b) => (
+                    <MenuItem key={b.id} value={b.name}>
+                      {b.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  // Fallback: extract from items if API doesn't provide brands
+                  Array.from(new Set(items.map(i => i.brand).filter(Boolean))).map(b => (
+                    <MenuItem key={b} value={b}>{b}</MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
           </Grid>
@@ -351,11 +432,21 @@ const SparePartsBrowse: React.FC = () => {
                 label="Category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                disabled={loadingFilters}
               >
                 <MenuItem value="">Any</MenuItem>
-                {Array.from(new Set(items.map(i => i.category).filter(Boolean))).map(c => (
-                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((c) => (
+                    <MenuItem key={c.id} value={c.name}>
+                      {c.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  // Fallback: extract from items if API doesn't provide categories
+                  Array.from(new Set(items.map(i => i.category).filter(Boolean))).map(c => (
+                    <MenuItem key={c} value={c}>{c}</MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
           </Grid>
@@ -402,27 +493,43 @@ const SparePartsBrowse: React.FC = () => {
         ? item.images 
         : '';
     
-    dispatch(addToCart({
-      id: `${item.id}-${Date.now()}`,
-      item_id: item.id,
-      item_type: 'spare_part',
-      name: item.name,
-      title: item.title,
-      price: item.price || 0,
-      currency: item.currency || 'USD',
-      quantity: 1,
-      seller_id: item.seller_id,
-      seller_name: item.seller_name,
-      image: firstImage,
-      sku: item.sku,
-      brand: item.brand,
-      category: item.category,
-    }));
-    toast.success(`${item.title || item.name} added to cart!`);
+    // Use item.id as seller_id if seller_id is not available (fallback)
+    const sellerId = item.seller_id || `seller_${item.id}`;
+    
+    // Check if cart is empty or item is from same seller
+    if (isCartEmpty || canAddToCart(sellerId)) {
+      dispatch(addToCart({
+        id: `${item.id}-${Date.now()}`,
+        item_id: item.id,
+        item_type: 'spare_part',
+        name: item.name,
+        title: item.title,
+        price: item.price || 0,
+        currency: item.currency || 'USD',
+        quantity: 1,
+        seller_id: sellerId,
+        seller_name: item.seller_name || 'Seller',
+        image: firstImage,
+        sku: item.sku,
+        brand: item.brand,
+        category: item.category,
+      }));
+      toast.success(`${item.title || item.name} added to cart!`);
+    } else {
+      // This shouldn't happen since we hide the button, but just in case
+      toast.error('Cannot add item from different seller. Please clear your cart first.');
+    }
   };
+  
 
   const ListingCard: React.FC<{ item: SparePartItem; view: 'grid' | 'list' }> = ({ item, view }) => {
     const imageUrl = imgFrom(item);
+    // Only show cart icon if cart is empty or item is from same seller
+    const sellerId = item.seller_id || `seller_${item.id}`;
+    const canAdd = isCartEmpty || canAddToCart(sellerId);
+    const showCartIcon = item.price && canAdd;
+    const itemInCart = isItemInCart(item.id, sellerId);
+    
     return (
       <Card 
         sx={{ 
@@ -461,15 +568,66 @@ const SparePartsBrowse: React.FC = () => {
               <Typography variant="body2" color="text.secondary">No Image</Typography>
             </Box>
           )}
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite(item.id);
-            }}
-            sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
-          >
-            {favoriteIds.includes(item.id) ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-          </IconButton>
+          <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(item.id);
+              }}
+              sx={{ bgcolor: 'background.paper' }}
+              title={favoriteIds.includes(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {favoriteIds.includes(item.id) ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
+            </IconButton>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                if (compareIds.includes(item.id)) {
+                  setCompareIds((prev) => prev.filter((x) => x !== item.id));
+                  toast.success('Removed from comparison');
+                } else {
+                  if (compareIds.length >= 3) {
+                    toast.error('You can compare up to 3 items');
+                    return;
+                  }
+                  setCompareIds((prev) => [...prev, item.id]);
+                  toast.success('Added to comparison');
+                }
+              }}
+              sx={{ 
+                bgcolor: compareIds.includes(item.id) ? 'success.main' : 'background.paper',
+                color: compareIds.includes(item.id) ? 'success.contrastText' : 'inherit',
+                '&:hover': {
+                  bgcolor: compareIds.includes(item.id) ? 'success.dark' : 'action.hover',
+                }
+              }}
+              title={compareIds.includes(item.id) ? 'Remove from comparison' : 'Add to comparison'}
+            >
+              <CompareArrowsIcon />
+            </IconButton>
+            {showCartIcon && (
+              <IconButton
+                onClick={(e) => handleAddToCart(item, e)}
+                disabled={itemInCart}
+                sx={{ 
+                  bgcolor: itemInCart ? 'action.disabled' : 'primary.main',
+                  color: itemInCart ? 'action.disabledBackground' : 'primary.contrastText',
+                  boxShadow: itemInCart ? 0 : 2,
+                  '&:hover': { 
+                    bgcolor: itemInCart ? 'action.disabled' : 'primary.dark',
+                    boxShadow: itemInCart ? 0 : 4,
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabled',
+                    color: 'action.disabledBackground',
+                  }
+                }}
+                title={itemInCart ? 'Already in cart' : 'Add to cart'}
+              >
+                <ShoppingCartIcon />
+              </IconButton>
+            )}
+          </Box>
         </Box>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -502,14 +660,15 @@ const SparePartsBrowse: React.FC = () => {
             >
               View Details
             </Button>
-            {item.price && item.seller_id && (
+            {showCartIcon && item.price && item.seller_id && (
               <Button 
                 variant="contained" 
+                disabled={itemInCart}
                 startIcon={<ShoppingCartIcon />}
                 onClick={(e) => handleAddToCart(item, e)}
                 sx={{ minWidth: 140 }}
               >
-                Add to Cart
+                {itemInCart ? 'In Cart' : 'Add to Cart'}
               </Button>
             )}
           </Box>
@@ -596,6 +755,7 @@ const SparePartsBrowse: React.FC = () => {
             </Grid>
           </Grid>
         </Grid>
+        
       </Box>
     </BuyerLayout>
   );

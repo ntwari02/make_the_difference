@@ -29,8 +29,17 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<CartItem>) => {
+    addToCart: (state, action: PayloadAction<CartItem & { clearCartIfDifferentSeller?: boolean }>) => {
       const newItem = action.payload;
+      
+      // Get current seller ID from existing cart items
+      const currentSellerId = state.items.length > 0 ? state.items[0].seller_id : null;
+      
+      // If cart has items from different seller and clearCartIfDifferentSeller is true, clear cart
+      if (currentSellerId && currentSellerId !== newItem.seller_id && action.payload.clearCartIfDifferentSeller) {
+        state.items = [];
+      }
+      
       // Check if item already exists in cart (same item_id and seller_id)
       const existingIndex = state.items.findIndex(
         (item) => item.item_id === newItem.item_id && item.seller_id === newItem.seller_id
@@ -92,5 +101,29 @@ export const selectCartItemsBySeller = (state: { cart: CartState }) => {
     itemsBySeller[item.seller_id].push(item);
   });
   return itemsBySeller;
+};
+
+// Get current seller ID from cart (returns null if cart is empty)
+export const selectCartSellerId = (state: { cart: CartState }): string | null => {
+  return state.cart.items.length > 0 ? state.cart.items[0].seller_id : null;
+};
+
+// Check if item can be added to cart (same seller or empty cart)
+export const selectCanAddToCart = (state: { cart: CartState }, sellerId: string | null | undefined): boolean => {
+  if (!sellerId) return false;
+  const currentSellerId = selectCartSellerId(state);
+  return !currentSellerId || currentSellerId === sellerId;
+};
+
+// Check if cart is empty
+export const selectIsCartEmpty = (state: { cart: CartState }): boolean => {
+  return state.cart.items.length === 0;
+};
+
+// Check if an item is already in the cart (by item_id and seller_id)
+export const selectIsItemInCart = (state: { cart: CartState }, itemId: string, sellerId?: string): boolean => {
+  return state.cart.items.some(
+    (item) => item.item_id === itemId && (!sellerId || item.seller_id === sellerId)
+  );
 };
 

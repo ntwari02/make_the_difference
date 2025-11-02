@@ -28,10 +28,15 @@ import {
   FilterList as FilterIcon,
   Tune as TuneIcon,
   DirectionsCar as CarIcon,
+  ShoppingCart as ShoppingCartIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import { useNavigate } from 'react-router-dom';
 import { vehicleApi, buyerApi } from '../services/buyerApi';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, selectCanAddToCart, selectIsCartEmpty, selectIsItemInCart } from '../store/cartSlice';
+import toast from 'react-hot-toast';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import { STORAGE_KEYS } from '../../../core/config/constants';
 
@@ -165,15 +170,33 @@ type Listing = {
   transmission?: string;
   body?: string;
   thumbnail?: string;
+  seller_id?: string;
+  seller_name?: string;
+  brand?: string;
+  model?: string;
+  images?: string[];
 };
 
 const BrowsePage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [view, setView] = React.useState<'grid' | 'list'>('grid');
   const [favoriteIds, setFavoriteIds] = React.useState<string[]>([]);
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [compareOpen, setCompareOpen] = React.useState(false);
+  
+  // Cart selectors - create a helper function to check if item can be added
+  const cartState = useSelector((state: any) => state.cart);
+  const isCartEmpty = useSelector(selectIsCartEmpty);
+  
+  const canAddToCart = React.useCallback((sellerId: string | null | undefined) => {
+    return selectCanAddToCart({ cart: cartState }, sellerId);
+  }, [cartState]);
+
+  const isItemInCart = React.useCallback((itemId: string, sellerId?: string) => {
+    return selectIsItemInCart({ cart: cartState }, itemId, sellerId);
+  }, [cartState]);
 
   const [listings, setListings] = React.useState<Listing[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -218,6 +241,20 @@ const BrowsePage: React.FC = () => {
         localStorage.removeItem('access_token');
         window.location.href = '/';
       }
+    }
+  };
+
+  const toggleCompare = (id: string) => {
+    if (compareIds.includes(id)) {
+      setCompareIds((prev) => prev.filter((x) => x !== id));
+      toast.success('Removed from comparison');
+    } else {
+      if (compareIds.length >= 3) {
+        toast.error('You can compare up to 3 items');
+        return;
+      }
+      setCompareIds((prev) => [...prev, id]);
+      toast.success('Added to comparison');
     }
   };
 
@@ -281,6 +318,11 @@ const BrowsePage: React.FC = () => {
             transmission: v.transmission,
             body: v.body_type || v.body,
             thumbnail: image || undefined, // Don't use fallback here - handle in render
+            seller_id: v.seller_id || v.sellerId || (v.seller && (v.seller.id || v.seller._id)) || undefined,
+            seller_name: v.seller_name || v.sellerName || (v.seller && (v.seller.name || `${v.seller.first_name || ''} ${v.seller.last_name || ''}`.trim())) || undefined,
+            brand: v.brand || v.make,
+            model: v.model,
+            images: Array.isArray(v.images) ? v.images : (v.images ? [v.images] : []),
           };
         });
         if ((import.meta as any).env?.DEV) {
@@ -443,16 +485,52 @@ const BrowsePage: React.FC = () => {
     </Card>
   );
 
-  const toggleCompare = (id: string) => {
-    setCompareIds((prev) => {
-      const exists = prev.includes(id);
-      if (exists) return prev.filter((x) => x !== id);
-      if (prev.length >= 3) return prev; // limit to 3 items
-      return [...prev, id];
-    });
+  const handleAddToCart = (item: Listing, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (!item.price) {
+      toast.error('Price information is missing');
+      return;
+    }
+    
+    // Use item.id as seller_id if seller_id is not available (fallback)
+    const sellerId = item.seller_id || `seller_${item.id}`;
+    
+    // Cart icon only shows if compatible, so this should always work
+    if (isCartEmpty || canAddToCart(sellerId)) {
+      const imageUrl = item.thumbnail || item.images?.[0] || '';
+      dispatch(addToCart({
+        id: `${item.id}-${Date.now()}`,
+        item_id: item.id,
+        item_type: 'car',
+        name: item.title,
+        title: item.title,
+        price: item.price,
+        currency: 'USD',
+        quantity: 1,
+        seller_id: sellerId,
+        seller_name: item.seller_name || 'Seller',
+        image: imageUrl,
+        brand: item.brand,
+      }));
+      toast.success('Item added to cart');
+    } else {
+      // This shouldn't happen since we hide the button, but just in case
+      toast.error('Cannot add item from different seller. Please clear your cart first.');
+    }
   };
+  
 
-  const ListingCard: React.FC<{ item: Listing; view: 'grid' | 'list' }> = ({ item, view }) => (
+  const ListingCard: React.FC<{ item: Listing; view: 'grid' | 'list' }> = ({ item, view }) => {
+    // Only show cart icon if:
+    // 1. Item has price AND
+    // 2. Cart is empty OR item is from the same seller as items in cart
+    const sellerId = item.seller_id || `seller_${item.id}`;
+    const canAdd = isCartEmpty || canAddToCart(sellerId);
+    const hasCartButton = item.price && canAdd;
+    const itemInCart = isItemInCart(item.id, sellerId);
+    
+    return (
     <Card sx={{ height: '100%' }}>
       <Box sx={{ position: 'relative' }}>
         {item.thumbnail ? (
@@ -480,12 +558,56 @@ const BrowsePage: React.FC = () => {
             <Typography variant="body2" color="text.secondary">No Image</Typography>
           </Box>
         )}
-        <IconButton
-          onClick={() => toggleFavorite(item.id)}
-          sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
-        >
-          {favoriteIds.includes(item.id) ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-        </IconButton>
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(item.id);
+            }}
+            sx={{ bgcolor: 'background.paper' }}
+            title={favoriteIds.includes(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {favoriteIds.includes(item.id) ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
+          </IconButton>
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCompare(item.id);
+            }}
+            sx={{ 
+              bgcolor: compareIds.includes(item.id) ? 'success.main' : 'background.paper',
+              color: compareIds.includes(item.id) ? 'success.contrastText' : 'inherit',
+              '&:hover': {
+                bgcolor: compareIds.includes(item.id) ? 'success.dark' : 'action.hover',
+              }
+            }}
+            title={compareIds.includes(item.id) ? 'Remove from comparison' : 'Add to comparison'}
+          >
+            <CompareArrowsIcon />
+          </IconButton>
+          {hasCartButton && (
+            <IconButton
+              onClick={(e) => handleAddToCart(item, e)}
+              disabled={itemInCart}
+              sx={{ 
+                bgcolor: itemInCart ? 'action.disabled' : 'primary.main',
+                color: itemInCart ? 'action.disabledBackground' : 'primary.contrastText',
+                boxShadow: itemInCart ? 0 : 2,
+                '&:hover': { 
+                  bgcolor: itemInCart ? 'action.disabled' : 'primary.dark',
+                  boxShadow: itemInCart ? 0 : 4,
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'action.disabled',
+                  color: 'action.disabledBackground',
+                }
+              }}
+              title={itemInCart ? 'Already in cart' : 'Add to cart'}
+            >
+              <ShoppingCartIcon />
+            </IconButton>
+          )}
+        </Box>
       </Box>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -508,19 +630,24 @@ const BrowsePage: React.FC = () => {
         </Typography>
         <Divider sx={{ my: 1.5 }} />
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" fullWidth onClick={() => navigate(`/cars/${item.id}`)}>View Details</Button>
-          <Button
-            variant={compareIds.includes(item.id) ? 'contained' : 'outlined'}
-            color={compareIds.includes(item.id) ? 'secondary' : 'primary'}
-            fullWidth
-            onClick={() => toggleCompare(item.id)}
-          >
-            {compareIds.includes(item.id) ? 'Added' : 'Compare'}
-          </Button>
+          <Button variant="contained" fullWidth onClick={(e) => { e.stopPropagation(); navigate(`/cars/${item.id}`); }}>View Details</Button>
+          {hasCartButton && (
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth
+              disabled={itemInCart}
+              startIcon={<ShoppingCartIcon />}
+              onClick={(e) => handleAddToCart(item, e)}
+            >
+              {itemInCart ? 'In Cart' : 'Add to Cart'}
+            </Button>
+          )}
         </Box>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <BuyerLayout>

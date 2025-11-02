@@ -35,6 +35,7 @@ import {
   Edit as EditIcon,
   Visibility as ViewIcon,
   MoreVert as MoreIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import SellerLayout from '../components/layout/SellerLayout';
 import { useDispatch } from 'react-redux';
@@ -43,6 +44,7 @@ import type { Car } from '../types';
 import { sellerApi } from '../services/sellerApi';
 import { useNavigate } from 'react-router-dom';
 import getImageUrl from '../../../shared/utils/imageUtils';
+import toast from 'react-hot-toast';
 
 const SellerInventory: React.FC = () => {
   const dispatch = useDispatch();
@@ -52,6 +54,7 @@ const SellerInventory: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -306,7 +309,36 @@ const SellerInventory: React.FC = () => {
                         onChange={() => toggleOne(c.id)}
                         sx={{ position: 'absolute', top: 8, left: 8, bgcolor: 'background.paper', borderRadius: 1 }}
                       />
-                      <Chip size="small" label={c.status} color={c.status === 'active' ? 'success' : c.status === 'draft' ? 'default' : c.status === 'pending' ? 'warning' : c.status === 'sold' ? 'info' : 'error'} sx={{ position: 'absolute', top: 8, right: 8 }} />
+                      <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (compareIds.includes(c.id)) {
+                              setCompareIds((prev) => prev.filter((x) => x !== c.id));
+                              toast.success('Removed from comparison');
+                            } else {
+                              if (compareIds.length >= 3) {
+                                toast.error('You can compare up to 3 items');
+                                return;
+                              }
+                              setCompareIds((prev) => [...prev, c.id]);
+                              toast.success('Added to comparison');
+                            }
+                          }}
+                          sx={{ 
+                            bgcolor: compareIds.includes(c.id) ? 'success.main' : 'background.paper',
+                            color: compareIds.includes(c.id) ? 'success.contrastText' : 'inherit',
+                            '&:hover': {
+                              bgcolor: compareIds.includes(c.id) ? 'success.dark' : 'action.hover',
+                            }
+                          }}
+                          title={compareIds.includes(c.id) ? 'Remove from comparison' : 'Add to comparison'}
+                        >
+                          <CompareArrowsIcon fontSize="small" />
+                        </IconButton>
+                        <Chip size="small" label={c.status} color={c.status === 'active' ? 'success' : c.status === 'draft' ? 'default' : c.status === 'pending' ? 'warning' : c.status === 'sold' ? 'info' : 'error'} />
+                      </Box>
                     </Box>
                     <CardContent>
                       <Typography variant="subtitle1" fontWeight={700} gutterBottom>

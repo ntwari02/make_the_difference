@@ -38,7 +38,6 @@ import {
   clearCart,
 } from '../store/cartSlice';
 import { buyerApi } from '../services/buyerApi';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import toast from 'react-hot-toast';
 
@@ -144,8 +143,7 @@ const Cart: React.FC = () => {
 
   if (cartItems.length === 0) {
     return (
-      <BuyerLayout>
-        <Box sx={{ py: 4 }}>
+      <Box sx={{ py: 4 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center', py: 6 }}>
               <CartIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
@@ -169,16 +167,15 @@ const Cart: React.FC = () => {
                 onClick={() => navigate('/browse')}
               >
                 Browse Cars
-              </Button>
-            </CardContent>
-          </Card>
-        </Box>
-      </BuyerLayout>
-    );
+          </Button>
+        </CardContent>
+      </Card>
+    </Box>
+  );
   }
 
   return (
-    <BuyerLayout>
+    <>
       <Box sx={{ py: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4" fontWeight={700}>
@@ -387,7 +384,7 @@ const Cart: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
-
+      
       {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onClose={() => !checkoutLoading && setCheckoutOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Checkout</DialogTitle>
@@ -456,7 +453,7 @@ const Cart: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </BuyerLayout>
+    </>
   );
 };
 
