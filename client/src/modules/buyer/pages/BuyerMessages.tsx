@@ -610,7 +610,7 @@ const BuyerMessages: React.FC = () => {
       {/* Two-pane layout */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 1.4fr' }, gap: 2 }}>
           {/* Messages list with toolbar */}
-          <Card>
+          <Card sx={{ display: { xs: inlineCompose ? 'none' : 'block', lg: 'block' } }}>
             <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: { md: 'calc(100vh - 140px)' } }}>
               <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, borderBottom: 1, borderColor: 'divider', flexWrap: 'wrap' }}>
                 <Checkbox
@@ -776,7 +776,7 @@ const BuyerMessages: React.FC = () => {
           </Card>
 
           {/* Detail pane */}
-          <Card sx={{ display: { xs: selectedConversation ? 'block' : 'none', lg: 'block' } }}>
+          <Card sx={{ display: { xs: (selectedConversation || inlineCompose) ? 'block' : 'none', lg: 'block' } }}>
             <CardContent sx={{ height: { md: 'calc(100vh - 140px)' }, display: 'flex', flexDirection: 'column' }}>
               {selectedConversation ? (
                 <>

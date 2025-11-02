@@ -68,7 +68,7 @@ const defaultSettings: SellerSettings = {
 export const SellerSettingsProvider: React.FC<SellerSettingsProviderProps> = ({ children }) => {
 	const [settings, setSettings] = useState<SellerSettings | null>(null);
 	const [loading, setLoading] = useState(true);
-	const { setMode } = useThemeMode();
+	const { setThemeMode } = useThemeMode();
 
 	const loadSettings = async () => {
 		try {
@@ -99,8 +99,8 @@ export const SellerSettingsProvider: React.FC<SellerSettingsProviderProps> = ({ 
 			};
 			setSettings(loadedSettings);
 			// Apply theme preference on load
-			if (loadedSettings.preferences.theme && setMode) {
-				setMode(loadedSettings.preferences.theme);
+			if (loadedSettings.preferences.theme && setThemeMode) {
+				setThemeMode(loadedSettings.preferences.theme);
 			}
 		} catch (error) {
 			console.error('Failed to load seller settings:', error);
@@ -124,8 +124,8 @@ export const SellerSettingsProvider: React.FC<SellerSettingsProviderProps> = ({ 
 			await sellerApi.settings.updateSettings(updated);
 			setSettings(updated);
 			// Update theme if it changed
-			if (updates.preferences?.theme && setMode) {
-				setMode(updates.preferences.theme);
+			if (updates.preferences?.theme && setThemeMode) {
+				setThemeMode(updates.preferences.theme);
 			}
 		} catch (error) {
 			console.error('Failed to update settings:', error);

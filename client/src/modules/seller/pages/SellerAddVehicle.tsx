@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SellerCarsAdvanced from './SellerCarsAdvanced';
 import { sellerApi } from '../services/sellerApi';
 import { useNavigate } from 'react-router-dom';
-import { Box, Card, CardHeader, CardContent, IconButton, Tooltip, Table, TableHead, TableRow, TableCell, TableBody, Button, Stack, Typography } from '@mui/material';
+import { Box, Card, CardHeader, CardContent, IconButton, Tooltip, Table, TableHead, TableRow, TableCell, TableBody, Stack, Typography } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 const SellerAddVehicle: React.FC = () => {

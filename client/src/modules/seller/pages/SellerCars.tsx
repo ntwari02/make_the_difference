@@ -32,7 +32,8 @@ import {
   Checkbox,
   TableSortLabel,
   Pagination,
-  
+  GridLegacy as Grid,
+  Divider,
 } from '@mui/material';
 //
 import {
@@ -46,6 +47,7 @@ import {
   ViewModule as GridViewIcon,
   Refresh as RefreshIcon,
   Visibility as ViewIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -55,6 +57,7 @@ import { setCars, removeCar, setLoading, setError, setViewMode } from '../store/
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
 import getImageUrl from '../../../shared/utils/imageUtils';
+import toast from 'react-hot-toast';
 
 interface CarFilters {
   search: string;
@@ -91,6 +94,8 @@ const SellerCars: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchInput, setSearchInput] = useState<string>('');
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const cars = useSelector((state: RootState) => state.seller.cars);
   const viewMode = useSelector((state: RootState) => state.seller.viewMode);
@@ -349,6 +354,20 @@ const SellerCars: React.FC = () => {
     }
   };
 
+  const toggleCompare = (id: string) => {
+    if (compareIds.includes(id)) {
+      setCompareIds((prev) => prev.filter((x) => x !== id));
+      toast.success('Removed from comparison');
+    } else {
+      if (compareIds.length >= 3) {
+        toast.error('You can compare up to 3 items');
+        return;
+      }
+      setCompareIds((prev) => [...prev, id]);
+      toast.success('Added to comparison');
+    }
+  };
+
 
   return (
     <SellerLayout>
@@ -519,12 +538,30 @@ const SellerCars: React.FC = () => {
                     onChange={() => toggleSelectOne(car.id)}
                     sx={{ position: 'absolute', top: 8, left: 8, bgcolor: 'background.paper', borderRadius: 1 }}
                   />
-                  <Chip
-                    label={car.status}
-                    color={getStatusColor(car.status) as any}
-                    size="small"
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                  />
+                  <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCompare(car.id);
+                      }}
+                      sx={{ 
+                        bgcolor: compareIds.includes(car.id) ? 'success.main' : 'background.paper',
+                        color: compareIds.includes(car.id) ? 'success.contrastText' : 'inherit',
+                        '&:hover': {
+                          bgcolor: compareIds.includes(car.id) ? 'success.dark' : 'action.hover',
+                        }
+                      }}
+                      title={compareIds.includes(car.id) ? 'Remove from comparison' : 'Add to comparison'}
+                    >
+                      <CompareArrowsIcon fontSize="small" />
+                    </IconButton>
+                    <Chip
+                      label={car.status}
+                      color={getStatusColor(car.status) as any}
+                      size="small"
+                    />
+                  </Box>
                 </Box>
                 <CardContent>
                   <Typography variant="h6" gutterBottom fontWeight={600}>
@@ -666,6 +703,21 @@ const SellerCars: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title={compareIds.includes(car.id) ? 'Remove from comparison' : 'Add to comparison'}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCompare(car.id);
+                            }}
+                            sx={{ 
+                              bgcolor: compareIds.includes(car.id) ? 'success.main' : 'transparent',
+                              color: compareIds.includes(car.id) ? 'success.contrastText' : 'inherit',
+                            }}
+                          >
+                            <CompareArrowsIcon />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="View Details">
                           <IconButton
                             size="small"
@@ -711,6 +763,66 @@ const SellerCars: React.FC = () => {
             showLastButton
           />
         </Box>
+
+        {/* Compare Bar */}
+        {compareIds.length > 0 && (
+          <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 16, display: 'flex', justifyContent: 'center', zIndex: 1200 }}>
+            <Box sx={{ bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : '#fff', border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[6], borderRadius: 999, px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" fontWeight={700}>{compareIds.length} selected</Typography>
+              <Button size="small" variant="outlined" onClick={() => setCompareIds([])}>Clear</Button>
+              <Button size="small" variant="contained" onClick={() => setCompareOpen(true)} disabled={compareIds.length < 2}>Compare Now</Button>
+            </Box>
+          </Box>
+        )}
+
+        {/* Compare Dialog */}
+        {compareOpen && (
+          <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={() => setCompareOpen(false)}>
+            <Card sx={{ width: 'min(1000px, 96vw)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6" fontWeight={700}>Compare Vehicles</Typography>
+                  <Button onClick={() => setCompareOpen(false)}>Close</Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {compareIds.map((id) => {
+                    const v = cars.find((x) => x.id === id)!;
+                    if (!v) return null;
+                    return (
+                      <Grid key={id} item xs={12} md={4}>
+                        <Card variant="outlined">
+                          <Box 
+                            component="img" 
+                            src={getCarImage(v)} 
+                            alt={`${v.brand} ${v.model}`} 
+                            sx={{ width: '100%', height: 140, objectFit: 'cover' }} 
+                          />
+                          <CardContent>
+                            <Typography variant="subtitle1" fontWeight={700}>{v.brand} {v.model}</Typography>
+                            <Typography variant="body2" color="text.secondary">{v.price ? formatPrice(v.price) : '—'}</Typography>
+                            <Divider sx={{ my: 1 }} />
+                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: 14 }}>
+                              <span>Year</span><span>{v.year ?? '—'}</span>
+                              <span>Mileage</span><span>{typeof v.mileage === 'number' ? `${Number(v.mileage).toLocaleString()} mi` : '—'}</span>
+                              <span>Fuel</span><span>{v.fuel_type || '—'}</span>
+                              <span>Transmission</span><span>{v.transmission || '—'}</span>
+                              <span>Body</span><span>{v.body_type || '—'}</span>
+                              <span>Status</span><span>{v.status || '—'}</span>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                              <Button size="small" variant="outlined" onClick={() => setCompareIds((prev) => prev.filter((x) => x !== id))}>Remove</Button>
+                              <Button size="small" variant="contained" onClick={() => navigate(`/cars/${id}`)}>View</Button>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Box>
+        )}
 
         {/* Floating Action Button for Mobile */}
         <Fab

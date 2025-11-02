@@ -18,8 +18,6 @@ import {
   DirectionsCar as CarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../../core/store';
 import { buyerApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import { STORAGE_KEYS } from '../../../core/config/constants';
@@ -156,7 +154,6 @@ type FavoriteItem = {
 
 const BuyerFavorites: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [items, setItems] = React.useState<FavoriteItem[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -201,7 +198,6 @@ const BuyerFavorites: React.FC = () => {
         const response = await buyerApi.getFavorites(1, 100);
         
         // Backend returns cars directly as an array (from the join query)
-        // The API extracts data.data which gives us the array of cars
         // Response format: { favorites: Favorite[] } or direct array
         let favoritesData: any[] = [];
         
@@ -211,9 +207,6 @@ const BuyerFavorites: React.FC = () => {
         } else if (Array.isArray(response.favorites)) {
           // Wrapped in favorites property
           favoritesData = response.favorites;
-        } else if (Array.isArray(response.data)) {
-          // Wrapped in data property
-          favoritesData = response.data;
         } else {
           // Try to extract from any nested structure
           favoritesData = [];

@@ -10,7 +10,6 @@ import {
   Avatar,
   Chip,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
 import {
   Favorite as FavoriteIcon,
@@ -79,7 +78,7 @@ const BuyerDashboard: React.FC = () => {
           const favoritesResponse = await buyerApi.getFavorites(1, 100);
           const favoritesList = Array.isArray(favoritesResponse) 
             ? favoritesResponse 
-            : (favoritesResponse?.favorites || favoritesResponse?.data || []);
+            : (favoritesResponse?.favorites || []);
           // Try to get total from pagination, otherwise use array length
           const favoritesCount = favoritesResponse?.pagination?.total || 
                                 (Array.isArray(favoritesList) ? favoritesList.length : 0);
@@ -159,7 +158,7 @@ const BuyerDashboard: React.FC = () => {
             });
           } else if (recentlyViewedList.length > 0) {
             // Use recently viewed as a proxy for views (distribute across recent months)
-            recentlyViewedList.forEach((vehicle: any, index: number) => {
+            recentlyViewedList.forEach((_, index: number) => {
               // Distribute views across recent months (simpler approach)
               const monthIndex = (currentMonth - (index % 6)) % 12;
               const monthAbbr = months[monthIndex];
