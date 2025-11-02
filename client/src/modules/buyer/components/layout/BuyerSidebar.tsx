@@ -22,6 +22,7 @@ import {
   Person as ProfileIcon,
   Build as SparePartsIcon,
   Receipt as InvoiceIcon,
+  ShoppingCart as CartIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { buyerMessagesApi } from '../../services/messagesApi';
@@ -44,6 +45,7 @@ const menuItems: MenuItem[] = [
   { title: 'Dashboard', path: '/buyer/dashboard', icon: <DashboardIcon /> },
   { title: 'Browse', path: '/browse', icon: <BrowseIcon /> },
   { title: 'Spare Parts', path: '/spare-parts', icon: <SparePartsIcon /> },
+  { title: 'Cart', path: '/buyer/cart', icon: <CartIcon />, badge: null },
   { title: 'Favorites', path: '/buyer/favorites', icon: <FavoriteIcon /> },
   { title: 'Messages', path: '/buyer/messages', icon: <MessageIcon />, badge: null },
   { title: 'Orders', path: '/buyer/orders', icon: <InvoiceIcon /> },

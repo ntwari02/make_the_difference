@@ -5,7 +5,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Grid,
+  GridLegacy as Grid,
   Chip,
   Table,
   TableBody,
@@ -35,8 +35,7 @@ import {
   TrendingUp as TrendingUpIcon,
   ArrowBack as ArrowBackIcon,
   Add as AddIcon,
-  Refresh as RefreshIcon,
-  Inventory2 as Inventory2Icon
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import SellerLayout from '../components/layout/SellerLayout';
@@ -218,12 +217,12 @@ const SellerSparePartsInventory: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactElement | undefined => {
     switch (status) {
       case 'good': return <CheckCircleIcon />;
       case 'low': return <WarningIcon />;
       case 'out': return <WarningIcon />;
-      default: return null;
+      default: return undefined;
     }
   };
 
@@ -368,7 +367,7 @@ const SellerSparePartsInventory: React.FC = () => {
               </Typography>
             </Box>
 
-            <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
+            <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
               <Tab label={`All (${inventory.length})`} />
               <Tab label={`Low Stock (${stats.lowStock})`} />
               <Tab label={`Out of Stock (${stats.outOfStock})`} />

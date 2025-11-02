@@ -88,6 +88,7 @@ const BuyerAIChat = React.lazy(() => import('../../modules/buyer/pages/BuyerAICh
 const BuyerPayments = React.lazy(() => import('../../modules/buyer/pages/BuyerPayments')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerInvoice = React.lazy(() => import('../../modules/buyer/pages/BuyerInvoice')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const BuyerOrders = React.lazy(() => import('../../modules/buyer/pages/BuyerOrders')) as React.LazyExoticComponent<React.ComponentType<any>>;
+const Cart = React.lazy(() => import('../../modules/buyer/pages/Cart')) as React.LazyExoticComponent<React.ComponentType<any>>;
 const CarDetails = React.lazy(() => import('../../modules/buyer/pages/CarDetails')) as React.LazyExoticComponent<React.ComponentType<any>>;
 // Student pages (static imports to avoid dynamic import issues during dev)
 import StudentDashboard from '../../modules/student/pages/StudentDashboard';
@@ -542,6 +543,14 @@ const router = createBrowserRouter([
         element: (
           <React.Suspense fallback={<Fallback />}>
             <BuyerFavorites />
+          </React.Suspense>
+        ),
+      },
+      {
+        path: 'cart',
+        element: (
+          <React.Suspense fallback={<Fallback />}>
+            <Cart />
           </React.Suspense>
         ),
       },

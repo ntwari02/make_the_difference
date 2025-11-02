@@ -59,6 +59,9 @@ export interface SellerStats {
     active_listings: number;
     sold_vehicles: number;
     average_price: number;
+    total_views?: number;
+    total_favorites?: number;
+    conversion_rate?: number;
   };
   sales: {
     total_sales: number;
@@ -87,6 +90,15 @@ export interface SellerAnalytics {
     total_revenue: number;
     average_price: number;
   }>;
+  sales_by_channel?: Array<{
+    channel: string;
+    sales: number;
+  }>;
+  sales_by_location?: Array<{
+    region: string;
+    revenue: number;
+  }>;
+  conversion_rate?: number;
 }
 
 export interface Notification {

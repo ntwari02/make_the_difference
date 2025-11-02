@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
   CardContent,
   Typography,
-  Grid,
+  GridLegacy as Grid,
   Avatar,
   Rating,
   Chip,
@@ -14,11 +14,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -31,10 +26,7 @@ import {
   Star as StarIcon,
   Reply as ReplyIcon,
   ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../../core/store';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
 import toast from 'react-hot-toast';
@@ -59,8 +51,6 @@ interface Review {
 }
 
 const SellerReviews: React.FC = () => {
-  const profile = useSelector((state: RootState) => state.seller.profile);
-
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [replyDialog, setReplyDialog] = useState(false);

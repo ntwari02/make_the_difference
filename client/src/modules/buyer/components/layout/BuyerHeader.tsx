@@ -25,6 +25,7 @@ import {
   LightMode as LightModeIcon,
   Search as SearchIcon,
   Favorite as FavoriteIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeMode } from '../../../../core/theme/ThemeProvider';
@@ -33,6 +34,7 @@ import { logoutUser } from '../../../../core/store/auth/authSlice';
 import type { RootState } from '../../../../core/store';
 import { getImageUrl } from '../../../../shared/utils/imageUtils';
 import { buyerApi } from '../../services/buyerApi';
+import { selectCartItemCount } from '../../store/cartSlice';
 
 interface BuyerHeaderProps {
   onMenuClick: () => void;
@@ -45,6 +47,7 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
   const { mode, toggleColorMode } = useThemeMode();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
+  const cartItemCount = useSelector(selectCartItemCount);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
@@ -246,6 +249,15 @@ const BuyerHeader: React.FC<BuyerHeaderProps> = ({ onMenuClick }) => {
         >
           <Badge badgeContent={0} color="error">
             <FavoriteIcon />
+          </Badge>
+        </IconButton>
+
+        <IconButton 
+          onClick={() => navigate('/buyer/cart')} 
+          sx={{ mr: 1, color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary }}
+        >
+          <Badge badgeContent={cartItemCount} color="error">
+            <ShoppingCartIcon />
           </Badge>
         </IconButton>
 

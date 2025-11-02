@@ -21,7 +21,6 @@ import {
   Toolbar,
   Tooltip,
   Avatar,
-  TableSortLabel,
   Menu,
   ListItemIcon,
   Alert,
@@ -86,8 +85,12 @@ const SellerInventory: React.FC = () => {
         list = res;
       } else if (res?.cars && Array.isArray(res.cars)) {
         list = res.cars;
-      } else if (res?.data && Array.isArray(res.data)) {
-        list = res.data;
+      } else if (res && typeof res === 'object') {
+        // Handle any additional response formats
+        const resAny = res as any;
+        if (Array.isArray(resAny.data)) {
+          list = resAny.data;
+        }
       }
       
       console.log('Extracted cars:', list);

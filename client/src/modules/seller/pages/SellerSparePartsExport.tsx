@@ -5,7 +5,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Grid,
+  GridLegacy as Grid,
   Chip,
   Table,
   TableBody,
@@ -33,7 +33,6 @@ import {
   Download as DownloadIcon,
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
   CloudDownload as CloudDownloadIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
@@ -73,6 +72,7 @@ const SellerSparePartsExport: React.FC = () => {
 
   const loadExportHistory = () => {
     // Load export history from localStorage
+    setLoadingHistory(true);
     try {
       const stored = localStorage.getItem('sparePartsExportHistory');
       if (stored) {
@@ -80,6 +80,8 @@ const SellerSparePartsExport: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load export history:', error);
+    } finally {
+      setLoadingHistory(false);
     }
   };
 

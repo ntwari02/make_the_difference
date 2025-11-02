@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../core/store';
+import { RootState } from '../../../core/store';
 import { sellerApi } from '../services/sellerApi';
 import {
   Box,
@@ -38,7 +38,7 @@ const APITestPage: React.FC = () => {
       // Test 2: Test categories endpoint
       let categoriesResult;
       try {
-        const categories = await sellerApi.cars.getCategories();
+        const categories = await sellerApi.spareParts.getCategories();
         categoriesResult = { success: true, data: categories, count: categories?.length || 0 };
       } catch (err: any) {
         categoriesResult = { success: false, error: err.message, status: err.response?.status };
@@ -47,7 +47,7 @@ const APITestPage: React.FC = () => {
       // Test 3: Test brands endpoint
       let brandsResult;
       try {
-        const brands = await sellerApi.cars.getBrands();
+        const brands = await sellerApi.spareParts.getBrands();
         brandsResult = { success: true, data: brands, count: brands?.length || 0 };
       } catch (err: any) {
         brandsResult = { success: false, error: err.message, status: err.response?.status };

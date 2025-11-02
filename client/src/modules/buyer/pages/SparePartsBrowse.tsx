@@ -28,6 +28,7 @@ import {
   FilterList as FilterIcon,
   Tune as TuneIcon,
   Build as PartIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import BuyerLayout from '../components/layout/BuyerLayout';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +37,8 @@ import { STORAGE_KEYS } from '../../../core/config/constants';
 import { api as coreApi } from '../../../core/services/api/apiClient';
 import toast from 'react-hot-toast';
 import { LinearProgress, CircularProgress } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../store/cartSlice';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1600&auto=format&fit=crop';
 
@@ -46,6 +49,7 @@ interface SparePartItem {
   price?: number;
   currency?: string;
   images?: string[] | string;
+  seller_id?: string;
   seller_name?: string;
   brand?: string;
   category?: string;
@@ -55,6 +59,7 @@ interface SparePartItem {
 const SparePartsBrowse: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [view, setView] = React.useState<'grid' | 'list'>('grid');
   const [favoriteIds, setFavoriteIds] = React.useState<string[]>([]);
   const [items, setItems] = React.useState<SparePartItem[]>([]);
@@ -75,31 +80,35 @@ const SparePartsBrowse: React.FC = () => {
   const imgFrom = (p: SparePartItem) => {
     try {
       if (!p.images) return '';
+      
+      let firstImg = '';
+      
+      // Handle array of images
       if (Array.isArray(p.images)) {
-        const firstImg = p.images[0] || '';
-        if (firstImg && firstImg.startsWith('/uploads/')) {
-          return getImageUrl(firstImg);
-        }
-        return firstImg;
-      }
-      if (typeof p.images === 'string') {
+        firstImg = p.images[0] || '';
+      } 
+      // Handle JSON string that needs parsing
+      else if (typeof p.images === 'string') {
         try {
           const parsed = JSON.parse(p.images);
-          if (Array.isArray(parsed)) {
-            const firstImg = parsed[0] || '';
-            if (firstImg && firstImg.startsWith('/uploads/')) {
-              return getImageUrl(firstImg);
-            }
-            return firstImg;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            firstImg = parsed[0] || '';
+          } else {
+            // If parsing doesn't yield an array, use the string as-is
+            firstImg = p.images;
           }
         } catch {
-          // If it's a single string path
-          if (p.images.startsWith('/uploads/')) {
-            return getImageUrl(p.images);
-          }
-          return p.images;
+          // If it's a single string path (not JSON), use it directly
+          firstImg = p.images;
         }
       }
+      
+      // Always use getImageUrl to ensure proper URL conversion
+      // This handles absolute URLs, relative paths, /uploads/ paths, etc.
+      if (firstImg) {
+        return getImageUrl(firstImg);
+      }
+      
       return '';
     } catch {
       return '';
@@ -159,6 +168,7 @@ const SparePartsBrowse: React.FC = () => {
         price: Number(x.price ?? x.unit_price ?? x.amount ?? 0),
         currency: x.currency || 'USD',
         images: x.images || x.image || [],
+        seller_id: x.seller_id || '',
         seller_name: x.seller_name || x.seller?.name || x.seller || '',
         brand: x.brand || x.brand_name || x.brand_id || '',
         category: x.category || x.category_name || x.category_id || '',
@@ -379,6 +389,38 @@ const SparePartsBrowse: React.FC = () => {
     </Card>
   );
 
+  const handleAddToCart = (item: SparePartItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.seller_id) {
+      toast.error('Seller information is missing');
+      return;
+    }
+    
+    const firstImage = Array.isArray(item.images) 
+      ? item.images[0] 
+      : typeof item.images === 'string' 
+        ? item.images 
+        : '';
+    
+    dispatch(addToCart({
+      id: `${item.id}-${Date.now()}`,
+      item_id: item.id,
+      item_type: 'spare_part',
+      name: item.name,
+      title: item.title,
+      price: item.price || 0,
+      currency: item.currency || 'USD',
+      quantity: 1,
+      seller_id: item.seller_id,
+      seller_name: item.seller_name,
+      image: firstImage,
+      sku: item.sku,
+      brand: item.brand,
+      category: item.category,
+    }));
+    toast.success(`${item.title || item.name} added to cart!`);
+  };
+
   const ListingCard: React.FC<{ item: SparePartItem; view: 'grid' | 'list' }> = ({ item, view }) => {
     const imageUrl = imgFrom(item);
     return (
@@ -449,16 +491,28 @@ const SparePartsBrowse: React.FC = () => {
             </Typography>
           )}
           <Divider sx={{ my: 1.5 }} />
-          <Button 
-            variant="contained" 
-            fullWidth 
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/spare-parts/${item.id}`);
-            }}
-          >
-            View Details & Order
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              fullWidth 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/spare-parts/${item.id}`);
+              }}
+            >
+              View Details
+            </Button>
+            {item.price && item.seller_id && (
+              <Button 
+                variant="contained" 
+                startIcon={<ShoppingCartIcon />}
+                onClick={(e) => handleAddToCart(item, e)}
+                sx={{ minWidth: 140 }}
+              >
+                Add to Cart
+              </Button>
+            )}
+          </Box>
         </CardContent>
       </Card>
     );

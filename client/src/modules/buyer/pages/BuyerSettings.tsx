@@ -11,16 +11,12 @@ import {
 	Button,
 	TextField,
 	Chip,
-	List,
-	ListItem,
-	ListItemText,
 	RadioGroup,
 	Radio,
 	Alert,
 	Snackbar,
 } from '@mui/material';
 import { buyerApi } from '../services/buyerApi';
-import authApi from '../../auth/services/authApi';
 import { useThemeMode } from '../../../core/theme/ThemeProvider';
 import toast from 'react-hot-toast';
 
@@ -38,8 +34,6 @@ const BuyerSettings: React.FC = () => {
 	const [topicPrice, setTopicPrice] = React.useState(true);
 	const [topicDealer, setTopicDealer] = React.useState(true);
 
-	const [sessions, setSessions] = React.useState<Array<{ id: string; created_at?: string; expires_at?: string }>>([]);
-	const [showAllSessions, setShowAllSessions] = React.useState(false);
 	const [saving, setSaving] = React.useState(false);
 	const [loading, setLoading] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
@@ -78,10 +72,6 @@ const BuyerSettings: React.FC = () => {
 				setTopicDealer(topics.dealerReplies !== false);
 				const addr = (profile.address as any) || {};
 				setLocation(addr?.location || '');
-				try {
-					const sess = await authApi.getSessions();
-					if (active) setSessions(sess?.data || sess || []);
-				} catch {}
 			} catch (e: any) {
 				if (active) setError(e?.response?.data?.message || 'Failed to load settings');
 			} finally {
@@ -118,21 +108,6 @@ const BuyerSettings: React.FC = () => {
 		} finally {
 			setSaving(false);
 		}
-	};
-
-	const revokeSession = async (id: string) => {
-		try {
-			await authApi.revokeSession(id);
-			setSessions((prev) => prev.filter((s) => s.id !== id));
-		} catch {}
-	};
-
-	const revokeAll = async () => {
-		try {
-			await authApi.revokeAllSessions();
-			setSessions([]);
-			setSuccess('Logged out from all devices');
-		} catch {}
 	};
 
 	const setup2FA = async () => {
@@ -176,16 +151,6 @@ const BuyerSettings: React.FC = () => {
 			setSuccess('2FA disabled');
 		} finally {
 			setSaving(false);
-		}
-	};
-
-	const formatDate = (iso?: string) => {
-		if (!iso) return '';
-		try {
-			const d = new Date(iso);
-			return d.toLocaleString();
-		} catch {
-			return iso;
 		}
 	};
 

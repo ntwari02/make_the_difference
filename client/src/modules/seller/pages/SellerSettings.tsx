@@ -7,15 +7,10 @@ import {
   Switch,
   FormControlLabel,
   Button,
-  TextField,
   Alert,
-  Divider,
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
-  Avatar,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -28,25 +23,18 @@ import {
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
-  Security as SecurityIcon,
   Palette as PaletteIcon,
-  Language as LanguageIcon,
   PrivacyTip as PrivacyIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
-  Refresh as RefreshIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { useSelector, useDispatch } from 'react-redux';
-import type { RootState } from '../../../core/store';
 import { useThemeMode } from '../../../core/theme/ThemeProvider';
 import SellerLayout from '../components/layout/SellerLayout';
 import { sellerApi } from '../services/sellerApi';
 import toast from 'react-hot-toast';
 
 const SellerSettings: React.FC = () => {
-  const dispatch = useDispatch();
-  const profile = useSelector((state: RootState) => state.seller.profile);
   const { mode, toggleColorMode, setMode } = useThemeMode();
 
   const [settings, setSettings] = useState({

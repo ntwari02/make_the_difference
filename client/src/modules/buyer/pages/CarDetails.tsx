@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
-import { Box, Card, CardContent, Chip, Divider, Typography, Button, TextField, Tabs, Tab, IconButton, Avatar } from '@mui/material';
+import { Box, Card, CardContent, Chip, Typography, Button, TextField, Tabs, Tab, IconButton, Avatar } from '@mui/material';
 import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteBorderIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
 import { sellerApi } from '../../seller/services/sellerApi';
 import { buyerApi, vehicleApi } from '../services/buyerApi';
@@ -215,8 +214,12 @@ const CarDetails: React.FC = () => {
           favoritesData = response;
         } else if (Array.isArray(response.favorites)) {
           favoritesData = response.favorites;
-        } else if (Array.isArray(response.data)) {
-          favoritesData = response.data;
+        } else if (response && typeof response === 'object') {
+          // Handle any additional response formats
+          const responseAny = response as any;
+          if (Array.isArray(responseAny.data)) {
+            favoritesData = responseAny.data;
+          }
         }
 
         const isFav = favoritesData.some((fav: any) => 

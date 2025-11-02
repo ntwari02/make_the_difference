@@ -377,27 +377,6 @@ const SellerOrders: React.FC = () => {
     });
   };
 
-  const formatAddress = (address: any) => {
-    if (!address) return 'N/A';
-    if (typeof address === 'string') {
-      try {
-        address = JSON.parse(address);
-      } catch {
-        return address;
-      }
-    }
-    if (typeof address === 'object') {
-      const parts = [];
-      if (address.street) parts.push(address.street);
-      if (address.city) parts.push(address.city);
-      if (address.state) parts.push(address.state);
-      if (address.zip) parts.push(address.zip);
-      if (address.country) parts.push(address.country);
-      return parts.length > 0 ? parts.join(', ') : 'N/A';
-    }
-    return 'N/A';
-  };
-
   return (
     <SellerLayout>
       <Box sx={{ p: { xs: 2, md: 4 } }}>

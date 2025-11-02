@@ -5,7 +5,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Grid,
+  GridLegacy as Grid,
   Chip,
   Table,
   TableBody,
@@ -140,7 +140,7 @@ const SellerSparePartsPriceComparison: React.FC = () => {
 
     try {
       setAddingComparison(true);
-      const response = await sparePartsApi.addPriceComparison(selectedPart.id, {
+      await sparePartsApi.addPriceComparison(selectedPart.id, {
         competitor_name: newComparison.competitor_name,
         competitor_url: newComparison.competitor_url || undefined,
         competitor_price: Number(newComparison.competitor_price),

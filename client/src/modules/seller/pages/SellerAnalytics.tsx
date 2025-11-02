@@ -3,6 +3,7 @@ import { Box, Typography, Card, CardContent, Chip, useTheme, FormControl, InputL
 import SellerLayout from '../components/layout/SellerLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../core/store';
+import type { SellerAnalytics as SellerAnalyticsType } from '../types';
 import { sellerApi } from '../services/sellerApi';
 import { setAnalytics } from '../store/sellerSlice';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
@@ -147,7 +148,7 @@ const SellerAnalytics: React.FC = () => {
           sales_by_channel: [],
           sales_by_location: [],
           conversion_rate: 0
-        }));
+        } as SellerAnalyticsType));
       } finally {
         setLoading(false);
       }

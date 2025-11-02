@@ -4,6 +4,7 @@ import { ENV } from '../config/environment';
 import authSlice from './auth/authSlice';
 import dealerSlice from '../../modules/dealer/store/dealerSlice';
 import buyerSlice from '../../modules/buyer/store/buyerSlice';
+import cartSlice from '../../modules/buyer/store/cartSlice';
 import sellerSlice from '../../modules/seller/store/sellerSlice';
 import instructorSlice from '../../modules/instructor/store/instructorSlice';
 import universitySlice from '../../modules/university/store/universitySlice';
@@ -14,6 +15,7 @@ export const store = configureStore({
     auth: authSlice,
     dealer: dealerSlice,
     buyer: buyerSlice,
+    cart: cartSlice,
     seller: sellerSlice,
     instructor: instructorSlice,
     university: universitySlice,

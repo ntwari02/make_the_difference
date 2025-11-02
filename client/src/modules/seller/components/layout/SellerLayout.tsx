@@ -25,11 +25,9 @@ const SellerLayout: React.FC<SellerLayoutProps> = ({ children }) => {
     dispatch(setSidebarOpen(!sidebarOpen));
   };
 
-  // Close sidebar on mobile by default
+  // Set sidebar state based on screen size: expanded on large screens, collapsed on mobile
   React.useEffect(() => {
-    if (isMobile) {
-      dispatch(setSidebarOpen(false));
-    }
+    dispatch(setSidebarOpen(!isMobile));
   }, [isMobile, dispatch]);
 
   return (

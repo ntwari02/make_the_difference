@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../core/store';
 import { sellerApi } from '../services/sellerApi';
+import type { Car } from '../types';
 import SellerLayout from '../components/layout/SellerLayout';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import {
@@ -11,7 +10,7 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
+  GridLegacy as Grid,
   MenuItem,
   Alert,
   LinearProgress,
@@ -29,9 +28,6 @@ import {
   Chip,
   useTheme,
   useMediaQuery,
-  FormControl,
-  InputLabel,
-  OutlinedInput,
   InputAdornment,
 } from '@mui/material';
 import {
@@ -44,10 +40,8 @@ import {
   Refresh as RefreshIcon,
   TrendingUp as TrendingUpIcon2,
   BarChart as BarChartIcon,
-  CloudUpload as CloudUploadIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -69,13 +63,11 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 
 const CreateCarPage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('md'));
 
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [recentCars, setRecentCars] = useState<any[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
@@ -154,7 +146,7 @@ const CreateCarPage: React.FC = () => {
         const allCars = await sellerApi.cars.getMyCars({ limit: 20 });
         console.log('All cars for sales analysis:', allCars);
         
-        let salesData = [];
+        let salesData: any[] = [];
         
         if (allCars.cars && Array.isArray(allCars.cars)) {
           // Filter cars with sales activity (sold, high views, or recent activity)
@@ -242,22 +234,16 @@ const CreateCarPage: React.FC = () => {
       console.log('Fetching recent cars...');
       
       // Try seller-specific endpoint first
-      let carsData;
+      let carsData: { cars: Car[]; pagination: any } | { cars: Car[]; pagination?: any } | Car[];
       try {
-        carsData = await sellerApi.cars.getMyCars({ limit: 10, sort: 'created_at', order: 'desc' });
+        carsData = await sellerApi.cars.getMyCars({ limit: 10 });
         console.log('Seller cars data received:', carsData);
-        console.log('Type of carsData:', typeof carsData);
-        console.log('carsData.cars:', carsData?.cars);
-        console.log('carsData.data:', carsData?.data);
       } catch (sellerError) {
         console.log('Seller endpoint failed, trying generic cars endpoint:', sellerError);
         // Fallback to generic cars endpoint with seller filter
         try {
           carsData = await sellerApi.cars.getCars({ limit: 10, seller_id: 'current' });
           console.log('Generic cars data received:', carsData);
-          console.log('Type of carsData:', typeof carsData);
-          console.log('carsData.cars:', carsData?.cars);
-          console.log('carsData.data:', carsData?.data);
         } catch (genericError) {
           console.error('Both endpoints failed:', genericError);
           setRecentCars([]);
@@ -266,7 +252,7 @@ const CreateCarPage: React.FC = () => {
       }
       
       // Handle different response formats - with better error handling
-      let cars = [];
+      let cars: Car[] = [];
       
       console.log('Full carsData object:', JSON.stringify(carsData, null, 2));
       
@@ -276,14 +262,10 @@ const CreateCarPage: React.FC = () => {
         return;
       }
       
-      if (carsData.cars && Array.isArray(carsData.cars)) {
-        cars = carsData.cars;
-      } else if (Array.isArray(carsData)) {
+      if (Array.isArray(carsData)) {
         cars = carsData;
-      } else if (carsData.data && carsData.data.cars && Array.isArray(carsData.data.cars)) {
-        cars = carsData.data.cars;
-      } else if (carsData.data && Array.isArray(carsData.data)) {
-        cars = carsData.data;
+      } else if ('cars' in carsData && Array.isArray(carsData.cars)) {
+        cars = carsData.cars;
       } else {
         console.error('No valid cars array found in response:', carsData);
         setRecentCars([]);
@@ -407,56 +389,7 @@ const CreateCarPage: React.FC = () => {
     });
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const fileArray = Array.from(files);
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...fileArray]
-      }));
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const files = Array.from(e.dataTransfer.files).filter(file => 
-        file.type.startsWith('image/')
-      );
-      if (files.length > 0) {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...files]
-    }));
-        toast.success(`${files.length} image(s) added successfully!`);
-      } else {
-        toast.error('Please drop only image files');
-      }
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -525,6 +458,9 @@ const CreateCarPage: React.FC = () => {
         year: '',
         price: '',
         mileage: '',
+        quantity: '1',
+        total: '',
+        number_of_seats: '5',
         car_condition: 'used',
         fuel_type: 'petrol',
         transmission: 'automatic',
@@ -1003,6 +939,9 @@ const CreateCarPage: React.FC = () => {
                         year: '',
                         price: '',
                         mileage: '',
+                        quantity: '1',
+                        total: '',
+                        number_of_seats: '5',
                         car_condition: 'used',
                         fuel_type: 'petrol',
                         transmission: 'automatic',

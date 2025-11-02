@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
   Card,
   CardContent,
   Typography,
   Button,
   Chip,
-  IconButton,
   Select,
   MenuItem,
   FormControl,
@@ -25,43 +23,28 @@ import {
   Paper,
   LinearProgress,
   Avatar,
-  Tooltip,
   Alert,
-  Divider,
   Stack,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
   CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Visibility as VisibilityIcon,
   ShoppingCart as ShoppingCartIcon,
   AttachMoney as MoneyIcon,
   Inventory as InventoryIcon,
   Star as StarIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  FilterList as FilterIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
   Assessment as AssessmentIcon,
   PieChart as PieChartIcon,
   BarChart as BarChartIcon,
   Timeline as TimelineIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
 } from '@mui/icons-material';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, ReferenceLine, Cell, Brush } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip as ReTooltip, Legend, ReferenceLine, Brush } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import SellerLayout from '../components/layout/SellerLayout';
-import type { RootState } from '../../../../core/store';
 import { sparePartsApi } from '../services/sparePartsApi';
 
 
@@ -88,7 +71,6 @@ function TabPanel(props: TabPanelProps) {
 
 const SellerSparePartsAnalytics: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
   
   const [activeTab, setActiveTab] = useState(0);
   const [timeRange, setTimeRange] = useState('6m');
@@ -97,7 +79,6 @@ const SellerSparePartsAnalytics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Analytics data state
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<any>(null);
   const [salesTrends, setSalesTrends] = useState<any[]>([]);
   const [categoryAnalysis, setCategoryAnalysis] = useState<any[]>([]);
@@ -110,7 +91,7 @@ const SellerSparePartsAnalytics: React.FC = () => {
   const [showTrendLine, setShowTrendLine] = useState(false);
   const [chartAnimation, setChartAnimation] = useState(true);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -120,14 +101,12 @@ const SellerSparePartsAnalytics: React.FC = () => {
       setError(null);
       
       const [
-        overviewResponse,
         metricsResponse,
         trendsResponse,
         categoriesResponse,
         topSellingResponse,
         alertsResponse
       ] = await Promise.all([
-        sparePartsApi.getAnalyticsOverview(timeRange),
         sparePartsApi.getPerformanceMetrics(timeRange),
         sparePartsApi.getSalesTrends(timeRange),
         sparePartsApi.getCategoryAnalysis(timeRange),
@@ -136,7 +115,6 @@ const SellerSparePartsAnalytics: React.FC = () => {
       ]);
 
       // Safely set data with fallbacks
-      setAnalyticsData(overviewResponse?.data || null);
       setPerformanceMetrics(metricsResponse?.data || null);
       setSalesTrends(Array.isArray(trendsResponse?.data) ? trendsResponse.data : []);
       setCategoryAnalysis(Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : []);
@@ -163,14 +141,6 @@ const SellerSparePartsAnalytics: React.FC = () => {
     setTimeRange(newTimeRange);
   };
 
-  // Chart control handlers
-  const handleMetricToggle = (metric: string) => {
-    setSelectedMetrics(prev => 
-      prev.includes(metric) 
-        ? prev.filter(m => m !== metric)
-        : [...prev, metric]
-    );
-  };
 
   const handleChartExport = () => {
     const data = getBarChartData();
@@ -289,12 +259,12 @@ const SellerSparePartsAnalytics: React.FC = () => {
     }));
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity: string): 'error' | 'warning' | 'info' | 'success' => {
     switch (severity) {
       case 'high': return 'error';
       case 'medium': return 'warning';
       case 'low': return 'info';
-      default: return 'default';
+      default: return 'info';
     }
   };
 
@@ -699,7 +669,7 @@ const SellerSparePartsAnalytics: React.FC = () => {
                               y={getTrendLineData()[getTrendLineData().length - 1]?.trendValue || 0}
                               stroke="#ff6b6b"
                               strokeDasharray="5 5"
-                              label={{ value: "Trend", position: "topRight" }}
+                              label={{ value: "Trend", position: "insideTopRight" }}
                             />
                           )}
 

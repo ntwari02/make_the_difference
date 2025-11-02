@@ -5,7 +5,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Grid,
+  GridLegacy as Grid,
   Chip,
   Table,
   TableBody,
@@ -20,7 +20,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField,
   Checkbox,
   FormControlLabel,
   FormGroup,
@@ -89,7 +88,7 @@ const SellerCarsExport: React.FC = () => {
     }
   ]);
 
-  const handleDataSelectionChange = (dataType: string) => {
+  const handleDataSelectionChange = (dataType: keyof typeof selectedData) => {
     setSelectedData(prev => ({
       ...prev,
       [dataType]: !prev[dataType]

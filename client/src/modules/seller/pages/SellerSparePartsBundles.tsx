@@ -6,7 +6,7 @@ import {
   CardContent,
   Typography,
   Button,
-  Grid,
+  GridLegacy as Grid,
   Chip,
   IconButton,
   Dialog,
@@ -37,7 +37,7 @@ import {
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import SellerLayout from '../components/layout/SellerLayout';
-import { sparePartsApi, type SparePart, type SparePartBundle } from '../services/sparePartsApi';
+import { sparePartsApi, type SparePart } from '../services/sparePartsApi';
 import toast from 'react-hot-toast';
 
 interface BundleFormData {
@@ -264,7 +264,7 @@ const SellerSparePartsBundles: React.FC = () => {
         name: formData.name,
         description: formData.description || '',
         bundle_price: totalPrice, // backend expects bundle_price, not total_price
-        discount_percentage: formData.bundle_discount || null, // backend expects discount_percentage, not bundle_discount
+        discount_percentage: formData.bundle_discount || undefined, // backend expects discount_percentage, not bundle_discount
         currency: formData.currency || 'USD',
         status: formData.status || 'active',
         items: selectedParts.map(p => ({
@@ -569,7 +569,7 @@ const SellerSparePartsBundles: React.FC = () => {
                     Selected Parts ({selectedParts.length})
                   </Typography>
                   <Stack spacing={2}>
-                    {selectedParts.map((selected, index) => (
+                    {selectedParts.map((selected) => (
                       <Box key={selected.part.id} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                           <Box>

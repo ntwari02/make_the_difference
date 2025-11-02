@@ -118,6 +118,10 @@ const BuyerMessages: React.FC = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Track last message ID to detect new messages and avoid unnecessary re-renders
+  const lastMessageIdRef = useRef<string | null>(null);
+  const lastThreadLengthRef = useRef<number>(0);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [attachmentPreviews, setAttachmentPreviews] = useState<{ [key: string]: string }>({});
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>(
@@ -221,13 +225,14 @@ const BuyerMessages: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, searchTerm]);
 
-  // Real-time polling: Refresh conversations list every 3 seconds
+  // Real-time polling: Refresh conversations list every 5 seconds
+  // Only updates UI when there are actual changes to avoid unnecessary re-renders
   useEffect(() => {
     const onFocus = () => { loadConversations(); };
     window.addEventListener('focus', onFocus);
     const interval = setInterval(() => { 
       loadConversations(true); // silent=true to avoid loading flicker during polling
-    }, 3000); // Poll every 3 seconds for real-time updates
+    }, 5000); // Poll every 5 seconds for real-time updates (reduced frequency)
     return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, searchTerm]);
@@ -235,18 +240,22 @@ const BuyerMessages: React.FC = () => {
   // Load conversation thread when a conversation is selected
   useEffect(() => {
     if (selectedConversation?.id) {
+      // Reset tracking when switching conversations
+      lastMessageIdRef.current = null;
+      lastThreadLengthRef.current = 0;
       loadThread(selectedConversation.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id]);
 
-  // Real-time polling: Refresh thread messages every 2 seconds when a conversation is selected
+  // Real-time polling: Refresh thread messages every 5 seconds when a conversation is selected
+  // Only updates UI when new messages are detected to avoid interrupting typing
   useEffect(() => {
     if (!selectedConversation?.id) return;
     
     const interval = setInterval(() => {
       loadThread(selectedConversation.id, true); // silent=true to avoid loading flicker
-    }, 2000); // Poll thread every 2 seconds for real-time updates
+    }, 5000); // Poll thread every 5 seconds for real-time updates (reduced frequency)
     
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,10 +319,21 @@ const BuyerMessages: React.FC = () => {
         } : undefined
       }));
       
-      setThread(mapped);
+      // Only update state if there are new messages (always update on non-silent load)
+      const latestMessageId = mapped.length > 0 ? mapped[mapped.length - 1].id : null;
+      const hasNewMessages = latestMessageId !== lastMessageIdRef.current || mapped.length !== lastThreadLengthRef.current;
       
-      // Reload conversations to update unread counts
-      await loadConversations();
+      // Always update on first load (!silent) or when there are new messages
+      if (!silent || hasNewMessages) {
+        setThread(mapped);
+        lastMessageIdRef.current = latestMessageId;
+        lastThreadLengthRef.current = mapped.length;
+      }
+      
+      // Reload conversations to update unread counts (only when there are actual changes or on first load)
+      if (!silent || hasNewMessages) {
+        await loadConversations();
+      }
     } catch (error: any) {
       console.error('Failed to load thread:', error);
       toast.error(error?.response?.data?.message || 'Failed to load conversation');

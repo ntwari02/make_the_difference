@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
-import { Box, Card, CardContent, Chip, Divider, Typography, Button, TextField, Tabs, Tab, IconButton, Avatar } from '@mui/material';
-import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteBorderIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
+import React, { useEffect, useState, useCallback, memo } from 'react';
+import { Box, Card, CardContent, Chip, Typography, Button, TextField, Tabs, Tab, IconButton, Avatar } from '@mui/material';
+import { Close as CloseIcon, Share as ShareIcon, FavoriteBorder as FavoriteBorderIcon, Favorite as FavoriteIcon, ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import BuyerLayout from '../components/layout/BuyerLayout';
 import RoleAwareLayout from '../../../shared/components/layout/RoleAwareLayout';
 import { buyerApi } from '../services/buyerApi';
 import { getImageUrl } from '../../../shared/utils/imageUtils';
 import toast from 'react-hot-toast';
-import { api as coreApi } from '../../../core/services/api/apiClient';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../store/cartSlice';
 
 type SparePartLite = {
   id: string;
@@ -137,6 +137,7 @@ const ContactForm: React.FC<{ price?: number; partId: string; sellerId?: string;
 const SparePartDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   // Use a role-aware wrapper to select layout (buyer, seller, dealer, admin)
   const Layout = (props: { children: React.ReactNode }) => <RoleAwareLayout>{props.children}</RoleAwareLayout>;
   const [part, setPart] = useState<SparePartLite | null>(null);
@@ -147,6 +148,38 @@ const SparePartDetails: React.FC = () => {
   const [similar, setSimilar] = useState<SparePartLite[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  const handleAddToCart = () => {
+    if (!part) return;
+    if (!part.seller_id) {
+      toast.error('Seller information is missing');
+      return;
+    }
+    if (!part.price) {
+      toast.error('Price information is missing');
+      return;
+    }
+    
+    const firstImage = part.images && part.images.length > 0 ? part.images[0] : '';
+    
+    dispatch(addToCart({
+      id: `${part.id}-${Date.now()}`,
+      item_id: part.id,
+      item_type: 'spare_part',
+      name: part.name,
+      title: part.title,
+      price: part.price,
+      currency: part.currency || 'USD',
+      quantity: 1,
+      seller_id: part.seller_id,
+      seller_name: part.seller_name,
+      image: firstImage,
+      sku: part.sku,
+      brand: part.brand,
+      category: part.category,
+    }));
+    toast.success(`${part.title || part.name} added to cart!`);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -380,6 +413,19 @@ const SparePartDetails: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {part.quantity_available > 0 ? `${part.quantity_available} available` : 'Out of stock'}
                   </Typography>
+                )}
+                {/* Add to Cart Button */}
+                {part.price && part.seller_id && part.quantity_available !== undefined && part.quantity_available > 0 && (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    startIcon={<ShoppingCartIcon />}
+                    onClick={handleAddToCart}
+                    sx={{ mb: 2 }}
+                  >
+                    Add to Cart
+                  </Button>
                 )}
                 {/* Contact Form - hidden for sellers */}
                 {(((localStorage.getItem('user_data') && JSON.parse(localStorage.getItem('user_data') || '{}')?.role?.toLowerCase?.()) !== 'seller')) && (
