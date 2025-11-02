@@ -40,6 +40,7 @@ import {
   Pagination,
   useTheme,
   useMediaQuery,
+  GridLegacy as Grid,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -65,6 +66,7 @@ import {
   Archive as ArchiveIcon,
   Restore as RestoreIcon,
   Refresh as RefreshIcon,
+  CompareArrows as CompareArrowsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import SellerLayout from '../components/layout/SellerLayout';
@@ -131,6 +133,10 @@ const SellerSparePartsDashboard: React.FC = () => {
   // Global menu state for table actions
   const [tableMenuAnchor, setTableMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedPart, setSelectedPart] = useState<any | null>(null);
+  
+  // Comparison state
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // Fetch spare parts data
   const fetchSpareParts = async () => {
@@ -375,6 +381,20 @@ const SellerSparePartsDashboard: React.FC = () => {
   const handleCloseView = () => {
     setViewOpen(false);
     setViewPart(null);
+  };
+
+  const toggleCompare = (id: string) => {
+    if (compareIds.includes(id)) {
+      setCompareIds((prev) => prev.filter((x) => x !== id));
+      toast.success('Removed from comparison');
+    } else {
+      if (compareIds.length >= 3) {
+        toast.error('You can compare up to 3 items');
+        return;
+      }
+      setCompareIds((prev) => [...prev, id]);
+      toast.success('Added to comparison');
+    }
   };
 
   // No global menu actions; handled per-card
@@ -631,8 +651,25 @@ const SellerSparePartsDashboard: React.FC = () => {
           </Box>
         )}
 
-        {/* Action Menu */}
-        <Box sx={{ position: 'absolute', top: 12, right: part.discount > 0 ? 60 : 12 }}>
+        {/* Compare and Action Menu */}
+        <Box sx={{ position: 'absolute', top: 12, right: part.discount > 0 ? 60 : 12, display: 'flex', gap: 0.5 }}>
+          <IconButton 
+            size="small" 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCompare(part.id);
+            }}
+            sx={{ 
+              bgcolor: compareIds.includes(part.id) ? 'success.main' : 'rgba(255,255,255,0.9)',
+              color: compareIds.includes(part.id) ? 'success.contrastText' : 'inherit',
+              '&:hover': {
+                bgcolor: compareIds.includes(part.id) ? 'success.dark' : 'rgba(255,255,255,1)',
+              }
+            }}
+            title={compareIds.includes(part.id) ? 'Remove from comparison' : 'Add to comparison'}
+          >
+            <CompareArrowsIcon fontSize="small" />
+          </IconButton>
           <IconButton 
             size="small" 
             sx={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
@@ -1595,6 +1632,67 @@ const SellerSparePartsDashboard: React.FC = () => {
             )}
           </DialogActions>
         </Dialog>
+
+        {/* Compare Bar */}
+        {compareIds.length > 0 && (
+          <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 16, display: 'flex', justifyContent: 'center', zIndex: 1200 }}>
+            <Box sx={{ bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : '#fff', border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[6], borderRadius: 999, px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" fontWeight={700}>{compareIds.length} selected</Typography>
+              <Button size="small" variant="outlined" onClick={() => setCompareIds([])}>Clear</Button>
+              <Button size="small" variant="contained" onClick={() => setCompareOpen(true)} disabled={compareIds.length < 2}>Compare Now</Button>
+            </Box>
+          </Box>
+        )}
+
+        {/* Compare Dialog */}
+        {compareOpen && (
+          <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={() => setCompareOpen(false)}>
+            <Card sx={{ width: 'min(1000px, 96vw)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6" fontWeight={700}>Compare Spare Parts</Typography>
+                  <Button onClick={() => setCompareOpen(false)}>Close</Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {compareIds.map((id) => {
+                    const part = spareParts.find((x) => x.id === id)!;
+                    if (!part) return null;
+                    return (
+                      <Grid key={id} item xs={12} md={4}>
+                        <Card variant="outlined">
+                          <Box 
+                            component="img" 
+                            src={getImageUrl(part.images?.[0])} 
+                            alt={part.name} 
+                            sx={{ width: '100%', height: 140, objectFit: 'cover' }} 
+                          />
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="subtitle1" fontWeight={700}>{part.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">{part.brand?.name || part.brand_name || 'Unknown Brand'}</Typography>
+                            <Typography variant="body2" color="text.secondary">{part.price ? formatPrice(part.price) : '—'}</Typography>
+                            <Divider sx={{ my: 1 }} />
+                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: 14 }}>
+                              <span>SKU</span><span>{part.sku || '—'}</span>
+                              <span>Category</span><span>{part.category?.name || part.category_name || '—'}</span>
+                              <span>Price</span><span>{part.price ? formatPrice(part.price) : '—'}</span>
+                              <span>Stock</span><span>{part.quantity_available ?? '—'}</span>
+                              <span>Status</span><span>{part.status || '—'}</span>
+                              <span>Rating</span><span>{part.rating ? `${part.rating.toFixed(1)} (${part.review_count || 0})` : '—'}</span>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                              <Button size="small" variant="outlined" onClick={() => setCompareIds((prev) => prev.filter((x) => x !== id))}>Remove</Button>
+                              <Button size="small" variant="contained" onClick={() => handleViewPart(part)}>View</Button>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Box>
+        )}
       </Box>
     </SellerLayout>
   );
