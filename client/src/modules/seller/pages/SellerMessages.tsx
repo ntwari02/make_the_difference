@@ -26,6 +26,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Tabs, Tab } from '@mui/material';
 import {
@@ -108,6 +110,8 @@ const SellerMessages: React.FC = () => {
   const profile = useSelector((state: RootState) => state.seller.profile);
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('md'));
 
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationListItem | null>(null);
@@ -154,6 +158,7 @@ const SellerMessages: React.FC = () => {
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
   const [inlineCompose, setInlineCompose] = useState(false);
+  const isComposing = composeOpen || inlineCompose;
 
   // Buyer-style controls
   const [tabValue, setTabValue] = useState<number>(() => {
@@ -391,14 +396,17 @@ const SellerMessages: React.FC = () => {
   // Real-time polling: Refresh conversations list every 5 seconds
   // Only updates UI when there are actual changes to avoid unnecessary re-renders
   useEffect(() => {
-    const onFocus = () => { loadConversations(false, false); };
+    const onFocus = () => { if (!isComposing) loadConversations(false, false); };
     window.addEventListener('focus', onFocus);
+    if (isComposing) {
+      return () => { window.removeEventListener('focus', onFocus); };
+    }
     const interval = setInterval(() => { 
-      loadConversations(false, true); // silent=true to avoid loading flicker during polling
+      if (!isComposing) loadConversations(false, true); // silent=true to avoid loading flicker during polling
     }, 5000); // Poll every 5 seconds for real-time updates (reduced frequency)
     return () => { window.removeEventListener('focus', onFocus); clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filter, categoryFilter, searchTerm]);
+  }, [page, filter, categoryFilter, searchTerm, isComposing]);
 
   // SSE live updates
   useEffect(() => {
@@ -466,14 +474,13 @@ const SellerMessages: React.FC = () => {
   // Only updates UI when new messages are detected to avoid interrupting typing
   useEffect(() => {
     if (!selectedConversation?.id || selectedConversation.id.startsWith('temp')) return;
-    
+    if (isComposing) return;
     const interval = setInterval(() => {
-      loadThread(selectedConversation.id, true); // silent=true to avoid loading flicker
+      if (!isComposing) loadThread(selectedConversation.id, true); // silent=true to avoid loading flicker
     }, 5000); // Poll thread every 5 seconds for real-time updates (reduced frequency)
-    
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation?.id]);
+  }, [selectedConversation?.id, isComposing]);
 
   // Scroll to bottom function
   const scrollToBottom = () => {
@@ -1002,7 +1009,11 @@ const SellerMessages: React.FC = () => {
                     setComposeBody(''); 
                     setSelectedConversation(null);
                     setThread([]); // Clear thread when starting new chat
-                    setInlineCompose(true); 
+                    if (isSmall) {
+                      setComposeOpen(true);
+                    } else {
+                      setInlineCompose(true);
+                    }
                   }}
                   sx={{
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1028,7 +1039,11 @@ const SellerMessages: React.FC = () => {
                         setComposeBody(''); 
                         setSelectedConversation(null);
                         setThread([]); // Clear thread
-                        setInlineCompose(true); 
+                        if (isSmall) {
+                          setComposeOpen(true);
+                        } else {
+                          setInlineCompose(true);
+                        }
                       }}
                       sx={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1537,7 +1552,7 @@ const SellerMessages: React.FC = () => {
         </Alert>
       </Snackbar>
       {/* Compose Dialog */}
-      <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={composeOpen} onClose={() => setComposeOpen(false)} maxWidth="md" fullWidth fullScreen={isSmall}>
         <DialogTitle>New Message</DialogTitle>
         <DialogContent>
           <TextField fullWidth label="To (email or name)" value={composeTo} onChange={(e) => setComposeTo(e.target.value)} sx={{ mb: 2, mt: 1 }} />
